@@ -34,7 +34,7 @@ void FunDefFmf::simplify( std::vector< Node >& assertions, bool doRewrite ) {
   for( unsigned i=0; i<assertions.size(); i++ ){
     if( assertions[i].getKind()==FORALL ){
       if( quantifiers::TermDb::isFunDef( assertions[i] ) ){
-        Assert( assertions[i][1].getKind()==EQUAL || assertions[i][1].getKind()==IFF );
+        Assert( assertions[i][1].getKind()==EQUAL );
         Node n = assertions[i][1][0];
         Assert( n.getKind()==APPLY_UF );
         Node f = n.getOperator();
@@ -176,11 +176,7 @@ void FunDefFmf::simplifyTerm( Node n, std::vector< Node >& constraints ) {
         std::vector< Node > children;
         for( unsigned j=0; j<n.getNumChildren(); j++ ){
           Node uz = NodeManager::currentNM()->mkNode( APPLY_UF, d_input_arg_inj[f][j], z );
-          if( !n[j].getType().isBoolean() ){
-            children.push_back( uz.eqNode( n[j] ) );
-          }else{
-            children.push_back( uz.iffNode( n[j] ) );
-          }
+          children.push_back( uz.eqNode( n[j] ) );
         }
         Node bd = children.size()==1 ? children[0] : NodeManager::currentNM()->mkNode( AND, children );
         bd = bd.negate();

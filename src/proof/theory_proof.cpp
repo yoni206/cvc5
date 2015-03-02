@@ -53,7 +53,6 @@ std::string toLFSCKind(Kind kind) {
   case kind::AND: return "and";
   case kind::XOR: return "xor";
   case kind::EQUAL: return "=";
-  case kind::IFF: return "iff";
   case kind::IMPLIES: return "impl";
   case kind::NOT: return "not";
   default:
@@ -103,8 +102,12 @@ void LFSCTheoryProof::printTerm(Expr term, std::ostream& os) {
 
   case kind::EQUAL:
     os << "(";
-    os << "= ";
-    os << term[0].getType() << " ";
+    if( term[0].getType().isBoolean() ){
+      os << "iff ";
+    }else{
+      os << "= ";
+      os << term[0].getType() << " ";
+    }
     printTerm(term[0], os);
     os << " ";
     printTerm(term[1], os);
@@ -123,7 +126,6 @@ void LFSCTheoryProof::printTerm(Expr term, std::ostream& os) {
   case kind::OR:
   case kind::AND:
   case kind::XOR:
-  case kind::IFF:
   case kind::IMPLIES:
   case kind::NOT:
     // print the Boolean operators

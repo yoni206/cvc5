@@ -898,7 +898,7 @@ MatchGen::MatchGen( QuantInfo * qi, Node n, bool isVar ){
         //for( unsigned i=0; i<d_children.size(); i++ ){
         //  d_children_order.push_back( i );
         //}
-        //if( !d_n.isNull() && ( d_n.getKind()==OR || d_n.getKind()==AND || d_n.getKind()==IFF ) ){
+        //if( !d_n.isNull() && ( d_n.getKind()==OR || d_n.getKind()==AND || d_n.getKind()==EQUAL ) ){
           //sort based on the type of the constraint : ground comes first, then literals, then others
           //MatchGenSort mgs;
           //mgs.d_mg = this;
@@ -926,7 +926,7 @@ void MatchGen::collectBoundVar( QuantInfo * qi, Node n, std::vector< int >& cbva
 
 void MatchGen::determineVariableOrder( QuantInfo * qi, std::vector< int >& bvars ) {
   Trace("qcf-qregister-debug") << "Determine variable order " << d_n << std::endl;
-  bool isCom = d_type==typ_formula && ( d_n.getKind()==OR || d_n.getKind()==AND || d_n.getKind()==IFF );
+  bool isCom = d_type==typ_formula && ( d_n.getKind()==OR || d_n.getKind()==AND || d_n.getKind()==EQUAL );
   std::map< int, std::vector< int > > c_to_vars;
   std::map< int, std::vector< int > > vars_to_c;
   std::map< int, int > vb_count;
@@ -1353,7 +1353,7 @@ bool MatchGen::getNextMatch( QuantConflictFind * p, QuantInfo * qi ) {
               success = true;
             }
           }
-        }else if( d_n.getKind()==IFF ){
+        }else if( d_n.getKind()==EQUAL ){
           //construct match based on both children
           if( d_child_counter%2==0 ){
             if( getChild( 0 )->getNextMatch( p, qi ) ){
@@ -1450,7 +1450,7 @@ bool MatchGen::getExplanation( QuantConflictFind * p, QuantInfo * qi, std::vecto
       }else{
         return getChild( d_child_counter )->getExplanation( p, qi, exp );
       }
-    }else if( d_n.getKind()==IFF ){
+    }else if( d_n.getKind()==EQUAL ){
       for( unsigned i=0; i<2; i++ ){
         if( !getChild( i )->getExplanation( p, qi, exp ) ){
           return false;
@@ -1651,7 +1651,7 @@ void MatchGen::setInvalid() {
 }
 
 bool MatchGen::isHandledBoolConnective( TNode n ) {
-  return n.getType().isBoolean() && ( n.getKind()==OR || n.getKind()==AND || n.getKind()==IFF || n.getKind()==ITE || n.getKind()==FORALL || n.getKind()==NOT );
+  return n.getType().isBoolean() && ( n.getKind()==OR || n.getKind()==AND || ( n.getKind()==EQUAL && n[0].getType().isBoolean() ) || n.getKind()==ITE || n.getKind()==FORALL || n.getKind()==NOT );
 }
 
 bool MatchGen::isHandledUfTerm( TNode n ) {
@@ -1692,14 +1692,6 @@ d_qassert( c ) {
   d_false = NodeManager::currentNM()->mkConst<bool>(false);
 }
 
-Node QuantConflictFind::mkEqNode( Node a, Node b ) {
-  if( a.getType().isBoolean() ){
-    return a.iffNode( b );
-  }else{
-    return a.eqNode( b );
-  }
-}
-
 //-------------------------------------------------- registration
 
 void QuantConflictFind::registerQuantifier( Node q ) {
@@ -1733,7 +1725,7 @@ void QuantConflictFind::registerQuantifier( Node q ) {
 
 int QuantConflictFind::evaluate( Node n, bool pref, bool hasPref ) {
   int ret = 0;
-  if( n.getKind()==EQUAL ){
+  if( n.getKind()==EQUAL && !n[0].getType().isBoolean() ){
     Node n1 = evaluateTerm( n[0] );
     Node n2 = evaluateTerm( n[1] );
     Debug("qcf-eval") << "Evaluate : Normalize " << n << " to " << n1 << " = " << n2 << std::endl;
@@ -1775,7 +1767,8 @@ int QuantConflictFind::evaluate( Node n, bool pref, bool hasPref ) {
     if( ret==0 && cevc[0]!=0 && cevc[0]==cevc[1] ){
       ret = cevc[0];
     }
-  }else if( n.getKind()==IFF ){
+  //IFF to EQUAL : also evaluate as above?
+  }else if( n.getKind()==EQUAL ){
     int cev1 = evaluate( n[0] );
     if( cev1!=0 ){
       int cev2 = evaluate( n[1] );

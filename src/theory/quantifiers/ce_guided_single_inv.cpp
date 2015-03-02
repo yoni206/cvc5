@@ -147,7 +147,7 @@ void CegConjectureSingleInv::initialize( QuantifiersEngine * qe, Node q ) {
 
             for( unsigned i=0; i<single_invoke_args[prog][k-1].size(); i++ ){
               Node arg = single_invoke_args[prog][k-1][i];
-              Node asum = NodeManager::currentNM()->mkNode( arg.getType().isBoolean() ? IFF : EQUAL, v, arg ).negate();
+              Node asum = NodeManager::currentNM()->mkNode( EQUAL, v, arg ).negate();
               Trace("cegqi-si-debug") << "  ..." << arg << " occurs in ";
               Trace("cegqi-si-debug") << single_invoke_args_from[prog][k-1][arg].size() << " invocations at position " << (k-1) << " of " << prog << "." << std::endl;
               for( unsigned j=0; j<single_invoke_args_from[prog][k-1][arg].size(); j++ ){

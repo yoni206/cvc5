@@ -198,13 +198,13 @@ void QuantArith::debugPrintMonomialSum( std::map< Node, Node >& msum, const char
 }
 
 bool QuantArith::solveEqualityFor( Node lit, Node v, Node & veq ) {
-  Assert( lit.getKind()==EQUAL || lit.getKind()==IFF );
+  Assert( lit.getKind()==EQUAL );
   //first look directly at sides
   TypeNode tn = lit[0].getType();
   for( unsigned r=0; r<2; r++ ){
     if( lit[r]==v ){
       Node olitr = lit[r==0 ? 1 : 0];
-      veq = tn.isBoolean() ? lit[r].iffNode( olitr ) : lit[r].eqNode( olitr );
+      veq = lit[r].eqNode( olitr );
       return true;
     }
   }
@@ -353,7 +353,7 @@ void QuantPhaseReq::getPolarity( Node n, int child, bool hasPol, bool pol, bool&
   newPol = pol;
   if( n.getKind()==NOT ){
     newPol = !pol;
-  }else if( n.getKind()==IFF ){
+  }else if( n.getKind()==EQUAL ){
     newHasPol = false;
   }else if( n.getKind()==ITE ){
     if( child==0 ){

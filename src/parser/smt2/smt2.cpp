@@ -149,7 +149,6 @@ void Smt2::addTheory(Theory theory) {
     Parser::addOperator(kind::AND);
     Parser::addOperator(kind::DISTINCT);
     Parser::addOperator(kind::EQUAL);
-    Parser::addOperator(kind::IFF);
     Parser::addOperator(kind::IMPLIES);
     Parser::addOperator(kind::ITE);
     Parser::addOperator(kind::NOT);
@@ -594,7 +593,7 @@ Expr Smt2::getSygusAssertion( std::vector<DatatypeType>& datatypeTypes, std::vec
     builtTerm = ops[i][j];
   }
   Debug("parser-sygus") << "...made built term " << builtTerm << std::endl;
-  Expr assertion = getExprManager()->mkExpr(evalApply.getType().isBoolean() ? kind::IFF : kind::EQUAL, evalApply, builtTerm);
+  Expr assertion = getExprManager()->mkExpr(kind::EQUAL, evalApply, builtTerm);
   Expr pattern = getExprManager()->mkExpr(kind::INST_PATTERN, evalApply);
   pattern = getExprManager()->mkExpr(kind::INST_PATTERN_LIST, pattern);
   assertion = getExprManager()->mkExpr(kind::FORALL, bvl, assertion, pattern);
@@ -644,7 +643,7 @@ Expr Smt2::getSygusAssertion( std::vector<DatatypeType>& datatypeTypes, std::vec
               Debug("parser-sygus") << "builtApply " << builtApply[k] << std::endl;
               builtTerm = getExprManager()->mkExpr(ops[i][j], builtApply);
               Debug("parser-sygus") << "builtTerm " << builtTerm << std::endl;
-              Expr eassertion = getExprManager()->mkExpr(evalApply.getType().isBoolean() ? kind::IFF : kind::EQUAL, evalApply, builtTerm);
+              Expr eassertion = getExprManager()->mkExpr(kind::EQUAL, evalApply, builtTerm);
               Expr epattern = getExprManager()->mkExpr(kind::INST_PATTERN, evalApply);
               epattern = getExprManager()->mkExpr(kind::INST_PATTERN_LIST, epattern);
               eassertion = getExprManager()->mkExpr(kind::FORALL, nbvl, eassertion, epattern);

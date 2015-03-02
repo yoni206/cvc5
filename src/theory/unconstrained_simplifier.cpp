@@ -168,13 +168,7 @@ void UnconstrainedSimplifier::processUnconstrained()
             if (card.isFinite() && !card.isLargeFinite() && card.getFiniteCardinality() == 2) {
               // Special case: condition is unconstrained, then and else are different, and total cardinality of the type is 2, then the result
               // is unconstrained
-              Node test;
-              if (parent.getType().isBoolean()) {
-                test = Rewriter::rewrite(parent[1].iffNode(parent[2]));
-              }
-              else {
-                test = Rewriter::rewrite(parent[1].eqNode(parent[2]));
-              }
+              Node test = Rewriter::rewrite(parent[1].eqNode(parent[2]));
               if (test == NodeManager::currentNM()->mkConst<bool>(false)) {
                 ++d_numUnconstrainedElim;
                 if (currentSub.isNull()) {
@@ -191,20 +185,37 @@ void UnconstrainedSimplifier::processUnconstrained()
         // Comparisons that return a different type - assuming domains are larger than 1, any
         // unconstrained child makes parent unconstrained as well
         case kind::EQUAL:
-          if (parent[0].getType() != parent[1].getType()) {
-            TNode other = (parent[0] == current) ? parent[1] : parent[0];
-            if (current.getType().isSubtypeOf(other.getType())) {
-              break;
+        {
+          TypeNode tn = parent[0].getType();
+          if( !tn.isBoolean() ){
+            if (tn != parent[1].getType()) {
+              TNode other = (parent[0] == current) ? parent[1] : parent[0];
+              if (current.getType().isSubtypeOf(other.getType())) {
+                break;
+              }
             }
-          }
-          if( parent[0].getType().isDatatype() ){
-            TypeNode tn = parent[0].getType();
-            const Datatype& dt = ((DatatypeType)(tn).toType()).getDatatype();
-            if( dt.isRecursiveSingleton() ){
-              //domain size may be 1
-              break;
+            if( tn.isDatatype() ){
+              const Datatype& dt = ((DatatypeType)(tn).toType()).getDatatype();
+              if( dt.isRecursiveSingleton() ){
+                //domain size may be 1
+                break;
+              }
             }
+          }else{
+            if (d_unconstrained.find(parent) == d_unconstrained.end() &&
+                !d_substitutions.hasSubstitution(parent)) {
+              ++d_numUnconstrainedElim;
+              if (currentSub.isNull()) {
+                currentSub = current;
+              }
+              current = parent;
+            }
+            else {
+              currentSub = Node();
+            }
+            break;
           }
+        }
         case kind::BITVECTOR_COMP:
         case kind::LT:
         case kind::LEQ:
@@ -364,7 +375,6 @@ void UnconstrainedSimplifier::processUnconstrained()
               !parent.getType().isInteger()) {
             break;
           }
-        case kind::IFF:
         case kind::XOR:
         case kind::BITVECTOR_XOR:
         case kind::BITVECTOR_XNOR:

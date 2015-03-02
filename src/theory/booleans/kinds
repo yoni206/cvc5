@@ -40,7 +40,6 @@ typerule CONST_BOOLEAN ::CVC4::theory::boolean::BooleanTypeRule
 
 typerule NOT ::CVC4::theory::boolean::BooleanTypeRule
 typerule AND ::CVC4::theory::boolean::BooleanTypeRule
-typerule IFF ::CVC4::theory::boolean::BooleanTypeRule
 typerule IMPLIES ::CVC4::theory::boolean::BooleanTypeRule
 typerule OR ::CVC4::theory::boolean::BooleanTypeRule
 typerule XOR ::CVC4::theory::boolean::BooleanTypeRule

@@ -320,7 +320,7 @@ Kind getOperatorKind(int type, bool& negate) {
 
   switch(type) {
     // booleanBinop
-  case IFF_TOK: return kind::IFF;
+  case IFF_TOK: return kind::EQUAL;
   case IMPLIES_TOK: return kind::IMPLIES;
   case OR_TOK: return kind::OR;
   case XOR_TOK: return kind::XOR;
@@ -403,8 +403,6 @@ Expr createPrecedenceTree(Parser* parser, ExprManager* em,
     if(lhs.getType().isBoolean()) {
       if(parser->strictModeEnabled()) {
         WarningOnce() << "Warning: in strict parsing mode, will not convert BOOL = BOOL to BOOL <=> BOOL" << std::endl;
-      } else {
-        k = kind::IFF;
       }
     }
     break;

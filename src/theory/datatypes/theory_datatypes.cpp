@@ -382,7 +382,7 @@ void TheoryDatatypes::doPendingMerges(){
     //do all pending merges
     int i=0;
     while( i<(int)d_pending_merge.size() ){
-      Assert( d_pending_merge[i].getKind()==EQUAL || d_pending_merge[i].getKind()==IFF );
+      Assert( d_pending_merge[i].getKind()==EQUAL );
       merge( d_pending_merge[i][0], d_pending_merge[i][1] );
       i++;
     }
@@ -540,19 +540,6 @@ Node TheoryDatatypes::ppRewrite(TNode in) {
   // we only care about tuples and records here
   if(in.getKind() != kind::TUPLE && in.getKind() != kind::TUPLE_UPDATE &&
      in.getKind() != kind::RECORD && in.getKind() != kind::RECORD_UPDATE) {
-    if((t.isTuple() || t.isRecord()) && in.hasAttribute(smt::BooleanTermAttr())) {
-      Debug("tuprec") << "should map " << in << " of type " << t << " back to " << in.getAttribute(smt::BooleanTermAttr()).getType() << endl;
-      Debug("tuprec") << "so " << NodeManager::currentNM()->getDatatypeForTupleRecord(t).getDatatype() << " goes to " << NodeManager::currentNM()->getDatatypeForTupleRecord(in.getAttribute(smt::BooleanTermAttr()).getType()).getDatatype() << endl;
-      if(t.isTuple()) {
-        Debug("tuprec") << "current datatype-tuple-attr is " << NodeManager::currentNM()->getDatatypeForTupleRecord(t).getAttribute(expr::DatatypeTupleAttr()) << endl;
-        Debug("tuprec") << "setting to " << NodeManager::currentNM()->getDatatypeForTupleRecord(in.getAttribute(smt::BooleanTermAttr()).getType()).getAttribute(expr::DatatypeTupleAttr()) << endl;
-        NodeManager::currentNM()->getDatatypeForTupleRecord(t).setAttribute(expr::DatatypeTupleAttr(), NodeManager::currentNM()->getDatatypeForTupleRecord(in.getAttribute(smt::BooleanTermAttr()).getType()).getAttribute(expr::DatatypeTupleAttr()));
-      } else {
-        Debug("tuprec") << "current datatype-record-attr is " << NodeManager::currentNM()->getDatatypeForTupleRecord(t).getAttribute(expr::DatatypeRecordAttr()) << endl;
-        Debug("tuprec") << "setting to " << NodeManager::currentNM()->getDatatypeForTupleRecord(in.getAttribute(smt::BooleanTermAttr()).getType()).getAttribute(expr::DatatypeRecordAttr()) << endl;
-        NodeManager::currentNM()->getDatatypeForTupleRecord(t).setAttribute(expr::DatatypeRecordAttr(), NodeManager::currentNM()->getDatatypeForTupleRecord(in.getAttribute(smt::BooleanTermAttr()).getType()).getAttribute(expr::DatatypeRecordAttr()));
-      }
-    }
 
     if( in.getKind()==EQUAL ){
       Node nn;
@@ -696,7 +683,7 @@ void TheoryDatatypes::explain(TNode literal, std::vector<TNode>& assumptions){
   Debug("datatypes-explain") << "Explain " << literal << std::endl;
   bool polarity = literal.getKind() != kind::NOT;
   TNode atom = polarity ? literal : literal[0];
-  if (atom.getKind() == kind::EQUAL || atom.getKind() == kind::IFF) {
+  if (atom.getKind() == kind::EQUAL) {
     explainEquality( atom[0], atom[1], polarity, assumptions );
   } else if( atom.getKind() == kind::AND && polarity ){
     for( unsigned i=0; i<atom.getNumChildren(); i++ ){
@@ -724,11 +711,7 @@ Node TheoryDatatypes::explain( std::vector< Node >& lits ) {
 
 /** Conflict when merging two constants */
 void TheoryDatatypes::conflict(TNode a, TNode b){
-  if (a.getKind() == kind::CONST_BOOLEAN) {
-    d_conflictNode = explain( a.iffNode(b) );
-  } else {
-    d_conflictNode = explain( a.eqNode(b) );
-  }
+  d_conflictNode = explain( a.eqNode(b) );
   Trace("dt-conflict") << "CONFLICT: Eq engine conflict : " << d_conflictNode << std::endl;
   d_out->conflict( d_conflictNode );
   d_conflict = true;
@@ -803,8 +786,7 @@ void TheoryDatatypes::merge( Node t1, Node t2 ){
             for( unsigned i=0; i<deq_cand.size(); i++ ){
               if( d_equalityEngine.areDisequal( deq_cand[i].first, deq_cand[i].second, true ) ){
                 conf = true;
-                Node eq = NodeManager::currentNM()->mkNode( deq_cand[i].first.getType().isBoolean() ? kind::IFF : kind::EQUAL,
-                                                            deq_cand[i].first, deq_cand[i].second );
+                Node eq = NodeManager::currentNM()->mkNode( kind::EQUAL, deq_cand[i].first, deq_cand[i].second );
                 exp.push_back( eq.negate() );
               }
             }
@@ -825,7 +807,7 @@ void TheoryDatatypes::merge( Node t1, Node t2 ){
             //do unification
             for( int i=0; i<(int)cons1.getNumChildren(); i++ ) {
               if( !areEqual( cons1[i], cons2[i] ) ){
-                Node eq = cons1[i].getType().isBoolean() ? cons1[i].iffNode( cons2[i] ) : cons1[i].eqNode( cons2[i] );
+                Node eq = cons1[i].eqNode( cons2[i] );
                 d_pending.push_back( eq );
                 d_pending_exp[ eq ] = unifEq;
                 Trace("datatypes-infer") << "DtInfer : cons-inj : " << eq << " by " << unifEq << std::endl;
@@ -1172,7 +1154,7 @@ void TheoryDatatypes::collapseSelector( Node s, Node c ) {
     Node rr = Rewriter::rewrite( r );
     if( s!=rr ){
       Node eq_exp = c.eqNode( s[0] );
-      Node eq = rr.getType().isBoolean() ? s.iffNode( rr ) : s.eqNode( rr );
+      Node eq = s.eqNode( rr );
       Trace("datatypes-infer") << "DtInfer : collapse sel";
       Trace("datatypes-infer") << ( wrong ? " wrong" : "");
       Trace("datatypes-infer") << " : " << eq << " by " << eq_exp << std::endl;
@@ -1540,7 +1522,7 @@ void TheoryDatatypes::collectTerms( Node n ) {
           if( children.empty() ){
             lem = n.negate();
           }else{
-            lem = NodeManager::currentNM()->mkNode( IFF, n, children.size()==1 ? children[0] : NodeManager::currentNM()->mkNode( OR, children ) );
+            lem = NodeManager::currentNM()->mkNode( EQUAL, n, children.size()==1 ? children[0] : NodeManager::currentNM()->mkNode( OR, children ) );
           }
           Trace("datatypes-infer") << "DtInfer : zero height : " << lem << std::endl;
           d_pending.push_back( lem );
@@ -1557,7 +1539,7 @@ void TheoryDatatypes::processNewTerm( Node n ){
   //see if it is rewritten to be something different
   Node rn = Rewriter::rewrite( n );
   if( rn!=n && !areEqual( rn, n ) ){
-    Node eq = n.getType().isBoolean() ? rn.iffNode( n ) : rn.eqNode( n );
+    Node eq = rn.eqNode( n );
     d_pending.push_back( eq );
     d_pending_exp[ eq ] = d_true;
     Trace("datatypes-infer") << "DtInfer : rewrite : " << eq << std::endl;
@@ -1896,7 +1878,7 @@ bool TheoryDatatypes::mustCommunicateFact( Node n, Node exp ){
   //We may need to communicate outwards if the conclusions involve other theories.  Also communicate (6) and OR conclusions.
   Trace("dt-lemma-debug") << "Compute for " << exp << " => " << n << std::endl;
   bool addLemma = false;
-  if( n.getKind()==EQUAL || n.getKind()==IFF ){
+  if( n.getKind()==EQUAL ){
     /*
     for( unsigned i=0; i<2; i++ ){
       if( !n[i].isVar() && n[i].getKind()!=APPLY_SELECTOR_TOTAL && n[i].getKind()!=APPLY_CONSTRUCTOR ){

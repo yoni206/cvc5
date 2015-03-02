@@ -63,7 +63,7 @@ void InstMatchGenerator::initialize( QuantifiersEngine* qe, std::vector< InstMat
       //we want to add the children of the NOT
       d_match_pattern = d_pattern[0];
     }
-    if( d_match_pattern.getKind()==IFF || d_match_pattern.getKind()==EQUAL || d_match_pattern.getKind()==GEQ ){
+    if( d_match_pattern.getKind()==EQUAL || d_match_pattern.getKind()==GEQ ){
       //make sure the matching portion of the equality is on the LHS of d_pattern
       //  and record what d_match_pattern is
       if( !quantifiers::TermDb::hasInstConstAttr(d_match_pattern[0]) ||
@@ -135,7 +135,7 @@ void InstMatchGenerator::initialize( QuantifiersEngine* qe, std::vector< InstMat
       }else{
         d_cg = new CandidateGeneratorQEAll( qe, d_match_pattern );
       }
-    }else if( d_match_pattern.getKind()==EQUAL || d_match_pattern.getKind()==IFF ){
+    }else if( d_match_pattern.getKind()==EQUAL ){
       //we will be producing candidates via literal matching heuristics
       if( d_pattern.getKind()!=NOT ){
         //candidates will be all equalities
@@ -144,7 +144,7 @@ void InstMatchGenerator::initialize( QuantifiersEngine* qe, std::vector< InstMat
         //candidates will be all disequalities
         d_cg = new inst::CandidateGeneratorQELitDeq( qe, d_match_pattern );
       }
-    }else if( d_pattern.getKind()==EQUAL || d_pattern.getKind()==IFF ||
+    }else if( d_pattern.getKind()==EQUAL || 
               d_pattern.getKind()==GEQ || d_pattern.getKind()==GT || d_pattern.getKind()==NOT ){
       Assert( d_matchPolicy==MATCH_GEN_DEFAULT );
       if( d_pattern.getKind()==NOT ){
@@ -238,11 +238,13 @@ bool InstMatchGenerator::getMatch( Node f, Node t, InstMatch& m, QuantifiersEngi
           t_match = t;
         }
       }else{
-        if(pat.getKind()==EQUAL) {
-          Node r = NodeManager::currentNM()->mkConst( Rational(1) );
-          t_match = NodeManager::currentNM()->mkNode(PLUS, t, r);
-        }else if( pat.getKind()==IFF ){
-          t_match = NodeManager::currentNM()->mkConst( !q->areEqual( NodeManager::currentNM()->mkConst(true), t ) );
+        if( pat.getKind()==EQUAL) {
+          if( !pat[0].getType().isBoolean() ){
+            Node r = NodeManager::currentNM()->mkConst( Rational(1) );
+            t_match = NodeManager::currentNM()->mkNode(PLUS, t, r);
+          }else{
+            t_match = NodeManager::currentNM()->mkConst( !q->areEqual( NodeManager::currentNM()->mkConst(true), t ) );
+          }
         }else if( pat.getKind()==GEQ ){
           Node r = NodeManager::currentNM()->mkConst( Rational(1) );
           t_match = NodeManager::currentNM()->mkNode(PLUS, t, r);

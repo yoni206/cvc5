@@ -432,10 +432,10 @@ bool SygusSplit::considerSygusSplitKind( const Datatype& dt, const Datatype& pdt
         nk = OR;reqk = NOT;
       }else if( k==OR ){
         nk = AND;reqk = NOT;
-      }else if( k==IFF ) {
+      }else if( k==EQUAL ) {
         nk = XOR;
       }else if( k==XOR ) {
-        nk = IFF;
+        nk = EQUAL;
       }
     }
     if( parent==BITVECTOR_NOT ){
@@ -1166,7 +1166,7 @@ Node SygusSymBreak::getSeparationTemplate( TypeNode tn,  Node rep_prog, Node anc
 bool SygusSymBreak::processConstantArg( TypeNode tnp, const Datatype & pdt, int pc,
                                         Kind k, int i, Node arg, std::map< unsigned, bool >& rlv ) {
   Assert( d_tds->hasKind( tnp, k ) );
-  if( k==AND || k==OR || k==IFF || k==XOR || k==IMPLIES || ( k==ITE && i==0 ) ){
+  if( k==AND || k==OR || ( k==EQUAL && arg.getType().isBoolean() ) || k==XOR || k==IMPLIES || ( k==ITE && i==0 ) ){
     return false;
   }else if( d_tds->isIdempotentArg( arg, k, i ) ){
     if( pdt[pc].getNumArgs()==2 ){

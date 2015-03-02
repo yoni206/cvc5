@@ -81,7 +81,7 @@ void EagerBitblaster::bbAtom(TNode node) {
       Rewriter::rewrite(d_atomBBStrategies[normalized.getKind()](normalized, this)) :
       normalized;
   // asserting that the atom is true iff the definition holds
-  Node atom_definition = utils::mkNode(kind::IFF, node, atom_bb);
+  Node atom_definition = utils::mkNode(kind::EQUAL, node, atom_bb);
 
   AlwaysAssert (options::bitblastMode() == theory::bv::BITBLAST_MODE_EAGER); 
   storeBBAtom(node, atom_definition);

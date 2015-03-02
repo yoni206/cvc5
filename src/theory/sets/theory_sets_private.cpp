@@ -1189,11 +1189,7 @@ void TheorySetsPrivate::setMasterEqualityEngine(eq::EqualityEngine* eq) {
 
 void TheorySetsPrivate::conflict(TNode a, TNode b)
 {
-  if (a.getKind() == kind::CONST_BOOLEAN) {
-    d_conflictNode = explain(a.iffNode(b));
-  } else {
-    d_conflictNode = explain(a.eqNode(b));
-  }
+  d_conflictNode = explain(a.eqNode(b));
   d_external.d_out->conflict(d_conflictNode);
   Debug("sets") << "[sets] conflict: " << a << " iff " << b
                 << ", explaination " << d_conflictNode << std::endl;
@@ -1209,7 +1205,7 @@ Node TheorySetsPrivate::explain(TNode literal)
   TNode atom = polarity ? literal : literal[0];
   std::vector<TNode> assumptions;
 
-  if(atom.getKind() == kind::EQUAL || atom.getKind() == kind::IFF) {
+  if(atom.getKind() == kind::EQUAL) {
     d_equalityEngine.explainEquality(atom[0], atom[1], polarity, assumptions);
   } else if(atom.getKind() == kind::MEMBER) {
     if( !d_equalityEngine.hasTerm(atom)) {

@@ -40,34 +40,6 @@ Node ModelPostprocessor::rewriteAs(TNode n, TypeNode asType) {
     // we don't handle non-const right now
     return n;
   }
-  if(asType.isBoolean()) {
-    if(n.getType().isBitVector(1u)) {
-      // type mismatch: should only happen for Boolean-term conversion under
-      // datatype constructor applications; rewrite from BV(1) back to Boolean
-      bool tf = (n.getConst<BitVector>().getValue() == 1);
-      return NodeManager::currentNM()->mkConst(tf);
-    }
-    if(n.getType().isDatatype() && n.getType().hasAttribute(BooleanTermAttr())) {
-      // type mismatch: should only happen for Boolean-term conversion under
-      // datatype constructor applications; rewrite from datatype back to Boolean
-      Assert(n.getKind() == kind::APPLY_CONSTRUCTOR);
-      Assert(n.getNumChildren() == 0);
-      // we assume (by construction) false is first; see boolean_terms.cpp
-      bool tf = (Datatype::indexOf(n.getOperator().toExpr()) == 1);
-      Debug("boolean-terms") << "+++ rewriteAs " << n << " : " << asType << " ==> " << tf << endl;
-      return NodeManager::currentNM()->mkConst(tf);
-    }
-  }
-  if(n.getType().isBoolean()) {
-    bool tf = n.getConst<bool>();
-    if(asType.isBitVector(1u)) {
-      return NodeManager::currentNM()->mkConst(BitVector(1u, tf ? 1u : 0u));
-    }
-    if(asType.isDatatype() && asType.hasAttribute(BooleanTermAttr())) {
-      const Datatype& asDatatype = asType.getConst<Datatype>();
-      return NodeManager::currentNM()->mkNode(kind::APPLY_CONSTRUCTOR, (tf ? asDatatype[0] : asDatatype[1]).getConstructor());
-    }
-  }
   if(n.getType().isRecord() && asType.isRecord()) {
     Debug("boolean-terms") << "+++ got a record - rewriteAs " << n << " : " << asType << endl;
     const Record& rec CVC4_UNUSED = n.getType().getConst<Record>();
@@ -154,20 +126,8 @@ void ModelPostprocessor::visit(TNode current, TNode parent) {
       Assert(t != expectType.end());
       TNode n = d_nodes[*i];
       n = n.isNull() ? *i : n;
-      if(!n.getType().isSubtypeOf(*t)) {
-        Assert(n.getType().isBitVector(1u) ||
-               (n.getType().isDatatype() && n.getType().hasAttribute(BooleanTermAttr())));
-        Assert(n.isConst());
-        Assert((*t).isBoolean());
-        if(n.getType().isBitVector(1u)) {
-          b << NodeManager::currentNM()->mkConst(bool(n.getConst<BitVector>().getValue() == 1));
-        } else {
-          // we assume (by construction) false is first; see boolean_terms.cpp
-          b << NodeManager::currentNM()->mkConst(bool(Datatype::indexOf(n.getOperator().toExpr()) == 1));
-        }
-      } else {
-        b << n;
-      }
+      Assert( n.getType().isSubtypeOf(*t) );
+      b << n;
     }
     Assert(t == expectType.end());
     d_nodes[current] = b;
@@ -188,63 +148,14 @@ void ModelPostprocessor::visit(TNode current, TNode parent) {
       Assert(t != expectRec.end());
       TNode n = d_nodes[*i];
       n = n.isNull() ? *i : n;
-      if(!n.getType().isSubtypeOf(TypeNode::fromType((*t).second))) {
-        Assert(n.getType().isBitVector(1u) ||
-               (n.getType().isDatatype() && n.getType().hasAttribute(BooleanTermAttr())));
-        Assert(n.isConst());
-        Assert((*t).second.isBoolean());
-        if(n.getType().isBitVector(1u)) {
-          b << NodeManager::currentNM()->mkConst(bool(n.getConst<BitVector>().getValue() == 1));
-        } else {
-          // we assume (by construction) false is first; see boolean_terms.cpp
-          b << NodeManager::currentNM()->mkConst(bool(Datatype::indexOf(n.getOperator().toExpr()) == 1));
-        }
-      } else {
-        b << n;
-      }
+      Assert(n.getType().isSubtypeOf(TypeNode::fromType((*t).second)));
+      b << n;
     }
     Assert(t == expectRec.end());
     d_nodes[current] = b;
     Debug("tuprec") << "returning " << d_nodes[current] << endl;
     Assert(d_nodes[current].getType() == expectType);
-  } else if(current.getKind() == kind::APPLY_CONSTRUCTOR &&
-            ( current.getOperator().hasAttribute(BooleanTermAttr()) ||
-              ( current.getOperator().getKind() == kind::APPLY_TYPE_ASCRIPTION &&
-                current.getOperator()[0].hasAttribute(BooleanTermAttr()) ) )) {
-    NodeBuilder<> b(kind::APPLY_CONSTRUCTOR);
-    Node realOp;
-    if(current.getOperator().getKind() == kind::APPLY_TYPE_ASCRIPTION) {
-      TNode oldAsc = current.getOperator().getOperator();
-      Debug("boolean-terms") << "old asc: " << oldAsc << endl;
-      Node newCons = current.getOperator()[0].getAttribute(BooleanTermAttr());
-      Node newAsc = NodeManager::currentNM()->mkConst(AscriptionType(newCons.getType().toType()));
-      Debug("boolean-terms") << "new asc: " << newAsc << endl;
-      if(newCons.getType().getRangeType().isParametricDatatype()) {
-        vector<TypeNode> oldParams = TypeNode::fromType(oldAsc.getConst<AscriptionType>().getType()).getRangeType().getParamTypes();
-        vector<TypeNode> newParams = newCons.getType().getRangeType().getParamTypes();
-        Assert(oldParams.size() == newParams.size() && oldParams.size() > 0);
-        newAsc = NodeManager::currentNM()->mkConst(AscriptionType(newCons.getType().substitute(newParams.begin(), newParams.end(), oldParams.begin(), oldParams.end()).toType()));
-      }
-      realOp = NodeManager::currentNM()->mkNode(kind::APPLY_TYPE_ASCRIPTION, newAsc, newCons);
-    } else {
-      realOp = current.getOperator().getAttribute(BooleanTermAttr());
-    }
-    b << realOp;
-    Debug("boolean-terms") << "+ op " << b.getOperator() << endl;
-    TypeNode::iterator j = realOp.getType().begin();
-    for(TNode::iterator i = current.begin(); i != current.end(); ++i, ++j) {
-      Assert(j != realOp.getType().end());
-      Assert(alreadyVisited(*i, TNode::null()));
-      TNode repl = d_nodes[*i];
-      repl = repl.isNull() ? *i : repl;
-      Debug("boolean-terms") << "+ adding " << repl << " expecting " << *j << endl;
-      b << rewriteAs(repl, *j);
-    }
-    Node n = b;
-    Debug("boolean-terms") << "model-post: " << current << endl
-                           << "- returning " << n << endl;
-    d_nodes[current] = n;
-  } else if(current.getKind() == kind::LAMBDA) {
+  }else if(current.getKind() == kind::LAMBDA) {
     // rewrite based on children
     bool self = true;
     for(size_t i = 0; i < current.getNumChildren(); ++i) {
@@ -262,13 +173,7 @@ void ModelPostprocessor::visit(TNode current, TNode parent) {
       // rewrite based on children
       NodeBuilder<> nb(current.getKind());
       if(current.getMetaKind() == kind::metakind::PARAMETERIZED) {
-        TNode op = current.getOperator();
-        Node realOp;
-        if(op.getAttribute(BooleanTermAttr(), realOp)) {
-          nb << realOp;
-        } else {
-          nb << op;
-        }
+        nb << current.getOperator();
       }
       for(size_t i = 0; i < current.getNumChildren(); ++i) {
         Assert(d_nodes.find(current[i]) != d_nodes.end());

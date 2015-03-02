@@ -180,15 +180,6 @@ Abc_Obj_t* AigBitblaster::bbFormula(TNode node) {
       }
       break;
     }
-  case kind::IFF:
-    {
-      Assert (node.getNumChildren() == 2); 
-      Abc_Obj_t* child1 = bbFormula(node[0]);
-      Abc_Obj_t* child2 = bbFormula(node[1]);
-
-      result = mkIff(child1, child2); 
-      break;
-    }
   case kind::XOR:
     {
       result = bbFormula(node[0]);
@@ -232,6 +223,18 @@ Abc_Obj_t* AigBitblaster::bbFormula(TNode node) {
     {
       result = mkInput(node);
       break;
+    }
+  case kind::EQUAL:
+    {
+      if( node[0].getType().isBoolean() ){
+        Assert (node.getNumChildren() == 2); 
+        Abc_Obj_t* child1 = bbFormula(node[0]);
+        Abc_Obj_t* child2 = bbFormula(node[1]);
+
+        result = mkIff(child1, child2); 
+        break;
+      }
+      //else continue...
     }
   default:
     bbAtom(node);

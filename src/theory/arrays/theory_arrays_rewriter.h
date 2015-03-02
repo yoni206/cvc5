@@ -33,7 +33,7 @@ void setMostFrequentValue(TNode store, TNode value);
 void setMostFrequentValueCount(TNode store, uint64_t count);
 
 static inline Node mkEqNode(Node a, Node b) {
-  return a.getType().isBoolean() ? a.iffNode(b) : a.eqNode(b);
+  return a.eqNode(b);
 }
 
 class TheoryArraysRewriter {
@@ -376,8 +376,7 @@ public:
         }
         break;
       }
-      case kind::EQUAL:
-      case kind::IFF: {
+      case kind::EQUAL: {
         if(node[0] == node[1]) {
           Trace("arrays-postrewrite") << "Arrays::postRewrite returning true" << std::endl;
           return RewriteResponse(REWRITE_DONE, NodeManager::currentNM()->mkConst(true));
@@ -482,8 +481,7 @@ public:
         }
         break;
       }
-      case kind::EQUAL:
-      case kind::IFF: {
+      case kind::EQUAL: {
         if(node[0] == node[1]) {
           Trace("arrays-prerewrite") << "Arrays::preRewrite returning true" << std::endl;
           return RewriteResponse(REWRITE_DONE, NodeManager::currentNM()->mkConst(true));

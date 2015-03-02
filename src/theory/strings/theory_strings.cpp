@@ -218,7 +218,7 @@ void TheoryStrings::explain(TNode literal, std::vector<TNode>& assumptions){
   TNode atom = polarity ? literal : literal[0];
   unsigned ps = assumptions.size();
   std::vector< TNode > tassumptions;
-  if (atom.getKind() == kind::EQUAL || atom.getKind() == kind::IFF) {
+  if (atom.getKind() == kind::EQUAL) {
     if( atom[0]!=atom[1] ){
       d_equalityEngine.explainEquality(atom[0], atom[1], polarity, tassumptions);
     }
@@ -679,12 +679,7 @@ void TheoryStrings::conflict(TNode a, TNode b){
   if( !d_conflict ){
     Debug("strings-conflict") << "Making conflict..." << std::endl;
     d_conflict = true;
-    Node conflictNode;
-    if (a.getKind() == kind::CONST_BOOLEAN) {
-      conflictNode = explain( a.iffNode(b) );
-    } else {
-      conflictNode = explain( a.eqNode(b) );
-    }
+    Node conflictNode = explain( a.eqNode(b) );
     Trace("strings-conflict") << "CONFLICT: Eq engine conflict : " << conflictNode << std::endl;
     d_out->conflict( conflictNode );
   }

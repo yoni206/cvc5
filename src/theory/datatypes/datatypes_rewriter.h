@@ -296,7 +296,7 @@ public:
       if( n1.isConst() && n2.isConst() ){
         return true;
       }else{
-        Node eq = NodeManager::currentNM()->mkNode( n1.getType().isBoolean() ? kind::IFF : kind::EQUAL, n1, n2 );
+        Node eq = NodeManager::currentNM()->mkNode( kind::EQUAL, n1, n2 );
         rew.push_back( eq );
       }
     }

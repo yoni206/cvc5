@@ -200,7 +200,11 @@ void CvcPrinter::toStream(std::ostream& out, TNode n, int depth, bool types, boo
 
     // BUILTIN
     case kind::EQUAL:
-      op << '=';
+      if( n[0].getType().isBoolean() ){
+        op << "<=>";
+      }else{
+        op << '=';
+      }
       opType = INFIX;
       break;
     case kind::ITE:
@@ -268,10 +272,6 @@ void CvcPrinter::toStream(std::ostream& out, TNode n, int depth, bool types, boo
       break;
     case kind::XOR:
       op << "XOR";
-      opType = INFIX;
-      break;
-    case kind::IFF:
-      op << "<=>";
       opType = INFIX;
       break;
     case kind::IMPLIES:

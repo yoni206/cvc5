@@ -207,7 +207,7 @@ void TheoryUF::explain(TNode literal, std::vector<TNode>& assumptions) {
   bool polarity = literal.getKind() != kind::NOT;
   TNode atom = polarity ? literal : literal[0];
   eq::EqProof * eqp = d_proofEnabled ? new eq::EqProof : NULL;
-  if (atom.getKind() == kind::EQUAL || atom.getKind() == kind::IFF) {
+  if (atom.getKind() == kind::EQUAL) {
     d_equalityEngine.explainEquality(atom[0], atom[1], polarity, assumptions, eqp);
   } else {
     d_equalityEngine.explainPredicate(atom, polarity, assumptions, eqp);
@@ -313,10 +313,10 @@ void TheoryUF::ppStaticLearn(TNode n, NodeBuilder<>& learned) {
     if(n.getKind() == kind::OR && n.getNumChildren() == 2 &&
        n[0].getKind() == kind::AND && n[0].getNumChildren() == 2 &&
        n[1].getKind() == kind::AND && n[1].getNumChildren() == 2 &&
-       (n[0][0].getKind() == kind::EQUAL || n[0][0].getKind() == kind::IFF) &&
-       (n[0][1].getKind() == kind::EQUAL || n[0][1].getKind() == kind::IFF) &&
-       (n[1][0].getKind() == kind::EQUAL || n[1][0].getKind() == kind::IFF) &&
-       (n[1][1].getKind() == kind::EQUAL || n[1][1].getKind() == kind::IFF)) {
+       n[0][0].getKind() == kind::EQUAL &&
+       n[0][1].getKind() == kind::EQUAL &&
+       n[1][0].getKind() == kind::EQUAL &&
+       n[1][1].getKind() == kind::EQUAL) {
       // now we have (a = b && c = d) || (e = f && g = h)
 
       Debug("diamonds") << "has form of a diamond!" << endl;
@@ -373,7 +373,7 @@ void TheoryUF::ppStaticLearn(TNode n, NodeBuilder<>& learned) {
           (a == h && d == e) ) {
         // learn: n implies a == d
         Debug("diamonds") << "+ C holds" << endl;
-        Node newEquality = a.getType().isBoolean() ? a.iffNode(d) : a.eqNode(d);
+        Node newEquality = a.eqNode(d);
         Debug("diamonds") << "  ==> " << newEquality << endl;
         learned << n.impNode(newEquality);
       } else {
@@ -504,11 +504,7 @@ void TheoryUF::computeCareGraph() {
 
 void TheoryUF::conflict(TNode a, TNode b) {
   //TODO: create EqProof at this level if d_proofEnabled = true
-  if (a.getKind() == kind::CONST_BOOLEAN) {
-    d_conflictNode = explain(a.iffNode(b));
-  } else {
-    d_conflictNode = explain(a.eqNode(b));
-  }
+  d_conflictNode = explain(a.eqNode(b));
   d_out->conflict(d_conflictNode);
   d_conflict = true;
 }

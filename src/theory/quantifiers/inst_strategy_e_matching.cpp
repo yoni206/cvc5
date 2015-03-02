@@ -242,7 +242,7 @@ void InstStrategyAutoGenTriggers::generateTriggers( Node f, Theory::Effort effor
     //well-defined function: can assume LHS is only trigger
     Node bd = d_quantEngine->getTermDatabase()->getInstConstantBody( f );
     if( d_quantEngine->getTermDatabase()->isQAttrFunDef( f ) && options::quantFunWellDefined() ){
-      Assert( bd.getKind()==EQUAL || bd.getKind()==IFF );
+      Assert( bd.getKind()==EQUAL );
       Assert( bd[0].getKind()==APPLY_UF );
       patTermsF.push_back( bd[0] );
     }else{

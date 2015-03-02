@@ -143,10 +143,10 @@ CVC4::prop::SatLiteral JustificationHeuristic::getNextThresh(bool &stopSearch, D
 inline void computeXorIffDesiredValues
 (Kind k, SatValue desiredVal, SatValue &desiredVal1, SatValue &desiredVal2)
 {
-  Assert(k == kind::IFF || k == kind::XOR);
+  Assert(k == kind::EQUAL || k == kind::XOR);
 
   bool shouldInvert =
-    (desiredVal == SAT_VALUE_TRUE && k == kind::IFF) ||
+    (desiredVal == SAT_VALUE_TRUE && k == kind::EQUAL) ||
     (desiredVal == SAT_VALUE_FALSE && k == kind::XOR);
 
   if(desiredVal1 == SAT_VALUE_UNKNOWN &&
@@ -517,7 +517,7 @@ JustificationHeuristic::findSplitterRec(TNode node, SatValue desiredVal)
     break;
 
   case kind::XOR:
-  case kind::IFF: {
+  case kind::EQUAL: {
     SatValue desiredVal1 = tryGetSatValue(node[0]);
     SatValue desiredVal2 = tryGetSatValue(node[1]);
     computeXorIffDesiredValues(k, desiredVal, desiredVal1, desiredVal2);

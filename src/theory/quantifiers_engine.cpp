@@ -848,8 +848,7 @@ bool QuantifiersEngine::addSplit( Node n, bool reqPhase, bool reqPhasePol ){
 bool QuantifiersEngine::addSplitEquality( Node n1, Node n2, bool reqPhase, bool reqPhasePol ){
   //Assert( !areEqual( n1, n2 ) );
   //Assert( !areDisequal( n1, n2 ) );
-  Kind knd = n1.getType()==NodeManager::currentNM()->booleanType() ? IFF : EQUAL;
-  Node fm = NodeManager::currentNM()->mkNode( knd, n1, n2 );
+  Node fm = NodeManager::currentNM()->mkNode( EQUAL, n1, n2 );
   return addSplit( fm );
 }
 
@@ -902,7 +901,7 @@ void QuantifiersEngine::getPhaseReqTerms( Node f, std::vector< Node >& nodes ){
       bool nodeChanged = false;
       if( d_phase_reqs[f]->isPhaseReq( nodes[i] ) ){
         bool preq = d_phase_reqs[f]->getPhaseReq( nodes[i] );
-        nodes[i] = NodeManager::currentNM()->mkNode( IFF, nodes[i], NodeManager::currentNM()->mkConst<bool>(preq) );
+        nodes[i] = NodeManager::currentNM()->mkNode( EQUAL, nodes[i], NodeManager::currentNM()->mkConst<bool>(preq) );
         nodeChanged = true;
       }
       //else if( qe->isPhaseReqEquality( f, trNodes[i] ) ){

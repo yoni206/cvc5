@@ -91,7 +91,6 @@ namespace smt {
   struct SmtEngineStatistics;
   class SmtEnginePrivate;
   class SmtScope;
-  class BooleanTermConverter;
 
   void beforeSearch(std::string, bool, SmtEngine*) throw(ModalException);
   ProofManager* currentProofManager();
@@ -334,7 +333,6 @@ class CVC4_PUBLIC SmtEngine {
 
   friend class ::CVC4::smt::SmtEnginePrivate;
   friend class ::CVC4::smt::SmtScope;
-  friend class ::CVC4::smt::BooleanTermConverter;
   friend ::CVC4::StatisticsRegistry* ::CVC4::stats::getStatisticsRegistry(SmtEngine*);
   friend void ::CVC4::smt::beforeSearch(std::string, bool, SmtEngine*) throw(ModalException);
   friend ProofManager* ::CVC4::smt::currentProofManager();

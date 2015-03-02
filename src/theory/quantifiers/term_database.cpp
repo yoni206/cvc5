@@ -279,7 +279,7 @@ TNode TermDb::evaluateTerm( TNode n ) {
 bool TermDb::isEntailed( TNode n, std::map< TNode, TNode >& subs, bool subsRep, bool pol ) {
   Trace("term-db-eval") << "Check entailed : " << n << ", pol = " << pol << std::endl;
   Assert( n.getType().isBoolean() );
-  if( n.getKind()==EQUAL ){
+  if( n.getKind()==EQUAL && !n[0].getType().isBoolean() ){
     TNode n1 = evaluateTerm( n[0], subs, subsRep );
     if( !n1.isNull() ){
       TNode n2 = evaluateTerm( n[1], subs, subsRep );
@@ -320,10 +320,11 @@ bool TermDb::isEntailed( TNode n, std::map< TNode, TNode >& subs, bool subsRep, 
       }
     }
     return !simPol;
-  }else if( n.getKind()==IFF || n.getKind()==ITE ){
+  //IFF to EQUAL: also use entailment check above?
+  }else if( n.getKind()==EQUAL || n.getKind()==ITE ){
     for( unsigned i=0; i<2; i++ ){
       if( isEntailed( n[0], subs, subsRep, i==0 ) ){
-        unsigned ch = ( n.getKind()==IFF || i==0 ) ? 1 : 2;
+        unsigned ch = ( n.getKind()==EQUAL || i==0 ) ? 1 : 2;
         bool reqPol = ( n.getKind()==ITE || i==0 ) ? pol : !pol;
         return isEntailed( n[ch], subs, subsRep, reqPol );
       }
@@ -1187,7 +1188,7 @@ Node TermDb::getRewriteRule( Node q ) {
 }
 
 bool TermDb::isFunDef( Node q ) {
-  if( q.getKind()==FORALL && ( q[1].getKind()==EQUAL || q[1].getKind()==IFF ) && q[1][0].getKind()==APPLY_UF && q.getNumChildren()==3 ){
+  if( q.getKind()==FORALL && q[1].getKind()==EQUAL && q[1][0].getKind()==APPLY_UF && q.getNumChildren()==3 ){
     for( unsigned i=0; i<q[2].getNumChildren(); i++ ){
       if( q[2][i].getKind()==INST_ATTRIBUTE ){
         if( q[2][i][0].getAttribute(FunDefAttribute()) ){
@@ -1217,7 +1218,7 @@ void TermDb::computeAttributes( Node q ) {
         if( avar.getAttribute(FunDefAttribute()) ){
           Trace("quant-attr") << "Attribute : function definition : " << q << std::endl;
           d_qattr_fundef[q] = true;
-          Assert( q[1].getKind()==EQUAL || q[1].getKind()==IFF );
+          Assert( q[1].getKind()==EQUAL );
           Assert( q[1][0].getKind()==APPLY_UF );
           Node f = q[1][0].getOperator();
           if( d_fun_defs.find( f )!=d_fun_defs.end() ){
@@ -1650,12 +1651,12 @@ int TermDbSygus::getTermSize( Node n ){
 }
 
 bool TermDbSygus::isAssoc( Kind k ) {
-  return k==PLUS || k==MULT || k==AND || k==OR || k==XOR || k==IFF ||
+  return k==PLUS || k==MULT || k==AND || k==OR || k==XOR || k==EQUAL ||
          k==BITVECTOR_PLUS || k==BITVECTOR_MULT || k==BITVECTOR_AND || k==BITVECTOR_OR || k==BITVECTOR_XOR || k==BITVECTOR_XNOR || k==BITVECTOR_CONCAT;
 }
 
 bool TermDbSygus::isComm( Kind k ) {
-  return k==PLUS || k==MULT || k==AND || k==OR || k==XOR || k==IFF ||
+  return k==PLUS || k==MULT || k==AND || k==OR || k==XOR || k==EQUAL ||
          k==BITVECTOR_PLUS || k==BITVECTOR_MULT || k==BITVECTOR_AND || k==BITVECTOR_OR || k==BITVECTOR_XOR || k==BITVECTOR_XNOR;
 }
 
@@ -1698,7 +1699,7 @@ bool TermDbSygus::isIdempotentArg( Node n, Kind ik, int arg ) {
       return arg==1;
     }
   }else if( n==getTypeMaxValue( tn ) ){
-    if( ik==IFF || ik==BITVECTOR_AND || ik==BITVECTOR_XNOR ){
+    if( ik==EQUAL || ik==BITVECTOR_AND || ik==BITVECTOR_XNOR ){
       return true;
     }
   }
@@ -1985,15 +1986,18 @@ Node TermDbSygus::minimizeBuiltinTerm( Node n ) {
 }
 
 Node TermDbSygus::expandBuiltinTerm( Node t ){
-  if( t.getKind()==EQUAL && ( t[0].getType().isInteger() || t[0].getType().isReal() ) ){
-    return NodeManager::currentNM()->mkNode( AND, NodeManager::currentNM()->mkNode( LEQ, t[0], t[1] ),
-                                                  NodeManager::currentNM()->mkNode( LEQ, t[1], t[0] ) );
+  if( t.getKind()==EQUAL ){
+    TypeNode tn = t[0].getType();
+    if( tn.isInteger() || tn.isReal() ){
+      return NodeManager::currentNM()->mkNode( AND, NodeManager::currentNM()->mkNode( LEQ, t[0], t[1] ),
+                                                    NodeManager::currentNM()->mkNode( LEQ, t[1], t[0] ) );
+    }else if( tn.isBoolean() ){
+      return NodeManager::currentNM()->mkNode( OR, NodeManager::currentNM()->mkNode( AND, t[0], t[1] ),
+                                                  NodeManager::currentNM()->mkNode( AND, t[0].negate(), t[1].negate() ) );
+    }
   }else if( t.getKind()==ITE && t.getType().isBoolean() ){
     return NodeManager::currentNM()->mkNode( OR, NodeManager::currentNM()->mkNode( AND, t[0], t[1] ),
                                                  NodeManager::currentNM()->mkNode( AND, t[0].negate(), t[2] ) );
-  }else if( t.getKind()==IFF ){
-    return NodeManager::currentNM()->mkNode( OR, NodeManager::currentNM()->mkNode( AND, t[0], t[1] ),
-                                                 NodeManager::currentNM()->mkNode( AND, t[0].negate(), t[1].negate() ) );
   }
   return Node::null();
 }

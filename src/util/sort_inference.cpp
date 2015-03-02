@@ -24,6 +24,7 @@
 #include "smt/options.h"
 #include "theory/rewriter.h"
 #include "theory/quantifiers/options.h"
+#include "theory/quantifiers/quant_util.h"
 
 using namespace CVC4;
 using namespace std;
@@ -433,7 +434,7 @@ void SortInference::processMonotonic( Node n, bool pol, bool hasPol, std::map< N
     for( unsigned i=0; i<n[0].getNumChildren(); i++ ){
       var_bound.erase( n[0][i] );
     }
-  }else if( n.getKind()==kind::EQUAL ){
+  }else if( n.getKind()==kind::EQUAL && !n[0].getType().isBoolean() ){
     if( !hasPol || pol ){
       for( unsigned i=0; i<2; i++ ){
         if( var_bound.find( n[i] )!=var_bound.end() ){
@@ -445,14 +446,8 @@ void SortInference::processMonotonic( Node n, bool pol, bool hasPol, std::map< N
     }
   }
   for( unsigned i=0; i<n.getNumChildren(); i++ ){
-    bool npol = pol;
-    bool nhasPol = hasPol;
-    if( n.getKind()==kind::NOT || ( n.getKind()==kind::IMPLIES && i==0 ) ){
-      npol = !npol;
-    }
-    if( ( n.getKind()==kind::ITE && i==0 ) || n.getKind()==kind::XOR || n.getKind()==kind::IFF ){
-      nhasPol = false;
-    }
+    bool npol, nhasPol;
+    theory::QuantPhaseReq::getPolarity( n, i, hasPol, pol, nhasPol, npol );
     processMonotonic( n[i], npol, nhasPol, var_bound );
   }
 }

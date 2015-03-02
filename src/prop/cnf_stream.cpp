@@ -370,7 +370,7 @@ SatLiteral TseitinCnfStream::handleImplies(TNode impliesNode) {
 
 SatLiteral TseitinCnfStream::handleIff(TNode iffNode) {
   Assert(!hasLiteral(iffNode), "Atom already mapped!");
-  Assert(iffNode.getKind() == IFF, "Expecting an IFF expression!");
+  Assert(iffNode.getKind() == EQUAL, "Expecting an EQUAL expression!");
   Assert(iffNode.getNumChildren() == 2, "Expecting exactly 2 children!");
 
   Debug("cnf") << "handleIff(" << iffNode << ")" << endl;
@@ -469,9 +469,6 @@ SatLiteral TseitinCnfStream::toCNF(TNode node, bool negated) {
     case ITE:
       nodeLit = handleIte(node);
       break;
-    case IFF:
-      nodeLit = handleIff(node);
-      break;
     case IMPLIES:
       nodeLit = handleImplies(node);
       break;
@@ -484,7 +481,7 @@ SatLiteral TseitinCnfStream::toCNF(TNode node, bool negated) {
     case EQUAL:
       if(node[0].getType().isBoolean()) {
         // normally this is an IFF, but EQUAL is possible with pseudobooleans
-        nodeLit = handleIff(node[0].iffNode(node[1]));
+        nodeLit = handleIff(node);
       } else {
         nodeLit = convertAtom(node);
       }
@@ -680,9 +677,6 @@ void TseitinCnfStream::convertAndAssert(TNode node, bool negated) {
   case OR:
     convertAndAssertOr(node, negated);
     break;
-  case IFF:
-    convertAndAssertIff(node, negated);
-    break;
   case XOR:
     convertAndAssertXor(node, negated);
     break;
@@ -695,6 +689,11 @@ void TseitinCnfStream::convertAndAssert(TNode node, bool negated) {
   case NOT:
     convertAndAssert(node[0], !negated);
     break;
+  case EQUAL:
+    if( node[0].getType().isBoolean() ){
+      convertAndAssertIff(node, negated);
+      break;
+    }
   default:
     // Atoms
     assertClause(node, toCNF(node, negated));

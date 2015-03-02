@@ -242,8 +242,7 @@ Node SymmetryBreaker::normInternal(TNode n, size_t level) {
         } else {
           if( (*i).getKind() == kind::OR ) {
             kids.push_back(normInternal(*i, level));
-          } else if((*i).getKind() == kind::IFF ||
-                    (*i).getKind() == kind::EQUAL) {
+          } else if((*i).getKind() == kind::EQUAL) {
             kids.push_back(normInternal(*i, level));
             if((*i)[0].isVar() ||
                (*i)[1].isVar()) {
@@ -287,8 +286,7 @@ Node SymmetryBreaker::normInternal(TNode n, size_t level) {
             first = false;
             matchingTerm = TNode::null();
             kids.push_back(normInternal(*i, level + 1));
-          } else if((*i).getKind() == kind::IFF ||
-                    (*i).getKind() == kind::EQUAL) {
+          } else if((*i).getKind() == kind::EQUAL) {
             kids.push_back(normInternal(*i, level + 1));
             if((*i)[0].isVar() ||
                (*i)[1].isVar()) {
@@ -358,7 +356,6 @@ Node SymmetryBreaker::normInternal(TNode n, size_t level) {
     return result = NodeManager::currentNM()->mkNode(k, kids);
   }
 
-  case kind::IFF:
   case kind::EQUAL:
     if(n[0].isVar() ||
        n[1].isVar()) {

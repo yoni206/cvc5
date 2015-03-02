@@ -1475,6 +1475,7 @@ int StrongSolverTheoryUF::SortModel::getNumRegions(){
 }
 
 Node StrongSolverTheoryUF::SortModel::getCardinalityLiteral( int c ) {
+  Assert( c>0 );
   if( d_cardinality_literal.find( c )==d_cardinality_literal.end() ){
     d_cardinality_literal[c] = NodeManager::currentNM()->mkNode( CARDINALITY_CONSTRAINT, d_cardinality_term,
                                                                  NodeManager::currentNM()->mkConst( Rational( c ) ) );
@@ -1610,8 +1611,9 @@ void StrongSolverTheoryUF::assertNode( Node n, bool isDecision ){
       //otherwise, make equal via lemma
       if( d_card_assertions_eqv_lemma.find( lit )==d_card_assertions_eqv_lemma.end() ){
         Node eqv_lit = NodeManager::currentNM()->mkNode( CARDINALITY_CONSTRAINT, ct, lit[1] );
-        Trace("uf-ss-lemma") << "*** Cardinality equiv lemma : " << lit.iffNode( eqv_lit ) << std::endl;
-        getOutputChannel().lemma( lit.iffNode( eqv_lit ) );
+        eqv_lit = lit.eqNode( eqv_lit );
+        Trace("uf-ss-lemma") << "*** Cardinality equiv lemma : " << eqv_lit << std::endl;
+        getOutputChannel().lemma( eqv_lit );
         d_card_assertions_eqv_lemma[lit] = true;
       }
     }

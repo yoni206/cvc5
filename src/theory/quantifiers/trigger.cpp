@@ -248,7 +248,7 @@ bool nodeContainsVar( Node n, Node v ){
 
 Node Trigger::getIsUsableTrigger( Node n, Node f, bool pol, bool hasPol ) {
   if( options::relationalTriggers() ){
-    if( n.getKind()==EQUAL || n.getKind()==IFF || n.getKind()==GEQ ){
+    if( n.getKind()==EQUAL || n.getKind()==GEQ ){
       Node rtr;
       for( unsigned i=0; i<2; i++) {
         unsigned j = (i==0) ? 1 : 0;
@@ -331,7 +331,7 @@ bool Trigger::isSimpleTrigger( Node n ){
 bool Trigger::collectPatTerms2( QuantifiersEngine* qe, Node f, Node n, std::map< Node, bool >& patMap, int tstrt, std::vector< Node >& exclude, bool pol, bool hasPol ){
   if( patMap.find( n )==patMap.end() ){
     patMap[ n ] = false;
-    bool newHasPol = n.getKind()==IFF ? false : hasPol;
+    bool newHasPol = n.getKind()==EQUAL ? false : hasPol;
     bool newPol = n.getKind()==NOT ? !pol : pol;
     if( tstrt==TS_MIN_TRIGGER ){
       if( n.getKind()==FORALL ){

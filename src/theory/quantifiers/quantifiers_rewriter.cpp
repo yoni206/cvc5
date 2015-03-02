@@ -53,11 +53,10 @@ bool QuantifiersRewriter::isLiteral( Node n ){
   case IMPLIES:
   case XOR:
   case ITE:
-  case IFF:
     return false;
     break;
   case EQUAL:
-    return n[0].getType()!=NodeManager::currentNM()->booleanType();
+    return !n[0].getType().isBoolean();
     break;
   default:
     break;
@@ -267,7 +266,7 @@ Node QuantifiersRewriter::computeElimSymbols( Node body ) {
     if( body.getKind()==IMPLIES ){
       return NodeManager::currentNM()->mkNode( OR, children );
     }else if( body.getKind()==XOR ){
-      return NodeManager::currentNM()->mkNode( IFF, children );
+      return NodeManager::currentNM()->mkNode( EQUAL, children );
     }else if( childrenChanged ){
       return NodeManager::currentNM()->mkNode( body.getKind(), children );
     }else{
@@ -298,7 +297,7 @@ Node QuantifiersRewriter::computeNNF( Node body ){
             children.push_back( nc );
           }
         }
-      }else if( body[0].getKind()==IFF ){
+      }else if( body[0].getKind()==EQUAL ){
         for( int i=0; i<2; i++ ){
           Node nn = i==0 ? body[0][i] : body[0][i].notNode();
           children.push_back( computeNNF( nn ) );
@@ -592,8 +591,8 @@ Node QuantifiersRewriter::computeCNF( Node n, std::vector< Node >& args, NodeBui
         }
         tt << pred;
         defs << NodeManager::currentNM()->mkNode( FORALL, bvl, tt.constructNode() );
-      }else if( nt.getKind()==IFF ){
-        //case for IFF
+      }else if( nt.getKind()==EQUAL && nt[0].getType().isBoolean() ){
+        //case for EQUAL
         for( int i=0; i<4; i++ ){
           NodeBuilder<> tt(OR);
           tt << ( ( i==0 || i==3 ) ? nt[0].notNode() : nt[0] );
@@ -1103,11 +1102,7 @@ Node QuantifiersRewriter::rewriteRewriteRule( Node r ) {
   case kind::RR_REWRITE:
     // Equality
     pattern.push_back( head );
-    if( head.getType().isBoolean() ){
-      body = head.iffNode(body);
-    }else{
-      body = head.eqNode(body);
-    }
+    body = head.eqNode(body);
     break;
   case kind::RR_REDUCTION:
   case kind::RR_DEDUCTION:
@@ -1244,14 +1239,14 @@ Node QuantifiersRewriter::preSkolemizeQuantifiers( Node n, bool polarity, std::v
     //if so, we will write this node
     if( containsQuantifiers( n ) ){
       if( n.getType().isBoolean() ){
-        if( n.getKind()==kind::ITE || n.getKind()==kind::IFF || n.getKind()==kind::XOR || n.getKind()==kind::IMPLIES ){
+        if( n.getKind()==kind::ITE || ( n.getKind()==kind::EQUAL && n[0].getType().isBoolean() ) || n.getKind()==kind::XOR || n.getKind()==kind::IMPLIES ){
           Node nn;
           //must remove structure
           if( n.getKind()==kind::ITE ){
             nn = NodeManager::currentNM()->mkNode( kind::AND,
                    NodeManager::currentNM()->mkNode( kind::OR, n[0].notNode(), n[1] ),
                    NodeManager::currentNM()->mkNode( kind::OR, n[0], n[2] ) );
-          }else if( n.getKind()==kind::IFF || n.getKind()==kind::XOR ){
+          }else if( n.getKind()==kind::EQUAL || n.getKind()==kind::XOR ){
             nn = NodeManager::currentNM()->mkNode( kind::AND,
                    NodeManager::currentNM()->mkNode( kind::OR, n[0].notNode(), n.getKind()==kind::XOR ? n[1].notNode() : n[1] ),
                    NodeManager::currentNM()->mkNode( kind::OR, n[0], n.getKind()==kind::XOR ? n[1] : n[1].notNode() ) );
