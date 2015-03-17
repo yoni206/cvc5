@@ -450,6 +450,9 @@ JustificationHeuristic::findSplitterRec(TNode node, SatValue desiredVal)
   /* What type of node is this */
   Kind k = node.getKind();
   theory::TheoryId tId = theory::kindToTheoryId(k);
+  bool isAtom =
+    (tId != theory::THEORY_BOOL) &&
+    (k != kind::EQUAL || (!node[0].getType().isBoolean()));
 
   /* Some debugging stuff */
   Debug("decision::jh") << "kind = " << k << std::endl
@@ -460,7 +463,7 @@ JustificationHeuristic::findSplitterRec(TNode node, SatValue desiredVal)
   /**
    * If not in theory of booleans, check if this is something to split-on.
    */
-  if(tId != theory::THEORY_BOOL) {
+  if(isAtom) {
     // if node has embedded ites, resolve that first
     if(handleEmbeddedITEs(node) == FOUND_SPLITTER)
       return FOUND_SPLITTER;

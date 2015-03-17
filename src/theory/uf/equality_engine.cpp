@@ -1551,7 +1551,7 @@ void EqualityEngine::addTriggerTerm(TNode t, TheoryId tag)
   Debug("equality::trigger") << d_name << "::eq::addTriggerTerm(" << t << ", " << tag << ")" << std::endl;
 
   Assert(tag != THEORY_LAST);
-  Assert(tag != THEORY_BOOL, "This one is used internally, bummer");
+  // Assert(tag != THEORY_BOOL, "This one is used internally, bummer");
 
   if (d_done) {
     return;
