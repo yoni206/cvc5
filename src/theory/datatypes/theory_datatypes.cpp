@@ -448,14 +448,14 @@ void TheoryDatatypes::preRegisterTerm(TNode n) {
     break;
   default:
     // Maybe it's a predicate
-    if (n.getType().isBoolean()) {
+    //if (n.getType().isBoolean()) {
       // Get triggered for both equal and dis-equal
-      d_equalityEngine.addTriggerPredicate(n);
-    } else {
+      //d_equalityEngine.addTriggerPredicate(n);
+    //} else {
       // Function applications/predicates
       d_equalityEngine.addTerm(n);
       //d_equalityEngine.addTriggerTerm(n, THEORY_DATATYPES);
-    }
+   // }
     break;
   }
   flushPendingFacts();
