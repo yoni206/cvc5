@@ -106,6 +106,11 @@ class Rewriter {
 public:
 
   /**
+   * Rewrites once using the given theory rewriter.
+   */
+  static Node rewriteWithTheory(theory::TheoryId theoryId, Node node);
+
+  /**
    * Rewrites the node using theoryOf() to determine which rewriter to
    * use on the node.
    */

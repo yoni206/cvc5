@@ -157,6 +157,7 @@ enum RewriteRuleId {
   MultSimplify,
   MultDistribConst,
   MultDistrib,
+  NotEq,
   SolveEq,
   BitwiseEq,
   AndSimplify,
@@ -276,6 +277,7 @@ inline std::ostream& operator << (std::ostream& out, RewriteRuleId ruleId) {
   case PlusCombineLikeTerms: out << "PlusCombineLikeTerms"; return out;
   case MultSimplify: out << "MultSimplify"; return out;
   case MultDistribConst: out << "MultDistribConst"; return out;
+  case NotEq :              out << "NotEq";               return out;
   case SolveEq : out << "SolveEq"; return out;
   case BitwiseEq : out << "BitwiseEq"; return out;
   case NegMult : out << "NegMult"; return out;
@@ -522,6 +524,7 @@ struct AllRewriteRules {
   RewriteRule<UltPlusOne> rule119;
   RewriteRule<ConcatToMult> rule120;
   RewriteRule<IsPowerOfTwo> rule121;
+  RewriteRule<NotEq> rule122;
 };
 
 template<> inline

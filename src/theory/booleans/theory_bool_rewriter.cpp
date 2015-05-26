@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include "theory/booleans/theory_bool_rewriter.h"
+#include "theory/theory.h"
 
 namespace CVC4 {
 namespace theory {
@@ -136,6 +137,20 @@ RewriteResponse TheoryBoolRewriter::preRewrite(TNode n) {
     if (n[0] == tt) return RewriteResponse(REWRITE_DONE, ff);
     if (n[0] == ff) return RewriteResponse(REWRITE_DONE, tt);
     if (n[0].getKind() == kind::NOT) return RewriteResponse(REWRITE_AGAIN, n[0][0]);
+    TheoryId tid = Theory::theoryOf(theory::THEORY_OF_TYPE_BASED, n[0]);
+    if (tid != theory::THEORY_BOOL) {
+      Node result = Rewriter::rewriteWithTheory(tid, n);
+      if (result != n) {
+        return RewriteResponse(REWRITE_AGAIN_FULL, result);
+      }
+    }
+    TheoryId tid2 = Theory::theoryOf(theory::THEORY_OF_TERM_BASED, n[0]);
+    if (tid2 != theory::THEORY_BOOL && tid2 != tid) {
+      Node result = Rewriter::rewriteWithTheory(tid2, n);
+      if (result != n) {
+        return RewriteResponse(REWRITE_AGAIN_FULL, result);
+      }
+    }
     break;
   }
   case kind::OR: {

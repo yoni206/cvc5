@@ -84,6 +84,27 @@ Node Rewriter::rewrite(TNode node) throw (UnsafeInterruptException){
   return rewriteTo(theoryOf(node), node);
 }
 
+Node Rewriter::rewriteWithTheory(theory::TheoryId theoryId, Node node) {
+  Node cached = Rewriter::getPreRewriteCache(theoryId, node);
+  if (!cached.isNull()) {
+    return cached;
+  }
+  {
+    RewriteResponse response = Rewriter::callPreRewrite(theoryId, node);
+    Rewriter::setPreRewriteCache(theoryId, node, response.node);
+    if (response.node != node) {
+      return response.node;
+    }
+  }
+  cached = getPostRewriteCache(theoryId, node);
+  if (!cached.isNull()) {
+    return cached;
+  }
+  RewriteResponse response = Rewriter::callPostRewrite(theoryId, node);
+  Rewriter::setPostRewriteCache(theoryId, node, response.node);
+  return response.node;
+}
+
 Node Rewriter::rewriteTo(theory::TheoryId theoryId, Node node) {
 
 #ifdef CVC4_ASSERTIONS

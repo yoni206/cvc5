@@ -540,6 +540,41 @@ Node RewriteRule<ConcatToMult>::apply(TNode node) {
 
 
 template<> inline
+bool RewriteRule<NotEq>::applies(TNode node) {
+  return (node.getKind() == kind::NOT &&
+          node[0].getKind() == kind::EQUAL &&
+          utils::getSize(node[0][0]) == 1);
+}
+
+template<> inline
+Node RewriteRule<NotEq>::apply(TNode node) {
+  Debug("bv-rewrite") << "RewriteRule<NotEq>(" << node << ")" << std::endl;
+
+  TNode term = node[0];
+  BitVector c;
+
+  if (term[0].getKind() == kind::CONST_BITVECTOR) {
+    c = term[0].getConst<BitVector>();
+    term = term[1];
+  }
+  else if (term[1].getKind() == kind::CONST_BITVECTOR) {
+    c = term[1].getConst<BitVector>();
+    term = term[0];
+  }
+  else {
+    return term[0].eqNode(utils::mkNode(kind::BITVECTOR_NOT, term[1]));
+  }
+
+  bool eqOne = (c == BitVector(1,(unsigned)1));
+  if (eqOne) {
+    return term.eqNode(utils::mkConst(1, (unsigned)0));
+  }
+  else {
+    return term.eqNode(utils::mkConst(1, (unsigned)1));
+  }
+}
+
+template<> inline
 bool RewriteRule<SolveEq>::applies(TNode node) {
   if (node.getKind() != kind::EQUAL ||
       (node[0].isVar() && !node[1].hasSubterm(node[0])) ||

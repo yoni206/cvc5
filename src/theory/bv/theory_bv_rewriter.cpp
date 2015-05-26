@@ -149,10 +149,10 @@ RewriteResponse TheoryBVRewriter::RewriteSge(TNode node, bool prerewrite){
 RewriteResponse TheoryBVRewriter::RewriteNot(TNode node, bool prerewrite){
   Node resultNode = node;
   
-  // // if(RewriteRule<NotXor>::applies(node)) {
-  // //   resultNode = RewriteRule<NotXor>::run<false>(node);
-  // //   return RewriteResponse(REWRITE_AGAIN_FULL, resultNode); 
-  // // }
+  if(RewriteRule<NotEq>::applies(node)) {
+    resultNode = RewriteRule<NotEq>::run<false>(node);
+    return RewriteResponse(REWRITE_AGAIN_FULL, resultNode); 
+  }
   resultNode = LinearRewriteStrategy
     < RewriteRule<EvalNot>,
       RewriteRule<NotIdemp>
@@ -569,6 +569,14 @@ RewriteResponse TheoryBVRewriter::RewriteIntToBV(TNode node, bool prerewrite) {
   return RewriteResponse(REWRITE_AGAIN_FULL, resultNode);
 }
 
+RewriteResponse TheoryBVRewriter::RewriteBoolNot(TNode node, bool prerewrite){
+  if(RewriteRule<NotEq>::applies(node)) {
+    Node resultNode = RewriteRule<NotEq>::run<false>(node);
+    return RewriteResponse(REWRITE_AGAIN_FULL, resultNode); 
+  }
+  return RewriteResponse(REWRITE_DONE, node);
+}
+
 RewriteResponse TheoryBVRewriter::RewriteEqual(TNode node, bool prerewrite) {
   if (prerewrite) {
     Node resultNode = LinearRewriteStrategy
@@ -613,6 +621,7 @@ void TheoryBVRewriter::initializeRewrites() {
     d_rewriteTable[i] = IdentityRewrite; //UndefinedRewrite;
   }
 
+  d_rewriteTable [ kind::NOT ] = RewriteBoolNot;
   d_rewriteTable [ kind::EQUAL ] = RewriteEqual;
   d_rewriteTable [ kind::BITVECTOR_ULT ] = RewriteUlt;
   d_rewriteTable [ kind::BITVECTOR_SLT ] = RewriteSlt;

@@ -31,3 +31,7 @@ config.reconfig
 /personal.conf
 /personal.mk
 /antlr-3.4
+BROWSE
+TAGS
+FILES
+myconf*

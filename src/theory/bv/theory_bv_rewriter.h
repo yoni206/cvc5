@@ -39,6 +39,7 @@ class TheoryBVRewriter {
 
   static void initializeRewrites();
   
+  static RewriteResponse RewriteBoolNot(TNode node, bool prerewrite = false);
   static RewriteResponse RewriteEqual(TNode node, bool prerewrite = false);
   static RewriteResponse RewriteUlt(TNode node, bool prerewrite = false);
   static RewriteResponse RewriteSlt(TNode node, bool prerewrite = false);

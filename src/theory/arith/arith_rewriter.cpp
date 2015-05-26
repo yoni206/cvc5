@@ -88,6 +88,8 @@ RewriteResponse ArithRewriter::preRewriteTerm(TNode t){
     return rewriteVariable(t);
   }else{
     switch(Kind k = t.getKind()){
+    case kind::NOT:
+      return RewriteResponse(REWRITE_DONE, t);
     case kind::MINUS:
       return rewriteMinus(t, true);
     case kind::UMINUS:
@@ -136,6 +138,8 @@ RewriteResponse ArithRewriter::postRewriteTerm(TNode t){
     return rewriteVariable(t);
   }else{
     switch(t.getKind()){
+    case kind::NOT:
+      return RewriteResponse(REWRITE_DONE, t);
     case kind::MINUS:
       return rewriteMinus(t, false);
     case kind::UMINUS:
