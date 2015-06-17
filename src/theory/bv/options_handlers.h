@@ -122,12 +122,12 @@ inline BitblastMode stringToBitblastMode(std::string option, std::string optarg,
     if (!options::bitvectorToBool.wasSetByUser()) {
       options::bitvectorToBool.set(true);
     }
-
-    if (!options::bvAbstraction.wasSetByUser() &&
-        !options::skolemizeArguments.wasSetByUser()) {
-      options::bvAbstraction.set(true);
-      options::skolemizeArguments.set(true); 
-    }
+    // broken currently
+    // if (!options::bvAbstraction.wasSetByUser() &&
+    //     !options::skolemizeArguments.wasSetByUser()) {
+    //   options::bvAbstraction.set(true);
+    //   options::skolemizeArguments.set(true); 
+    // }
     return BITBLAST_MODE_EAGER;
   } else if(optarg == "help") {
     puts(bitblastingModeHelp.c_str());
@@ -217,11 +217,11 @@ inline SatSolverMode stringToSatSolver(std::string option,
       options::bitvectorToBool.set(true);
     }
 
-    if (!options::bvAbstraction.wasSetByUser() &&
-        !options::skolemizeArguments.wasSetByUser()) {
-      options::bvAbstraction.set(true);
-      options::skolemizeArguments.set(true); 
-    }
+    // if (!options::bvAbstraction.wasSetByUser() &&
+    //     !options::skolemizeArguments.wasSetByUser()) {
+    //   options::bvAbstraction.set(true);
+    //   options::skolemizeArguments.set(true); 
+    // }
     return SAT_SOLVER_CRYPTOMINISAT;
   } else if(optarg == "riss") {
 
@@ -240,11 +240,11 @@ inline SatSolverMode stringToSatSolver(std::string option,
       options::bitvectorToBool.set(true);
     }
 
-    if (!options::bvAbstraction.wasSetByUser() &&
-        !options::skolemizeArguments.wasSetByUser()) {
-      options::bvAbstraction.set(true);
-      options::skolemizeArguments.set(true); 
-    }
+    // if (!options::bvAbstraction.wasSetByUser() &&
+    //     !options::skolemizeArguments.wasSetByUser()) {
+    //   options::bvAbstraction.set(true);
+    //   options::skolemizeArguments.set(true); 
+    // }
     return SAT_SOLVER_RISS;
   }else if(optarg == "glucose") {
 
@@ -263,11 +263,11 @@ inline SatSolverMode stringToSatSolver(std::string option,
       options::bitvectorToBool.set(true);
     }
 
-    if (!options::bvAbstraction.wasSetByUser() &&
-        !options::skolemizeArguments.wasSetByUser()) {
-      options::bvAbstraction.set(true);
-      options::skolemizeArguments.set(true); 
-    }
+    // if (!options::bvAbstraction.wasSetByUser() &&
+    //     !options::skolemizeArguments.wasSetByUser()) {
+    //   options::bvAbstraction.set(true);
+    //   options::skolemizeArguments.set(true); 
+    // }
     return SAT_SOLVER_GLUCOSE;
   } else if(optarg == "help") {
     puts(bvSatSolverHelp.c_str());

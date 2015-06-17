@@ -15,10 +15,10 @@
  **/
 
 #include "prop/cryptominisat.h"
+#include "prop/minisat/minisat.h"
 #include "prop/riss.h"
 #include "prop/glucose.h"
 #include "prop/sat_solver_factory.h"
-#include "prop/minisat/minisat.h"
 #include "prop/bvminisat/bvminisat.h"
 
 

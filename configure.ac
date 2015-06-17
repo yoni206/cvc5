@@ -789,18 +789,6 @@ AM_CONDITIONAL([CVC4_USE_ABC], [test $have_libabc -eq 1])
 AC_SUBST([ABC_LDFLAGS])
 AC_SUBST([ABC_LIBS])
 
-dnl AC_ARG_WITH(
-dnl   [cryptominisat],
-dnl   AS_HELP_STRING(
-dnl     [--with-cryptominisat],
-dnl     [use CRYPTOMINISAT sat solver]
-dnl   ),
-dnl   [case "$withval" in
-dnl    y|ye|yes|Y|YE|YES) cvc4_use_cryptominisat=1 ;;
-dnl    n|no|N|NO) cvc4_use_cryptominisat=0 ;;
-dnl    esac
-dnl   ]
-dnl )
 
 # Build with libcryptominisat
 AC_ARG_WITH([cryptominisat],
@@ -817,7 +805,7 @@ elif test -n "$with_cryptominisat"; then
   AC_LINK_IFELSE(
     [AC_LANG_PROGRAM([#include <cryptominisat4/cryptominisat.h>],
       [CMSat::SATSolver test()])],
-    [LIBS="$LIBS -lcryptominisat4"] [have_libcryptominisat=1],
+    [LIBS="$LIBS -lcryptominisat4 -lm4ri"] [have_libcryptominisat=1],
     [AC_MSG_ERROR([libcryptominisat is not installed.])])
   LDFLAGS=$SAVED_LDFLAGS
 else
