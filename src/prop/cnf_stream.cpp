@@ -227,7 +227,8 @@ SatLiteral CnfStream::convertAtom(TNode node) {
   bool preRegister = false;
 
   // Is this a variable add it to the list
-  if (node.isVar()) {
+  // TODO(bool): if Skolem, it's a theory literal
+  if (node.isVar() && true) {
     d_booleanVariables.push_back(node);
   } else {
     theoryLiteral = true;
@@ -368,35 +369,44 @@ SatLiteral TseitinCnfStream::handleImplies(TNode impliesNode) {
 }
 
 
-SatLiteral TseitinCnfStream::handleIff(TNode iffNode) {
-  Assert(!hasLiteral(iffNode), "Atom already mapped!");
-  Assert(iffNode.getKind() == EQUAL, "Expecting an EQUAL expression!");
-  Assert(iffNode.getNumChildren() == 2, "Expecting exactly 2 children!");
+SatLiteral TseitinCnfStream::handleEq(TNode eqNode) {
+  Assert(!hasLiteral(eqNode), "Atom already mapped!");
+  Assert(eqNode.getKind() == EQUAL, "Expecting an EQUAL expression!");
+  Assert(eqNode.getNumChildren() == 2, "Expecting exactly 2 children!");
 
-  Debug("cnf") << "handleIff(" << iffNode << ")" << endl;
+  Debug("cnf") << "handleEq(" << eqNode << ")" << endl;
 
   // Convert the children to CNF
-  SatLiteral a = toCNF(iffNode[0]);
-  SatLiteral b = toCNF(iffNode[1]);
+  SatLiteral a = toCNF(eqNode[0]);
+  SatLiteral b = toCNF(eqNode[1]);
+
+  // TODO(bool): See if this is an equality between Skolem or predicates
+  bool lhsIsTheory = false;
+  bool rhsIsTheory = false;
 
   // Get the now literal
-  SatLiteral iffLit = newLiteral(iffNode);
+  SatLiteral eqLit;
+  if (lhsIsTheory && rhsIsTheory) {
+    eqLit = newLiteral(eqNode, true, true, false);
+  } else {
+    eqLit = newLiteral(eqNode);
+  }
 
   // lit -> ((a-> b) & (b->a))
   // ~lit | ((~a | b) & (~b | a))
   // (~a | b | ~lit) & (~b | a | ~lit)
-  assertClause(iffNode, ~a, b, ~iffLit);
-  assertClause(iffNode, a, ~b, ~iffLit);
+  assertClause(eqNode, ~a, b, ~eqLit);
+  assertClause(eqNode, a, ~b, ~eqLit);
 
   // (a<->b) -> lit
   // ~((a & b) | (~a & ~b)) | lit
   // (~(a & b)) & (~(~a & ~b)) | lit
   // ((~a | ~b) & (a | b)) | lit
   // (~a | ~b | lit) & (a | b | lit)
-  assertClause(iffNode, ~a, ~b, iffLit);
-  assertClause(iffNode, a, b, iffLit);
+  assertClause(eqNode, ~a, ~b, eqLit);
+  assertClause(eqNode, a, b, eqLit);
 
-  return iffLit;
+  return eqLit;
 }
 
 
@@ -481,7 +491,7 @@ SatLiteral TseitinCnfStream::toCNF(TNode node, bool negated) {
     case EQUAL:
       if(node[0].getType().isBoolean()) {
         // normally this is an IFF, but EQUAL is possible with pseudobooleans
-        nodeLit = handleIff(node);
+        nodeLit = handleEq(node);
       } else {
         nodeLit = convertAtom(node);
       }

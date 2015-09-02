@@ -331,7 +331,8 @@ public:
     } else {
       id = kindToTheoryId(typeNode.getKind());
     }
-    if (id == THEORY_BUILTIN) {
+    // TODO(bool): Check if this is OK?
+    if (id == THEORY_BUILTIN || id == THEORY_BOOL) {
       Trace("theory::internal") << "theoryOf(" << typeNode << ") == " << s_uninterpretedSortOwner << std::endl;
       return s_uninterpretedSortOwner;
     }

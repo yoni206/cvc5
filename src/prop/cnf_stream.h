@@ -313,7 +313,7 @@ private:
   SatLiteral handleNot(TNode node);
   SatLiteral handleXor(TNode node);
   SatLiteral handleImplies(TNode node);
-  SatLiteral handleIff(TNode node);
+  SatLiteral handleEq(TNode node);
   SatLiteral handleIte(TNode node);
   SatLiteral handleAnd(TNode node);
   SatLiteral handleOr(TNode node);
