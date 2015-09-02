@@ -1,0 +1,43 @@
+* Remove Boolean terms like ITE removal:
+  Within terms
+  - f(x) -> f(s) & s = x (for simplicity)
+  - f(a | b) -> f(s) & s = (a | b)
+  - f(p(x)) ->
+    + either skolem f(s) & s = p(s1), or
+    + f(p(x)) & (p(x) | !p(x)) [or ensureLiteral]
+  - f(g(x)) -> SAT solver needs to assign value to g(x) so we need a skolem or literal
+  No Skolems needed for equalities, examples:
+  - x = p(...) -> no skolem needed
+  - x = p(x) -> s = p(s) & x = s
+  - x = (y & p(y)) -> x = (y & p(s)) & y = s
+  - p(x) = p(y) -> p(s1) = p(s2) & s1 = s2
+
+* ITE removal and and Bool skolemization:
+  - Unified and shared between SMT engine and theory engine
+  - User level backtrackable
+
+* CNF Conversion:
+  - Predicates are theory variable
+  - If a variable is Skolem => it's a theory variable
+      - not removable
+      - preregister
+      - not in the bool var list
+  - Equality t1 = t2 is is a theory variable (as above) if t1 and t2 are theory
+    variables
+  - Equalities are CNF as usual
+
+* TheoryOf:
+  - Boolean variables belong to uninterpreted sort owner
+
+* Theories:
+  - Whoever is uninterpreted sort owner gets
+    s, !s, and equalities between theory variables (skolems and predicates)
+  - Model: don't include values for skolems
+  - Lemmas and splits: If skolemizing subterms be careful about
+      split  f(g(x)) = g(x)
+
+After above all assertions theories get are purified, and the SAT solver
+assigns the Boolean term values.
+
+Unresolved:
+* Skolemization within quantifiers
