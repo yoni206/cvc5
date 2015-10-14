@@ -461,6 +461,11 @@ libcvc4_la_LIBADD += $(ABC_LIBS)
 libcvc4_la_LDFLAGS += $(ABC_LDFLAGS)
 endif
 
+if CVC4_USE_CRYPTOMINISAT
+libcvc4_la_LIBADD += $(CRYPTOMINISAT_LIBS)
+libcvc4_la_LDFLAGS += $(CRYPTOMINISAT_LDFLAGS)
+endif
+
 BUILT_SOURCES = \
 	theory/rewriter_tables.h \
 	theory/theory_traits.h \

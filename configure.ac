@@ -794,28 +794,14 @@ AC_SUBST([ABC_LIBS])
 AC_ARG_WITH([cryptominisat],
   [AS_HELP_STRING([--with-cryptominisat],
      [use the CRYPTOMINISAT sat solver])], [], [with_cryptominisat=])
-have_libcryptominisat=0
-if test "$with_cryptominisat" = no; then
-  AC_MSG_RESULT([no, cryptominisat disabled by user])
-elif test -n "$with_cryptominisat"; then
-  AC_MSG_RESULT([yes, cryptominisat requested by user])
-  AC_LANG(C++)
-  SAVED_LDFLAGS=$LDFLAGS
-  LDFLAGS="$LDFLAGS -lcryptominisat4"
-  AC_LINK_IFELSE(
-    [AC_LANG_PROGRAM([#include <cryptominisat4/cryptominisat.h>],
-      [CMSat::SATSolver test()])],
-    [LIBS="$LIBS -lcryptominisat4 -lm4ri"] [have_libcryptominisat=1],
-    [AC_MSG_ERROR([libcryptominisat is not installed.])])
-  LDFLAGS=$SAVED_LDFLAGS
-else
-  AC_MSG_RESULT([no, user didn't request cryptominisat])
-  with_cryptominisat=no
-fi
+CVC4_CHECK_FOR_CRYPTOMINISAT
 if test $have_libcryptominisat -eq 1; then
   CVC4CPPFLAGS="${CVC4CPPFLAGS:+$CVC4CPPFLAGS }-DCVC4_USE_CRYPTOMINISAT"
+  CVC4CPPFLAGS="${CVC4CPPFLAGS:+$CVC4CPPFLAGS }-I$CRYPTOMINISAT_HOME/include"
 fi
 AM_CONDITIONAL([CVC4_USE_CRYPTOMINISAT], [test $have_libcryptominisat -eq 1])
+AC_SUBST([CRYPTOMINISAT_LDFLAGS])
+AC_SUBST([CRYPTOMINISAT_LIBS])
 
 # Build with libglucose
 AC_ARG_WITH([glucose],
