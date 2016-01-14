@@ -31,30 +31,74 @@ elif test -n "$with_cryptominisat"; then
     AC_MSG_FAILURE([either $CRYPTOMINISAT_HOME is not an cryptominisat install tree or it's not yet built])
   fi
 
-  AC_LANG(C++)
-  cvc4_save_LIBS="$LIBS"
-  cvc4_save_LDFLAGS="$LDFLAGS"
-  cvc4_save_CPPFLAGS="$CPPFLAGS"
-
-  CRYPTOMINISAT_LDFLAGS="-L$CRYPTOMINISAT_HOME/lib"
-  CRYPTOMINISAT_LIBS="-lcryptominisat4 -lm4ri"
-
-  LDFLAGS="$LDFLAGS $CRYPTOMINISAT_LDFLAGS"
-  LIBS="$LIBS $CRYPTOMINISAT_LIBS"
-  
   CPPFLAGS="$CPPFLAGS -I$CRYPTOMINISAT_HOME/include"
+  
+  AC_MSG_CHECKING([how to link cryptominisat])
+  CVC4_TRY_CRYPTOMINISAT_WITH([])
+  CVC4_TRY_CRYPTOMINISAT_WITH([-lm4ri])
 
-  AC_LINK_IFELSE(
-    [AC_LANG_PROGRAM([#include <cryptominisat4/cryptominisat.h>],
-      [CMSat::SATSolver test()])], [have_libcryptominisat=1],
-    [AC_MSG_ERROR([libcryptominisat is not installed.])])
+  if test -z "$CRYPTOMINISAT_LIBS"; then
+    AC_MSG_FAILURE([cannot link against libcryptominisat!])
+  else
+    AC_MSG_RESULT([$CRYPTOMINISAT_LIBS])
+    have_libcryptominisat=1
+  fi
 
-  LDFLAGS="$cvc4_save_LDFLAGS"
-  CPPFLAGS="$cvc4_save_CPPFLAGS"
-  LIBS="$cvc4_save_LIBS"
+  # cvc4_save_LIBS="$LIBS"
+  # cvc4_save_LDFLAGS="$LDFLAGS"
+  # cvc4_save_CPPFLAGS="$CPPFLAGS"
+
+  # CRYPTOMINISAT_LDFLAGS="-L$CRYPTOMINISAT_HOME/lib"
+  # CRYPTOMINISAT_LIBS="-lcryptominisat4"
+
+  # LDFLAGS="$LDFLAGS $CRYPTOMINISAT_LDFLAGS"
+  # LIBS="$LIBS $CRYPTOMINISAT_LIBS"
+  
+  # CPPFLAGS="$CPPFLAGS -I$CRYPTOMINISAT_HOME/include"
+
+  # AC_LINK_IFELSE(
+  #   [AC_LANG_PROGRAM([#include <cryptominisat4/cryptominisat.h>],
+  #     [CMSat::SATSolver test()])], [have_libcryptominisat=1],
+  #   [AC_MSG_ERROR([libcryptominisat is not installed.])])
+
+  # LDFLAGS="$cvc4_save_LDFLAGS"
+  # CPPFLAGS="$cvc4_save_CPPFLAGS"
+  # LIBS="$cvc4_save_LIBS"
 else
   AC_MSG_RESULT([no, user didn't request cryptominisat])
   with_cryptominisat=no
 fi
 
-])# CVC4_TRY_STATIC_CRYPTOMINISAT_WITH
+])# CVC4_CHECK_FOR_CRYPTOMINISAT
+
+# CVC4_TRY_STATIC_CRYPTOMINISAT_WITH(LIBS)
+# ------------------------------
+# Try AC_CHECK_LIB(cryptominisat) with the given linking libraries
+AC_DEFUN([CVC4_TRY_CRYPTOMINISAT_WITH], [
+if test -z "$CRYPTOMINISAT_LIBS"; then
+  AC_LANG_PUSH([C++])
+
+  cvc4_save_LIBS="$LIBS"
+  cvc4_save_LDFLAGS="$LDFLAGS"
+  cvc4_save_CPPFLAGS="$CPPFLAGS"
+
+  LDFLAGS="-L$CRYPTOMINISAT_HOME/lib"
+  LIBS="-lcryptominisat4 $1"
+
+  dnl LDFLAGS="$LDFLAGS $CRYPTOMINISAT_LDFLAGS"
+  dnl LIBS="$LIBS $CRYPTOMINISAT_LIBS"
+  
+
+  AC_LINK_IFELSE(
+    [AC_LANG_PROGRAM([#include <cryptominisat4/cryptominisat.h>],
+      [CMSat::SATSolver test()])], [CRYPTOMINISAT_LIBS="-lcryptominisat4 $1"],
+    [CRYPTOMINISAT_LIBS=])
+
+  LDFLAGS="$cvc4_save_LDFLAGS"
+  CPPFLAGS="$cvc4_save_CPPFLAGS"
+  LIBS="$cvc4_save_LIBS"
+
+  AC_LANG_POP([C++])
+fi
+])# CVC4_TRY_CRYPTOMINISAT_WITH
+
