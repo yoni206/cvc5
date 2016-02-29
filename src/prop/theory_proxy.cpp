@@ -85,7 +85,7 @@ void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
   d_theoryEngine->check(effort);
 }
 
-void TheoryProxy::theoryPropagate(std::vector<SatLiteral>& output) {
+void TheoryProxy::getPropagatedLiterals(std::vector<SatLiteral>& output) {
   // Get the propagated literals
   std::vector<TNode> outputNodes;
   d_theoryEngine->getPropagatedLiterals(outputNodes);

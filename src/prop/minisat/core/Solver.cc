@@ -839,86 +839,68 @@ void Solver::uncheckedEnqueue(Lit p, CRef from)
 
 CRef Solver::propagate(TheoryCheckType type)
 {
-    CRef confl = CRef_Undef;
-    recheck = false;
-    theoryConflict = false;
+    CRef conflict = CRef_Undef;
 
     ScopedBool scoped_bool(minisat_busy, true);
 
-    // Add lemmas that we're left behind
-    if (lemmas.size() > 0) {
-      confl = updateLemmas();
-      if (confl != CRef_Undef) {
-        return confl;
-      }
-    }
+    // Functions used:
+    //   propoagateBool(): does Boolean propagation and returns a potential conflict
+    //   processTheoryPropagations(): enqueus theory propagated literals and returns a potential conflict (might add lemmas)
+    //   updateLemmas(): adds the lemmas and returns if there is a conflict (might backtrack without conflict)
+    //
+    // If the type is not final, we propagate to exhaustion, interleaving Boolean and theory propagation.
+    // If the type is final, we just check once, and return.
 
-    // If this is the final check, no need for Boolean propagation and
-    // theory propagation
-    if (type == CHECK_FINAL) {
-      // Do the theory check
-      theoryCheck(CVC4::theory::Theory::EFFORT_FULL);
-      // Pick up the theory propagated literals (there could be some,
-      // if new lemmas are added)
-      propagateTheory();
-      // If there are lemmas (or conflicts) update them
-      if (lemmas.size() > 0) {
-        recheck = true;
-        confl = updateLemmas();
-        return confl; 
-      } else {
-        recheck = proxy->theoryNeedCheck();
-        return confl;
-      }
-    }
+    // If we are in FULL_EFFORT, we go back after the check
+    bool final_check = type == CHECK_FINAL_FAKE || type == CHECK_FINAL;
 
-    // Keep running until we have checked everything, we
-    // have no conflict and no new literals have been asserted
+    // Do the theory reasoning:
+    // * check current trail (if conflict, done)
+    // * enqueue theory propagated literals (if conflict, done)
     do {
-        // Propagate on the clauses
-        confl = propagateBool();
-        // If no conflict, do the theory check
-        if (confl == CRef_Undef && type != CHECK_WITHOUT_THEORY) {
-            // Do the theory check
-            if (type == CHECK_FINAL_FAKE) {
-              theoryCheck(CVC4::theory::Theory::EFFORT_FULL);
-            } else {
-              theoryCheck(CVC4::theory::Theory::EFFORT_STANDARD);
-            }
-            // Pick up the theory propagated literals
-            propagateTheory();
-            // If there are lemmas (or conflicts) update them
-            if (lemmas.size() > 0) {
-              confl = updateLemmas();
-            }
+      // We should have updated lemmas at this point
+      assert(lemmas.size() == 0);
+      // Propagate on the clause level
+      conflict = propagateBool();
+      if (conflict != CRef_Undef) {
+        return conflict;
+      }
+      // If no conflict, and we are checking with theories do the theory check
+      if (type != CHECK_WITHOUT_THEORY) {
+        // Do the theory check (full or standard)
+        if (final_check) {
+          theoryCheck(CVC4::theory::Theory::EFFORT_FULL);
+          recheck = proxy->theoryNeedCheck();
         } else {
-          // Even though in conflict, we still need to discharge the lemmas
-          if (lemmas.size() > 0) {
-            // Remember the trail size
-            int oldLevel = decisionLevel();
-            // Update the lemmas
-            CRef lemmaConflict = updateLemmas();
-            // If we get a conflict, we prefer it since it's earlier in the trail
-            if (lemmaConflict != CRef_Undef) {
-              // Lemma conflict takes precedence, since it's earlier in the trail
-              confl = lemmaConflict;
-            } else {
-              // Otherwise, the Boolean conflict is canceled in the case we popped the trail
-              if (oldLevel > decisionLevel()) {
-                confl = CRef_Undef;
-              }
-            }
-          }
+          theoryCheck(CVC4::theory::Theory::EFFORT_STANDARD);
         }
-    } while (confl == CRef_Undef && qhead < trail.size());
-    return confl;
+        // If any conflicts, or lemmas, process them
+        conflict = updateLemmas();
+        if (conflict != CRef_Undef) {
+          return conflict;
+        }
+        // Pick up the theory propagated literals (this also calls Boolean propagation)
+        conflict = processTheoryPropagations();
+        if (conflict != CRef_Undef) {
+          return conflict;
+        }
+        // If any conflicts, or lemmas, process them
+        conflict = updateLemmas();
+        if (conflict != CRef_Undef) {
+          return conflict;
+        }
+      }
+    } while (qhead != trail.size() && !final_check);
+
+    return CRef_Undef;
 }
 
-void Solver::propagateTheory() {
+CRef Solver::processTheoryPropagations() {
   SatClause propagatedLiteralsClause;
+
   // Doesn't actually call propagate(); that's done in theoryCheck() now that combination
   // is online.  This just incorporates those propagations previously discovered.
-  proxy->theoryPropagate(propagatedLiteralsClause);
+  proxy->getPropagatedLiterals(propagatedLiteralsClause);
 
   vec<Lit> propagatedLiterals;
   MinisatSatSolver::toMinisatClause(propagatedLiteralsClause, propagatedLiterals); 
@@ -931,7 +913,13 @@ void Solver::propagateTheory() {
     Lit p = propagatedLiterals[i];
     if (value(p) == l_Undef) {
       uncheckedEnqueue(p, CRef_Lazy);
+      // See if anything new can be propagated on the Boolean level (or a conflict)
+      CRef conflict = propagateBool();
+      if (conflict != CRef_Undef) {
+        return conflict;
+      }
     } else {
+      // Value already in the trail, potentially a conflict
       if (value(p) == l_False) {
         Debug("minisat") << "Conflict in theory propagation" << std::endl;
         SatClause explanation_cl;
@@ -940,9 +928,14 @@ void Solver::propagateTheory() {
         MinisatSatSolver::toMinisatClause(explanation_cl, explanation);
         ClauseId id; // FIXME: mark it as explanation here somehow?
         addClause(explanation, true, id);
+        // We have a conflict from the propagation, lemma was added, so return.
+        return CRef_Undef;
       }
     }
   }
+
+  // Everything fine, no conflicts
+  return CRef_Undef;
 }
 
 /*_________________________________________________________________________________________________
@@ -1167,9 +1160,18 @@ lbool Solver::search(int nof_conflicts)
     TheoryCheckType check_type = CHECK_WITH_THEORY;
     for (;;) {
 
-        // Propagate and call the theory solvers
-        CRef confl = propagate(check_type);
-        Assert(lemmas.size() == 0);
+        // We're doing the check, mark no re-check
+        recheck = false;
+
+        // Update any lemmas (could have been added on backtrack)
+        CRef confl = updateLemmas();
+
+        // If no conflict, propagate and call the theory solvers
+        if (confl == CRef_Undef) {
+          confl = propagate(check_type);
+        }
+
+        assert(lemmas.size() == 0);
 
         if (confl != CRef_Undef) {
 
@@ -1232,6 +1234,13 @@ lbool Solver::search(int nof_conflicts)
             }
 
         } else {
+
+            // If no-conflict, we must be fully propagated so we go back
+            // to normal checks.
+            if (qhead != trail.size()) {
+              check_type = CHECK_WITH_THEORY;
+              continue;
+            }
 
 	    // If this was a final check, we are satisfiable
             if (check_type == CHECK_FINAL) {
@@ -1643,6 +1652,11 @@ bool Solver::flipDecision() {
 
 
 CRef Solver::updateLemmas() {
+
+  // If no lemmas, just return
+  if (lemmas.size() == 0) {
+    return CRef_Undef;
+  }
 
   Debug("minisat::lemmas") << "Solver::updateLemmas() begin" << std::endl;
 

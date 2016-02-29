@@ -66,7 +66,7 @@ public:
 
   void explainPropagation(SatLiteral l, SatClause& explanation);
 
-  void theoryPropagate(SatClause& output);
+  void getPropagatedLiterals(SatClause& output);
 
   void enqueueTheoryLiteral(const SatLiteral& l);
 

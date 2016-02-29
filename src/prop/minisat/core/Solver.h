@@ -389,7 +389,7 @@ protected:
     bool     theoryConflict;                                                           // Was the last conflict a theory conflict
     CRef     propagate        (TheoryCheckType type);                                  // Perform Boolean and Theory. Returns possibly conflicting clause.
     CRef     propagateBool    ();                                                      // Perform Boolean propagation. Returns possibly conflicting clause.
-    void     propagateTheory  ();                                                      // Perform Theory propagation.
+    CRef     processTheoryPropagations  ();                                                      // Perform Theory propagation. Returns possibly conflicting clause (lemmas might be added).
     void     theoryCheck      (CVC4::theory::Theory::Effort effort);                   // Perform a theory satisfiability check. Adds lemmas.
     CRef     updateLemmas     ();                                                      // Add the lemmas, backtraking if necessary and return a conflict if there is one
     void     cancelUntil      (int level);                                             // Backtrack until a certain level.
