@@ -51,6 +51,20 @@ namespace Minisat {
 //=================================================================================================
 // Solver -- the main class:
 
+class LitSet {
+public:
+  LitSet(const Clause &clause) {
+    for (int i = 0; i < clause.size(); ++i)
+      lits.insert(clause[i].x);
+  }
+
+  std::set<int> lits;
+
+  bool operator<(const LitSet &other) const {
+    return lits < other.lits;
+  }
+};
+
 class Solver {
 
   /** The only two CVC4 entry points to the private solver data */
@@ -63,10 +77,10 @@ public:
 
   typedef Var TVar;
   typedef Lit TLit;
-  typedef Clause TClause; 
+  typedef Clause TClause;
   typedef CRef TCRef;
   typedef vec<Lit> TLitVec;
-  
+
 protected:
 
   /** The pointer to the proxy that provides interfaces to the SMT engine */
@@ -190,7 +204,7 @@ public:
     lbool    solve        (Lit p, Lit q, Lit r);     // Search for a model that respects three assumptions.
     bool    okay         () const;                  // FALSE means solver is in a conflicting state
 
-    void    toDimacs     (); 
+    void    toDimacs     ();
     void    toDimacs     (FILE* f, const vec<Lit>& assumps);            // Write CNF to file in DIMACS-format.
     void    toDimacs     (const char *file, const vec<Lit>& assumps);
     void    toDimacs     (FILE* f, Clause& c, vec<Var>& map, Var& max);
@@ -426,6 +440,7 @@ protected:
     int      decisionLevel    ()      const; // Gives the current decisionlevel.
     uint32_t abstractLevel    (Var x) const; // Used to represent an abstraction of sets of decision levels.
     CRef     reason           (Var x); // Get the reason of the variable (non const as it might create the explanation on the fly)
+      // void cacheLemma(vec<Lit> &lemma);
     bool     hasReasonClause  (Var x) const; // Does the variable have a reason
     bool     isPropagated     (Var x) const; // Does the variable have a propagated variables
     bool     isPropagatedBy   (Var x, const Clause& c) const; // Is the value of the variable propagated by the clause Clause C
@@ -452,8 +467,10 @@ protected:
     // Returns a random integer 0 <= x < size. Seed must never be 0.
     static inline int irand(double& seed, int size) {
         return (int)(drand(seed) * size); }
-};
 
+private:
+  std::set<LitSet> currentlyAttachedClauses;
+};
 
 
 //=================================================================================================

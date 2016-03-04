@@ -229,7 +229,7 @@ CRef Solver::reason(Var x) {
     proxy->explainPropagation(MinisatSatSolver::toSatLiteral(l),
                               explanation_cl);
     vec<Lit> explanation;
-    MinisatSatSolver::toMinisatClause(explanation_cl, explanation); 
+    MinisatSatSolver::toMinisatClause(explanation_cl, explanation);
 
     // Sort the literals by trail index level
     lemma_lt lt(*this);
@@ -271,6 +271,7 @@ CRef Solver::reason(Var x) {
       explanation.push(mkLit(varTrue, true));
     }
 
+
     // Construct the reason
     CRef real_reason = ca.alloc(explLevel, explanation, true);
     // FIXME: at some point will need more information about where this explanation
@@ -281,6 +282,12 @@ CRef Solver::reason(Var x) {
            );
     vardata[x] = VarData(real_reason, level(x), user_level(x), intro_level(x), trail_index(x));
     clauses_removable.push(real_reason);
+
+    if (Debug.isOn("duplemmas")) {
+      const Clause& thisClause = ca[real_reason];
+      assert(currentlyAttachedClauses.find(LitSet(thisClause)) == currentlyAttachedClauses.end());
+    }
+
     attachClause(real_reason);
 
     return real_reason;
@@ -419,9 +426,13 @@ bool Solver::addClause_(vec<Lit>& ps, bool removable, ClauseId& id)
     return true;
 }
 
-
 void Solver::attachClause(CRef cr) {
     const Clause& c = ca[cr];
+
+    if (Debug.isOn("duplemmas")) {
+      currentlyAttachedClauses.insert(LitSet(c));
+    }
+
     Debug("minisat") << "Solver::attachClause(" << c << "): level " << c.level() << std::endl;
     Assert(c.size() > 1);
     watches[~c[0]].push(Watcher(cr, c[1]));
@@ -433,6 +444,11 @@ void Solver::attachClause(CRef cr) {
 
 void Solver::detachClause(CRef cr, bool strict) {
     const Clause& c = ca[cr];
+
+    if (Debug.isOn("duplemmas")) {
+      currentlyAttachedClauses.erase(LitSet(c));
+    }
+
     PROOF( ProofManager::getSatProof()->markDeleted(cr); );
     Debug("minisat") << "Solver::detachClause(" << c << ")" << std::endl;
     assert(c.size() > 1);
@@ -602,20 +618,20 @@ Lit Solver::pickBranchLit()
 /*_________________________________________________________________________________________________
 |
 |  analyze : (confl : Clause*) (out_learnt : vec<Lit>&) (out_btlevel : int&)  ->  [void]
-|  
+|
 |  Description:
 |    Analyze conflict and produce a reason clause.
-|  
+|
 |    Pre-conditions:
 |      * 'out_learnt' is assumed to be cleared.
 |      * Current decision level must be greater than root level.
-|  
+|
 |    Post-conditions:
 |      * 'out_learnt[0]' is the asserting literal at level 'out_btlevel'.
-|      * If out_learnt.size() > 1 then 'out_learnt[1]' has the greatest decision level of the 
+|      * If out_learnt.size() > 1 then 'out_learnt[1]' has the greatest decision level of the
 |        rest of literals. There may be others from the same level though.
 |      * returns the maximal level of the resolved clauses
-|  
+|
 |________________________________________________________________________________________________@*/
 int Solver::analyze(CRef confl, vec<Lit>& out_learnt, int& out_btlevel)
 {
@@ -661,14 +677,14 @@ int Solver::analyze(CRef confl, vec<Lit>& out_learnt, int& out_btlevel)
               }
             }
         }
-        
+
         // Select next clause to look at:
         while (!seen[var(trail[index--])]);
         p     = trail[index+1];
         confl = reason(var(p));
         seen[var(p)] = 0;
         pathC--;
-        
+
         if ( pathC > 0 && confl != CRef_Undef ) {
           PROOF( ProofManager::getSatProof()->addResolutionStep(p, confl, sign(p)); )
         }
@@ -694,13 +710,13 @@ int Solver::analyze(CRef confl, vec<Lit>& out_learnt, int& out_btlevel)
                 out_learnt[j++] = out_learnt[i];
               } else {
                 PROOF( ProofManager::getSatProof()->storeLitRedundant(out_learnt[i]); )
-                // Literal is redundant, to be safe, mark the level as current assertion level 
+                // Literal is redundant, to be safe, mark the level as current assertion level
                 // TODO: maybe optimize
                 max_resolution_level = std::max(max_resolution_level, user_level(var(out_learnt[i])));
               }
             }
         }
-        
+
     }else if (ccmin_mode == 1){
         Unreachable();
         for (i = j = 1; i < out_learnt.size(); i++){
@@ -786,7 +802,7 @@ bool Solver::litRedundant(Lit p, uint32_t abstract_levels)
 /*_________________________________________________________________________________________________
 |
 |  analyzeFinal : (p : Lit)  ->  [void]
-|  
+|
 |  Description:
 |    Specialized analysis procedure to express the final conflict in terms of assumptions.
 |    Calculates the (possibly empty) set of assumptions that led to the assignment of 'p', and
@@ -903,7 +919,7 @@ CRef Solver::processTheoryPropagations() {
   proxy->getPropagatedLiterals(propagatedLiteralsClause);
 
   vec<Lit> propagatedLiterals;
-  MinisatSatSolver::toMinisatClause(propagatedLiteralsClause, propagatedLiterals); 
+  MinisatSatSolver::toMinisatClause(propagatedLiteralsClause, propagatedLiterals);
 
   int oldTrailSize = trail.size();
   Debug("minisat") << "old trail size is " << oldTrailSize << ", propagating " << propagatedLiterals.size() << " lits..." << std::endl;
@@ -956,11 +972,11 @@ void Solver::theoryCheck(CVC4::theory::Theory::Effort effort)
 /*_________________________________________________________________________________________________
 |
 |  propagateBool : [void]  ->  [Clause*]
-|  
+|
 |  Description:
 |    Propagates all enqueued facts. If a conflict arises, the conflicting clause is returned,
 |    otherwise CRef_Undef.
-|  
+|
 |    Post-conditions:
 |      * the propagation queue is empty, even if there was a conflict.
 |________________________________________________________________________________________________@*/
@@ -1030,16 +1046,16 @@ CRef Solver::propagateBool()
 /*_________________________________________________________________________________________________
 |
 |  reduceDB : ()  ->  [void]
-|  
+|
 |  Description:
 |    Remove half of the learnt clauses, minus the clauses locked by the current assignment. Locked
 |    clauses are clauses that are reason to some assignment. Binary clauses are never removed.
 |________________________________________________________________________________________________@*/
-struct reduceDB_lt { 
+struct reduceDB_lt {
     ClauseAllocator& ca;
     reduceDB_lt(ClauseAllocator& ca_) : ca(ca_) {}
-    bool operator () (CRef x, CRef y) { 
-        return ca[x].size() > 2 && (ca[y].size() == 2 || ca[x].activity() < ca[y].activity()); } 
+    bool operator () (CRef x, CRef y) {
+        return ca[x].size() > 2 && (ca[y].size() == 2 || ca[x].activity() < ca[y].activity()); }
 };
 void Solver::reduceDB()
 {
@@ -1107,7 +1123,7 @@ void Solver::rebuildOrderHeap()
 /*_________________________________________________________________________________________________
 |
 |  simplify : [void]  ->  [bool]
-|  
+|
 |  Description:
 |    Simplify the clause database according to the current top-level assigment. Currently, the only
 |    thing done here is the removal of satisfied clauses, but more things can be put here.
@@ -1139,11 +1155,11 @@ bool Solver::simplify()
 /*_________________________________________________________________________________________________
 |
 |  search : (nof_conflicts : int) (params : const SearchParams&)  ->  [lbool]
-|  
+|
 |  Description:
-|    Search for a model the specified number of conflicts. 
+|    Search for a model the specified number of conflicts.
 |    NOTE! Use negative value for 'nof_conflicts' indicate infinity.
-|  
+|
 |  Output:
 |    'l_True' if a partial assigment that is consistent with respect to the clauseset is found. If
 |    all variables are decision variables, this means that the clause set is satisfiable. 'l_False'
@@ -1221,9 +1237,9 @@ lbool Solver::search(int nof_conflicts)
                 max_learnts             *= learntsize_inc;
 
                 if (verbosity >= 1)
-                    printf("| %9d | %7d %8d %8d | %8d %8d %6.0f | %6.3f %% |\n", 
-                           (int)conflicts, 
-                           (int)dec_vars - (trail_lim.size() == 0 ? trail.size() : trail_lim[0]), nClauses(), (int)clauses_literals, 
+                    printf("| %9d | %7d %8d %8d | %8d %8d %6.0f | %6.3f %% |\n",
+                           (int)conflicts,
+                           (int)dec_vars - (trail_lim.size() == 0 ? trail.size() : trail_lim[0]), nClauses(), (int)clauses_literals,
                            (int)max_learnts, nLearnts(), (double)learnts_literals/nLearnts(), progressEstimate()*100);
             }
 
@@ -1426,7 +1442,7 @@ lbool Solver::solve_()
 
 //=================================================================================================
 // Writing CNF to DIMACS:
-// 
+//
 // FIXME: this needs to be rewritten completely.
 
 static Var mapVar(Var x, vec<Var>& map, Var& max)
@@ -1475,7 +1491,7 @@ void Solver::toDimacs(FILE* f, const vec<Lit>& assumps)
     for (int i = 0; i < clauses_persistent.size(); i++)
         if (!satisfied(ca[clauses_persistent[i]]))
             cnt++;
-        
+
     for (int i = 0; i < clauses_persistent.size(); i++)
         if (!satisfied(ca[clauses_persistent[i]])){
             Clause& c = ca[clauses_persistent[i]];
@@ -1546,11 +1562,11 @@ void Solver::garbageCollect()
 {
     // Initialize the next region to a size corresponding to the estimated utilization degree. This
     // is not precise but should avoid some unnecessary reallocations for the new region:
-    ClauseAllocator to(ca.size() - ca.wasted()); 
+    ClauseAllocator to(ca.size() - ca.wasted());
 
     relocAll(to);
     if (verbosity >= 2)
-        printf("|  Garbage collection:   %12d bytes => %12d bytes             |\n", 
+        printf("|  Garbage collection:   %12d bytes => %12d bytes             |\n",
                ca.size()*ClauseAllocator::Unit_Size, to.size()*ClauseAllocator::Unit_Size);
     to.moveTo(ca);
 }
@@ -1712,7 +1728,7 @@ CRef Solver::updateLemmas() {
   int backtrack_index = trail.size();
 
   PROOF(Assert (lemmas.size() == (int)lemmas_cnf_assertion.size()););
-  
+
   // Attach all the clauses and enqueue all the propagations
   for (int i = 0; i < lemmas.size(); ++ i)
   {
@@ -1753,7 +1769,7 @@ CRef Solver::updateLemmas() {
         (
          Node cnf_assertion = lemmas_cnf_assertion[i].first;
          Node cnf_def = lemmas_cnf_assertion[i].second;
-         
+
          ClauseId id = ProofManager::getSatProof()->registerUnitClause(lemma[0], THEORY_LEMMA);
          ProofManager::getCnfProof()->setClauseAssertion(id, cnf_assertion);
          ProofManager::getCnfProof()->setClauseDefinition(id, cnf_def);
@@ -1798,20 +1814,20 @@ CRef Solver::updateLemmas() {
 
 void ClauseAllocator::reloc(CRef& cr, ClauseAllocator& to, CVC4::CoreProofProxy* proxy)
 {
- 
+
   // FIXME what is this CRef_lazy
   if (cr == CRef_Lazy) return;
-  
+
   CRef old = cr;  // save the old reference
   Clause& c = operator[](cr);
   if (c.reloced()) { cr = c.relocation(); return; }
-  
+
   cr = to.alloc(c.level(), c, c.removable());
   c.relocate(cr);
   if (proxy) {
-    proxy->updateCRef(old, cr); 
+    proxy->updateCRef(old, cr);
   }
-  // Copy extra data-fields: 
+  // Copy extra data-fields:
   // (This could be cleaned-up. Generalize Clause-constructor to be applicable here instead?)
   to[cr].mark(c.mark());
   if (to[cr].removable())         to[cr].activity() = c.activity();
