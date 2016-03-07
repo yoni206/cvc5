@@ -168,7 +168,6 @@ inline std::ostream& operator <<(std::ostream& out, Minisat::lbool val) {
   return out;
 }
 
-
 class Solver;
 
 class ProofProxyAbstract {
@@ -258,11 +257,31 @@ public:
 
     Lit          subsumes    (const Clause& other) const;
     void         strengthen  (Lit p);
+
+    void to_stream(std::ostream& out) const {
+      out << "Clause[";
+      out << "mark = " << header.mark;
+      out << ", removable = " << header.removable;
+      out << ", has_extra = " << header.has_extra;
+      out << ", reloced = " << header.reloced;
+      out << ", size = " << header.size;
+      out << ", level = " << header.level;
+      out << ",";
+      for (int i = 0; i < size(); ++ i) {
+        out << " " << data[i].lit;
+      }
+      out << "]";
+    }
 };
 
 
 //=================================================================================================
 // ClauseAllocator -- a simple class for allocating memory for clauses:
+
+inline std::ostream& operator <<(std::ostream& out, const Clause& clause) {
+  clause.to_stream(out);
+  return out;
+}
 
 
 const CRef CRef_Undef = RegionAllocator<uint32_t>::Ref_Undef;

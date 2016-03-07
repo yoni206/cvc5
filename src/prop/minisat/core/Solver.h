@@ -53,15 +53,43 @@ namespace Minisat {
 
 class LitSet {
 public:
-  LitSet(const Clause &clause) {
-    for (int i = 0; i < clause.size(); ++i)
+  LitSet(const Clause &clause, CRef cr)
+  : cr(cr)
+  {
+    for (int i = 0; i < clause.size(); ++i) {
       lits.insert(clause[i].x);
+    }
   }
 
   std::set<int> lits;
+  CRef cr;
+
+  CRef& get_cr() const { return const_cast<LitSet*>(this)->cr; }
 
   bool operator<(const LitSet &other) const {
-    return lits < other.lits;
+    if (lits.size() != other.lits.size()) {
+      return lits.size() < other.lits.size();
+    }
+    std::set<int>::iterator it1, it2;
+    for (it1 = lits.begin(), it2 = other.lits.begin(); it1 != lits.end(); it1 ++, it2 ++) {
+      if (*it1 != *it2) {
+        return *it1 < *it2;
+      }
+    }
+    return false;
+  }
+
+  bool operator == (const LitSet &other) const {
+    if (lits.size() != other.lits.size()) {
+      return false;
+    }
+    std::set<int>::iterator it1, it2;
+    for (it1 = lits.begin(), it2 = other.lits.begin(); it1 != lits.end(); it1 ++, it2 ++) {
+      if (*it1 != *it2) {
+        return false;
+      }
+    }
+    return true;
   }
 };
 

@@ -283,11 +283,6 @@ CRef Solver::reason(Var x) {
     vardata[x] = VarData(real_reason, level(x), user_level(x), intro_level(x), trail_index(x));
     clauses_removable.push(real_reason);
 
-    if (Debug.isOn("duplemmas")) {
-      const Clause& thisClause = ca[real_reason];
-      assert(currentlyAttachedClauses.find(LitSet(thisClause)) == currentlyAttachedClauses.end());
-    }
-
     attachClause(real_reason);
 
     return real_reason;
@@ -430,7 +425,13 @@ void Solver::attachClause(CRef cr) {
     const Clause& c = ca[cr];
 
     if (Debug.isOn("duplemmas")) {
-      currentlyAttachedClauses.insert(LitSet(c));
+      std::pair<std::set<LitSet>::iterator,bool> insert = currentlyAttachedClauses.insert(LitSet(c, cr));
+      if (!insert.second) {
+        const Clause& old_c = ca[insert.first->cr];
+        std::cerr << "Duplicate clause added:" << std::endl;
+        std::cerr << "c     = " << c << std::endl;
+        std::cerr << "old_c = " << old_c << std::endl;
+      }
     }
 
     Debug("minisat") << "Solver::attachClause(" << c << "): level " << c.level() << std::endl;
@@ -446,7 +447,8 @@ void Solver::detachClause(CRef cr, bool strict) {
     const Clause& c = ca[cr];
 
     if (Debug.isOn("duplemmas")) {
-      currentlyAttachedClauses.erase(LitSet(c));
+      size_t removed = currentlyAttachedClauses.erase(LitSet(c, cr));
+      assert(removed > 0);
     }
 
     PROOF( ProofManager::getSatProof()->markDeleted(cr); );
@@ -928,6 +930,7 @@ CRef Solver::processTheoryPropagations() {
     // multiple theories can propagate the same literal
     Lit p = propagatedLiterals[i];
     if (value(p) == l_Undef) {
+      assert(qhead == trail.size());
       uncheckedEnqueue(p, CRef_Lazy);
       // See if anything new can be propagated on the Boolean level (or a conflict)
       CRef conflict = propagateBool();
@@ -1555,6 +1558,14 @@ void Solver::relocAll(ClauseAllocator& to)
       ca.reloc(clauses_persistent[i], to,  NULLPROOF( ProofManager::getSatProof()->getProxy() ));
 
       PROOF( ProofManager::getSatProof()->finishUpdateCRef(); )
+
+    // All debug
+    if (Debug.isOn("duplemmas")) {
+      std::set<LitSet>::iterator it;
+      for (it = currentlyAttachedClauses.begin(); it != currentlyAttachedClauses.end(); ++ it) {
+        ca.reloc(it->get_cr(), to, NULLPROOF( ProofManager::getSatProof()->getProxy() ));
+      }
+    }
 }
 
 
