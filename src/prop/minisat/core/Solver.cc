@@ -237,14 +237,16 @@ CRef Solver::reason(Var x) {
     Assert(explanation[0] == l);
 
     // Compute the assertion level for this clause
-    int explLevel = 0;
+    int explLevel = 0; // Level of the clause
+    int propLevel = 0; // Propagation level of the clause
     int i, j;
     Lit prev = lit_Undef;
     for (i = 0, j = 0; i < explanation.size(); ++ i) {
       // This clause is valid theory propagation, so its level is the level of the top literal
       explLevel = std::max(explLevel, intro_level(var(explanation[i])));
+      if (l != explanation[i]) propLevel = std::max(propLevel, level(var(explanation[i])));
 
-      Assert(value(explanation[i]) != l_Undef);
+      Assert(explanation[i] == l || value(explanation[i]) == l_False);
       Assert(i == 0 || trail_index(var(explanation[0])) > trail_index(var(explanation[i])));
 
       // Always keep the first literal
@@ -285,7 +287,46 @@ CRef Solver::reason(Var x) {
 
     attachClause(real_reason);
 
+    if (decisionLevel() > 0) {
+      // Remember the propagation level
+      propagation_lemmas.push_back(std::pair<CRef, unsigned>(real_reason, propLevel));
+    }
+
     return real_reason;
+}
+
+void Solver::checkPropagationLemmas() {
+
+  size_t i, to_keep = 0;
+  int min_level = decisionLevel(); // Min level of clauses that we keep
+
+  // Collect any lemmas that need propagation at lower levels
+  for (i = 0; i < propagation_lemmas.size(); ++ i) {
+    int level = propagation_lemmas[i].second;
+    if (level < min_level) {
+      to_keep = 0;
+      min_level = level;
+    }
+    if (level == min_level) {
+      propagation_lemmas[to_keep ++] = propagation_lemmas[i];
+    }
+  }
+  propagation_lemmas.resize(to_keep);
+
+  // Backjump
+  cancelUntil(min_level);
+
+  // Propagate the lemmas
+  for (i = 0; i < propagation_lemmas.size(); ++ i) {
+    CRef cr = propagation_lemmas[i].first;
+    Clause& c = ca[cr];
+    if (value(c[0]) == l_Undef) {
+      uncheckedEnqueue(c[0], cr);
+    }
+  }
+
+  // Up to date, clear all data
+  propagation_lemmas.clear();
 }
 
 bool Solver::addClause_(vec<Lit>& ps, bool removable, ClauseId& id)
@@ -427,10 +468,19 @@ void Solver::attachClause(CRef cr) {
     if (Debug.isOn("duplemmas")) {
       std::pair<std::set<LitSet>::iterator,bool> insert = currentlyAttachedClauses.insert(LitSet(c, cr));
       if (!insert.second) {
+        // Print the clause
         const Clause& old_c = ca[insert.first->cr];
         std::cerr << "Duplicate clause added:" << std::endl;
         std::cerr << "c     = " << c << std::endl;
+        std::cerr << "ref   = " << cr << std::endl;
         std::cerr << "old_c = " << old_c << std::endl;
+        std::cerr << "ref  = " << insert.first->cr << std::endl;
+      }
+    }
+
+    if (Debug.isOn("duplemmas")) {
+      if (false /* || cr == 122 */) {
+        std::cerr << "Adding problematic clause at level " << decisionLevel() << std::endl;
       }
     }
 
@@ -639,6 +689,8 @@ int Solver::analyze(CRef confl, vec<Lit>& out_learnt, int& out_btlevel)
 {
     int pathC = 0;
     Lit p     = lit_Undef;
+
+    assert(propagation_lemmas.size() == 0);
 
     // Generate conflict clause:
     //
@@ -878,6 +930,7 @@ CRef Solver::propagate(TheoryCheckType type)
     do {
       // We should have updated lemmas at this point
       assert(lemmas.size() == 0);
+      assert(propagation_lemmas.size() == 0);
       // Propagate on the clause level
       conflict = propagateBool();
       if (conflict != CRef_Undef) {
@@ -897,6 +950,8 @@ CRef Solver::propagate(TheoryCheckType type)
         if (conflict != CRef_Undef) {
           return conflict;
         }
+        // Boolean propagation first
+        if (qhead != trail.size()) continue;
         // Pick up the theory propagated literals (this also calls Boolean propagation)
         conflict = processTheoryPropagations();
         if (conflict != CRef_Undef) {
@@ -1231,6 +1286,10 @@ lbool Solver::search(int nof_conflicts)
                       );
             }
 
+            // Check for if any propagation lemmas need to be done again.
+            // This might backjump even further
+            checkPropagationLemmas();
+
             varDecayActivity();
             claDecayActivity();
 
@@ -1284,6 +1343,7 @@ lbool Solver::search(int nof_conflicts)
                 !withinBudget(options::satConflictStep())) {
                 // Reached bound on number of conflicts:
                 progress_estimate = progressEstimate();
+                assert(propagation_lemmas.size() == 0);
                 cancelUntil(0);
                 // [mdeters] notify theory engine of restarts for deferred
                 // theory processing
@@ -1658,6 +1718,7 @@ bool Solver::flipDecision() {
   if(level < 0) {
     Lit l = trail[trail_lim[0]];
     Debug("flipdec") << "FLIP: canceling everything, flipping root decision " << l << std::endl;
+    assert(propagation_lemmas.size() == 0);
     cancelUntil(0);
     newDecisionLevel();
     Debug("flipdec") << "FLIP: enqueuing " << ~l << std::endl;
@@ -1668,6 +1729,7 @@ bool Solver::flipDecision() {
   }
   Lit l = trail[trail_lim[level]];
   Debug("flipdec") << "FLIP: canceling to level " << level << ", flipping decision " << l << std::endl;
+  assert(propagation_lemmas.size() == 0);
   cancelUntil(level);
   newDecisionLevel();
   Debug("flipdec") << "FLIP: enqueuing " << ~l << std::endl;
@@ -1732,6 +1794,7 @@ CRef Solver::updateLemmas() {
 
     // Pop so that propagation would be current
     Debug("minisat::lemmas") << "Solver::updateLemmas(): backtracking to " << backtrackLevel << " from " << decisionLevel() << std::endl;
+    assert(propagation_lemmas.size() == 0);
     cancelUntil(backtrackLevel);
   }
 

@@ -139,6 +139,12 @@ protected:
   /** Is the lemma removable */
   vec<bool> lemmas_removable;
 
+  /** Propagation lemmas that might propagate at lower levels (lemma, propagation_level) */
+  std::vector< std::pair<CRef, int> > propagation_lemmas;
+
+  /** Check if any lemmas from propagation are out of date. If so backjump and make them up-to-date */
+  void checkPropagationLemmas();
+
   /** Nodes being converted to CNF */
   std::vector< std::pair<CVC4::Node, CVC4::Node > >lemmas_cnf_assertion;
 
