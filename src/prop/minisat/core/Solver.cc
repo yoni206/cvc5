@@ -1621,10 +1621,14 @@ void Solver::relocAll(ClauseAllocator& to)
 
     // All debug
     if (Debug.isOn("duplemmas")) {
+      std::set<LitSet> currentlyAttachedClauses_new;
       std::set<LitSet>::iterator it;
       for (it = currentlyAttachedClauses.begin(); it != currentlyAttachedClauses.end(); ++ it) {
-        ca.reloc(it->get_cr(), to, NULLPROOF( ProofManager::getSatProof()->getProxy() ));
+        CRef cref = it->get_cr();
+        ca.reloc(cref, to, NULLPROOF( ProofManager::getSatProof()->getProxy() ));
+        currentlyAttachedClauses_new.insert(LitSet(to[cref], cref));
       }
+      currentlyAttachedClauses.swap(currentlyAttachedClauses_new);
     }
 }
 
