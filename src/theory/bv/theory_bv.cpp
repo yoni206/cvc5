@@ -779,28 +779,32 @@ Node TheoryBV::ppRewrite(TNode t)
     std::vector<Node> equalities;
     Slicer::splitEqualities(t, equalities);
     res = utils::mkAnd(equalities);
+  } else if (t.getKind() == kind::EQUAL &&
+             RewriteRule<AlignedConcatEq>::applies(t)) {
+    Node split = RewriteRule<AlignedConcatEq>::run<false>(t);
+    Debug("bv-pp-rewrite") << "split " << split << "\n";
+    res = Rewriter::rewrite(split);
   } else if (RewriteRule<UltPlusOne>::applies(t)) {
     Node result = RewriteRule<UltPlusOne>::run<false>(t);
     res = Rewriter::rewrite(result);
-  } else if( res.getKind() == kind::EQUAL &&
-      ((res[0].getKind() == kind::BITVECTOR_PLUS &&
-        RewriteRule<ConcatToMult>::applies(res[1])) ||
-       (res[1].getKind() == kind::BITVECTOR_PLUS &&
-	RewriteRule<ConcatToMult>::applies(res[0])))) {
-    Node mult = RewriteRule<ConcatToMult>::applies(res[0])?
-      RewriteRule<ConcatToMult>::run<false>(res[0]) :
-      RewriteRule<ConcatToMult>::run<true>(res[1]);
+  } else if (res.getKind() == kind::EQUAL &&
+             ((res[0].getKind() == kind::BITVECTOR_PLUS &&
+               RewriteRule<ConcatToMult>::applies(res[1])) ||
+              (res[1].getKind() == kind::BITVECTOR_PLUS &&
+               RewriteRule<ConcatToMult>::applies(res[0])))) {
+    Node mult = RewriteRule<ConcatToMult>::applies(res[0])
+                    ? RewriteRule<ConcatToMult>::run<false>(res[0])
+                    : RewriteRule<ConcatToMult>::run<true>(res[1]);
     Node factor = mult[0];
-    Node sum =  RewriteRule<ConcatToMult>::applies(res[0])? res[1] : res[0];
-    Node new_eq =utils::mkNode(kind::EQUAL, sum, mult);
+    Node sum = RewriteRule<ConcatToMult>::applies(res[0]) ? res[1] : res[0];
+    Node new_eq = utils::mkNode(kind::EQUAL, sum, mult);
     Node rewr_eq = RewriteRule<SolveEq>::run<true>(new_eq);
-    if (rewr_eq[0].isVar() || rewr_eq[1].isVar()){
+    if (rewr_eq[0].isVar() || rewr_eq[1].isVar()) {
       res = Rewriter::rewrite(rewr_eq);
     } else {
       res = t;
     }
   }
-
 
   // if(t.getKind() == kind::EQUAL &&
   //    ((t[0].getKind() == kind::BITVECTOR_MULT && t[1].getKind() == kind::BITVECTOR_PLUS) ||

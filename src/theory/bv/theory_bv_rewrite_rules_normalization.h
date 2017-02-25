@@ -732,11 +732,166 @@ Node RewriteRule<SolveEq>::apply(TNode node) {
   return newLeft.eqNode(newRight);
 }
 
+// Advances from a child at *index in a concat node to the next child. Increases
+// *index by 1, and *low by the size of node[*index]. If dest is non-null,
+// child is pushed onto the back of dest.
+inline void AdvanceNextConcatChild(TNode concat, unsigned* index, unsigned* low,
+                                   std::vector<Node>* dest = NULL) {
+  Assert(concat.getKind() == kind::BITVECTOR_CONCAT);
+  Assert(index != NULL);
+  Assert(low != NULL);
+  Assert(*index < concat.getNumChildren());
+  TNode child = concat[*index];
+  (*index)++;
+  const unsigned size = utils::getSize(child);
+  Assert(*low >= size);
+  *low -= size;
+  if (dest) {
+    dest->push_back(child);
+  }
+}
 
-template<> inline
-bool RewriteRule<BitwiseEq>::applies(TNode node) {
-  if (node.getKind() != kind::EQUAL ||
-      utils::getSize(node[0]) != 1) {
+template <>
+inline bool RewriteRule<AlignedConcatEq>::applies(TNode node) {
+  if (node.getKind() != kind::EQUAL || utils::getSize(node[0]) == 1) {
+    return false;
+  }
+  // Look for terms that are equivalent:
+  //  (= l r) where l and r are equivalent to concats.
+  // Rewrite these to:
+  //  (and (= l1 r1) (= l2 r2) ... (= ln rn))
+  // whenever these do introduce new extracts.
+
+  // Cases:
+  // 0 : not a match
+  // 1 : left is constant, right is concat
+  // 2 : left is concat, right is constant
+  // 3 : left is concat, right is concat.
+  Node left = node[0];
+  Node right = node[1];
+  Kind left_kind = left.getKind();
+  Kind right_kind = right.getKind();
+  if (left_kind == kind::CONST_BITVECTOR &&
+      right_kind == kind::BITVECTOR_CONCAT) {
+    return true;
+  } else if (left_kind == kind::BITVECTOR_CONCAT &&
+             right_kind == kind::CONST_BITVECTOR) {
+    return true;
+  } else if (left_kind == kind::BITVECTOR_CONCAT &&
+             right_kind == kind::BITVECTOR_CONCAT) {
+    const unsigned size = utils::getSize(left);
+    unsigned left_index = 0;
+    unsigned right_index = 0;
+    unsigned left_low = size;
+    unsigned right_low = size;
+    AdvanceNextConcatChild(left, &left_index, &left_low);
+    AdvanceNextConcatChild(right, &right_index, &right_low);
+    // Stop at the first alignment that is not at the lsb or msb.
+    while (left_index < left.getNumChildren() &&
+           right_index < right.getNumChildren()) {
+      if (left_low > right_low) {
+        AdvanceNextConcatChild(left, &left_index, &left_low);
+      } else if (left_low < right_low) {
+        AdvanceNextConcatChild(right, &right_index, &right_low);
+      } else {
+        Assert(left_low == right_low);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+template <>
+inline Node RewriteRule<AlignedConcatEq>::apply(TNode node) {
+  Debug("bv-rewrite-align") << "AlignedConcatEq(" << node << ")" << std::endl;
+
+  TNode left = node[0];
+  TNode right = node[1];
+  // Cases:
+  // 0 : not a match
+  // 1 : left is constant, right is concat
+  // 2 : left is concat, right is constant
+  // 3 : left is concat, right is concat, ...
+  NodeBuilder<> and_builder(kind::AND);
+  const bool left_is_const = left.getKind() == kind::CONST_BITVECTOR;
+  if (left_is_const || right.getKind() == kind::CONST_BITVECTOR) {
+    TNode term = left_is_const ? right : left;
+    BitVector c = left_is_const ? left.getConst<BitVector>()
+                                : right.getConst<BitVector>();
+    Assert(term.getKind() == kind::BITVECTOR_CONCAT);
+    const unsigned size = utils::getSize(term);
+    const unsigned term_children = term.getNumChildren();
+    unsigned term_index = 0;
+    unsigned term_low = size;
+    while(term_index < term_children) {
+      const TNode child = term[term_index];
+      const unsigned prev_low = term_low;
+      AdvanceNextConcatChild(term, &term_index, &term_low);
+      const unsigned term_high = prev_low - 1;
+      Node current_constant = utils::mkConst(c.extract(term_high, term_low));
+      Node equality = child.eqNode(current_constant);
+      and_builder << equality;
+    }
+  } else {
+    // 3 : left is concat, right is concat
+    Assert(left.getKind() == kind::BITVECTOR_CONCAT);
+    Assert(right.getKind() == kind::BITVECTOR_CONCAT);
+
+    const unsigned size = utils::getSize(left);
+    const unsigned left_children = left.getNumChildren();
+    const unsigned right_children = right.getNumChildren();
+
+    unsigned left_index = 0;
+    unsigned right_index = 0;
+    unsigned left_low = size;
+    unsigned right_low = size;
+
+    // Temporaries to hold children until an alignment.
+    std::vector<Node> left_slices;
+    std::vector<Node> right_slices;
+    while (true) {
+      // The indices can equal the # of children in the final iterations.
+      Assert(left_index <= left_children);
+      Assert(right_index <= right_children);
+      if (left_low > right_low) {
+        // Advance the left side.
+        AdvanceNextConcatChild(left, &left_index, &left_low, &left_slices);
+      } else if (left_low < right_low) {
+        // Advance the right side.
+        AdvanceNextConcatChild(right, &right_index, &right_low, &right_slices);
+      } else {
+        Assert(left_low == right_low);
+        Assert(left_slices.empty() == right_slices.empty());
+        if (!left_slices.empty()) {
+          Node new_left_term = utils::mkConcat(left_slices);
+          Node new_right_term = utils::mkConcat(right_slices);
+          Node equality = new_left_term.eqNode(new_right_term);
+          and_builder << equality;
+          left_slices.clear();
+          right_slices.clear();
+        }
+        if (left_index < left_children) {  // Advance the left arbitrarily.
+          AdvanceNextConcatChild(left, &left_index, &left_low, &left_slices);
+        } else {
+          // Both nodes have been consumed. Stop.
+          Assert(left_index == left_children);
+          Assert(right_index == right_children);
+          Assert(left_low == 0);
+          Assert(right_low == 0);
+          break;
+        }
+      }
+    }
+  }
+  Node and_node = and_builder;
+  Debug("bv-rewrite") << "AlignedConcatEq -> " << and_node << std::endl;
+  return and_node;
+}
+
+template <>
+inline bool RewriteRule<BitwiseEq>::applies(TNode node) {
+  if (node.getKind() != kind::EQUAL || utils::getSize(node[0]) != 1) {
     return false;
   }
   TNode term;
@@ -744,22 +899,20 @@ bool RewriteRule<BitwiseEq>::applies(TNode node) {
   if (node[0].getKind() == kind::CONST_BITVECTOR) {
     c = node[0].getConst<BitVector>();
     term = node[1];
-  }
-  else if (node[1].getKind() == kind::CONST_BITVECTOR) {
+  } else if (node[1].getKind() == kind::CONST_BITVECTOR) {
     c = node[1].getConst<BitVector>();
     term = node[0];
-  }
-  else {
+  } else {
     return false;
   }
   switch (term.getKind()) {
     case kind::BITVECTOR_AND:
     case kind::BITVECTOR_OR:
-      //operator BITVECTOR_XOR 2: "bitwise xor"
+    // operator BITVECTOR_XOR 2: "bitwise xor"
     case kind::BITVECTOR_NOT:
     case kind::BITVECTOR_NAND:
     case kind::BITVECTOR_NOR:
-      //operator BITVECTOR_XNOR 2 "bitwise xnor"
+    // operator BITVECTOR_XNOR 2 "bitwise xnor"
     case kind::BITVECTOR_COMP:
     case kind::BITVECTOR_NEG:
       return true;
@@ -769,7 +922,6 @@ bool RewriteRule<BitwiseEq>::applies(TNode node) {
   }
   return false;
 }
-
 
 static inline Node mkNodeKind(Kind k, TNode node, TNode c) {
   unsigned i = 0;
