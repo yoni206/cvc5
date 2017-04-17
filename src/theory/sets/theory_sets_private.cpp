@@ -758,6 +758,7 @@ void TheorySetsPrivate::checkUpwardsClosure( std::vector< Node >& lemmas ) {
           Node r2 = it2->first;
           //see if there are members in second argument
           std::map< Node, std::map< Node, Node > >::iterator itm2 = d_pol_mems[0].find( r2 );
+          std::map< Node, std::map< Node, Node > >::iterator itm2n = d_pol_mems[1].find( r2 );
           if( itm2!=d_pol_mems[0].end() || k!=kind::INTERSECTION ){
             Trace("sets-debug") << "Checking " << it2->second << ", members = " << (itm1!=d_pol_mems[0].end()) << ", " << (itm2!=d_pol_mems[0].end()) << std::endl;
             //for all members of r1
@@ -782,6 +783,14 @@ void TheorySetsPrivate::checkUpwardsClosure( std::vector< Node >& lemmas ) {
                     addEqualityToExp( it2->second[1], itm2->second[xr][1], exp );
                     addEqualityToExp( x, itm2->second[xr][0], exp );
                     valid = true;
+                  }else{
+                    // if not, check whether it is definitely not a member, if unknown, split
+                    bool not_in_r2 = itm2n!=d_pol_mems[1].end() && itm2n->second.find( xr )!=itm2->second.end();
+                    if( !not_in_r2 ){
+                      exp.push_back( NodeManager::currentNM()->mkNode( kind::MEMBER, x, it2->second[1] ) );
+                      valid = true;
+                      inferType = 1;
+                    }
                   }
                 }else{
                   Assert( k==kind::SETMINUS );
@@ -1565,11 +1574,33 @@ void TheorySetsPrivate::debugPrintSet( Node s, const char * c ) {
   }
 }
 
+void TheorySetsPrivate::lastCallEffortCheck() {
+  Trace("sets") << "----- Last call effort check ------" << std::endl;
+  /*  FIXME : do this?
+  bool addedLemma = false;
+  TheoryModel * m = d_external.d_valuation.getModel();
+  //check that negated memberships are satisfied
+  for( std::map< Node, std::map< Node, Node > >::iterator itp = d_pol_mems[0].begin(); itp != d_pol_mems[0].end(); ++itp ){
+    Node eqc = itp->first;
+    std::map< Node, std::map< Node, Node > >::iterator itn = d_pol_mems[1].find( eqc );
+    if( itn!=d_pol_mems[1].end() ){
+
+    }
+  }
+  */
+  
+}
+
+
 /**************************** TheorySetsPrivate *****************************/
 /**************************** TheorySetsPrivate *****************************/
 /**************************** TheorySetsPrivate *****************************/
 
 void TheorySetsPrivate::check(Theory::Effort level) {
+  if( level == Theory::EFFORT_LAST_CALL ){
+    lastCallEffortCheck();
+    return;
+  }
   Trace("sets-check") << "Sets check effort " << level << std::endl;
   while(!d_external.done() && !d_conflict) {
     // Get all the assertions
@@ -1605,6 +1636,13 @@ void TheorySetsPrivate::check(Theory::Effort level) {
   Trace("sets-check") << "Sets finish Check effort " << level << std::endl;
 }/* TheorySetsPrivate::check() */
 
+bool TheorySetsPrivate::needsCheckLastEffort() {
+  if( options::modelBasedTc() ){
+    return true;
+  }else{
+    return false;
+  }
+}
 
 /************************ Sharing ************************/
 /************************ Sharing ************************/
@@ -1773,15 +1811,18 @@ EqualityStatus TheorySetsPrivate::getEqualityStatus(TNode a, TNode b) {
 /******************** Model generation ********************/
 
 
-void TheorySetsPrivate::collectModelInfo(TheoryModel* m) {
+bool TheorySetsPrivate::collectModelInfo(TheoryModel* m) {
   Trace("sets-model") << "Set collect model info" << std::endl;
   set<Node> termSet;
   // Compute terms appearing in assertions and shared terms
   d_external.computeRelevantTerms(termSet);
   
   // Assert equalities and disequalities to the model
-  m->assertEqualityEngine(&d_equalityEngine,&termSet);
+  if( !m->assertEqualityEngine(&d_equalityEngine, THEORY_SETS, &termSet) ){
+    return false;
+  }
   
+  //std::map< Node, std::map< Node, bool > > diseq_asserted;
   std::map< Node, Node > mvals;
   for( int i=(int)(d_set_eqc.size()-1); i>=0; i-- ){
     Node eqc = d_set_eqc[i];
@@ -1789,6 +1830,7 @@ void TheorySetsPrivate::collectModelInfo(TheoryModel* m) {
       Trace("sets-model") << "* Do not assign value for " << eqc << " since is not relevant." << std::endl;
     }else{
       std::vector< Node > els;
+      std::vector< Node > pmems;
       bool is_base = !d_card_enabled || ( d_nf[eqc].size()==1 && d_nf[eqc][0]==eqc );
       if( is_base ){
         Trace("sets-model") << "Collect elements of base eqc " << eqc << std::endl;
@@ -1798,6 +1840,7 @@ void TheorySetsPrivate::collectModelInfo(TheoryModel* m) {
           for( std::map< Node, Node >::iterator itmm = itm->second.begin(); itmm != itm->second.end(); ++itmm ){
             Node t = NodeManager::currentNM()->mkNode( kind::SINGLETON, itmm->first );
             els.push_back( t );
+            pmems.push_back( itmm->first );
           }
         }
       }
@@ -1813,7 +1856,9 @@ void TheorySetsPrivate::collectModelInfo(TheoryModel* m) {
             unsigned vu = v.getConst<Rational>().getNumerator().toUnsignedInt();
             Assert( els.size()<=vu );
             while( els.size()<vu ){
-              els.push_back( NodeManager::currentNM()->mkNode( kind::SINGLETON, NodeManager::currentNM()->mkSkolem( "msde", elementType ) ) );
+              Node k = NodeManager::currentNM()->mkSkolem( "msde", elementType );
+              els.push_back( NodeManager::currentNM()->mkNode( kind::SINGLETON, k ) );
+              //pmems.push_back( k );
             }
           }else{
             Trace("sets-model") << "No slack elements for " << eqc << std::endl;
@@ -1824,6 +1869,7 @@ void TheorySetsPrivate::collectModelInfo(TheoryModel* m) {
           for( unsigned j=0; j<d_nf[eqc].size(); j++ ){
             Assert( mvals.find( d_nf[eqc][j] )!=mvals.end() );
             els.push_back( mvals[d_nf[eqc][j]] );
+            // TODO : add to pmem
           }
         }
       }
@@ -1831,10 +1877,34 @@ void TheorySetsPrivate::collectModelInfo(TheoryModel* m) {
       rep = Rewriter::rewrite( rep );
       Trace("sets-model") << "* Assign representative of " << eqc << " to " << rep << std::endl;
       mvals[eqc] = rep;
-      m->assertEquality( eqc, rep, true );
+      if( !m->assertEquality( eqc, rep, true ) ){
+        return false;
+      }
+      // all negative members cannot be equal to positive members
+      /*  FIXME : either do this, or must do last call effort check, if model-based theory combination is enabled.
+                  last-call effort check is probably better
+      std::map< Node, std::map< Node, Node > >::iterator itm = d_pol_mems[1].find( eqc );
+      if( itm!=d_pol_mems[1].end() ){
+        for( std::map< Node, Node >::iterator itmm = itm->second.begin(); itmm != itm->second.end(); ++itmm ){
+          Node neg_el = itmm->first;
+          for( unsigned e=0; e<pmems.size(); e++ ) {
+            Node pos_el = pmems[e];
+            if( diseq_asserted[neg_el].find( pos_el )==diseq_asserted[neg_el].end() ){
+              if( !m->assertEquality( neg_el, pos_el, false ) ){
+                return;
+              }else{
+                diseq_asserted[pos_el][neg_el] = true;
+                diseq_asserted[neg_el][pos_el] = true;
+              }
+            }
+          }
+        } 
+      }
+      */
       m->assertRepresentative( rep );
     }
   }
+  return true;
 }
 
 /********************** Helper functions ***************************/

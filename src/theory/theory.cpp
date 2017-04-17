@@ -206,6 +206,10 @@ void Theory::computeCareGraph() {
   }
 }
 
+Node Theory::isSharedTerm( Node r ) {
+  return r;
+}
+
 void Theory::printFacts(std::ostream& os) const {
   unsigned i, n = d_facts.size();
   for(i = 0; i < n; i++){

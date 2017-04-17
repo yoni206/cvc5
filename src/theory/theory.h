@@ -152,6 +152,7 @@ private:
    * The default function returns all the pairs among the shared variables.
    */
   virtual void computeCareGraph();
+  virtual Node isSharedTerm( Node r );
 
   /**
    * A list of shared terms that the theory has.
@@ -516,7 +517,7 @@ public:
    * model.  This should be called after a call to check( FULL_EFFORT )
    * for all theories with no conflicts and no lemmas added.
    */
-  virtual void collectModelInfo( TheoryModel* m ){ }
+  virtual bool collectModelInfo( TheoryModel* m ){ return true; }
 
   /** if theories want to do something with model after building, do it here */
   virtual void postProcessModel( TheoryModel* m ){ }

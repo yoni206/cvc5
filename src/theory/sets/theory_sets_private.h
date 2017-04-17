@@ -149,6 +149,8 @@ private:
   void checkNormalForms( std::vector< Node >& lemmas, std::vector< Node >& intro_sets );
   void checkNormalForm( Node eqc, std::vector< Node >& intro_sets );
   void checkMinCard( std::vector< Node >& lemmas );
+private:
+  void lastCallEffortCheck();
 public:
 
   /**
@@ -166,8 +168,10 @@ public:
   void addSharedTerm(TNode);
 
   void check(Theory::Effort);
+  
+  bool needsCheckLastEffort();
 
-  void collectModelInfo(TheoryModel* m);
+  bool collectModelInfo(TheoryModel* m);
 
   void computeCareGraph();
 
@@ -234,6 +238,9 @@ private:
 public:
   bool isEntailed( Node n, bool pol );
   
+  eq::EqualityEngine* getEqualityEngine() {
+    return &d_equalityEngine;
+  }
 };/* class TheorySetsPrivate */
 
 

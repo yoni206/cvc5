@@ -37,13 +37,15 @@ protected:
   /** substitution map for this model */
   SubstitutionMap d_substitutions;
   bool d_modelBuilt;
+  context::Context* getEeContext();
 public:
-  TheoryModel(context::Context* c, std::string name, bool enableFuncModels);
+  TheoryModel(theory::eq::EqualityEngineNotify& notify, context::Context* c, std::string name, bool enableFuncModels);
   virtual ~TheoryModel() throw();
 
   /** special local context for our equalityEngine so we can clear it independently of search context */
   context::Context* d_eeContext;
   /** equality engine containing all known equalities/disequalities */
+  context::CDList<Node> d_keepAlive;
   eq::EqualityEngine* d_equalityEngine;
   /** map of representatives of equality engine to used representatives in representative set */
   std::map< Node, Node > d_reps;
@@ -97,11 +99,12 @@ public:
     */
   virtual void addTerm(TNode n);
   /** assert equality holds in the model */
-  void assertEquality(TNode a, TNode b, bool polarity);
+  bool assertEquality(TNode a, TNode b, bool polarity);
+  bool assertEquality(TNode a, TNode b, bool polarity, Node reason);
   /** assert predicate holds in the model */
-  void assertPredicate(TNode a, bool polarity);
+  bool assertPredicate(TNode a, bool polarity);
   /** assert all equalities/predicates in equality engine hold in the model */
-  void assertEqualityEngine(const eq::EqualityEngine* ee, std::set<Node>* termSet = NULL);
+  bool assertEqualityEngine(const eq::EqualityEngine* ee, theory::TheoryId tid, std::set<Node>* termSet = NULL);
   /** assert representative
     *  This function tells the model that n should be the representative of its equivalence class.
     *  It should be called during model generation, before final representatives are chosen.  In the
@@ -267,6 +270,7 @@ protected:
   TheoryEngine* d_te;
   typedef std::hash_map<Node, Node, NodeHashFunction> NodeMap;
   NodeMap d_normalizedCache;
+  NodeMap d_normalizedCacheExp;
   typedef std::hash_set<Node, NodeHashFunction> NodeSet;
   std::map< Node, Node > d_constantReps;
 
@@ -275,10 +279,10 @@ protected:
   virtual bool processBuildModel(TheoryModel* m);
   virtual void debugModel( TheoryModel* m ) {}
   /** normalize representative */
-  Node normalize(TheoryModel* m, TNode r, bool evalOnly);
+  Node normalize(TheoryModel* m, TNode r, bool evalOnly, std::vector< Node >& expl);
   bool isAssignable(TNode n);
   void checkTerms(TNode n, TheoryModel* tm, NodeSet& cache);
-  void assignConstantRep( TheoryModel* tm, Node eqc, Node const_rep );
+  void assignConstantRep( TheoryModel* tm, Node const_rep, Node term_rep );
   /** is v an excluded codatatype value */
   bool isExcludedCdtValue( Node v, std::set<Node>* repSet, std::map< Node, Node >& assertedReps, Node eqc );
   bool isCdtValueMatch( Node v, Node r, Node eqc, Node& eqc_m );

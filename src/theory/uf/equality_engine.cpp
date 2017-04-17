@@ -2168,7 +2168,7 @@ EqClassIterator::EqClassIterator()
 EqClassIterator::EqClassIterator(Node eqc, const eq::EqualityEngine* ee)
 : d_ee(ee)
 {
-  Assert(d_ee->consistent());
+  //Assert(d_ee->consistent());
   d_current = d_start = d_ee->getNodeId(eqc);
   Assert(d_start == d_ee->getEqualityNode(d_start).getFind());
   Assert (!d_ee->d_isInternal[d_start]);

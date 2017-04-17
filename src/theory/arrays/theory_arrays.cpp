@@ -1038,7 +1038,7 @@ void TheoryArrays::computeCareGraph()
 /////////////////////////////////////////////////////////////////////////////
 
 
-void TheoryArrays::collectModelInfo( TheoryModel* m )
+bool TheoryArrays::collectModelInfo( TheoryModel* m )
 {
   set<Node> termSet;
 
@@ -1139,7 +1139,9 @@ void TheoryArrays::collectModelInfo( TheoryModel* m )
   } while (changed);
 
   // Send the equality engine information to the model
-  m->assertEqualityEngine(&d_equalityEngine, &termSet);
+  if( !m->assertEqualityEngine(&d_equalityEngine, THEORY_ARRAY, &termSet) ){
+    return false;
+  }
 
   // Build a list of all the relevant reads, indexed by the store representative
   std::map<Node, std::vector<Node> > selects;
@@ -1169,6 +1171,7 @@ void TheoryArrays::collectModelInfo( TheoryModel* m )
     }
   //}
 
+  std::map< Node, Node > defValues_tmp;
   // Loop through all array equivalence classes that need a representative computed
   for (size_t i=0; i<arrays.size(); ++i) {
     TNode n = arrays[i];
@@ -1180,14 +1183,21 @@ void TheoryArrays::collectModelInfo( TheoryModel* m )
       it = d_defValues.find(mayRep);
       // If this mayEqual EC doesn't have a default value associated, get the next available default value for the associated array element type
       if (it == d_defValues.end()) {
-        TypeNode valueType = nrep.getType().getArrayConstituentType();
-        rep = defaultValuesSet.nextTypeEnum(valueType);
-        if (rep.isNull()) {
-          Assert(defaultValuesSet.getSet(valueType)->begin() != defaultValuesSet.getSet(valueType)->end());
-          rep = *(defaultValuesSet.getSet(valueType)->begin());
+        std::map< Node, Node >::iterator itd = defValues_tmp.find( mayRep );
+        if( itd==defValues_tmp.end() ){
+          TypeNode valueType = nrep.getType().getArrayConstituentType();
+          rep = defaultValuesSet.nextTypeEnum(valueType);
+          if (rep.isNull()) {
+            Assert(defaultValuesSet.getSet(valueType)->begin() != defaultValuesSet.getSet(valueType)->end());
+            rep = *(defaultValuesSet.getSet(valueType)->begin());
+          }
+          Trace("arrays-models") << "New default value = " << rep << endl;
+          //AJR : do not set default value permanently here
+          //d_defValues[mayRep] = rep;
+          defValues_tmp[mayRep] = rep;
+        }else{
+          rep = itd->second;
         }
-        Trace("arrays-models") << "New default value = " << rep << endl;
-        d_defValues[mayRep] = rep;
       }
       else {
         rep = (*it).second;
@@ -1214,11 +1224,14 @@ void TheoryArrays::collectModelInfo( TheoryModel* m )
     for (unsigned j = 0; j < reads.size(); ++j) {
       rep = nm->mkNode(kind::STORE, rep, reads[j][1], reads[j]);
     }
-    m->assertEquality(n, rep, true);
+    if( !m->assertEquality(n, rep, true) ){
+      return false;
+    }
     if (!n.isConst()) {
       m->assertRepresentative(rep);
     }
   }
+  return true;
 }
 
 /////////////////////////////////////////////////////////////////////////////

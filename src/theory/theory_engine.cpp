@@ -230,7 +230,7 @@ void TheoryEngine::finishInit() {
     d_curr_model_builder = d_quantEngine->getModelBuilder();
     d_curr_model = d_quantEngine->getModel();
   } else {
-    d_curr_model = new theory::TheoryModel(d_userContext, "DefaultModel", true);
+    d_curr_model = new theory::TheoryModel(d_modelNotify, d_userContext, "DefaultModel", true);
     d_aloc_curr_model = true;
   }
   //make the default builder, e.g. in the case that the quantifiers engine does not have a model builder
@@ -246,26 +246,279 @@ void TheoryEngine::finishInit() {
   }
 }
 
-void TheoryEngine::eqNotifyNewClass(TNode t){
-  if (d_logicInfo.isQuantified()) {
+TheoryId TheoryEngine::considerSharedTermSplit( TNode t1, TNode t2, std::map< TheoryId, std::map< TNode, TNode > >& sharedTermMap ) {
+  Trace("tc-model-debug") << "Possible split : " << t1 << " == " << t2 << std::endl;
+  if (d_sharedTerms.isShared(t1) && d_sharedTerms.isShared(t2)) {
+    if (d_sharedTerms.areEqual(t1,t2)) {
+      Trace("tc-model-debug") << "...propagated equal." << std::endl;
+      return theory::THEORY_LAST;
+    }
+    else if (d_sharedTerms.areDisequal(t1,t2)) {
+      Trace("tc-model-debug") << "...propagated disequal." << std::endl;
+      return theory::THEORY_LAST;
+    }
+  }
+  std::map< int, TheoryId > status;
+  for(TheoryId theoryId = theory::THEORY_FIRST; theoryId != theory::THEORY_LAST; ++ theoryId) {
+    if (d_theoryTable[theoryId]) {
+      std::map< TheoryId, std::map< TNode, TNode > >::iterator its = sharedTermMap.find( theoryId );
+      if( its!=sharedTermMap.end() ){
+        Trace("tc-model-debug") << "* Theory " << theoryId << " : shared rep :";
+        bool isShared = true;
+        TNode ts[2];
+        for( unsigned i=0; i<2; i++ ){
+          TNode t = i==0 ? t1 : t2;
+          std::map< TNode, TNode >::iterator itst = its->second.find( t );
+          if( itst!=its->second.end() ){
+            ts[i] = itst->second;
+          }else{
+            isShared = false;
+          }
+          Trace("tc-model-debug") << " " << ts[i];
+        }
+        Trace("tc-model-debug") << std::endl;
+        if( isShared ){
+          EqualityStatus es = d_theoryTable[theoryId]->getEqualityStatus( ts[0], ts[1] );
+          Assert( es!=EQUALITY_TRUE_AND_PROPAGATED && es!=EQUALITY_FALSE_AND_PROPAGATED );
+          Trace("tc-model-debug") << "...equality status : " << es << " ";
+          int curr_status;
+          if( es==EQUALITY_TRUE || es==EQUALITY_TRUE_IN_MODEL ){
+            Trace("tc-model-debug") << "(true)" << std::endl;
+            curr_status = 1;
+          }else if( es==EQUALITY_FALSE || es==EQUALITY_FALSE_IN_MODEL ){
+            Trace("tc-model-debug") << "(false)" << std::endl;
+            curr_status = -1;
+          }else{
+            Trace("tc-model-debug") << "(unknown)" << std::endl;
+            curr_status = 0; 
+          }
+          for( int s=-1; s<=1; s++ ){
+            std::map< int, TheoryId >::iterator its = status.find( s );
+            if( its!=status.end() ){
+              if( s==0 || s!=curr_status ){
+                //if( s==1 ){
+                //  //return this, if the other theory was equality status true
+                if( ( curr_status==0 && s!=0 ) || s==1 ){
+                  //return this, if this is unknown and other is not, or if other was true
+                  Trace("tc-model-debug") << "...return " << theoryId << std::endl;
+                  return theoryId;
+                }else{
+                  Trace("tc-model-debug") << "...return " << its->second << std::endl;
+                  return its->second;
+                }
+              }
+            }else{
+              if( s==curr_status ){
+                status[curr_status] = theoryId;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return theory::THEORY_LAST;
+}
+
+void TheoryEngine::collectSharedTerms( TNode t, std::map< TNode, bool >& visited, std::vector< TNode >& shared ) {
+  if( visited.find( t )==visited.end() ){
+    visited[t] = d_sharedTerms.isShared(t);
+    shared.push_back( t );
+    Trace("tc-model-debug") << "...term " << t << ", shared = " << visited[t] << std::endl;
+    for( unsigned i=0; i<t.getNumChildren(); i++ ){
+      collectSharedTerms( t[i], visited, shared );
+    }
+  }
+}
+
+void TheoryEngine::eqNotifyConstantTermMerge(TNode t1, TNode t2, NotifyClass* c) {  
+  if( c==&d_modelNotify ){
+    //TODO : make this its own function
+    //combining theories, conflict
+    Trace("tc-model") << "combineTheoriesModelBased : Notified of a conflict during model construction : " << t1 << " == " << t2 << std::endl;
+    /*
+    if( Trace.isOn("tc-model-eqc") ){
+      TNode r[2];
+      r[0] = d_curr_model->getRepresentative( t1 );
+      r[1] = d_curr_model->getRepresentative( t2 );
+      Trace("tc-model-eqc") << "...reps : " << r[0] << " " << r[1] << std::endl;
+      for( unsigned i=0; i<2; i++ ){
+        Trace("tc-model-eqc") << "eqc( " << r[i] << " ) = { ";
+        eq::EqClassIterator eqc_i = eq::EqClassIterator( r[i], d_curr_model->d_equalityEngine );
+        while( !eqc_i.isFinished() ){
+          TNode n = (*eqc_i);
+          Trace("tc-model") << n << " ";
+          ++eqc_i;
+        }
+        Trace("tc-model-eqc") << "}" << std::endl;
+      }
+    }
+    */
+    // get the explanation
+    std::vector<TNode> tassumptions;
+    d_curr_model->d_equalityEngine->explainEquality(t1, t2, true, tassumptions);
+    std::vector< TNode > terms;
+    std::map< TNode, bool > terms_shared;
+    for( unsigned i=0; i<tassumptions.size(); i++ ){
+      Trace("tc-model") << "Explanation #" << i << " : " << tassumptions[i] << std::endl;
+      std::vector< TNode > lits;
+      if( tassumptions[i].getKind()==kind::AND ){
+        for( unsigned j=0; j<tassumptions[i].getNumChildren(); j++ ){
+          lits.push_back( tassumptions[i][j] );
+        }
+      }else{
+        lits.push_back( tassumptions[i] );
+      }
+      std::vector< TNode > eterms;
+      for( unsigned j=0; j<lits.size(); j++ ){
+        TNode atom = lits[j].getKind()==kind::NOT ? lits[j][0] : lits[j];
+        if( atom.getKind()==kind::EQUAL ){
+          eterms.push_back( atom[0] );
+          eterms.push_back( atom[1] );
+        }else{
+          eterms.push_back( atom );
+        }
+      }
+      for( unsigned j=0; j<eterms.size(); j++ ){
+        TNode t = eterms[j];
+        collectSharedTerms( t, terms_shared, terms );
+      }
+    }
+    std::map< TNode, std::vector< TNode > > conflict_shared_terms;
+    for( unsigned i=0; i<terms.size(); i++ ){
+      TNode t = terms[i];
+      if( terms_shared[t] ){
+        TNode r = d_curr_model->getRepresentative( t );
+        conflict_shared_terms[r].push_back( t );
+      }
+    }
+    std::map< TheoryId, std::map< TNode, TNode > > sharedTermMap;
+    for(TheoryId theoryId = theory::THEORY_FIRST; theoryId != theory::THEORY_LAST; ++ theoryId) {
+      if (d_theoryTable[theoryId]) {
+        eq::EqualityEngine* ee = NULL;//d_theoryTable[theoryId]->getEqualityEngine();
+        Trace("tc-model-debug") << "Get shared terms " << theoryId << ", ee = " << ( ee!=NULL ) << std::endl;
+        if( ee!=NULL ){
+          //ask each term if it corresponds to a shared term
+          for( unsigned i=0; i<terms.size(); i++ ){
+            TNode t = terms[i];
+            if( ee->isTriggerTerm(t, theoryId) ){
+              TNode ttr = ee->getTriggerTermRepresentative(t, theoryId);
+              sharedTermMap[theoryId][t] = ttr;
+              Trace("tc-model-debug") << "......" << t << " is shared term of " << theoryId << " with trigger rep " << ttr << std::endl;
+            }
+          }
+        }else{
+          std::hash_set<TNode, TNodeHashFunction> tshared = d_theoryTable[theoryId]->currentlySharedTerms();
+          for( unsigned i=0; i<terms.size(); i++ ){
+            TNode t = terms[i];
+            if( terms_shared[t] ){
+              if( tshared.find( t )!=tshared.end() ){
+                Trace("tc-model-debug") << "......" << t << " is shared term of " << theoryId << std::endl;
+                sharedTermMap[theoryId][t] = t;
+              }
+            }
+          }
+        }
+      }
+    }
+    /*
+    for(TheoryId theoryId = theory::THEORY_FIRST; theoryId != theory::THEORY_LAST; ++ theoryId) {
+      if (d_theoryTable[theoryId]) {
+        std::hash_set<TNode, TNodeHashFunction> tshared = d_theoryTable[theoryId]->currentlySharedTerms();
+        for( unsigned i=0; i<sh_terms.size(); i++ ){
+          TNode t = sh_terms[i];
+          if( tshared.find( t )!=tshared.end() ){
+            sharedTermMap[theoryId][t] = t;
+          }
+        }
+      }
+    }
+    */
+      
+    // figure out the theory that disagrees on an equality/disequality between two shared terms in the explanation
+    TheoryId success = theory::THEORY_LAST;
+    TNode st[2];
+    std::map< TNode, std::vector< TNode > >::iterator it1 = conflict_shared_terms.begin();
+    // TODO: more efficient iteration here : sample 1 per eqc 
+    for( ; it1 != conflict_shared_terms.end(); ++it1 ){
+      for( unsigned i=0; i<it1->second.size(); i++ ){
+        st[0] = it1->second[i];
+        //split internal to equivalence class
+        for( unsigned j=(i+1); j<it1->second.size(); j++ ){
+          st[1] = it1->second[j];
+          success = considerSharedTermSplit( st[0], st[1], sharedTermMap );
+          if( success != theory::THEORY_LAST ){
+            break;
+          }
+        }
+        if( success == theory::THEORY_LAST ){
+          TypeNode tn = st[0].getType();
+          std::map< TNode, std::vector< TNode > >::iterator it2 = it1;
+          ++it2;
+          for( ; it2 != conflict_shared_terms.end(); ++it2 ){
+            if( it2->second[0].getType().isComparableTo( tn ) ){
+              for( unsigned j=0; j<it2->second.size(); j++ ){
+                st[1] = it2->second[j];
+                success = considerSharedTermSplit( st[0], st[1], sharedTermMap );
+                if( success != theory::THEORY_LAST ){
+                  break;
+                }
+              }
+              if( success != theory::THEORY_LAST ){
+                break;
+              }
+            }
+          }
+        }
+        if( success != theory::THEORY_LAST ){
+          break;
+        }
+      }
+      if( success != theory::THEORY_LAST ){
+        break;
+      }
+    }
+    
+    //split on the equality, should send atoms to the theory that thought the shared terms were disequal
+    Trace("tc-model") << "*** Consider shared term split : " << st[0] << " == " << st[1] << ", theory is " << success << std::endl;
+    AlwaysAssert( success != theory::THEORY_LAST );
+    Assert( !st[0].isNull() );
+    Assert( !st[1].isNull() );
+    //convert to shared term representatives
+    st[0] = sharedTermMap[success][st[0]];
+    st[1] = sharedTermMap[success][st[1]];
+    Trace("tc-model") << "    ...shared term reps are " << st[0] << " == " << st[1] << std::endl;
+    Assert( !st[0].isNull() );
+    Assert( !st[1].isNull() );
+    // add a split between st1 and st2
+    Node equality = st[0].eqNode(st[1]);
+    lemma(equality.orNode(equality.notNode()), RULE_INVALID, false, false, false, success);
+    //require phase
+    Node e = ensureLiteral(equality);
+    d_propEngine->requirePhase(e, true);
+  }
+}
+
+void TheoryEngine::eqNotifyNewClass(TNode t, NotifyClass* c){
+  if (d_logicInfo.isQuantified() && c==&d_masterEENotify) {
     d_quantEngine->eqNotifyNewClass( t );
   }
 }
 
-void TheoryEngine::eqNotifyPreMerge(TNode t1, TNode t2){
-  if (d_logicInfo.isQuantified()) {
+void TheoryEngine::eqNotifyPreMerge(TNode t1, TNode t2, NotifyClass* c){
+  if (d_logicInfo.isQuantified() && c==&d_masterEENotify) {
     d_quantEngine->eqNotifyPreMerge( t1, t2 );
   }
 }
 
-void TheoryEngine::eqNotifyPostMerge(TNode t1, TNode t2){
-  if (d_logicInfo.isQuantified()) {
+void TheoryEngine::eqNotifyPostMerge(TNode t1, TNode t2, NotifyClass* c){
+  if (d_logicInfo.isQuantified() && c==&d_masterEENotify) {
     d_quantEngine->eqNotifyPostMerge( t1, t2 );
   }
 }
 
-void TheoryEngine::eqNotifyDisequal(TNode t1, TNode t2, TNode reason){
-  if (d_logicInfo.isQuantified()) {
+void TheoryEngine::eqNotifyDisequal(TNode t1, TNode t2, TNode reason, NotifyClass* c){
+  if (d_logicInfo.isQuantified() && c==&d_masterEENotify) {
     d_quantEngine->eqNotifyDisequal( t1, t2, reason );
   }
 }
@@ -284,6 +537,7 @@ TheoryEngine::TheoryEngine(context::Context* context,
   d_sharedTerms(this, context),
   d_masterEqualityEngine(NULL),
   d_masterEENotify(*this),
+  d_modelNotify(*this),
   d_quantEngine(NULL),
   d_curr_model(NULL),
   d_aloc_curr_model(false),
@@ -577,12 +831,23 @@ void TheoryEngine::check(Theory::Effort effort) {
       propagate(effort);
 
       // We do combination if all has been processed and we are in fullcheck
-      if (Theory::fullEffort(effort) && d_logicInfo.isSharingEnabled() && !d_factsAsserted && !d_lemmasAdded && !d_inConflict) {
-        // Do the combination
-        Debug("theory") << "TheoryEngine::check(" << effort << "): running combination" << endl;
-        combineTheories();
-        if(d_logicInfo.isQuantified()){
-          d_quantEngine->notifyCombineTheories();
+      if (Theory::fullEffort(effort) && !d_factsAsserted && !d_inConflict && !needCheck()) {
+        d_curr_model->setNeedsBuild();
+        Trace("theory::assertions-model-pre") << endl;
+        if (Trace.isOn("theory::assertions-model-pre")) {
+          printAssertions("theory::assertions-model-pre");
+        }
+        if( d_logicInfo.isSharingEnabled() ){
+          // Do the combination
+          Debug("theory") << "TheoryEngine::check(" << effort << "): running combination" << endl;
+          if( options::modelBasedTc() ){
+            combineTheoriesModelBased();
+          }else{
+            combineTheories();
+          }
+          if(d_logicInfo.isQuantified()){
+            d_quantEngine->notifyCombineTheories();
+          }
         }
       }
     }
@@ -594,7 +859,6 @@ void TheoryEngine::check(Theory::Effort effort) {
         printAssertions("theory::assertions-model");
       }
       //checks for theories requiring the model go at last call
-      d_curr_model->setNeedsBuild();
       for (TheoryId theoryId = THEORY_FIRST; theoryId < THEORY_LAST; ++theoryId) {
         if( theoryId!=THEORY_QUANTIFIERS ){
           Theory* theory = d_theoryTable[theoryId];
@@ -647,6 +911,14 @@ void TheoryEngine::check(Theory::Effort effort) {
       dumpAssertions("theory::fullcheck");
     }
   }
+}
+
+void TheoryEngine::combineTheoriesModelBased() {
+  Trace("tc-model") << "Combining theories..." << std::endl;
+  if( !d_curr_model_builder->buildModel(d_curr_model) ){
+    //Assert( needCheck() );
+  }
+  Trace("tc-model") << "...finished combining theories." << std::endl;
 }
 
 void TheoryEngine::combineTheories() {
@@ -843,7 +1115,7 @@ bool TheoryEngine::properExplanation(TNode node, TNode expl) const {
   return true;
 }
 
-void TheoryEngine::collectModelInfo( theory::TheoryModel* m ){
+bool TheoryEngine::collectModelInfo( theory::TheoryModel* m ){
   //have shared term engine collectModelInfo
   //  d_sharedTerms.collectModelInfo( m );
   // Consult each active theory to get all relevant information
@@ -851,7 +1123,10 @@ void TheoryEngine::collectModelInfo( theory::TheoryModel* m ){
   for(TheoryId theoryId = theory::THEORY_FIRST; theoryId < theory::THEORY_LAST; ++theoryId) {
     if(d_logicInfo.isTheoryEnabled(theoryId)) {
       Trace("model-builder") << "  CollectModelInfo on theory: " << theoryId << endl;
-      d_theoryTable[theoryId]->collectModelInfo( m );
+      if( !d_theoryTable[theoryId]->collectModelInfo( m ) ){
+        Assert( needCheck() );
+        return false;
+      }
     }
   }
   // Get the Boolean variables
@@ -867,8 +1142,11 @@ void TheoryEngine::collectModelInfo( theory::TheoryModel* m ){
       value = false;
     }
     Trace("model-builder-assertions") << "(assert" << (value ? " " : " (not ") << var << (value ? ");" : "));") << endl;
-    m->assertPredicate(var, value);
+    if( !m->assertPredicate(var, value) ){
+      return false;
+    }
   }
+  return true;
 }
 
 void TheoryEngine::postProcessModel( theory::TheoryModel* m ){

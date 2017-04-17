@@ -245,13 +245,15 @@ Node TheoryUF::explain(TNode literal, eq::EqProof* pf) {
   return mkAnd(assumptions);
 }
 
-void TheoryUF::collectModelInfo( TheoryModel* m ){
+bool TheoryUF::collectModelInfo( TheoryModel* m ){
   set<Node> termSet;
 
   // Compute terms appearing in assertions and shared terms
   computeRelevantTerms(termSet);
 
-  m->assertEqualityEngine( &d_equalityEngine, &termSet );
+  if( !m->assertEqualityEngine( &d_equalityEngine, THEORY_UF, &termSet ) ){
+    return false;
+  }
   // if( fullModel ){
   //   std::map< TypeNode, TypeEnumerator* > type_enums;
   //   //must choose proper representatives
@@ -267,12 +269,15 @@ void TheoryUF::collectModelInfo( TheoryModel* m ){
   //       Node rep = *(*type_enums[tn]);
   //       ++(*type_enums[tn]);
   //       //specify the constant as the representative
-  //       m->assertEquality( eqc, rep, true );
+  //       if( !m->assertEquality( eqc, rep, true ) ){
+  //         return;
+  //       }
   //       m->assertRepresentative( rep );
   //     }
   //     ++eqcs_i;
   //   }
   // }
+  return true;
 }
 
 void TheoryUF::presolve() {

@@ -49,8 +49,10 @@ public:
   void addSharedTerm(TNode);
 
   void check(Effort);
-
-  void collectModelInfo(TheoryModel* m);
+  
+  bool needsCheckLastEffort();
+  
+  bool collectModelInfo(TheoryModel* m);
 
   void computeCareGraph();
 
@@ -71,7 +73,8 @@ public:
   void setMasterEqualityEngine(eq::EqualityEngine* eq);
   
   bool isEntailed( Node n, bool pol );
-
+  
+  eq::EqualityEngine* getEqualityEngine();
 };/* class TheorySets */
 
 }/* CVC4::theory::sets namespace */

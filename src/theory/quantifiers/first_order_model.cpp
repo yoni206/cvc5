@@ -43,8 +43,8 @@ struct sortQuantifierRelevance {
   }
 };
 
-FirstOrderModel::FirstOrderModel(QuantifiersEngine * qe, context::Context* c, std::string name ) :
-TheoryModel( c, name, true ),
+FirstOrderModel::FirstOrderModel(theory::eq::EqualityEngineNotify& notify, QuantifiersEngine * qe, context::Context* c, std::string name ) :
+TheoryModel( notify, c, name, true ),
 d_qe( qe ), d_forall_asserts( c ){
   d_rlv_count = 0;
 }
@@ -199,8 +199,8 @@ bool FirstOrderModel::isQuantifierAsserted( TNode q ) {
   return std::find( d_forall_rlv_assert.begin(), d_forall_rlv_assert.end(), q )!=d_forall_rlv_assert.end();
 }
 
-FirstOrderModelIG::FirstOrderModelIG(QuantifiersEngine * qe, context::Context* c, std::string name) :
-FirstOrderModel(qe, c,name) {
+FirstOrderModelIG::FirstOrderModelIG(theory::eq::EqualityEngineNotify& notify, QuantifiersEngine * qe, context::Context* c, std::string name) :
+FirstOrderModel(notify, qe, c,name) {
 
 }
 
@@ -604,8 +604,8 @@ Node FirstOrderModelIG::getCurrentUfModelValue( Node n, std::vector< Node > & ar
 
 
 
-FirstOrderModelFmc::FirstOrderModelFmc(QuantifiersEngine * qe, context::Context* c, std::string name) :
-FirstOrderModel(qe, c, name){
+FirstOrderModelFmc::FirstOrderModelFmc(theory::eq::EqualityEngineNotify& notify, QuantifiersEngine * qe, context::Context* c, std::string name) :
+FirstOrderModel(notify, qe, c, name){
 
 }
 
@@ -758,11 +758,16 @@ Node FirstOrderModelFmc::getFunctionValue(Node op, const char* argPrefix ) {
           children.push_back( NodeManager::currentNM()->mkNode( EQUAL, vars[j], c ) );
         }
       }
-      Assert( !children.empty() );
-      Node cc = children.size()==1 ? children[0] : NodeManager::currentNM()->mkNode( AND, children );
+      if( !children.empty() ){
+        Node cc = children.size()==1 ? children[0] : NodeManager::currentNM()->mkNode( AND, children );
 
-      Trace("fmc-model-func") << "condition : " << cc << ", value : " << v << std::endl;
-      curr = NodeManager::currentNM()->mkNode( ITE, cc, v, curr );
+        Trace("fmc-model-func") << "condition : " << cc << ", value : " << v << std::endl;
+        curr = NodeManager::currentNM()->mkNode( ITE, cc, v, curr );
+      }else{
+        //strange case (why would this happen?)
+        //Assert( false );
+        curr = v;
+      }
     }
   }
   Trace("fmc-model") << "Made " << curr << " for " << op << std::endl;
@@ -798,8 +803,8 @@ bool FirstOrderModelFmc::isInRange( Node v, Node i ) {
 
 
 
-FirstOrderModelAbs::FirstOrderModelAbs(QuantifiersEngine * qe, context::Context* c, std::string name) :
-FirstOrderModel(qe, c, name) {
+FirstOrderModelAbs::FirstOrderModelAbs(theory::eq::EqualityEngineNotify& notify, QuantifiersEngine * qe, context::Context* c, std::string name) :
+FirstOrderModel(notify, qe, c, name) {
 
 }
 

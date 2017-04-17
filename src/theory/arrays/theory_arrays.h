@@ -246,7 +246,7 @@ class TheoryArrays : public Theory {
 
   public:
 
-  void collectModelInfo(TheoryModel* m);
+  bool collectModelInfo(TheoryModel* m);
 
   /////////////////////////////////////////////////////////////////////////////
   // NOTIFICATIONS
@@ -334,7 +334,7 @@ class TheoryArrays : public Theory {
 
     void eqNotifyNewClass(TNode t) { }
     void eqNotifyPreMerge(TNode t1, TNode t2) { }
-    void eqNotifyPostMerge(TNode t1, TNode t2) { }
+    void eqNotifyPostMerge(TNode t1, TNode t2) {}
     void eqNotifyDisequal(TNode t1, TNode t2, TNode reason) { }
   };
 

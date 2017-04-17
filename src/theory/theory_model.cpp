@@ -15,6 +15,7 @@
 
 #include "options/smt_options.h"
 #include "options/uf_options.h"
+#include "options/theory_options.h"
 #include "options/quantifiers_options.h"
 #include "smt/smt_engine.h"
 #include "theory/quantifiers_engine.h"
@@ -29,22 +30,45 @@ using namespace CVC4::context;
 namespace CVC4 {
 namespace theory {
 
-TheoryModel::TheoryModel(context::Context* c, std::string name, bool enableFuncModels) :
-  d_substitutions(c, false), d_modelBuilt(false), d_enableFuncModels(enableFuncModels)
+context::Context* TheoryModel::getEeContext() {
+  if( d_eeContext==NULL ){
+    d_eeContext = new context::Context();
+  }
+  return d_eeContext;
+}
+
+TheoryModel::TheoryModel(theory::eq::EqualityEngineNotify& notify, context::Context* c, std::string name, bool enableFuncModels) :
+  d_substitutions(c, false), d_eeContext( NULL ), d_modelBuilt(false), d_keepAlive( getEeContext() ), d_enableFuncModels(enableFuncModels)
 {
   d_true = NodeManager::currentNM()->mkConst( true );
   d_false = NodeManager::currentNM()->mkConst( false );
 
-  d_eeContext = new context::Context();
-  d_equalityEngine = new eq::EqualityEngine(d_eeContext, name, false);
+  d_equalityEngine = new eq::EqualityEngine(notify, d_eeContext, name, true);
 
   // The kinds we are treating as function application in congruence
+  // all operator that have shared term children must go here
   d_equalityEngine->addFunctionKind(kind::APPLY_UF);
-  d_equalityEngine->addFunctionKind(kind::SELECT);
-  // d_equalityEngine->addFunctionKind(kind::STORE);
-  d_equalityEngine->addFunctionKind(kind::APPLY_CONSTRUCTOR);
-  d_equalityEngine->addFunctionKind(kind::APPLY_SELECTOR_TOTAL);
-  d_equalityEngine->addFunctionKind(kind::APPLY_TESTER);
+  //FIXME : Should these be included?  This is necessary for model-based theory combination since conflicts may be encountered via congruence.
+  //        Alternatively, could enforce T-consistency of model by evaluation (option repCheckModels)
+  if( options::modelBasedTc() ){
+    d_equalityEngine->addFunctionKind(kind::SELECT);
+    d_equalityEngine->addFunctionKind(kind::APPLY_CONSTRUCTOR);
+    d_equalityEngine->addFunctionKind(kind::APPLY_SELECTOR_TOTAL);
+    d_equalityEngine->addFunctionKind(kind::APPLY_TESTER);
+    d_equalityEngine->addFunctionKind(kind::STORE);
+    d_equalityEngine->addFunctionKind(kind::SINGLETON);
+    d_equalityEngine->addFunctionKind(kind::UNION);
+    d_equalityEngine->addFunctionKind(kind::INTERSECTION);
+    d_equalityEngine->addFunctionKind(kind::SEP_PTO);
+    d_equalityEngine->addFunctionKind(kind::MEMBER);
+    d_equalityEngine->addFunctionKind(kind::CARD);
+    d_equalityEngine->addFunctionKind(kind::STRING_LENGTH);
+    d_equalityEngine->addFunctionKind(kind::JOIN);
+    d_equalityEngine->addFunctionKind(kind::TCLOSURE);
+    d_equalityEngine->addFunctionKind(kind::PRODUCT);
+    d_equalityEngine->addFunctionKind(kind::TRANSPOSE);
+  }
+
   d_eeContext->push();
 }
 
@@ -251,13 +275,14 @@ Node TheoryModel::getModelValue(TNode n, bool hasBoundVars, bool useDontCares) c
     }
   }
   ret = d_equalityEngine->getRepresentative(ret);
+  Debug("model-getvalue-debug") << "Representative value is " << ret << std::endl;
   Assert(d_reps.find(ret) != d_reps.end());
   std::map< Node, Node >::const_iterator it2 = d_reps.find( ret );
   if (it2 != d_reps.end()) {
     ret = it2->second;
-  } else {
-    ret = Node::null();
+    Debug("model-getvalue-debug") << "Return value is " << ret << std::endl;
   }
+  Assert( ret.isConst() );
   d_modelCache[n] = ret;
   return ret;
 }
@@ -308,34 +333,59 @@ void TheoryModel::addTerm(TNode n ){
 }
 
 /** assert equality */
-void TheoryModel::assertEquality(TNode a, TNode b, bool polarity ){
-  if (a == b && polarity) {
-    return;
-  }
-  Trace("model-builder-assertions") << "(assert " << (polarity ? "(= " : "(not (= ") << a << " " << b << (polarity ? "));" : ")));") << endl;
-  d_equalityEngine->assertEquality( a.eqNode(b), polarity, Node::null() );
+bool TheoryModel::assertEquality(TNode a, TNode b, bool polarity ){
   Assert(d_equalityEngine->consistent());
+  if (a == b && polarity) {
+    return true;
+  }
+  Node reason;
+  if( polarity ){
+    reason = a.eqNode(b);
+  }else{
+    reason = a.eqNode(b).negate();
+  }
+  return assertEquality( a, b, polarity, reason );
+}
+
+bool TheoryModel::assertEquality(TNode a, TNode b, bool polarity, Node reason) {
+  Assert(d_equalityEngine->consistent());
+  if (a == b && polarity) {
+    return true;
+  }
+  Node eq = a.eqNode(b);
+  Trace("model-builder-assertions") << "(assert " << (polarity ? "(= " : "(not (= ") << a << " " << b << (polarity ? "));" : ")));") << endl;
+  d_keepAlive.push_back( reason );
+  d_equalityEngine->assertEquality( eq, polarity, reason );
+  return d_equalityEngine->consistent();
 }
 
 /** assert predicate */
-void TheoryModel::assertPredicate(TNode a, bool polarity ){
+bool TheoryModel::assertPredicate(TNode a, bool polarity ){
+  Assert(d_equalityEngine->consistent());
   if ((a == d_true && polarity) ||
       (a == d_false && (!polarity))) {
-    return;
+    return true;
   }
+  Node exp;
+  if( polarity ){
+    exp = a;
+  }else{
+    exp = a.negate();
+  }
+  d_keepAlive.push_back( exp );
   if (a.getKind() == EQUAL) {
     Trace("model-builder-assertions") << "(assert " << (polarity ? " " : "(not ") << a << (polarity ? ");" : "));") << endl;
-    d_equalityEngine->assertEquality( a, polarity, Node::null() );
+    d_equalityEngine->assertEquality( a, polarity, exp );
   } else {
     Trace("model-builder-assertions") << "(assert " << (polarity ? "" : "(not ") << a << (polarity ? ");" : "));") << endl;
-    d_equalityEngine->assertPredicate( a, polarity, Node::null() );
-    Assert(d_equalityEngine->consistent());
+    d_equalityEngine->assertPredicate( a, polarity, exp );
   }
+  return d_equalityEngine->consistent();
 }
 
 /** assert equality engine */
-void TheoryModel::assertEqualityEngine(const eq::EqualityEngine* ee, set<Node>* termSet)
-{
+bool TheoryModel::assertEqualityEngine(const eq::EqualityEngine* ee, theory::TheoryId tid, set<Node>* termSet){
+  Assert(d_equalityEngine->consistent());
   eq::EqClassesIterator eqcs_i = eq::EqClassesIterator( ee );
   for (; !eqcs_i.isFinished(); ++eqcs_i) {
     Node eqc = (*eqcs_i);
@@ -347,47 +397,60 @@ void TheoryModel::assertEqualityEngine(const eq::EqualityEngine* ee, set<Node>* 
       predTrue = ee->areEqual(eqc, d_true);
       predFalse = ee->areEqual(eqc, d_false);
     }
-    eq::EqClassIterator eqc_i = eq::EqClassIterator(eqc, ee);
-    bool first = true;
+    
+    //make the representative a shared term (for model-based theory combination)
     Node rep;
+    if( ee->isTriggerTerm( eqc, tid ) ){
+      rep = ee->getTriggerTermRepresentative(eqc, tid);
+    }
+    
+    eq::EqClassIterator eqc_i = eq::EqClassIterator(eqc, ee);
     for (; !eqc_i.isFinished(); ++eqc_i) {
       if (termSet != NULL && termSet->find(*eqc_i) == termSet->end()) {
+        Trace("model-builder-debug") << "...skip " << (*eqc_i) << std::endl;
         continue;
+      }
+      if( rep.isNull() ){
+        rep = (*eqc_i);
       }
       if (predicate) {
         if (predTrue) {
-          assertPredicate(*eqc_i, true);
+          if( !assertPredicate(*eqc_i, true) ){
+            return false;
+          }
         }
         else if (predFalse) {
-          assertPredicate(*eqc_i, false);
+          if( !assertPredicate(*eqc_i, false) ){
+            return false;
+          }
         }
         else {
-          if (first) {
-            rep = (*eqc_i);
-            first = false;
-          }
-          else {
+          if ((*eqc_i)!=rep) {
             Trace("model-builder-assertions") << "(assert (= " << *eqc_i << " " << rep << "));" << endl;
             d_equalityEngine->mergePredicates(*eqc_i, rep, Node::null());
-            Assert(d_equalityEngine->consistent());
+            if(!d_equalityEngine->consistent()){
+              return false;
+            }
           }
         }
       } else {
-        if (first) {
-          rep = (*eqc_i);
+        if ((*eqc_i)==rep) {
           //add the term (this is specifically for the case of singleton equivalence classes)
           if( !rep.getType().isRegExp() ){
             d_equalityEngine->addTerm( rep );
             Trace("model-builder-debug") << "Add term to ee within assertEqualityEngine: " << rep << std::endl;
           }
-          first = false;
         }
         else {
-          assertEquality(*eqc_i, rep, true);
+          if( !assertEquality(*eqc_i, rep, true) ){
+            return false;
+          }
         }
       }
     }
   }
+  Assert(d_equalityEngine->consistent());
+  return true;
 }
 
 void TheoryModel::assertRepresentative(TNode n )
@@ -406,6 +469,7 @@ Node TheoryModel::getRepresentative(TNode a)
 {
   if( d_equalityEngine->hasTerm( a ) ){
     Node r = d_equalityEngine->getRepresentative( a );
+    //TODO: remove this (representatives should be true in the ee with new implementation)
     if( d_reps.find( r )!=d_reps.end() ){
       return d_reps[ r ];
     }else{
@@ -495,10 +559,13 @@ void TheoryEngineModelBuilder::checkTerms(TNode n, TheoryModel* tm, NodeSet& cac
   cache.insert(n);
 }
 
-void TheoryEngineModelBuilder::assignConstantRep( TheoryModel* tm, Node eqc, Node const_rep ) {
-  d_constantReps[eqc] = const_rep;
-  Trace("model-builder") << "    Assign: Setting constant rep of " << eqc << " to " << const_rep << endl;
-  tm->d_rep_set.d_values_to_terms[const_rep] = eqc;
+void TheoryEngineModelBuilder::assignConstantRep( TheoryModel* tm, Node const_rep, Node term_rep ) {
+  Assert( tm->getRepresentative( const_rep )==const_rep );
+  //Assert( tm->getRepresentative( term_rep )==const_rep );
+  //FIXME : remove constantReps
+  d_constantReps[const_rep] = const_rep;
+  //Trace("model-builder-debug") << "......assign: Setting constant rep of " << eqc << " to " << const_rep << ", term rep is " << term_rep << endl;
+  tm->d_rep_set.d_values_to_terms[const_rep] = term_rep;
 }
 
 bool TheoryEngineModelBuilder::isExcludedCdtValue( Node val, std::set<Node>* repSet, std::map< Node, Node >& assertedReps, Node eqc ) {
@@ -595,7 +662,9 @@ bool TheoryEngineModelBuilder::buildModel(Model* m)
 
   // Collect model info from the theories
   Trace("model-builder") << "TheoryEngineModelBuilder: Collect model info..." << std::endl;
-  d_te->collectModelInfo(tm);
+  if( !d_te->collectModelInfo(tm) ){
+    return false;
+  }  
 
   // model-builder specific initialization
   if( !preProcessBuildModel(tm) ){
@@ -681,15 +750,14 @@ bool TheoryEngineModelBuilder::buildModel(Model* m)
       // Theories should not specify a rep if there is already a constant in the EC
       //AJR: I believe this assertion is too strict, eqc with asserted reps may merge with constant eqc
       //Assert(rep.isNull() || rep == const_rep);
-      assignConstantRep( tm, eqc, const_rep );
+      Assert( eqc==const_rep );
+      assignConstantRep( tm, const_rep, eqc );
       typeConstSet.add(eqct.getBaseType(), const_rep);
-    }
-    else if (!rep.isNull()) {
+    }else if (!rep.isNull()) {
       assertedReps[eqc] = rep;
       typeRepSet.add(eqct.getBaseType(), eqc);
       allTypes.insert(eqct.getBaseType());
-    }
-    else {
+    }else{
       typeNoRepSet.add(eqct, eqc);
       allTypes.insert(eqct);
     }
@@ -728,29 +796,55 @@ bool TheoryEngineModelBuilder::buildModel(Model* m)
           Trace("model-builder") << "  Eval phase, working on type: " << t << endl;
           bool assignable, evaluable, evaluated;
           d_normalizedCache.clear();
+          d_normalizedCacheExp.clear();
           for (i = noRepSet->begin(); i != noRepSet->end(); ) {
             i2 = i;
             ++i;
             assignable = false;
             evaluable = false;
             evaluated = false;
-            eq::EqClassIterator eqc_i = eq::EqClassIterator(*i2, tm->d_equalityEngine);
-            for ( ; !eqc_i.isFinished(); ++eqc_i) {
-              Node n = *eqc_i;
-              if (isAssignable(n)) {
-                assignable = true;
-              }
-              else {
-                evaluable = true;
-                Node normalized = normalize(tm, n, true);
-                if (normalized.isConst()) {
-                  typeConstSet.add(tb, normalized);
-                  assignConstantRep( tm, *i2, normalized);
-                  Trace("model-builder") << "    Eval: Setting constant rep of " << (*i2) << " to " << normalized << endl;
-                  changed = true;
-                  evaluated = true;
-                  noRepSet->erase(i2);
-                  break;
+            Node r = *i2;
+            if( tm->getRepresentative( r )!=r ){
+              // this representative was merge with something else
+              noRepSet->erase(i2);
+              Trace("model-builder-debug") << "....eqc " << r << " was merged." << std::endl; 
+            }else{            
+              Trace("model-builder-debug") << "....look at eqc " << r << std::endl; 
+              eq::EqClassIterator eqc_i = eq::EqClassIterator(r, tm->d_equalityEngine);
+              for ( ; !eqc_i.isFinished(); ++eqc_i) {
+                Node n = *eqc_i;
+                if (isAssignable(n)) {
+                  assignable = true;
+                }
+                else {
+                  evaluable = true;
+                  std::vector< Node > expl;
+                  Node normalized = normalize(tm, n, true, expl);
+                  if (normalized.isConst()) {
+                    Trace("model-builder-debug") << "....normalized " << n << " to " << normalized << ", with explanation size = " << expl.size() << std::endl;
+                    Node exp;
+                    if( expl.size()==1 ){
+                      Trace("model-builder-debug") << "......explanation is " << expl[0] << std::endl;
+                      exp = expl[0];
+                    }else{
+                      //Assert( false );
+                      exp = n.eqNode( normalized );
+                      // can occur for sets { 0, 1 } -> { 1, 0 } for some reason
+                    }
+                    Trace("model-builder") << "    *** Eval: Setting constant rep of " << n << " to " << normalized << std::endl;
+                    //must assert the equality
+                    if( !tm->assertEquality( n, normalized, true, exp ) ){
+                      return false;
+                    }
+                    //get the representative again (may have updated)
+                    typeConstSet.add(tb, normalized);
+                    Assert( tm->getRepresentative( n )==normalized );
+                    assignConstantRep( tm, normalized, r);
+                    changed = true;
+                    evaluated = true;
+                    noRepSet->erase(i2);
+                    break;
+                  }
                 }
               }
             }
@@ -770,25 +864,47 @@ bool TheoryEngineModelBuilder::buildModel(Model* m)
         if (repSet != NULL && !repSet->empty()) {
           Trace("model-builder") << "  Normalization phase, working on type: " << t << endl;
           d_normalizedCache.clear();
+          d_normalizedCacheExp.clear();
           for (i = repSet->begin(); i != repSet->end(); ) {
             Assert(assertedReps.find(*i) != assertedReps.end());
-            Node rep = assertedReps[*i];
-            Node normalized = normalize(tm, rep, false);
-            Trace("model-builder") << "    Normalizing rep (" << rep << "), normalized to (" << normalized << ")" << endl;
+            Node r = *i;
+            // notice that r may no longer be its own representative.
+            // However, we need to evaluate its asserted representative to satisfy contract with theory.
+            Node rep = assertedReps[r];
+            std::vector< Node > expl;
+            Trace("model-builder-debug") << "....normalizing rep of " << r << ", which has asserted rep " << rep << std::endl;
+            Node normalized = normalize(tm, rep, false, expl);
             if (normalized.isConst()) {
+              Trace("model-builder-debug") << "....normalized " << rep << " to " << normalized << ", with explanation size = " << expl.size() << std::endl;
+              Node exp;
+              if( expl.size()==1 ){
+                Trace("model-builder-debug") << "......explanation is " << expl[0] << std::endl;
+                exp = expl[0];
+              }else{
+                //Assert( false );
+                exp = r.eqNode( normalized );
+              }
+              Trace("model-builder") << "    *** Eval non-constant rep: Setting constant rep of " << r << " to " << normalized << endl;
+              //must assert the equality
+              //if( !tm->assertEquality( r, normalized, true, expl[0] ) ){
+              if( !tm->assertEquality( r, normalized, true, exp ) ){
+                return false;
+              }
               changed = true;
               typeConstSet.add(tb, normalized);
-              assignConstantRep( tm, *i, normalized);
+              Assert( tm->getRepresentative( r )==normalized );
+              assignConstantRep( tm, normalized, rep);
               assertedReps.erase(*i);
               i2 = i;
               ++i;
               repSet->erase(i2);
-            }
-            else {
-              if (normalized != rep) {
-                assertedReps[*i] = normalized;
-                changed = true;
-              }
+            }else{
+              //FIXME : this seems to just be an optimization
+              //        may break invariant that model conflicts are explainable by shared term equalities
+              //if (normalized != rep) {
+              //  assertedReps[*i] = normalized;
+              //  changed = true;
+              //}
               ++i;
             }
           }
@@ -845,69 +961,86 @@ bool TheoryEngineModelBuilder::buildModel(Model* m)
       for (i = noRepSet.begin(); i != noRepSet.end(); ) {
         i2 = i;
         ++i;
-        eq::EqClassIterator eqc_i = eq::EqClassIterator(*i2, tm->d_equalityEngine);
-        assignable = false;
-        evaluable = false;
-        for ( ; !eqc_i.isFinished(); ++eqc_i) {
-          Node n = *eqc_i;
-          if (isAssignable(n)) {
-            assignable = true;
+        Node r = *i2;
+        if( tm->getRepresentative( r )!=r ){
+          // this representative was merge with something else
+          noRepSet.erase(i2);
+          Trace("model-builder-debug") << "....eqc " << r << " was merged." << std::endl;
+        }else{
+          eq::EqClassIterator eqc_i = eq::EqClassIterator(*i2, tm->d_equalityEngine);
+          assignable = false;
+          evaluable = false;
+          for ( ; !eqc_i.isFinished(); ++eqc_i) {
+            Node n = *eqc_i;
+            if (isAssignable(n)) {
+              assignable = true;
+            }
+            else {
+              evaluable = true;
+            }
           }
-          else {
-            evaluable = true;
-          }
-        }
-        Trace("model-builder-debug") << "    eqc " << *i2 << " is assignable=" << assignable << ", evaluable=" << evaluable << std::endl;
-        if (assignable) {
-          Assert(!evaluable || assignOne);
-          Assert(!t.isBoolean() || (*i2).getKind() == kind::APPLY_UF);
-          Node n;
-          if (t.getCardinality().isInfinite()) {
-          // if (!t.isInterpretedFinite()) {
-            bool success;
-            do{
-              Trace("model-builder-debug") << "Enumerate term of type " << t << std::endl;
-              n = typeConstSet.nextTypeEnum(t, true);
-              //--- AJR: this code checks whether n is a legal value
-              Assert( !n.isNull() );
-              success = true;
-              Trace("model-builder-debug") << "Check if excluded : " << n << std::endl;
-#ifdef CVC4_ASSERTIONS
-              if( isUSortFiniteRestricted ){
-                //must not involve uninterpreted constants beyond cardinality bound (which assumed to coincide with #eqc)
-                //this is just an assertion now, since TypeEnumeratorProperties should ensure that only legal values are enumerated wrt this constraint.
-                std::map< Node, bool > visited;
-                success = !isExcludedUSortValue( eqc_usort_count, n, visited );
-                if( !success ){
-                  Trace("model-builder") << "Excluded value for " << t << " : " << n << " due to out of range uninterpreted constant." << std::endl;
-                }
-                Assert( success );
-              }
-#endif
-              if( success && isCorecursive ){
-                if (repSet != NULL && !repSet->empty()) {
-                  // in the case of codatatypes, check if it is in the set of values that we cannot assign
-                  // this will check whether n \not\in V^x_I from page 9 of Reynolds/Blanchette CADE 2015
-                  success = !isExcludedCdtValue( n, repSet, assertedReps, *i2 );
+          Trace("model-builder-debug") << "....try eqc " << r << " is assignable=" << assignable << ", evaluable=" << evaluable << std::endl;
+          if (assignable) {
+            Assert(!evaluable || assignOne);
+            Assert(!t.isBoolean() || (*i2).getKind() == kind::APPLY_UF);
+            Node n;
+            if (t.getCardinality().isInfinite()) {
+            // if (!t.isInterpretedFinite()) {
+              bool success;
+              do{
+                Trace("model-builder-debug") << "    enumerate term of type " << t << std::endl;
+                n = typeConstSet.nextTypeEnum(t, true);
+                //--- AJR: this code checks whether n is a legal value
+                Assert( !n.isNull() );
+                success = true;
+                Trace("model-builder-debug") << "    check if excluded : " << n << std::endl;
+  #ifdef CVC4_ASSERTIONS
+                if( isUSortFiniteRestricted ){
+                  //must not involve uninterpreted constants beyond cardinality bound (which assumed to coincide with #eqc)
+                  //this is just an assertion now, since TypeEnumeratorProperties should ensure that only legal values are enumerated wrt this constraint.
+                  std::map< Node, bool > visited;
+                  success = !isExcludedUSortValue( eqc_usort_count, n, visited );
                   if( !success ){
-                    Trace("model-builder") << "Excluded value : " << n << " due to alpha-equivalent codatatype expression." << std::endl;
+                    Trace("model-builder-debug") << "    excluded value for " << t << " : " << n << " due to out of range uninterpreted constant." << std::endl;
+                  }
+                  Assert( success );
+                }
+  #endif
+                if( success && isCorecursive ){
+                  if (repSet != NULL && !repSet->empty()) {
+                    // in the case of codatatypes, check if it is in the set of values that we cannot assign
+                    // this will check whether n \not\in V^x_I from page 9 of Reynolds/Blanchette CADE 2015
+                    success = !isExcludedCdtValue( n, repSet, assertedReps, *i2 );
+                    if( !success ){
+                      Trace("model-builder-debug") << "    excluded value : " << n << " due to alpha-equivalent codatatype expression." << std::endl;
+                    }
                   }
                 }
-              }
-              //---
-            }while( !success );
-          }
-          else {
-            TypeEnumerator te(t);
-            n = *te;
-          }
-          Assert(!n.isNull());
-          assignConstantRep( tm, *i2, n);
-          changed = true;
-          noRepSet.erase(i2);
-          if (assignOne) {
-            assignOne = false;
-            break;
+                //---
+              }while( !success );
+            }
+            else {
+              TypeEnumerator te(t);
+              n = *te;
+            }
+            Assert(!n.isNull());
+            Trace("model-builder-debug") << "    assign : " << n << std::endl;
+            
+            //must assert the equality
+            if( !tm->assertEquality( r, n, true ) ){
+              //it is strange that we would fail here  TODO : revisit if this should be possible
+              //Assert( false );
+              return false;
+            }
+            //get the representative again (may have updated)
+            Assert( tm->getRepresentative( *i2 )==n );
+            assignConstantRep( tm, n, *i2 );
+            changed = true;
+            noRepSet.erase(i2);
+            if (assignOne) {
+              assignOne = false;
+              break;
+            }
           }
         }
       }
@@ -923,13 +1056,15 @@ bool TheoryEngineModelBuilder::buildModel(Model* m)
       assignOne = true;
     }
   }
-
+  
 #ifdef CVC4_ASSERTIONS
   // Assert that all representatives have been converted to constants
   for (it = typeRepSet.begin(); it != typeRepSet.end(); ++it) {
     set<Node>& repSet = TypeSet::getSet(it);
     if (!repSet.empty()) {
-      Trace("model-builder") << "***Non-empty repSet, size = " << repSet.size() << ", first = " << *(repSet.begin()) << endl;
+      Node r = *(repSet.begin());
+      Node rr = tm->getRepresentative( r );
+      Trace("model-builder") << "***Non-empty repSet, size = " << repSet.size() << ", first = " << r << ", rep = " << rr << ", hasTerm = " << tm->hasTerm( r ) << endl;
       Assert(false);
     }
   }
@@ -939,6 +1074,7 @@ bool TheoryEngineModelBuilder::buildModel(Model* m)
   tm->d_reps.clear();
   std::map< Node, Node >::iterator itMap;
   for (itMap = d_constantReps.begin(); itMap != d_constantReps.end(); ++itMap) {
+    Trace("model-builder")  << "...constant rep : " << itMap->first << " -> " << itMap->second << std::endl;
     tm->d_reps[itMap->first] = itMap->second;
     tm->d_rep_set.add(itMap->second.getType(), itMap->second);
   }
@@ -946,6 +1082,7 @@ bool TheoryEngineModelBuilder::buildModel(Model* m)
   Trace("model-builder") << "Make sure ECs have reps..." << std::endl;
   // Make sure every EC has a rep
   for (itMap = assertedReps.begin(); itMap != assertedReps.end(); ++itMap ) {
+    Trace("model-builder")  << "...asserted rep : " << itMap->first << " -> " << itMap->second << std::endl;
     tm->d_reps[itMap->first] = itMap->second;
     tm->d_rep_set.add(itMap->second.getType(), itMap->second);
   }
@@ -955,6 +1092,56 @@ bool TheoryEngineModelBuilder::buildModel(Model* m)
     for (i = noRepSet.begin(); i != noRepSet.end(); ++i) {
       tm->d_reps[*i] = *i;
       tm->d_rep_set.add((*i).getType(), *i);
+    }
+  }
+  
+  // now, do rep checking
+  if( options::repCheckModels() ){
+    d_normalizedCache.clear();
+    d_normalizedCacheExp.clear();
+    eqcs_i = eq::EqClassesIterator( tm->d_equalityEngine );
+    // Check that every term evaluates to its representative in the model
+    for (eqcs_i = eq::EqClassesIterator(tm->d_equalityEngine); !eqcs_i.isFinished(); ++eqcs_i) {
+      // eqc is the equivalence class representative
+      Node eqc = (*eqcs_i);
+      Trace("rep-checking-debug") << "Rep checking for equivalence class " << eqc << "..." << std::endl;
+      Node rep;
+      if( eqc.isConst() ){
+        rep = eqc;
+      }else{
+        Assert( false );
+      }
+      eq::EqClassIterator eqc_i = eq::EqClassIterator(eqc, tm->d_equalityEngine);
+      for ( ; !eqc_i.isFinished(); ++eqc_i) {
+        Node n = *eqc_i;
+        // non-linear mult is not necessarily accurate wrt getValue
+        if( n!=rep && n.getKind()!=kind::APPLY_UF && n.getKind()!=kind::NONLINEAR_MULT && n.getKind()!=kind::FORALL ){
+          if( n.getNumChildren()>0 ){
+            std::vector< Node > expl;
+            Node normalized = normalize(tm, n, true, expl);
+            Trace("rep-checking-debug") << "...check : " << n << " normalized to " << normalized << ", with explanation size = " << expl.size() << std::endl;
+            Assert( normalized.isConst() );
+            if( normalized!=rep ){
+              Trace("rep-checking") << "Rep check fail : " << n << " normalized to " << normalized << std::endl;
+              Trace("rep-checking") << "...but rep is  : " << rep << std::endl;
+              Node exp;
+              if( expl.size()==1 ){
+                Trace("rep-checking") << "......explanation is " << expl[0] << std::endl;
+                exp = expl[0];
+              }else{
+                //Assert( false );
+                exp = n.eqNode( normalized );
+              }
+              if( !tm->assertEquality( n, normalized, true, exp ) ){
+                return false;
+              }else{
+                // normalizing to a different constant should definitely lead to a conflict
+                Assert( false );
+              }
+            }
+          }
+        }
+      }
     }
   }
 
@@ -976,15 +1163,21 @@ void TheoryEngineModelBuilder::debugCheckModel(Model* m){
   for (eqcs_i = eq::EqClassesIterator(tm->d_equalityEngine); !eqcs_i.isFinished(); ++eqcs_i) {
     // eqc is the equivalence class representative
     Node eqc = (*eqcs_i);
+    Debug("check-model::rep-checking") << "Rep checking for equivalence class " << eqc << "..." << std::endl;
     Node rep;
-    itMap = d_constantReps.find(eqc);
-    if (itMap == d_constantReps.end() && eqc.getType().isBoolean()) {
-      rep = tm->getValue(eqc);
-      Assert(rep.isConst());
-    }
-    else {
-      Assert(itMap != d_constantReps.end());
-      rep = itMap->second;
+    if( eqc.isConst() ){
+      rep = eqc;
+    }else{
+      Assert( false );
+      itMap = d_constantReps.find(eqc);
+      if (itMap == d_constantReps.end() && eqc.getType().isBoolean()) {
+        rep = tm->getValue(eqc);
+        Assert(rep.isConst());
+      }
+      else {
+        Assert(itMap != d_constantReps.end());
+        rep = itMap->second;
+      }
     }
     eq::EqClassIterator eqc_i = eq::EqClassIterator(eqc, tm->d_equalityEngine);
     for ( ; !eqc_i.isFinished(); ++eqc_i) {
@@ -1007,14 +1200,19 @@ void TheoryEngineModelBuilder::debugCheckModel(Model* m){
   debugModel( tm );
 }
 
-Node TheoryEngineModelBuilder::normalize(TheoryModel* m, TNode r, bool evalOnly)
+Node TheoryEngineModelBuilder::normalize(TheoryModel* m, TNode r, bool evalOnly, std::vector< Node >& expl)
 {
   std::map<Node, Node>::iterator itMap = d_constantReps.find(r);
   if (itMap != d_constantReps.end()) {
+    Assert( r==(*itMap).second );
     return (*itMap).second;
   }
   NodeMap::iterator it = d_normalizedCache.find(r);
   if (it != d_normalizedCache.end()) {
+    NodeMap::iterator itex = d_normalizedCacheExp.find(r);
+    if( itex!=d_normalizedCacheExp.end() ){
+      expl.push_back( (*itex).second );
+    }
     return (*it).second;
   }
   Node retNode = r;
@@ -1029,8 +1227,14 @@ Node TheoryEngineModelBuilder::normalize(TheoryModel* m, TNode r, bool evalOnly)
       bool recurse = true;
       if (!ri.isConst()) {
         if (m->d_equalityEngine->hasTerm(ri)) {
-          itMap = d_constantReps.find(m->d_equalityEngine->getRepresentative(ri));
+          TNode rir = m->d_equalityEngine->getRepresentative(ri);
+          itMap = d_constantReps.find(rir);
           if (itMap != d_constantReps.end()) {
+            if( (*itMap).second!=rir ){
+              Trace("model-builder-debug") << "Bad constant rep : " << rir << " " << (*itMap).second << std::endl;
+              Assert( false );
+            }
+            expl.push_back( ri.eqNode( (*itMap).second ) );
             ri = (*itMap).second;
             recurse = false;
           }
@@ -1039,7 +1243,7 @@ Node TheoryEngineModelBuilder::normalize(TheoryModel* m, TNode r, bool evalOnly)
           }
         }
         if (recurse) {
-          ri = normalize(m, ri, evalOnly);
+          ri = normalize(m, ri, evalOnly, expl);
         }
         if (!ri.isConst()) {
           childrenConst = false;
@@ -1054,6 +1258,18 @@ Node TheoryEngineModelBuilder::normalize(TheoryModel* m, TNode r, bool evalOnly)
     }
   }
   d_normalizedCache[r] = retNode;
+  //cache the explanation
+  if( !expl.empty() ){
+    Node exp;
+    if( expl.size()>1 ){
+      exp = NodeManager::currentNM()->mkNode( kind::AND, expl );
+      expl.clear();
+      expl.push_back( exp );
+    }else{
+      exp = expl[0];
+    }
+    d_normalizedCacheExp[r] = exp;
+  }
   return retNode;
 }
 
@@ -1080,7 +1296,7 @@ bool TheoryEngineModelBuilder::processBuildModel(TheoryModel* m){
         }
         simp = NodeManager::currentNM()->mkNode(un.getKind(), children);
         v = m->getRepresentative(un);
-        Trace("model-builder") << "  Setting (" << simp << ") to (" << v << ")" << endl;
+        Trace("model-builder") << "  Setting (" << simp << ") to (" << v << "), from " << un << endl;
         ufmt.setValue(m, simp, v);
         default_v = v;
       }

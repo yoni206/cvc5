@@ -46,8 +46,12 @@ void TheorySets::check(Effort e) {
   d_internal->check(e);
 }
 
-void TheorySets::collectModelInfo(TheoryModel* m) {
-  d_internal->collectModelInfo(m);
+bool TheorySets::needsCheckLastEffort() {
+  return d_internal->needsCheckLastEffort();
+}
+
+bool TheorySets::collectModelInfo(TheoryModel* m) {
+  return d_internal->collectModelInfo(m);
 }
 
 void TheorySets::computeCareGraph() {
@@ -84,6 +88,10 @@ void TheorySets::setMasterEqualityEngine(eq::EqualityEngine* eq) {
 
 bool TheorySets::isEntailed( Node n, bool pol ) {
   return d_internal->isEntailed( n, pol );
+}
+
+eq::EqualityEngine* TheorySets::getEqualityEngine() {
+  return d_internal->getEqualityEngine();
 }
 
 }/* CVC4::theory::sets namespace */

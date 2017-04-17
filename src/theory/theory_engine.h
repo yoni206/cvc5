@@ -157,21 +157,23 @@ class TheoryEngine {
     bool eqNotifyTriggerEquality(TNode equality, bool value) { return true; }
     bool eqNotifyTriggerPredicate(TNode predicate, bool value) { return true; }
     bool eqNotifyTriggerTermEquality(theory::TheoryId tag, TNode t1, TNode t2, bool value) { return true; }
-    void eqNotifyConstantTermMerge(TNode t1, TNode t2) {}
-    void eqNotifyNewClass(TNode t) { d_te.eqNotifyNewClass(t); }
-    void eqNotifyPreMerge(TNode t1, TNode t2) { d_te.eqNotifyPreMerge(t1, t2); }
-    void eqNotifyPostMerge(TNode t1, TNode t2) { d_te.eqNotifyPostMerge(t1, t2); }
-    void eqNotifyDisequal(TNode t1, TNode t2, TNode reason) { d_te.eqNotifyDisequal(t1, t2, reason); }
+    void eqNotifyConstantTermMerge(TNode t1, TNode t2) { d_te.eqNotifyConstantTermMerge(t1, t2, this); }
+    void eqNotifyNewClass(TNode t) { d_te.eqNotifyNewClass(t, this); }
+    void eqNotifyPreMerge(TNode t1, TNode t2) { d_te.eqNotifyPreMerge(t1, t2, this); }
+    void eqNotifyPostMerge(TNode t1, TNode t2)  { d_te.eqNotifyPostMerge(t1, t2, this); }
+    void eqNotifyDisequal(TNode t1, TNode t2, TNode reason) { d_te.eqNotifyDisequal(t1, t2, reason, this); }
   };/* class TheoryEngine::NotifyClass */
   NotifyClass d_masterEENotify;
+  NotifyClass d_modelNotify;
 
   /**
    * notification methods
    */
-  void eqNotifyNewClass(TNode t);
-  void eqNotifyPreMerge(TNode t1, TNode t2);
-  void eqNotifyPostMerge(TNode t1, TNode t2);
-  void eqNotifyDisequal(TNode t1, TNode t2, TNode reason);
+  void eqNotifyConstantTermMerge(TNode t1, TNode t2, NotifyClass* c);
+  void eqNotifyNewClass(TNode t, NotifyClass* c);
+  void eqNotifyPreMerge(TNode t1, TNode t2, NotifyClass* c);
+  void eqNotifyPostMerge(TNode t1, TNode t2, NotifyClass* c);
+  void eqNotifyDisequal(TNode t1, TNode t2, TNode reason, NotifyClass* c);
 
   /**
    * The quantifiers engine
@@ -664,6 +666,7 @@ public:
    * Run the combination framework.
    */
   void combineTheories();
+  void combineTheoriesModelBased();
 
   /**
    * Calls ppStaticLearn() on all theories, accumulating their
@@ -714,7 +717,7 @@ public:
   /**
    * collect model info
    */
-  void collectModelInfo( theory::TheoryModel* m );
+  bool collectModelInfo( theory::TheoryModel* m );
   /** post process model */
   void postProcessModel( theory::TheoryModel* m );
 
@@ -722,6 +725,8 @@ public:
    * Get the current model
    */
   theory::TheoryModel* getModel();
+
+  theory::eq::EqualityEngineNotify * getModelNotify() { return &d_modelNotify; }
 
   /**
    * Get the model builder
@@ -828,6 +833,9 @@ private:
 
   /** For preprocessing pass lifting bit-vectors of size 1 to booleans */
   theory::bv::BvToBoolPreprocessor d_bvToBoolPreprocessor;
+  
+  theory::TheoryId considerSharedTermSplit( TNode t1, TNode t2, std::map< theory::TheoryId, std::map< TNode, TNode > >& sharedTermMap );
+  void collectSharedTerms( TNode t, std::map< TNode, bool >& visited, std::vector< TNode >& shared );
 public:
   void staticInitializeBVOptions(const std::vector<Node>& assertions);
   void ppBvToBool(const std::vector<Node>& assertions, std::vector<Node>& new_assertions);

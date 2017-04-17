@@ -452,9 +452,10 @@ void TheoryStrings::presolve() {
 /////////////////////////////////////////////////////////////////////////////
 
 
-void TheoryStrings::collectModelInfo( TheoryModel* m ) {
+bool TheoryStrings::collectModelInfo( TheoryModel* m ) {
+  Assert( !d_conflict );
   Trace("strings-model") << "TheoryStrings : Collect model info" << std::endl;
-  Trace("strings-model") << "TheoryStrings : assertEqualityEngine." << std::endl;
+  Trace("strings-model") << "TheoryStrings : assert equality engine." << std::endl;
   
   //AJR : no use doing this since we cannot preregister terms with finite types that don't belong to strings.
   //      change this if we generalize to sequences.
@@ -463,7 +464,9 @@ void TheoryStrings::collectModelInfo( TheoryModel* m ) {
   //computeRelevantTerms(termSet);
   //m->assertEqualityEngine( &d_equalityEngine, &termSet );
   
-  m->assertEqualityEngine( &d_equalityEngine );
+  if( !m->assertEqualityEngine( &d_equalityEngine, THEORY_STRINGS ) ){
+    return false;
+  }
   
   // Generate model
   std::vector< Node > nodes;
@@ -558,7 +561,9 @@ void TheoryStrings::collectModelInfo( TheoryModel* m ) {
         ++sel;
         Trace("strings-model") << "*** Assigned constant " << c << " for " << pure_eq[j] << std::endl;
         processed[pure_eq[j]] = c;
-        m->assertEquality( pure_eq[j], c, true );
+        if( !m->assertEquality( pure_eq[j], c, true ) ){
+          return false;
+        }
       }
     }
   }
@@ -587,11 +592,14 @@ void TheoryStrings::collectModelInfo( TheoryModel* m ) {
       Assert( cc.getKind()==kind::CONST_STRING );
       Trace("strings-model") << "*** Determined constant " << cc << " for " << nodes[i] << std::endl;
       processed[nodes[i]] = cc;
-      m->assertEquality( nodes[i], cc, true );
+      if( !m->assertEquality( nodes[i], cc, true ) ){
+        return false;
+      }
     }
   }
   //Trace("strings-model") << "String Model : Assigned." << std::endl;
   Trace("strings-model") << "String Model : Finished." << std::endl;
+  return true;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -691,6 +699,7 @@ void TheoryStrings::check(Effort e) {
   }
   doPendingFacts();
 
+  Trace("strings-check") << "  conflict = " << d_conflict << ", needCheck = " << d_valuation.needCheck() << std::endl;
   if( !d_conflict && ( ( e == EFFORT_FULL && !d_valuation.needCheck() ) || ( e==EFFORT_STANDARD && options::stringEager() ) ) ) {
     Trace("strings-check") << "Theory of strings full effort check " << std::endl;
 

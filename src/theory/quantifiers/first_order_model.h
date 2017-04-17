@@ -71,7 +71,7 @@ public: //for Theory Quantifiers:
   virtual void processInitializeModelForTerm( Node n ) = 0;
   virtual void processInitializeQuantifier( Node q ) {}
 public:
-  FirstOrderModel(QuantifiersEngine * qe, context::Context* c, std::string name );
+  FirstOrderModel(theory::eq::EqualityEngineNotify& notify, QuantifiersEngine * qe, context::Context* c, std::string name );
   virtual ~FirstOrderModel() throw() {}
   virtual FirstOrderModelIG * asFirstOrderModelIG() { return NULL; }
   virtual fmcheck::FirstOrderModelFmc * asFirstOrderModelFmc() { return NULL; }
@@ -127,7 +127,7 @@ private:
   void makeEvalUfIndexOrder( Node n );
 //the following functions are for evaluating quantifier bodies
 public:
-  FirstOrderModelIG(QuantifiersEngine * qe, context::Context* c, std::string name);
+  FirstOrderModelIG(theory::eq::EqualityEngineNotify& notify, QuantifiersEngine * qe, context::Context* c, std::string name);
   ~FirstOrderModelIG() throw() {}
   FirstOrderModelIG * asFirstOrderModelIG() { return this; }
   // initialize the model
@@ -171,7 +171,7 @@ private:
   /** get current model value */
   void processInitializeModelForTerm(Node n);
 public:
-  FirstOrderModelFmc(QuantifiersEngine * qe, context::Context* c, std::string name);
+  FirstOrderModelFmc(theory::eq::EqualityEngineNotify& notify, QuantifiersEngine * qe, context::Context* c, std::string name);
   virtual ~FirstOrderModelFmc() throw();
   FirstOrderModelFmc * asFirstOrderModelFmc() { return this; }
   // initialize the model
@@ -207,7 +207,7 @@ private:
   void processInitializeQuantifier( Node q );
   void collectEqVars( TNode q, TNode n, std::map< int, bool >& eq_vars );
 public:
-  FirstOrderModelAbs(QuantifiersEngine * qe, context::Context* c, std::string name);
+  FirstOrderModelAbs(theory::eq::EqualityEngineNotify& notify, QuantifiersEngine * qe, context::Context* c, std::string name);
   ~FirstOrderModelAbs() throw();
   FirstOrderModelAbs * asFirstOrderModelAbs() { return this; }
   void processInitialize( bool ispre );
