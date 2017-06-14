@@ -50,6 +50,9 @@ void Expr::destroy(Expr *_e, bool dec_kids) {
   case INT_EXPR:
     delete (IntExpr *)_e;
     break;
+  case RAT_EXPR:
+    delete (RatExpr *)_e;
+    break;
   case SYMS_EXPR:  {
     SymSExpr *e = (SymSExpr *)_e;
     if (e->val && e->val->getop() != PROG) {

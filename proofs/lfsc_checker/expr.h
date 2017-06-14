@@ -142,8 +142,9 @@ protected:
 #ifdef DEBUG_REFCNT    
     debugrefcnt(ref,DEC);
 #endif
-    if (ref == 0)
+    if (ref == 0) {
       destroy(this,dec_kids);
+    }
     else
       data = (ref << 9) | (data & 511);
   }

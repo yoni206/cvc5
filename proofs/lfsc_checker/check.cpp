@@ -830,6 +830,7 @@ Expr *check(bool create, Expr *expected, Expr **computed = NULL,
         if (mpq_set_str(num,v.c_str(),10) == -1)
 	        report_error("Error reading a numeral.");
         i = new RatExpr(num);
+        mpq_clear(num);
       }
       else
       {
@@ -837,6 +838,7 @@ Expr *check(bool create, Expr *expected, Expr **computed = NULL,
         if (mpz_init_set_str(num,v.c_str(),10) == -1)
 	        report_error("Error reading a numeral.");
         i = new IntExpr(num);
+        mpz_clear(num);
       }
     }
 
