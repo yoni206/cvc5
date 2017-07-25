@@ -97,7 +97,7 @@ inline TheoryId& operator ++ (TheoryId& id) {
 }
 
 std::ostream& operator<<(std::ostream& out, TheoryId theoryId);
-TheoryId kindToTheoryId(::CVC4::Kind k);
+TheoryId kindToTheoryId(::CVC4::Kind k) CVC4_PUBLIC;
 TheoryId typeConstantToTheoryId(::CVC4::TypeConstant typeConstant);
 
 }/* CVC4::theory namespace */
