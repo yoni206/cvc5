@@ -20,7 +20,6 @@
 #define __CVC4__KIND_H
 
 #include <iosfwd>
-#include <sstream>
 
 #include "base/exception.h"
 
@@ -43,22 +42,7 @@ typedef ::CVC4::kind::Kind_t Kind;
 
 namespace kind {
 
-inline std::ostream& operator<<(std::ostream&, CVC4::Kind) CVC4_PUBLIC;
-inline std::ostream& operator<<(std::ostream& out, CVC4::Kind k) {
-  using namespace CVC4::kind;
-
-  switch(k) {
-
-  /* special cases */
-  case UNDEFINED_KIND: out << "UNDEFINED_KIND"; break;
-  case NULL_EXPR: out << "NULL"; break;
-${kind_printers}
-  case LAST_KIND: out << "LAST_KIND"; break;
-  default: out << "UNKNOWNKIND!" << int(k); break;
-  }
-
-  return out;
-}
+std::ostream& operator<<(std::ostream&, CVC4::Kind) CVC4_PUBLIC;
 
 #line 64 "${template}"
 
@@ -66,24 +50,8 @@ ${kind_printers}
  * decide whether it's safe to modify big expressions by changing the grouping of
  * the arguments. */
 /* TODO: This could be generated. */
-inline bool isAssociative(::CVC4::Kind k) {
-  switch(k) {
-  case kind::AND:
-  case kind::OR:
-  case kind::MULT:
-  case kind::PLUS:
-    return true;
-
-  default:
-    return false;
-  }
-}
-
-inline std::string kindToString(::CVC4::Kind k) {
-  std::stringstream ss;
-  ss << k;
-  return ss.str();
-}
+bool isAssociative(::CVC4::Kind k);
+std::string kindToString(::CVC4::Kind k);
 
 struct KindHashFunction {
   inline size_t operator()(::CVC4::Kind k) const {
@@ -111,16 +79,7 @@ struct TypeConstantHashFunction {
   }
 };/* struct TypeConstantHashFunction */
 
-inline std::ostream& operator<<(std::ostream& out, TypeConstant typeConstant) {
-  switch(typeConstant) {
-${type_constant_descriptions}
-#line 118 "${template}"
-  default:
-    out << "UNKNOWN_TYPE_CONSTANT";
-    break;
-  }
-  return out;
-}
+std::ostream& operator<<(std::ostream& out, TypeConstant typeConstant);
 
 namespace theory {
 
@@ -137,39 +96,9 @@ inline TheoryId& operator ++ (TheoryId& id) {
   return id = static_cast<TheoryId>(((int)id) + 1);
 }
 
-inline std::ostream& operator<<(std::ostream& out, TheoryId theoryId) {
-  switch(theoryId) {
-${theory_descriptions}
-#line 144 "${template}"
-  default:
-    out << "UNKNOWN_THEORY";
-    break;
-  }
-  return out;
-}
-
-inline TheoryId kindToTheoryId(::CVC4::Kind k) {
-  switch(k) {
-  case kind::UNDEFINED_KIND:
-  case kind::NULL_EXPR:
-    break;
-${kind_to_theory_id}
-#line 158 "${template}"
-  case kind::LAST_KIND:
-    break;
-  }
-  throw IllegalArgumentException("", "k", __PRETTY_FUNCTION__, "bad kind");
-}
-
-inline TheoryId typeConstantToTheoryId(::CVC4::TypeConstant typeConstant) {
-  switch(typeConstant) {
-${type_constant_to_theory_id}
-#line 168 "${template}"
-  case LAST_TYPE:
-    break;
-  }
-  throw IllegalArgumentException("", "k", __PRETTY_FUNCTION__, "bad type constant");
-}
+std::ostream& operator<<(std::ostream& out, TheoryId theoryId);
+TheoryId kindToTheoryId(::CVC4::Kind k);
+TheoryId typeConstantToTheoryId(::CVC4::TypeConstant typeConstant);
 
 }/* CVC4::theory namespace */
 }/* CVC4 namespace */
