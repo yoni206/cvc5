@@ -50,8 +50,8 @@ std::ostream& operator<<(std::ostream&, CVC4::Kind) CVC4_PUBLIC;
  * decide whether it's safe to modify big expressions by changing the grouping of
  * the arguments. */
 /* TODO: This could be generated. */
-bool isAssociative(::CVC4::Kind k);
-std::string kindToString(::CVC4::Kind k);
+bool isAssociative(::CVC4::Kind k) CVC4_PUBLIC;
+std::string kindToString(::CVC4::Kind k) CVC4_PUBLIC;
 
 struct KindHashFunction {
   inline size_t operator()(::CVC4::Kind k) const {
