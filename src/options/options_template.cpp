@@ -43,10 +43,11 @@ extern int optreset;
 #include <cstdlib>
 #include <cstring>
 #include <iomanip>
-#include <new>
-#include <string>
-#include <sstream>
 #include <limits>
+#include <new>
+#include <sstream>
+#include <stdexcept>
+#include <string>
 
 #include "base/cvc4_assert.h"
 #include "base/exception.h"
