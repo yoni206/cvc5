@@ -17,7 +17,7 @@
 #ifndef __CVC4__THEORY__QUANTIFIERS_ENGINE_H
 #define __CVC4__THEORY__QUANTIFIERS_ENGINE_H
 
-#include <iostream>
+#include <iosfwd>
 #include <map>
 #include <unordered_map>
 
