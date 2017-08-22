@@ -1950,7 +1950,7 @@ term[CVC4::Expr& expr, CVC4::Expr& expr2]
         }
         args.push_back(expr);
       }
-        }
+    }
     //(termList[args,expr])? RPAREN_TOK
     termList[args,expr] RPAREN_TOK
     { Debug("parser") << "args has size " << args.size() << std::endl
@@ -1961,7 +1961,21 @@ term[CVC4::Expr& expr, CVC4::Expr& expr2]
       if(isBuiltinOperator) {
         PARSER_STATE->checkOperator(kind, args.size());
       }
-      expr = MK_EXPR(kind, args); 
+      // may be partially applied function, in this case we should use HO_APPLY     
+      if( args.size()>=2 && args[0].getType().isFunction() &&
+          ( args[0].getKind()==kind::BOUND_VARIABLE || 
+            (args.size()-1)<((FunctionType)args[0].getType()).getArity() ) ){
+        Debug("parser") << "Partial or variable application of " << args[0];
+        Debug("parser") << " : #argTypes = " << ((FunctionType)args[0].getType()).getArity();  
+        Debug("parser") << ", #args = " << args.size()-1 << std::endl;  
+        // must curry the application
+        expr = MK_EXPR( CVC4::kind::HO_APPLY, args[0], args[1] );
+        for( unsigned i=2; i<args.size(); i++ ){
+          expr = MK_EXPR( CVC4::kind::HO_APPLY, expr, args[i] );
+        }  
+      }else{
+        expr = MK_EXPR(kind, args); 
+      }
     }
 
   | LPAREN_TOK
@@ -2247,6 +2261,27 @@ term[CVC4::Expr& expr, CVC4::Expr& expr2]
         expr2 = f2;
       }
     }
+  | /* lambda */
+    LPAREN_TOK LAMBDA_TOK 
+    LPAREN_TOK sortedVarList[sortedVarNames] RPAREN_TOK
+    {
+      PARSER_STATE->pushScope(true);
+      for(std::vector<std::pair<std::string, CVC4::Type> >::const_iterator i =
+            sortedVarNames.begin(), iend = sortedVarNames.end();
+          i != iend;
+          ++i) {
+        args.push_back(PARSER_STATE->mkBoundVar((*i).first, (*i).second));
+      }
+      Expr bvl = MK_EXPR(kind::BOUND_VAR_LIST, args);
+      args.clear();
+      args.push_back(bvl);
+    }
+    term[f, f2] RPAREN_TOK
+    {
+      PARSER_STATE->popScope();
+      expr = MK_EXPR( CVC4::kind::LAMBDA, args );
+    }
+    RPAREN_TOK
     /* constants */
   | INTEGER_LITERAL
     { expr = MK_CONST( AntlrInput::tokenToInteger($INTEGER_LITERAL) ); }
@@ -2776,6 +2811,8 @@ sortSymbol[CVC4::Type& t, CVC4::parser::DeclarationCheck check]
   std::vector<CVC4::Type> args;
   std::vector<uint64_t> numerals;
   bool indexed = false;
+  CVC4::Type dtype;
+  CVC4::Type rtype;
 }
   : sortName[name,CHECK_NONE]
     {
@@ -2861,6 +2898,23 @@ sortSymbol[CVC4::Type& t, CVC4::parser::DeclarationCheck check]
         }
       }
     ) RPAREN_TOK
+  | LPAREN_TOK HO_ARROW_TOK sortList[args] RPAREN_TOK
+    { 
+      if(args.size()<2) {
+        PARSER_STATE->parseError("Arrow types must have at least 2 arguments");
+      }
+      //flatten the type
+      Type rangeType = args[args.size()-1];
+      args.pop_back();
+      if( rtype.isFunction() ){
+        std::vector< Type > domainTypes = ((FunctionType)rtype).getArgTypes();
+        args.insert( args.end(), domainTypes.begin(), domainTypes.end() );
+        rangeType = ((FunctionType)rtype).getRangeType();
+      }
+      Debug("parser") << "Make function type, #argTypes=" << args.size() << ", rangeType " << rangeType << std::endl;
+      t = EXPR_MANAGER->mkFunctionType( args, rangeType );
+      Debug("parser") << "Finish here." << std::endl;
+    }
   ;
 
 /**
@@ -3155,6 +3209,9 @@ FP_RNA_FULL_TOK : { PARSER_STATE->isTheoryEnabled(Smt2::THEORY_FP) }? 'roundNear
 FP_RTP_FULL_TOK : { PARSER_STATE->isTheoryEnabled(Smt2::THEORY_FP) }? 'roundTowardPositive';
 FP_RTN_FULL_TOK : { PARSER_STATE->isTheoryEnabled(Smt2::THEORY_FP) }? 'roundTowardNegative';
 FP_RTZ_FULL_TOK : { PARSER_STATE->isTheoryEnabled(Smt2::THEORY_FP) }? 'roundTowardZero';
+
+HO_ARROW_TOK : '->';
+HO_LAMBDA_TOK : 'lambda';
 
 /**
  * A sequence of printable ASCII characters (except backslash) that starts

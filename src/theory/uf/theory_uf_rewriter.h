@@ -70,7 +70,41 @@ public:
         Node n = Rewriter::rewrite(*arg);
         substitutions.addSubstitution(*formal, n);
       }
-      return RewriteResponse(REWRITE_DONE, substitutions.apply(lambda[1]));
+      return RewriteResponse(REWRITE_AGAIN_FULL, substitutions.apply(lambda[1]));
+    }else if( node.getKind() == kind::HO_APPLY ){
+      if( node[0].getKind() == kind::LAMBDA ){
+        // resolve one argument of the lambda
+        TNode arg = Rewriter::rewrite( node[1] );
+        TNode var = node[0][0][0];
+        Node new_body = node[0][1].substitute( var, arg );
+        if( node[0][0].getNumChildren()>1 ){
+          std::vector< Node > new_vars;
+          for( unsigned i=1; i<node[0][0].getNumChildren(); i++ ){
+            new_vars.push_back( node[0][0][i] );
+          }
+          std::vector< Node > largs;
+          largs.push_back( NodeManager::currentNM()->mkNode( kind::BOUND_VAR_LIST, new_vars ) );
+          largs.push_back( new_body );
+          new_body = NodeManager::currentNM()->mkNode( kind::LAMBDA, largs );
+        }
+        return RewriteResponse( REWRITE_AGAIN_FULL, new_body );
+      }else{
+        //rewrite to APPLY_UF if full application of non-variable function
+        if( node[0].getType().getNumChildren()==2 ){
+          std::vector< Node > children;
+          Node curr = node;
+          while( curr.getKind() == kind::HO_APPLY ){
+            children.push_back( node[1] );
+            curr = node[0];        
+          }
+          if( node[0].getKind()!=kind::BOUND_VARIABLE ){
+            children.push_back( node[0] );
+            std::reverse( children.begin(), children.end() );
+            Node ret = NodeManager::currentNM()->mkNode( kind::APPLY_UF, children );
+            return RewriteResponse( REWRITE_AGAIN_FULL, ret );
+          }
+        }
+      }
     }
     return RewriteResponse(REWRITE_DONE, node);
   }

@@ -47,13 +47,13 @@ TheoryUF::TheoryUF(context::Context* c, context::UserContext* u,
       d_equalityEngine(d_notify, c, instanceName + "theory::uf::TheoryUF",
                        true),
       d_conflict(c, false),
-      d_literalsToPropagate(c),
-      d_literalsToPropagateIndex(c, 0),
+      d_extensionality_deq(u),
       d_functionsTerms(c),
       d_symb(u, instanceName)
 {
   // The kinds we are treating as function application in congruence
   d_equalityEngine.addFunctionKind(kind::APPLY_UF);
+  d_equalityEngine.addFunctionKind(kind::HO_APPLY);
 }
 
 TheoryUF::~TheoryUF() {
@@ -123,6 +123,9 @@ void TheoryUF::check(Effort level) {
     TNode atom = polarity ? fact : fact[0];
     if (atom.getKind() == kind::EQUAL) {
       d_equalityEngine.assertEquality(atom, polarity, fact);
+      if( !polarity && atom[0].getType().isFunction() ){
+        applyExtensionality( fact );
+      }
     } else if (atom.getKind() == kind::CARDINALITY_CONSTRAINT || atom.getKind() == kind::COMBINED_CARDINALITY_CONSTRAINT) {
       if( d_thss == NULL ){
         std::stringstream ss;
@@ -145,6 +148,9 @@ void TheoryUF::check(Effort level) {
       if( d_thss->isConflict() ){
         d_conflict = true;
       }
+    }
+    if(! d_conflict && fullEffort(level) ){
+      checkExtensionality();
     }
   }
 }/* TheoryUF::check() */
@@ -407,7 +413,22 @@ void TheoryUF::ppStaticLearn(TNode n, NodeBuilder<>& learned) {
       } else {
         Debug("diamonds") << "+ C fails" << endl;
       }
-    }
+    }  //   eq::EqClassesIterator eqcs_i = eq::EqClassesIterator( &d_equalityEngine );
+  //   while( !eqcs_i.isFinished() ){
+  //     Node eqc = (*eqcs_i);
+  //     TypeNode tn = eqc.getType();
+  //     if( tn.isSort() ){
+  //       if( type_enums.find( tn )==type_enums.end() ){
+  //         type_enums[tn] = new TypeEnumerator( tn );
+  //       }
+  //       Node rep = *(*type_enums[tn]);
+  //       ++(*type_enums[tn]);
+  //       //specify the constant as the representative
+  //       m->assertEquality( eqc, rep, true );
+  //       m->assertRepresentative( rep );
+  //     }
+  //     ++eqcs_i;
+  //   }
   }
 
   if(options::ufSymmetryBreaker()) {
@@ -581,6 +602,68 @@ void TheoryUF::eqNotifyDisequal(TNode t1, TNode t2, TNode reason) {
   }
 }
 
+void TheoryUF::applyExtensionality(TNode deq) {
+  Assert( deq.getKind()==kind::NOT && deq[0].getKind()==kind::EQUAL );
+  Assert( deq[0][0].getType().isFunction() );
+  // apply extensionality
+  if( d_extensionality_deq.find( deq )==d_extensionality_deq.end() ){
+    d_extensionality_deq.insert( deq );
+    TypeNode tn = deq[0][0].getType();
+    std::vector< Node > skolems;
+    for( unsigned i=0; i<tn.getNumChildren()-1; i++ ){
+      Node k = NodeManager::currentNM()->mkSkolem( "k", tn[i], "skolem created for extensionality." );
+      skolems.push_back( k );
+    }
+    Node t[2];
+    for( unsigned i=0; i<2; i++ ){
+      std::vector< Node > children;
+      Node curr = deq[0][i];
+      while( curr.getKind()==kind::HO_APPLY ){
+        children.push_back( curr[1] );
+        curr = curr[0];
+      }
+      children.push_back( curr );
+      std::reverse( children.begin(), children.end() );
+      children.insert( children.end(), skolems.begin(), skolems.end() );
+      t[i] = NodeManager::currentNM()->mkNode( kind::APPLY_UF, children );
+    }
+    Node conc = t[0].eqNode( t[1] ).negate();
+    Node lem = NodeManager::currentNM()->mkNode( kind::OR, deq[0], conc );
+    Trace("uf-ho") << "Extensionality inference : " << lem << std::endl;
+    d_out->lemma( lem );
+  }
+}
+
+void TheoryUF::checkExtensionality() {
+  Trace("uf-ho") << "TheoryUF::checkExtensionality..." << std::endl;
+  // This is bit eager: we should allow functions to be neither equal nor disequal during model construction
+  // However, doing so would require a function-type enumerator.
+  std::map< TypeNode, std::vector< Node > > func_eqcs;
+
+  eq::EqClassesIterator eqcs_i = eq::EqClassesIterator( &d_equalityEngine );
+  while( !eqcs_i.isFinished() ){
+    Node eqc = (*eqcs_i);
+    TypeNode tn = eqc.getType();
+    if( tn.isFunction() ){
+      func_eqcs[tn].push_back( eqc );
+      Trace("uf-ho") << "  func eqc : " << tn << " : " << eqc << std::endl;
+    }
+    ++eqcs_i;
+  }
+  
+  for( std::map< TypeNode, std::vector< Node > >::iterator itf = func_eqcs.begin(); 
+       itf != func_eqcs.end(); ++itf ){
+    for( unsigned j=0; j<itf->second.size(); j++ ){
+      for( unsigned k=(j+1); k<itf->second.size(); k++ ){ 
+        // if these equivalence classes are not explicitly disequal, do extensionality to ensure distinctness
+        if( !d_equalityEngine.areDisequal( itf->second[j], itf->second[k], false ) ){
+          Node deq = itf->second[j].eqNode( itf->second[k] ).negate();
+          applyExtensionality( deq );
+        }
+      }   
+    }
+  }
+}
 
 } /* namespace CVC4::theory::uf */
 } /* namespace CVC4::theory */

@@ -23,6 +23,7 @@
 #include "expr/type_node.h"
 #include "expr/expr.h"
 #include "theory/rewriter.h"
+#include "theory/builtin/theory_builtin_rewriter.h" // for array and lambda representation
 
 #include <sstream>
 
@@ -160,6 +161,20 @@ public:
     }
     TypeNode rangeType = n[1].getType(check);
     return nodeManager->mkFunctionType(argTypes, rangeType);
+  }
+  inline static bool computeIsConst(NodeManager* nodeManager, TNode n)
+    throw (AssertionException) {
+    Assert(n.getKind() == kind::LAMBDA);
+    //get array representation of this function, if possible
+    Node na = TheoryBuiltinRewriter::getArrayRepresentationForLambda( n, false, true );
+    if( !na.isNull() ){
+      if( na.isConst() ){
+        Trace("lambda-const") << "Constant lambda : " << n << std::endl;
+        Trace("lambda-const") << "...since its array representation : " << na << " is constant." << std::endl;
+        return true;
+      }
+    }
+    return false;
   }
 };/* class LambdaTypeRule */
 

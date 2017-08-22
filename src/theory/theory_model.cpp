@@ -40,6 +40,7 @@ TheoryModel::TheoryModel(context::Context* c, std::string name, bool enableFuncM
 
   // The kinds we are treating as function application in congruence
   d_equalityEngine->addFunctionKind(kind::APPLY_UF);
+  d_equalityEngine->addFunctionKind(kind::HO_APPLY);
   d_equalityEngine->addFunctionKind(kind::SELECT);
   // d_equalityEngine->addFunctionKind(kind::STORE);
   d_equalityEngine->addFunctionKind(kind::APPLY_CONSTRUCTOR);
@@ -297,12 +298,18 @@ void TheoryModel::addSubstitution( TNode x, TNode t, bool invalidateCache ){
 /** add term */
 void TheoryModel::addTerm(TNode n ){
   Assert(d_equalityEngine->hasTerm(n));
+  Trace("model-builder-debug2") << "TheoryModel::addTerm : " << n << std::endl;
   //must collect UF terms
   if (n.getKind()==APPLY_UF) {
     Node op = n.getOperator();
     if( std::find( d_uf_terms[ op ].begin(), d_uf_terms[ op ].end(), n )==d_uf_terms[ op ].end() ){
       d_uf_terms[ op ].push_back( n );
-      Trace("model-add-term-uf") << "Add term " << n << std::endl;
+      Trace("model-add-term-uf") << "Add term for function " << n << std::endl;
+    }
+  }else if( n.isVar() && n.getType().isFunction() ){
+    if( d_uf_terms.find( n )==d_uf_terms.end() ){
+      d_uf_terms[n].clear();
+      Trace("model-add-term-uf") << "Add function variable (without term) " << n << std::endl;
     }
   }
 }
@@ -466,6 +473,97 @@ void TheoryModel::printRepresentative( std::ostream& out, Node r ){
   }
 }
 
+void TheoryModel::assignFunctionDefinition( Node f, Node f_def ) {
+  Trace("model-builder") << "  Assigning function (" << f << ") to (" << f_def << ")" << endl;
+  d_uf_models[f] = f_def;
+
+  // if the function is a first-class member of the equality engine
+  if( d_equalityEngine->hasExternalTerm( f ) ){
+    Trace("model-builder-debug") << "  ...function is first-class member of equality engine" << std::endl;
+    // assign to representative if higher-order
+    Node r = getRepresentative( f );
+    //if( d_reps.find( r )==d_reps.end() )
+    //always replace the representative, since it is initially assigned to itself
+    d_reps[r] = f_def;  
+    // also assign to other functions in the same equivalence class
+    eq::EqClassIterator eqc_i = eq::EqClassIterator(r,d_equalityEngine);
+    while( !eqc_i.isFinished() ) {
+      Node n = *eqc_i;
+      // if an unassigned function
+      if( d_uf_terms.find( n )!=d_uf_terms.end() && !hasAssignedFunctionDefinition( n ) ){
+        // then, assign
+        d_uf_models[n] = f_def;
+        Trace("model-builder") << "  Assigning function (" << n << ") to function definition of " << f << std::endl;
+      }
+      ++eqc_i;
+    }
+  }
+}
+
+struct sortTypeSize {
+  std::map< TypeNode, unsigned > d_type_size;
+  unsigned getTypeSize( TypeNode tn ) {
+    std::map< TypeNode, unsigned >::iterator it = d_type_size.find( tn );
+    if( it!=d_type_size.end() ){
+      return it->second;    
+    }else{
+      unsigned sum = 1;
+      for( unsigned i=0; i<tn.getNumChildren(); i++ ){
+        sum += getTypeSize( tn[i] );
+      }  
+      d_type_size[tn] = sum;
+      return sum;
+    }
+  }
+public:
+  bool operator() (Node i, Node j) {
+    int si = getTypeSize( i.getType() );
+    int sj = getTypeSize( j.getType() );
+    if( si<sj ){
+      return true;
+    }else if( si==sj ){
+      return i<j;
+    }else{
+      return false;
+    }
+  }
+};
+
+std::vector< Node > TheoryModel::getFunctionsToAssign() {
+  std::vector< Node > funcs_to_assign;
+  std::map< Node, Node > func_to_rep;
+
+  // collect functions
+  for( std::map< Node, std::vector< Node > >::iterator it = d_uf_terms.begin(); it != d_uf_terms.end(); ++it ){
+    Node n = it->first;
+    if( !hasAssignedFunctionDefinition( n ) ){
+      // if the function is a first-class member of the equality engine
+      if( d_equalityEngine->hasExternalTerm( n ) ){
+        // if function is a part of equality engine, 
+        //   we are higher-order, assign function definitions modulo equality
+        Node r = getRepresentative( n );
+        std::map< Node, Node >::iterator itf = func_to_rep.find( r );
+        if( itf==func_to_rep.end() ){
+          func_to_rep[r] = n;
+          funcs_to_assign.push_back( n );
+        }else{
+          // must combine uf terms
+          d_uf_terms[itf->second].insert( d_uf_terms[itf->second].end(), it->second.begin(), it->second.end() );
+        }
+      }else{
+        funcs_to_assign.push_back( n );
+      }
+    }
+  }
+
+  // sort based on type dependencies if higher-order
+  if( !func_to_rep.empty() ){
+    sortTypeSize sts;
+    std::sort( funcs_to_assign.begin(), funcs_to_assign.end(), sts );
+  }
+
+  return funcs_to_assign;
+}
 
 TheoryEngineModelBuilder::TheoryEngineModelBuilder( TheoryEngine* te ) : d_te( te ){
 
@@ -474,7 +572,7 @@ TheoryEngineModelBuilder::TheoryEngineModelBuilder( TheoryEngine* te ) : d_te( t
 
 bool TheoryEngineModelBuilder::isAssignable(TNode n)
 {
-  return (n.isVar() || n.getKind() == kind::APPLY_UF || n.getKind() == kind::SELECT || n.getKind() == kind::APPLY_SELECTOR_TOTAL);
+  return ( ( n.isVar() && !n.getType().isFunction() ) || n.getKind() == kind::APPLY_UF || n.getKind() == kind::SELECT || n.getKind() == kind::APPLY_SELECTOR_TOTAL);
 }
 
 
@@ -734,14 +832,18 @@ bool TheoryEngineModelBuilder::buildModel(Model* m)
             assignable = false;
             evaluable = false;
             evaluated = false;
+            Trace("model-builder-debug") << "Look at eqc : " << (*i2) << std::endl;
             eq::EqClassIterator eqc_i = eq::EqClassIterator(*i2, tm->d_equalityEngine);
             for ( ; !eqc_i.isFinished(); ++eqc_i) {
               Node n = *eqc_i;
+              Trace("model-builder-debug") << "Look at term : " << n << std::endl;
               if (isAssignable(n)) {
                 assignable = true;
+                Trace("model-builder-debug") << "...assignable" << std::endl;
               }
               else {
                 evaluable = true;
+                Trace("model-builder-debug") << "...try to normalize" << std::endl;
                 Node normalized = normalize(tm, n, true);
                 if (normalized.isConst()) {
                   typeConstSet.add(tb, normalized);
@@ -976,30 +1078,33 @@ void TheoryEngineModelBuilder::debugCheckModel(Model* m){
   for (eqcs_i = eq::EqClassesIterator(tm->d_equalityEngine); !eqcs_i.isFinished(); ++eqcs_i) {
     // eqc is the equivalence class representative
     Node eqc = (*eqcs_i);
-    Node rep;
-    itMap = d_constantReps.find(eqc);
-    if (itMap == d_constantReps.end() && eqc.getType().isBoolean()) {
-      rep = tm->getValue(eqc);
-      Assert(rep.isConst());
-    }
-    else {
-      Assert(itMap != d_constantReps.end());
-      rep = itMap->second;
-    }
-    eq::EqClassIterator eqc_i = eq::EqClassIterator(eqc, tm->d_equalityEngine);
-    for ( ; !eqc_i.isFinished(); ++eqc_i) {
-      Node n = *eqc_i;
-      static int repCheckInstance = 0;
-      ++repCheckInstance;
-      
-      // non-linear mult is not necessarily accurate wrt getValue
-      if( n.getKind()!=kind::NONLINEAR_MULT ){
-        Debug("check-model::rep-checking")
-          << "( " << repCheckInstance <<") "
-          << "n: " << n << endl
-          << "getValue(n): " << tm->getValue(n) << endl
-          << "rep: " << rep << endl;
-        Assert(tm->getValue(*eqc_i) == rep, "run with -d check-model::rep-checking for details");
+    // some types it is not possible to check equivalence
+    if( !eqc.getType().isFunction() ){
+      Node rep;
+      itMap = d_constantReps.find(eqc);
+      if (itMap == d_constantReps.end() && eqc.getType().isBoolean()) {
+        rep = tm->getValue(eqc);
+        Assert(rep.isConst());
+      }
+      else {
+        Assert(itMap != d_constantReps.end());
+        rep = itMap->second;
+      }
+      eq::EqClassIterator eqc_i = eq::EqClassIterator(eqc, tm->d_equalityEngine);
+      for ( ; !eqc_i.isFinished(); ++eqc_i) {
+        Node n = *eqc_i;
+        static int repCheckInstance = 0;
+        ++repCheckInstance;
+        
+        // non-linear mult is not necessarily accurate wrt getValue
+        if( n.getKind()!=kind::NONLINEAR_MULT && ( n.getKind()!=kind::EQUAL || !n[0].getType().isFunction() ) ){
+          Debug("check-model::rep-checking")
+            << "( " << repCheckInstance <<") "
+            << "n: " << n << endl
+            << "getValue(n): " << tm->getValue(n) << endl
+            << "rep: " << rep << endl;
+          Assert(tm->getValue(*eqc_i) == rep, "run with -d check-model::rep-checking for details");
+        }
       }
     }
   }
@@ -1017,6 +1122,7 @@ Node TheoryEngineModelBuilder::normalize(TheoryModel* m, TNode r, bool evalOnly)
   if (it != d_normalizedCache.end()) {
     return (*it).second;
   }
+  Trace("model-builder-debug") << "do normalize on " << r << std::endl;
   Node retNode = r;
   if (r.getNumChildren() > 0) {
     std::vector<Node> children;
@@ -1050,7 +1156,8 @@ Node TheoryEngineModelBuilder::normalize(TheoryModel* m, TNode r, bool evalOnly)
     retNode = NodeManager::currentNM()->mkNode( r.getKind(), children );
     if (childrenConst) {
       retNode = Rewriter::rewrite(retNode);
-      Assert(retNode.getKind()==kind::APPLY_UF || retNode.getType().isRegExp() || retNode.isConst());
+      Assert(retNode.getKind()==kind::APPLY_UF || retNode.getType().isRegExp() || 
+             retNode.getType().isFunction() || retNode.isConst());
     }
   }
   d_normalizedCache[r] = retNode;
@@ -1061,43 +1168,50 @@ bool TheoryEngineModelBuilder::preProcessBuildModel(TheoryModel* m) {
   return true;
 }
 
+
+
 bool TheoryEngineModelBuilder::processBuildModel(TheoryModel* m){
   Trace("model-builder") << "Assigning function values..." << endl;
-  //construct function values
-  for( std::map< Node, std::vector< Node > >::iterator it = m->d_uf_terms.begin(); it != m->d_uf_terms.end(); ++it ){
-    Node n = it->first;
-    if( m->d_uf_models.find( n )==m->d_uf_models.end() ){
-      TypeNode type = n.getType();
-      Trace("model-builder") << "  Assign function value for " << n << " " << type << std::endl;
-      uf::UfModelTree ufmt( n );
-      Node default_v, un, simp, v;
-      for( size_t i=0; i<it->second.size(); i++ ){
-        un = it->second[i];
-        vector<TNode> children;
-        children.push_back(n);
-        for (size_t j = 0; j < un.getNumChildren(); ++j) {
-          children.push_back(m->getRepresentative(un[j]));
-        }
-        simp = NodeManager::currentNM()->mkNode(un.getKind(), children);
-        v = m->getRepresentative(un);
-        Trace("model-builder") << "  Setting (" << simp << ") to (" << v << ")" << endl;
-        ufmt.setValue(m, simp, v);
-        default_v = v;
+  std::vector< Node > funcs_to_assign = m->getFunctionsToAssign();
+
+  // construct function values
+  for( unsigned j=0; j<funcs_to_assign.size(); j++ ){
+    Node n = funcs_to_assign[j];
+    TypeNode type = n.getType();
+    Trace("model-builder") << "  Assign function value for " << n << " " << type << std::endl;
+    uf::UfModelTree ufmt( n );
+    Node default_v, un, simp, v;
+    for( size_t i=0; i<m->d_uf_terms[n].size(); i++ ){
+      un = m->d_uf_terms[n][i];
+      vector<TNode> children;
+      children.push_back(n);
+      Trace("model-builder-debug") << "  process term : " << un << std::endl;
+      for (size_t j = 0; j < un.getNumChildren(); ++j) {
+        Node rc = m->getRepresentative(un[j]);
+        Trace("model-builder-debug2") << "    get rep : " << un[j] << " returned " << rc << std::endl;
+        Assert( ( rc.getType().isFunction() && rc.getKind()==kind::LAMBDA ) || rc.isConst() ); 
+        children.push_back(rc);
       }
-      if( default_v.isNull() ){
-        //choose default value from model if none exists
-        TypeEnumerator te(type.getRangeType());
-        default_v = (*te);
-      }
-      ufmt.setDefaultValue( m, default_v );
-      if(options::condenseFunctionValues()) {
-        ufmt.simplify();
-      }
-      Node val = ufmt.getFunctionValue( "_ufmt_", options::condenseFunctionValues() );
-      Trace("model-builder") << "  Assigning (" << n << ") to (" << val << ")" << endl;
-      m->d_uf_models[n] = val;
-      //ufmt.debugPrint( std::cout, m );
+      simp = NodeManager::currentNM()->mkNode(un.getKind(), children);
+      v = m->getRepresentative(un);
+      Trace("model-builder") << "  Setting (" << simp << ") to (" << v << ")" << endl;
+      ufmt.setValue(m, simp, v);
+      default_v = v;
     }
+    if( default_v.isNull() ){
+      //choose default value from model if none exists
+      TypeEnumerator te(type.getRangeType());
+      default_v = (*te);
+    }
+    ufmt.setDefaultValue( m, default_v );
+    if(options::condenseFunctionValues()) {
+      ufmt.simplify();
+    }
+    std::stringstream ss;
+    ss << "_arg_" << n << "_";
+    Node val = ufmt.getFunctionValue( ss.str().c_str(), options::condenseFunctionValues() );
+    m->assignFunctionDefinition( n, val );
+    //ufmt.debugPrint( std::cout, m );
   }
   return true;
 }

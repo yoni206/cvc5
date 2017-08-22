@@ -45,6 +45,7 @@ class StrongSolverTheoryUF;
 class TheoryUF : public Theory {
 
   friend class StrongSolverTheoryUF;
+  typedef context::CDHashSet<Node, NodeHashFunction> NodeSet;
 
 public:
 
@@ -125,6 +126,9 @@ private:
   /** The conflict node */
   Node d_conflictNode;
 
+  /** extensionality applied to these disequalities */
+  NodeSet d_extensionality_deq;
+
   /**
    * Should be called to propagate the literal. We use a node here
    * since some of the propagated literals are not kept anywhere.
@@ -141,12 +145,6 @@ private:
    * Explain a literal, with proof (if "pf" is non-NULL).
    */
   Node explain(TNode literal, eq::EqProof* pf);
-
-  /** Literals to propagate */
-  context::CDList<Node> d_literalsToPropagate;
-
-  /** Index of the next literal to propagate */
-  context::CDO<unsigned> d_literalsToPropagateIndex;
 
   /** All the function terms that the theory has seen */
   context::CDList<TNode> d_functionsTerms;
@@ -169,6 +167,12 @@ private:
   /** called when two equivalence classes are made disequal */
   void eqNotifyDisequal(TNode t1, TNode t2, TNode reason);
 
+private: // for higher-order
+  /** apply extensionality */
+  void applyExtensionality(TNode deq);
+  
+  /** check extensionality */
+  void checkExtensionality();
 public:
 
   /** Constructs a new instance of TheoryUF w.r.t. the provided context.*/

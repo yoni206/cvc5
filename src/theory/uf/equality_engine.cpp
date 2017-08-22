@@ -272,61 +272,75 @@ void EqualityEngine::subtermEvaluates(EqualityNodeId id)  {
 
 void EqualityEngine::addTermInternal(TNode t, bool isOperator) {
 
-  Debug("equality") << d_name << "::eq::addTermInternal(" << t << ")" << std::endl;
-
-  // If there already, we're done
-  if (hasTerm(t)) {
-    Debug("equality") << d_name << "::eq::addTermInternal(" << t << "): already there" << std::endl;
-    return;
-  }
+  Debug("equality") << d_name << "::eq::addTermInternal(" << t << "), isOperator = " << isOperator << std::endl;
 
   if (d_done) {
     return;
   }
 
+  // If there already, we're done
+  //if (hasTerm(t)) {
+  //  Debug("equality") << d_name << "::eq::addTermInternal(" << t << "): already there" << std::endl;
+  //  return;
+  //}
   EqualityNodeId result;
-
-  if (t.getKind() == kind::EQUAL) {
-    addTermInternal(t[0]);
-    addTermInternal(t[1]);
-    EqualityNodeId t0id = getNodeId(t[0]);
-    EqualityNodeId t1id = getNodeId(t[1]);
-    result = newApplicationNode(t, t0id, t1id, APP_EQUALITY);
-    d_isInternal[result] = false;
-    d_isConstant[result] = false;
-  } else if (t.getNumChildren() > 0 && d_congruenceKinds[t.getKind()]) {
-    TNode tOp = t.getOperator();
-    // Add the operator
-    addTermInternal(tOp, true);
-    result = getNodeId(tOp);
-    // Add all the children and Curryfy
-    bool isInterpreted = isInterpretedFunctionKind(t.getKind());
-    for (unsigned i = 0; i < t.getNumChildren(); ++ i) {
-      // Add the child
-      addTermInternal(t[i]);
-      EqualityNodeId tiId = getNodeId(t[i]);
-      // Add the application
-      result = newApplicationNode(t, result, tiId, isInterpreted ? APP_INTERPRETED : APP_UNINTERPRETED);
+  std::unordered_map<TNode, EqualityNodeId, TNodeHashFunction>::iterator itn = d_nodeIds.find(t);
+  if( itn!=d_nodeIds.end() ){
+    result = itn->second;
+    if( d_isInternal[result] && !isOperator && t.getKind() != kind::EQUAL && 
+        ( t.getNumChildren()==0 || !d_congruenceKinds[t.getKind()] ) ){
+      // update isInternal flag
+      //   the issue is that with higher-order, we could have two calls:
+      //   addTermInternal( t, true ) followed by addTermInternal( t, false )
+      //   at the second call, hasTerm( t ) is true but d_isInternal needs to be updated
+      d_isInternal[result] = false;
+      d_isConstant[result] = t.isConst();
+    }else{
+      return;
     }
-    d_isInternal[result] = false;
-    d_isConstant[result] = t.isConst();
-    // If interpreted, set the number of non-interpreted children
-    if (isInterpreted) {
-      // How many children are not constants yet
-      d_subtermsToEvaluate[result] = t.getNumChildren();
+  }else{
+    if (t.getKind() == kind::EQUAL) {
+      addTermInternal(t[0]);
+      addTermInternal(t[1]);
+      EqualityNodeId t0id = getNodeId(t[0]);
+      EqualityNodeId t1id = getNodeId(t[1]);
+      result = newApplicationNode(t, t0id, t1id, APP_EQUALITY);
+      d_isInternal[result] = false;
+      d_isConstant[result] = false;
+    } else if (t.getNumChildren() > 0 && d_congruenceKinds[t.getKind()]) {
+      TNode tOp = t.getOperator();
+      // Add the operator
+      addTermInternal(tOp, true);
+      result = getNodeId(tOp);
+      // Add all the children and Curryfy
+      bool isInterpreted = isInterpretedFunctionKind(t.getKind());
       for (unsigned i = 0; i < t.getNumChildren(); ++ i) {
-        if (isConstant(getNodeId(t[i]))) {
-          Debug("equality::evaluation") << d_name << "::eq::addTermInternal(" << t << "): evaluates " << t[i] << std::endl;
-          subtermEvaluates(result);
+        // Add the child
+        addTermInternal(t[i]);
+        EqualityNodeId tiId = getNodeId(t[i]);
+        // Add the application
+        result = newApplicationNode(t, result, tiId, isInterpreted ? APP_INTERPRETED : APP_UNINTERPRETED);
+      }
+      d_isInternal[result] = false;
+      d_isConstant[result] = t.isConst();
+      // If interpreted, set the number of non-interpreted children
+      if (isInterpreted) {
+        // How many children are not constants yet
+        d_subtermsToEvaluate[result] = t.getNumChildren();
+        for (unsigned i = 0; i < t.getNumChildren(); ++ i) {
+          if (isConstant(getNodeId(t[i]))) {
+            Debug("equality::evaluation") << d_name << "::eq::addTermInternal(" << t << "): evaluates " << t[i] << std::endl;
+            subtermEvaluates(result);
+          }
         }
       }
+    } else {
+      // Otherwise we just create the new id
+      result = newNode(t);
+      // Is this an operator
+      d_isInternal[result] = isOperator;
+      d_isConstant[result] = !isOperator && t.isConst();
     }
-  } else {
-    // Otherwise we just create the new id
-    result = newNode(t);
-    // Is this an operator
-    d_isInternal[result] = isOperator;
-    d_isConstant[result] = !isOperator && t.isConst();
   }
 
   if (t.getKind() == kind::EQUAL) {
@@ -366,6 +380,14 @@ void EqualityEngine::addTermInternal(TNode t, bool isOperator) {
 
 bool EqualityEngine::hasTerm(TNode t) const {
   return d_nodeIds.find(t) != d_nodeIds.end();
+}
+
+bool EqualityEngine::hasExternalTerm(TNode t) const {
+  if( hasTerm(t) ){
+    return !d_isInternal[getNodeId(t)];
+  }else{
+    return false;  
+  }
 }
 
 EqualityNodeId EqualityEngine::getNodeId(TNode node) const {

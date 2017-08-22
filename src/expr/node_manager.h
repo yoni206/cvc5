@@ -1072,8 +1072,8 @@ NodeManager::mkFunctionType(const std::vector<TypeNode>& sorts) {
   Assert(sorts.size() >= 2);
   std::vector<TypeNode> sortNodes;
   for (unsigned i = 0; i < sorts.size(); ++ i) {
-    CheckArgument(!sorts[i].isFunctionLike(), sorts,
-                  "cannot create higher-order function types");
+    //CheckArgument(!sorts[i].isFunctionLike(), sorts,
+    //              "cannot create higher-order function types");
     sortNodes.push_back(sorts[i]);
   }
   return mkTypeNode(kind::FUNCTION_TYPE, sortNodes);
@@ -1084,8 +1084,8 @@ NodeManager::mkPredicateType(const std::vector<TypeNode>& sorts) {
   Assert(sorts.size() >= 1);
   std::vector<TypeNode> sortNodes;
   for (unsigned i = 0; i < sorts.size(); ++ i) {
-    CheckArgument(!sorts[i].isFunctionLike(), sorts,
-                  "cannot create higher-order function types");
+    //CheckArgument(!sorts[i].isFunctionLike(), sorts,
+    //              "cannot create higher-order function types");
     sortNodes.push_back(sorts[i]);
   }
   sortNodes.push_back(booleanType());

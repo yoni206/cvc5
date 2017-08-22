@@ -110,6 +110,7 @@ static bool stringifyRegexp(Node n, stringstream& ss) {
 // force_nt is the type that n must have
 void Smt2Printer::toStream(std::ostream& out, TNode n,
                            int toDepth, bool types, TypeNode force_nt) const throw() {
+  Trace("ajr-temp") << "print[" << n.getKind() << "]" << std::endl;
   // null
   if(n.getKind() == kind::NULL_EXPR) {
     out << "null";
@@ -310,7 +311,7 @@ void Smt2Printer::toStream(std::ostream& out, TNode n,
   if(n.getKind() == kind::SORT_TYPE) {
     string name;
     if(n.getNumChildren() != 0) {
-      out << '(';
+      out << "(";
     }
     if(n.getAttribute(expr::VarNameAttr(), name)) {
       out << maybeQuoteSymbol(name);
@@ -345,13 +346,12 @@ void Smt2Printer::toStream(std::ostream& out, TNode n,
     break;
   case kind::CHAIN: break;
   case kind::FUNCTION_TYPE:
+    out << "-> ";
     for(size_t i = 0; i < n.getNumChildren() - 1; ++i) {
-      if(i > 0) {
-        out << ' ';
-      }
-      out << n[i];
+
+      out << n[i] << " ";
     }
-    out << ") " << n[n.getNumChildren() - 1];
+    out << n[n.getNumChildren() - 1] << ")";
     return;
   case kind::SEXPR: break;
 
@@ -365,6 +365,10 @@ void Smt2Printer::toStream(std::ostream& out, TNode n,
 
     // uf theory
   case kind::APPLY_UF: typeChildren = true; break;
+    
+    //higher-order
+  case kind::HO_APPLY: break;
+  case kind::LAMBDA: out << smtKindString(k) << " "; break;
 
     // arith theory
   case kind::PLUS:
@@ -803,6 +807,10 @@ static string smtKindString(Kind k) throw() {
 
     // uf theory
   case kind::APPLY_UF: break;
+
+    // higher-order
+  case kind::HO_APPLY: break;
+  case kind::LAMBDA: return "lambda";
 
     // arith theory
   case kind::PLUS: return "+";
