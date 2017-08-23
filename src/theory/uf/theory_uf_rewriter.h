@@ -89,16 +89,16 @@ public:
         }
         return RewriteResponse( REWRITE_AGAIN_FULL, new_body );
       }else{
-        //rewrite to APPLY_UF if full application of non-variable function
+        //rewrite to APPLY_UF if full application of non-variable function?
         if( node[0].getType().getNumChildren()==2 ){
           std::vector< Node > children;
           Node curr = node;
           while( curr.getKind() == kind::HO_APPLY ){
-            children.push_back( node[1] );
-            curr = node[0];        
+            children.push_back( curr[1] );
+            curr = curr[0];        
           }
-          if( node[0].getKind()!=kind::BOUND_VARIABLE ){
-            children.push_back( node[0] );
+          if( curr.getKind()!=kind::BOUND_VARIABLE ){
+            children.push_back( curr );
             std::reverse( children.begin(), children.end() );
             Node ret = NodeManager::currentNM()->mkNode( kind::APPLY_UF, children );
             return RewriteResponse( REWRITE_AGAIN_FULL, ret );

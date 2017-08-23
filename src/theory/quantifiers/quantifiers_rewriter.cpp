@@ -216,6 +216,8 @@ RewriteResponse QuantifiersRewriter::postRewrite(TNode in) {
     Trace("quantifiers-rewrite") << "*** rewrite (op=" << rew_op << ") " << in << std::endl;
     Trace("quantifiers-rewrite") << " to " << std::endl;
     Trace("quantifiers-rewrite") << ret << std::endl;
+  }else{
+    Trace("quantifiers-rewrite-debug") << "...finished post-rewriting " << in << std::endl;
   }
   return RewriteResponse( status, ret );
 }

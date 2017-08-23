@@ -341,8 +341,7 @@ command [std::unique_ptr<CVC4::Command>* cmd]
     DECLARE_FUN_TOK { PARSER_STATE->checkThatLogicIsSet(); }
     symbol[name,CHECK_UNDECLARED,SYM_VARIABLE]
     { PARSER_STATE->checkUserSymbol(name); }
-    LPAREN_TOK sortList[sorts] RPAREN_TOK
-    sortSymbol[t,CHECK_DECLARED]
+    sortListReturn[sorts,t]
     { Debug("parser") << "declare fun: '" << name << "'" << std::endl;
       if( sorts.size() > 0 ) {
         if(!PARSER_STATE->isTheoryEnabled(Smt2::THEORY_UF)) {
@@ -363,13 +362,19 @@ command [std::unique_ptr<CVC4::Command>* cmd]
     { /* add variables to parser state before parsing term */
       Debug("parser") << "define fun: '" << name << "'" << std::endl;
       if( sortedVarNames.size() > 0 ) {
-        std::vector<CVC4::Type> sorts;
         sorts.reserve(sortedVarNames.size());
         for(std::vector<std::pair<std::string, CVC4::Type> >::const_iterator i =
               sortedVarNames.begin(), iend = sortedVarNames.end();
             i != iend;
             ++i) {
           sorts.push_back((*i).second);
+        }
+        // flatten if function return sort
+        if( t.isFunction() ){
+          std::vector< Type > domainTypes = ((FunctionType)t).getArgTypes();
+          sorts.insert( sorts.end(), domainTypes.begin(), domainTypes.end() );
+          Debug("parser") << "Flatten function type " << name << ", #argTypes = " << domainTypes.size() << std::endl;
+          t = ((FunctionType)t).getRangeType();
         }
         t = EXPR_MANAGER->mkFunctionType(sorts, t);
       }
@@ -382,7 +387,15 @@ command [std::unique_ptr<CVC4::Command>* cmd]
       }
     }
     term[expr, expr2]
-    { PARSER_STATE->popScope();
+    { 
+      Debug("parser") << "defining function, #sorts = " << sorts.size() << ", #terms = " << terms.size() << std::endl;
+      for( unsigned i=terms.size(); i<sorts.size(); i++ ){
+        Expr var = EXPR_MANAGER->mkBoundVar(sorts[i]);
+        terms.push_back( var );
+        Debug("parser") << "Add variable " << var << " to flatten function " << name << std::endl;
+        expr = MK_EXPR( CVC4::kind::HO_APPLY, expr, var );
+      } 
+      PARSER_STATE->popScope();
       // declare the name down here (while parsing term, signature
       // must not be extended with the name itself; no recursion
       // permitted)
@@ -607,6 +620,10 @@ sygusCommand [std::unique_ptr<CVC4::Command>* cmd]
     ( sortSymbol[range,CHECK_DECLARED] )? {
       if( range.isNull() ){
         PARSER_STATE->parseError("Must supply return type for synth-fun.");
+      }
+      if( range.isFunction() ){
+        //FIXME : this is possible
+        PARSER_STATE->parseError("Cannot use synth-fun with function return type.");
       }
       seq.reset(new CommandSequence());
       std::vector<Type> var_sorts;
@@ -1139,6 +1156,7 @@ smt25Command[std::unique_ptr<CVC4::Command>* cmd]
   std::vector<Expr> func_defs;
   Expr aexpr;
   std::unique_ptr<CVC4::CommandSequence> seq;
+  std::vector<CVC4::Type> sorts;
 }
     /* meta-info */
   : META_INFO_TOK metaInfoInternal[cmd]
@@ -1183,18 +1201,23 @@ smt25Command[std::unique_ptr<CVC4::Command>* cmd]
     LPAREN_TOK sortedVarList[sortedVarNames] RPAREN_TOK
     sortSymbol[t,CHECK_DECLARED]
     { if( sortedVarNames.size() > 0 ) {
-        std::vector<CVC4::Type> sorts;
         sorts.reserve(sortedVarNames.size());
         for(std::vector<std::pair<std::string, CVC4::Type> >::const_iterator i =
             sortedVarNames.begin(), iend = sortedVarNames.end(); i != iend;
             ++i) {
           sorts.push_back((*i).second);
         }
+        // if return type is a function, flatten
+        if( t.isFunction() ){
+          std::vector< Type > domainTypes = ((FunctionType)t).getArgTypes();
+          sorts.insert( sorts.end(), domainTypes.begin(), domainTypes.end() );
+          t = ((FunctionType)t).getRangeType();
+        }
         t = EXPR_MANAGER->mkFunctionType(sorts, t);
       }
       Expr func = PARSER_STATE->mkVar(fname, t);
       seq->addCommand(new DeclareFunctionCommand(fname, func, t));
-      if( sortedVarNames.empty() ){
+      if( sorts.empty() ){
         func_app = func;
       }else{
         std::vector< Expr > f_app;
@@ -1207,11 +1230,21 @@ smt25Command[std::unique_ptr<CVC4::Command>* cmd]
           bvs.push_back( v );
           f_app.push_back( v );
         }
+        // carry variables if functional
+        for( unsigned i=sortedVarNames.size(); i<sorts.size(); i++ ){
+          Expr v = EXPR_MANAGER->mkBoundVar(sorts[i]);
+          bvs.push_back( v );
+          f_app.push_back( v );
+        }
         func_app = MK_EXPR( kind::APPLY_UF, f_app );
       }
     }
     term[expr, expr2]
-    { PARSER_STATE->popScope(); 
+    { // carry function variables if higher-order
+      for( unsigned i=sortedVarNames.size(); i<sorts.size(); i++ ){
+        expr = MK_EXPR( CVC4::kind::HO_APPLY, expr, bvs[i] );
+      }
+      PARSER_STATE->popScope(); 
       Expr as = MK_EXPR( kind::EQUAL, func_app, expr);
       if( !bvs.empty() ){
         std::string attr_name("fun-def");
@@ -1237,9 +1270,9 @@ smt25Command[std::unique_ptr<CVC4::Command>* cmd]
       LPAREN_TOK sortedVarList[sortedVarNames] RPAREN_TOK
       sortSymbol[t,CHECK_DECLARED]
       { sortedVarNamesList.push_back( sortedVarNames );
+        sorts.clear();
         if( sortedVarNamesList[0].size() > 0 ) {
           if( !sortedVarNames.empty() ){
-            std::vector<CVC4::Type> sorts;
             for(std::vector<std::pair<std::string, CVC4::Type> >::const_iterator
                     i = sortedVarNames.begin(), iend = sortedVarNames.end();
                 i != iend; ++i) {
@@ -1963,9 +1996,9 @@ term[CVC4::Expr& expr, CVC4::Expr& expr2]
       }
       // may be partially applied function, in this case we should use HO_APPLY     
       if( args.size()>=2 && args[0].getType().isFunction() &&
-          ( args[0].getKind()==kind::BOUND_VARIABLE || 
+          ( !args[0].isVariable() || args[0].getKind()==kind::BOUND_VARIABLE || 
             (args.size()-1)<((FunctionType)args[0].getType()).getArity() ) ){
-        Debug("parser") << "Partial or variable application of " << args[0];
+        Debug("parser") << "Partial or non-standard operator application of " << args[0];
         Debug("parser") << " : #argTypes = " << ((FunctionType)args[0].getType()).getArity();  
         Debug("parser") << ", #args = " << args.size()-1 << std::endl;  
         // must curry the application
@@ -2262,7 +2295,7 @@ term[CVC4::Expr& expr, CVC4::Expr& expr2]
       }
     }
   | /* lambda */
-    LPAREN_TOK LAMBDA_TOK 
+    LPAREN_TOK HO_LAMBDA_TOK
     LPAREN_TOK sortedVarList[sortedVarNames] RPAREN_TOK
     {
       PARSER_STATE->pushScope(true);
@@ -2278,10 +2311,10 @@ term[CVC4::Expr& expr, CVC4::Expr& expr2]
     }
     term[f, f2] RPAREN_TOK
     {
+      args.push_back( f );
       PARSER_STATE->popScope();
       expr = MK_EXPR( CVC4::kind::LAMBDA, args );
     }
-    RPAREN_TOK
     /* constants */
   | INTEGER_LITERAL
     { expr = MK_CONST( AntlrInput::tokenToInteger($INTEGER_LITERAL) ); }
@@ -2762,6 +2795,23 @@ quantOp[CVC4::Kind& kind]
  */
 functionName[std::string& name, CVC4::parser::DeclarationCheck check]
   : symbol[name,check,SYM_VARIABLE]
+  ;
+
+
+/**
+ * Matches a sequence of sort symbols and fills them into the given
+ * vector.
+ */
+sortListReturn[std::vector<CVC4::Type>& sorts, CVC4::Type& t]
+  : LPAREN_TOK sortList[sorts] RPAREN_TOK
+    sortSymbol[t,CHECK_DECLARED] {
+      // if return type is a function, flatten
+      if( t.isFunction() ){
+        std::vector< Type > domainTypes = ((FunctionType)t).getArgTypes();
+        sorts.insert( sorts.end(), domainTypes.begin(), domainTypes.end() );
+        t = ((FunctionType)t).getRangeType();
+      }
+    }
   ;
 
 /**

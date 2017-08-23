@@ -135,7 +135,7 @@ public:
     }else{
       arg_type = arg_types[0];    
     }
-    Trace("builtin-rewrite-debug2") << "  making array type..." << std::endl;
+    Trace("builtin-rewrite-debug2") << "  making array type : " << arg_type << " " << n[1].getType() << "..." << std::endl;
     TypeNode array_type = NodeManager::currentNM()->mkArrayType( arg_type, n[1].getType() );
     
     Trace("builtin-rewrite-debug2") << "  process body..." << std::endl;

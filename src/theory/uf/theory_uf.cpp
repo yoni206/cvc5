@@ -413,22 +413,7 @@ void TheoryUF::ppStaticLearn(TNode n, NodeBuilder<>& learned) {
       } else {
         Debug("diamonds") << "+ C fails" << endl;
       }
-    }  //   eq::EqClassesIterator eqcs_i = eq::EqClassesIterator( &d_equalityEngine );
-  //   while( !eqcs_i.isFinished() ){
-  //     Node eqc = (*eqcs_i);
-  //     TypeNode tn = eqc.getType();
-  //     if( tn.isSort() ){
-  //       if( type_enums.find( tn )==type_enums.end() ){
-  //         type_enums[tn] = new TypeEnumerator( tn );
-  //       }
-  //       Node rep = *(*type_enums[tn]);
-  //       ++(*type_enums[tn]);
-  //       //specify the constant as the representative
-  //       m->assertEquality( eqc, rep, true );
-  //       m->assertRepresentative( rep );
-  //     }
-  //     ++eqcs_i;
-  //   }
+    }
   }
 
   if(options::ufSymmetryBreaker()) {
