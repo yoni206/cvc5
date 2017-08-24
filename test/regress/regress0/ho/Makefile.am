@@ -25,7 +25,10 @@ TESTS = \
   ext-ho.smt2 \     
   trans.smt2 \
   ext-finite-unsat.smt2 \     
-  ext-sat.smt2
+  ext-sat.smt2 \     
+  cong-full-apply.smt2 \     
+  def-fun-flatten.smt2 \     
+  lambda-equality-non-canon.smt2
 
 EXTRA_DIST = $(TESTS)
 

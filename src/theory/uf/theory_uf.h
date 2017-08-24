@@ -29,6 +29,8 @@
 
 #include "context/cdo.h"
 #include "context/cdhashset.h"
+#include "context/cdchunk_list.h"
+
 
 namespace CVC4 {
 namespace theory {
@@ -170,9 +172,12 @@ private:
 private: // for higher-order
   /** apply extensionality */
   void applyExtensionality(TNode deq);
-  
+
   /** check extensionality */
-  void checkExtensionality();
+  unsigned checkExtensionality();
+  
+  /** check higher order */
+  unsigned checkHigherOrder();
 public:
 
   /** Constructs a new instance of TheoryUF w.r.t. the provided context.*/
@@ -185,7 +190,8 @@ public:
   void setMasterEqualityEngine(eq::EqualityEngine* eq);
   void finishInit();
 
-  void check(Effort);
+  void check(Effort);  
+  Node expandDefinition(LogicRequest &logicRequest, Node node);
   void preRegisterTerm(TNode term);
   Node explain(TNode n);
 

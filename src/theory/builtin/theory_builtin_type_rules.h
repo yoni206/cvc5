@@ -168,10 +168,15 @@ public:
     //get array representation of this function, if possible
     Node na = TheoryBuiltinRewriter::getArrayRepresentationForLambda( n, false, true );
     if( !na.isNull() ){
-      if( na.isConst() ){
-        Trace("lambda-const") << "Constant lambda : " << n << std::endl;
-        Trace("lambda-const") << "...since its array representation : " << na << " is constant." << std::endl;
-        return true;
+      // must have the standard bound variable list
+      Node bvl = TheoryBuiltinRewriter::getLambdaBoundVarListForType( na.getType().getArrayIndexType() );
+      if( bvl==n[0] ){
+        //array must be constant
+        if( na.isConst() ){
+          Trace("lambda-const") << "Constant lambda : " << n;
+          Trace("lambda-const") << " since its array representation : " << na << " is constant." << std::endl;
+          return true;
+        }
       }
     }
     return false;

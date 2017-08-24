@@ -110,7 +110,6 @@ static bool stringifyRegexp(Node n, stringstream& ss) {
 // force_nt is the type that n must have
 void Smt2Printer::toStream(std::ostream& out, TNode n,
                            int toDepth, bool types, TypeNode force_nt) const throw() {
-  Trace("ajr-temp") << "print[" << n.getKind() << "]" << std::endl;
   // null
   if(n.getKind() == kind::NULL_EXPR) {
     out << "null";

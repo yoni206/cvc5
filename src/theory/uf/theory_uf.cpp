@@ -28,6 +28,7 @@
 #include "theory/uf/theory_uf_strong_solver.h"
 #include "theory/quantifiers/term_database.h"
 #include "options/theory_options.h"
+#include "theory/uf/theory_uf_rewriter.h"
 
 using namespace std;
 
@@ -150,10 +151,37 @@ void TheoryUF::check(Effort level) {
       }
     }
     if(! d_conflict && fullEffort(level) ){
+      checkHigherOrder();
       checkExtensionality();
     }
   }
 }/* TheoryUF::check() */
+
+Node TheoryUF::expandDefinition(LogicRequest &logicRequest, Node node) {
+  if( node.getKind()==kind::HO_APPLY ){
+    // may convert HO_APPLY to APPLY_UF if fully applied
+    if( node[0].getType().getNumChildren()==2 ){
+      Trace("uf-ho") << "uf-ho : expanding definition : " << node << std::endl;
+      std::vector< TNode > args;
+      Node f = TheoryUfRewriter::decomposeHoApply( node, args );
+      Node new_f = f;
+      if( !TheoryUfRewriter::isStdApplyUfOperator( f ) ){
+        // introduce skolem
+        new_f = NodeManager::currentNM()->mkSkolem( "a", f.getType() );
+        Node lem = new_f.eqNode( f );
+        Trace("uf-ho") << "uf-ho-lemma : Skolem definition for apply-conversion : " << lem << std::endl;
+        d_out->lemma( lem );
+      }
+      Assert( TheoryUfRewriter::isStdApplyUfOperator( new_f ) );
+      args.push_back( new_f );
+      std::reverse( args.begin(), args.end() );
+      Node ret = NodeManager::currentNM()->mkNode( kind::APPLY_UF, args );
+      Trace("uf-ho") << "uf-ho : expandDefinition : " << node << " to " << ret << std::endl;
+      return ret;
+    }
+  }
+  return node;
+}
 
 void TheoryUF::preRegisterTerm(TNode node) {
   Debug("uf") << "TheoryUF::preRegisterTerm(" << node << ")" << std::endl;
@@ -614,12 +642,13 @@ void TheoryUF::applyExtensionality(TNode deq) {
     }
     Node conc = t[0].eqNode( t[1] ).negate();
     Node lem = NodeManager::currentNM()->mkNode( kind::OR, deq[0], conc );
-    Trace("uf-ho") << "Extensionality inference : " << lem << std::endl;
+    Trace("uf-ho") << "uf-ho-lemma : extensionality : " << lem << std::endl;
     d_out->lemma( lem );
   }
 }
 
-void TheoryUF::checkExtensionality() {
+unsigned TheoryUF::checkExtensionality() {
+  unsigned num_lemmas = 0;
   Trace("uf-ho") << "TheoryUF::checkExtensionality..." << std::endl;
   // This is bit eager: we should allow functions to be neither equal nor disequal during model construction
   // However, doing so would require a function-type enumerator.
@@ -631,7 +660,7 @@ void TheoryUF::checkExtensionality() {
     TypeNode tn = eqc.getType();
     if( tn.isFunction() ){
       func_eqcs[tn].push_back( eqc );
-      Trace("uf-ho") << "  func eqc : " << tn << " : " << eqc << std::endl;
+      Trace("uf-ho-debug") << "  func eqc : " << tn << " : " << eqc << std::endl;
     }
     ++eqcs_i;
   }
@@ -644,10 +673,32 @@ void TheoryUF::checkExtensionality() {
         if( !d_equalityEngine.areDisequal( itf->second[j], itf->second[k], false ) ){
           Node deq = itf->second[j].eqNode( itf->second[k] ).negate();
           applyExtensionality( deq );
+          num_lemmas++;
         }
       }   
     }
   }
+  return num_lemmas;
+}
+
+unsigned TheoryUF::checkHigherOrder() {
+  Trace("uf-ho") << "TheoryUF::checkHigherOrder..." << std::endl;
+  unsigned num_lemmas = 0;
+  
+/*
+  num_lemmas = checkApplyConversion();
+  if( num_lemmas>0 ){
+    Trace("uf-ho") << "...apply-conversion returned " << num_lemmas << " lemmas." << std::endl;
+    return num_lemmas;
+  }
+*/
+
+  num_lemmas = checkExtensionality();
+  if( num_lemmas>0 ){
+    Trace("uf-ho") << "...extensionality returned " << num_lemmas << " lemmas." << std::endl;
+    return num_lemmas;
+  }
+  return 0;
 }
 
 } /* namespace CVC4::theory::uf */

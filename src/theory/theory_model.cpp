@@ -475,17 +475,25 @@ void TheoryModel::printRepresentative( std::ostream& out, Node r ){
 
 void TheoryModel::assignFunctionDefinition( Node f, Node f_def ) {
   Trace("model-builder") << "  Assigning function (" << f << ") to (" << f_def << ")" << endl;
-  d_uf_models[f] = f_def;
 
   // if the function is a first-class member of the equality engine
-  if( d_equalityEngine->hasExternalTerm( f ) ){
+  bool hasExternalTerm = d_equalityEngine->hasExternalTerm( f );
+  if( hasExternalTerm ){
+    //we must rewrite the function value since the definition needs to be a constant value
+    f_def = Rewriter::rewrite( f_def );
+    Assert( f_def.isConst() );
+  }
+
+  d_uf_models[f] = f_def;
+
+  if( hasExternalTerm ){
     Trace("model-builder-debug") << "  ...function is first-class member of equality engine" << std::endl;
     // assign to representative if higher-order
     Node r = getRepresentative( f );
     //if( d_reps.find( r )==d_reps.end() )
     //always replace the representative, since it is initially assigned to itself
     d_reps[r] = f_def;  
-    // also assign to other functions in the same equivalence class
+    // also assign to other assignable functions in the same equivalence class
     eq::EqClassIterator eqc_i = eq::EqClassIterator(r,d_equalityEngine);
     while( !eqc_i.isFinished() ) {
       Node n = *eqc_i;
@@ -1024,7 +1032,11 @@ bool TheoryEngineModelBuilder::buildModel(Model* m)
       Assert(!assignOne); // check for infinite loop!
       assignOne = true;
     }
-  }
+  }  
+
+  //must assign functions that occur as external terms now, since these must have a particular shape
+  //TODO
+
 
 #ifdef CVC4_ASSERTIONS
   // Assert that all representatives have been converted to constants
@@ -1079,36 +1091,41 @@ void TheoryEngineModelBuilder::debugCheckModel(Model* m){
     // eqc is the equivalence class representative
     Node eqc = (*eqcs_i);
     // some types it is not possible to check equivalence
-    if( !eqc.getType().isFunction() ){
-      Node rep;
-      itMap = d_constantReps.find(eqc);
-      if (itMap == d_constantReps.end() && eqc.getType().isBoolean()) {
-        rep = tm->getValue(eqc);
-        Assert(rep.isConst());
-      }
-      else {
-        Assert(itMap != d_constantReps.end());
-        rep = itMap->second;
-      }
-      eq::EqClassIterator eqc_i = eq::EqClassIterator(eqc, tm->d_equalityEngine);
-      for ( ; !eqc_i.isFinished(); ++eqc_i) {
-        Node n = *eqc_i;
-        static int repCheckInstance = 0;
-        ++repCheckInstance;
-        
-        // non-linear mult is not necessarily accurate wrt getValue
-        if( n.getKind()!=kind::NONLINEAR_MULT && ( n.getKind()!=kind::EQUAL || !n[0].getType().isFunction() ) ){
-          Debug("check-model::rep-checking")
-            << "( " << repCheckInstance <<") "
-            << "n: " << n << endl
-            << "getValue(n): " << tm->getValue(n) << endl
-            << "rep: " << rep << endl;
-          Assert(tm->getValue(*eqc_i) == rep, "run with -d check-model::rep-checking for details");
-        }
+    //if( !eqc.getType().isFunction() ){
+    Node rep = tm->getRepresentative( eqc );
+/*
+    itMap = d_constantReps.find(eqc);
+    if (itMap == d_constantReps.end() && eqc.getType().isBoolean()) {
+      rep = tm->getValue(eqc);
+      Assert(rep.isConst());
+    }
+    else {
+      Assert(itMap != d_constantReps.end());
+      rep = itMap->second;
+    }
+*/
+    eq::EqClassIterator eqc_i = eq::EqClassIterator(eqc, tm->d_equalityEngine);
+    for ( ; !eqc_i.isFinished(); ++eqc_i) {
+      Node n = *eqc_i;
+      static int repCheckInstance = 0;
+      ++repCheckInstance;
+      
+      // non-linear mult is not necessarily accurate wrt getValue
+      // HO_APPLY terms may have unassigned representatives (FIXME)
+      if( n.getKind()!=kind::NONLINEAR_MULT && n.getKind()!=kind::HO_APPLY ){
+        Debug("check-model::rep-checking")
+          << "( " << repCheckInstance <<") "
+          << "n: " << n << endl
+          << "getValue(n): " << tm->getValue(n) << endl
+          << "rep: " << rep << endl;
+        Assert(tm->getValue(*eqc_i) == rep, "run with -d check-model::rep-checking for details");
       }
     }
+    //}
   }
 #endif /* CVC4_ASSERTIONS */
+
+  // builder-specific debugging
   debugModel( tm );
 }
 
@@ -1189,7 +1206,7 @@ bool TheoryEngineModelBuilder::processBuildModel(TheoryModel* m){
       for (size_t j = 0; j < un.getNumChildren(); ++j) {
         Node rc = m->getRepresentative(un[j]);
         Trace("model-builder-debug2") << "    get rep : " << un[j] << " returned " << rc << std::endl;
-        Assert( ( rc.getType().isFunction() && rc.getKind()==kind::LAMBDA ) || rc.isConst() ); 
+        Assert( rc.isConst() ); 
         children.push_back(rc);
       }
       simp = NodeManager::currentNM()->mkNode(un.getKind(), children);
@@ -1203,13 +1220,14 @@ bool TheoryEngineModelBuilder::processBuildModel(TheoryModel* m){
       TypeEnumerator te(type.getRangeType());
       default_v = (*te);
     }
+    bool condenseFuncValues = options::condenseFunctionValues() && !m->d_equalityEngine->hasExternalTerm( n );
     ufmt.setDefaultValue( m, default_v );
-    if(options::condenseFunctionValues()) {
+    if(condenseFuncValues) {
       ufmt.simplify();
     }
     std::stringstream ss;
     ss << "_arg_" << n << "_";
-    Node val = ufmt.getFunctionValue( ss.str().c_str(), options::condenseFunctionValues() );
+    Node val = ufmt.getFunctionValue( ss.str().c_str(), condenseFuncValues );
     m->assignFunctionDefinition( n, val );
     //ufmt.debugPrint( std::cout, m );
   }

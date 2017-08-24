@@ -88,23 +88,20 @@ public:
           new_body = NodeManager::currentNM()->mkNode( kind::LAMBDA, largs );
         }
         return RewriteResponse( REWRITE_AGAIN_FULL, new_body );
-      }else{
+      }
+      // this is disabled since we may want to reason about both representations 
+      //of a function application simultaneously (e.g. for higher-order unification)
+/*
+      else{
         //rewrite to APPLY_UF if full application of non-variable function?
         if( node[0].getType().getNumChildren()==2 ){
-          std::vector< Node > children;
-          Node curr = node;
-          while( curr.getKind() == kind::HO_APPLY ){
-            children.push_back( curr[1] );
-            curr = curr[0];        
-          }
-          if( curr.getKind()!=kind::BOUND_VARIABLE ){
-            children.push_back( curr );
-            std::reverse( children.begin(), children.end() );
-            Node ret = NodeManager::currentNM()->mkNode( kind::APPLY_UF, children );
+          Node ret = getApplyUfForHoApply( node );
+          if( !ret.isNull() ){
             return RewriteResponse( REWRITE_AGAIN_FULL, ret );
           }
         }
       }
+*/
     }
     return RewriteResponse(REWRITE_DONE, node);
   }
@@ -138,6 +135,40 @@ public:
   static inline void init() {}
   static inline void shutdown() {}
 
+public: //conversion between HO_APPLY AND APPLY_UF
+  static Node getHoApplyForApplyUf(TNode n) {
+    Assert( n.getKind()==kind::APPLY_UF );
+    Node curr = n.getOperator();
+    for( unsigned i=0; i<n.getNumChildren(); i++ ){
+      curr = NodeManager::currentNM()->mkNode( kind::HO_APPLY, curr, n[i] );     
+    }
+    return curr;
+  }
+  static Node getApplyUfForHoApply(TNode n) {
+    Assert( n.getType().getNumChildren()==2 );
+    std::vector< TNode > children;
+    TNode curr = decomposeHoApply( n, children );
+    // if operator is standard
+    if( isStdApplyUfOperator( curr ) ){
+      children.push_back( curr );
+      std::reverse( children.begin(), children.end() );
+      return NodeManager::currentNM()->mkNode( kind::APPLY_UF, children );
+    }
+    // cannot construct APPLY_UF if operator is partially applied or is not standard       
+    return Node::null();
+  }
+  // gets arguments, returns operator
+  static Node decomposeHoApply(TNode n, std::vector<TNode>& args) {
+    TNode curr = n;
+    while( curr.getKind() == kind::HO_APPLY ){
+      args.push_back( curr[1] );
+      curr = curr[0];        
+    }
+    return curr;
+  }
+  static inline bool isStdApplyUfOperator(TNode n){
+    return n.isVar() && n.getKind()!=kind::BOUND_VARIABLE;
+  }
 };/* class TheoryUfRewriter */
 
 }/* CVC4::theory::uf namespace */
