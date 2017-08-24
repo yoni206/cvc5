@@ -131,6 +131,9 @@ private:
   /** extensionality applied to these disequalities */
   NodeSet d_extensionality_deq;
 
+  /** extensionality applied to these disequalities */
+  NodeSet d_full_apply_ho_conv;
+
   /**
    * Should be called to propagate the literal. We use a node here
    * since some of the propagated literals are not kept anywhere.
@@ -178,6 +181,9 @@ private: // for higher-order
   
   /** check higher order */
   unsigned checkHigherOrder();
+
+  /** get apply uf for ho apply */
+  Node getApplyUfForHoApply( Node node );
 public:
 
   /** Constructs a new instance of TheoryUF w.r.t. the provided context.*/

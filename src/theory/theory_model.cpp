@@ -91,6 +91,7 @@ bool TheoryModel::getHeapModel( Expr& h, Expr& neq ) const {
 Node TheoryModel::getValue(TNode n, bool useDontCares) const {
   //apply substitutions
   Node nn = d_substitutions.apply(n);
+  Debug("model-getvalue-debug") << "[model-getvalue] getValue : substitute " << n << " to " << nn << std::endl;
   //get value in model
   nn = getModelValue(nn, false, useDontCares);
   if (nn.isNull()) return nn;
@@ -137,6 +138,8 @@ Node TheoryModel::getModelValue(TNode n, bool hasBoundVars, bool useDontCares) c
   if (it != d_modelCache.end()) {
     return (*it).second;
   }
+  Debug("model-getvalue-debug") << "Get model value " << n << " ... ";
+  Debug("model-getvalue-debug") << d_equalityEngine->hasTerm(n) << " " << d_equalityEngine->hasExternalTerm(n) << std::endl;
   Node ret = n;
   if(n.getKind() == kind::EXISTS || n.getKind() == kind::FORALL || n.getKind() == kind::COMBINED_CARDINALITY_CONSTRAINT ||
      ( n.getKind() == kind::CARDINALITY_CONSTRAINT && options::ufssMode()!=theory::uf::UF_SS_FULL ) ) {
@@ -162,44 +165,19 @@ Node TheoryModel::getModelValue(TNode n, bool hasBoundVars, bool useDontCares) c
       ret = nr;
     }
   } else {
+      // FIXME : special case not necessary
     if(n.getKind() == kind::LAMBDA) {
       NodeManager* nm = NodeManager::currentNM();
       Node body = getModelValue(n[1], true);
       body = Rewriter::rewrite(body);
       ret = nm->mkNode(kind::LAMBDA, n[0], body);
+      ret = Rewriter::rewrite( ret );
       d_modelCache[n] = ret;
       return ret;
     }
     if(n.isConst() || (hasBoundVars && n.getKind() == kind::BOUND_VARIABLE)) {
       d_modelCache[n] = ret;
       return ret;
-    }
-
-    TypeNode t = n.getType();
-    if (t.isFunction() || t.isPredicate()) {
-      if (d_enableFuncModels) {
-        std::map< Node, Node >::const_iterator it = d_uf_models.find(n);
-        if (it != d_uf_models.end()) {
-          // Existing function
-          ret = it->second;
-          d_modelCache[n] = ret;
-          return ret;
-        }
-        // Unknown function symbol: return LAMBDA x. c, where c is the first constant in the enumeration of the range type
-        vector<TypeNode> argTypes = t.getArgTypes();
-        vector<Node> args;
-        NodeManager* nm = NodeManager::currentNM();
-        for (unsigned i = 0; i < argTypes.size(); ++i) {
-          args.push_back(nm->mkBoundVar(argTypes[i]));
-        }
-        Node boundVarList = nm->mkNode(kind::BOUND_VAR_LIST, args);
-        TypeEnumerator te(t.getRangeType());
-        ret = nm->mkNode(kind::LAMBDA, boundVarList, *te);
-        d_modelCache[n] = ret;
-        return ret;
-      }
-      // TODO: if func models not enabled, throw an error?
-      Unreachable();
     }
 
     if (n.getNumChildren() > 0 &&
@@ -235,9 +213,34 @@ Node TheoryModel::getModelValue(TNode n, bool hasBoundVars, bool useDontCares) c
       d_modelCache[n] = ret;
       return ret;
     }
-
-    if (!d_equalityEngine->hasTerm(n)) {
-      if(n.getType().isRegExp()) {
+  
+    Debug("model-getvalue-debug") << "Handling special cases for types..." << std::endl;
+    if (!d_equalityEngine->hasExternalTerm(n)) {
+      TypeNode t = n.getType();
+      if (t.isFunction() || t.isPredicate()) {
+        if (d_enableFuncModels) {
+          std::map< Node, Node >::const_iterator it = d_uf_models.find(n);
+          if (it != d_uf_models.end()) {
+            // Existing function
+            ret = it->second;
+            d_modelCache[n] = ret;
+            return ret;
+          }
+          // Unknown function symbol: return LAMBDA x. c, where c is the first constant in the enumeration of the range type
+          vector<TypeNode> argTypes = t.getArgTypes();
+          vector<Node> args;
+          NodeManager* nm = NodeManager::currentNM();
+          for (unsigned i = 0; i < argTypes.size(); ++i) {
+            args.push_back(nm->mkBoundVar(argTypes[i]));
+          }
+          Node boundVarList = nm->mkNode(kind::BOUND_VAR_LIST, args);
+          TypeEnumerator te(t.getRangeType());
+          ret = nm->mkNode(kind::LAMBDA, boundVarList, *te);
+        }else{
+          // TODO: if func models not enabled, throw an error?
+          Unreachable();
+        }
+      }else if(t.isRegExp()) {
         ret = Rewriter::rewrite(ret);
       } else {
         if (options::omitDontCares() && useDontCares) {
@@ -251,6 +254,7 @@ Node TheoryModel::getModelValue(TNode n, bool hasBoundVars, bool useDontCares) c
       return ret;
     }
   }
+  Debug("model-getvalue-debug") << "get value from representative " << ret << "..." << std::endl;
   ret = d_equalityEngine->getRepresentative(ret);
   Assert(d_reps.find(ret) != d_reps.end());
   std::map< Node, Node >::const_iterator it2 = d_reps.find( ret );
@@ -278,6 +282,7 @@ Node TheoryModel::getDomainValue( TypeNode tn, std::vector< Node >& exclude ){
 /** add substitution */
 void TheoryModel::addSubstitution( TNode x, TNode t, bool invalidateCache ){
   if( !d_substitutions.hasSubstitution( x ) ){
+    Debug("model") << "Add substitution in model " << x << " -> " << t << std::endl;
     d_substitutions.addSubstitution( x, t, invalidateCache );
   } else {
 #ifdef CVC4_ASSERTIONS

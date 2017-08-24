@@ -44,33 +44,39 @@ public:
         return RewriteResponse(REWRITE_DONE, newNode);
       }
     }
-    if(node.getKind() == kind::APPLY_UF && node.getOperator().getKind() == kind::LAMBDA) {
-      // resolve away the lambda
-      context::Context fakeContext;
-      theory::SubstitutionMap substitutions(&fakeContext);
-      TNode lambda = node.getOperator();
-      for(TNode::iterator formal = lambda[0].begin(), arg = node.begin(); formal != lambda[0].end(); ++formal, ++arg) {
-        // typechecking should ensure that the APPLY_UF is well-typed, correct arity, etc.
-        Assert(formal != node.end());
-        // This rewrite step is important: if we have (f (f 5)) for
-        // some lambda term f, we want to beta-reduce the inside (f 5)
-        // application first.  Otherwise, we can end up in infinite
-        // recursion, because f's formal (say "x") gives the
-        // substitution "x |-> (f 5)".  Fine, the body of the lambda
-        // gets (f 5) in place for x.  But since the same lambda ("f")
-        // now occurs in the body, it's got the same bound var "x", so
-        // substitution continues and we replace that x by (f 5).  And
-        // then again.  :-(
-        //
-        // We need a better solution for distinguishing bound
-        // variables like this, but for now, handle it by going
-        // inside-out.  (Quantifiers shouldn't ever have this problem,
-        // so long as the bound vars in different quantifiers are kept
-        // different.)
-        Node n = Rewriter::rewrite(*arg);
-        substitutions.addSubstitution(*formal, n);
+    if(node.getKind() == kind::APPLY_UF) {
+      if( !isStdApplyUfOperator( node.getOperator() ) ){
+        if( node.getOperator().getKind() == kind::LAMBDA ){
+          // resolve away the lambda
+          context::Context fakeContext;
+          theory::SubstitutionMap substitutions(&fakeContext);
+          TNode lambda = node.getOperator();
+          for(TNode::iterator formal = lambda[0].begin(), arg = node.begin(); formal != lambda[0].end(); ++formal, ++arg) {
+            // typechecking should ensure that the APPLY_UF is well-typed, correct arity, etc.
+            Assert(formal != node.end());
+            // This rewrite step is important: if we have (f (f 5)) for
+            // some lambda term f, we want to beta-reduce the inside (f 5)
+            // application first.  Otherwise, we can end up in infinite
+            // recursion, because f's formal (say "x") gives the
+            // substitution "x |-> (f 5)".  Fine, the body of the lambda
+            // gets (f 5) in place for x.  But since the same lambda ("f")
+            // now occurs in the body, it's got the same bound var "x", so
+            // substitution continues and we replace that x by (f 5).  And
+            // then again.  :-(
+            //
+            // We need a better solution for distinguishing bound
+            // variables like this, but for now, handle it by going
+            // inside-out.  (Quantifiers shouldn't ever have this problem,
+            // so long as the bound vars in different quantifiers are kept
+            // different.)
+            Node n = Rewriter::rewrite(*arg);
+            substitutions.addSubstitution(*formal, n);
+          }
+          return RewriteResponse(REWRITE_AGAIN_FULL, substitutions.apply(lambda[1]));
+        }else{
+          return RewriteResponse(REWRITE_AGAIN_FULL, getHoApplyForApplyUf(node));
+        }
       }
-      return RewriteResponse(REWRITE_AGAIN_FULL, substitutions.apply(lambda[1]));
     }else if( node.getKind() == kind::HO_APPLY ){
       if( node[0].getKind() == kind::LAMBDA ){
         // resolve one argument of the lambda

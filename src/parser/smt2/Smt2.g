@@ -1996,9 +1996,8 @@ term[CVC4::Expr& expr, CVC4::Expr& expr2]
       }
       // may be partially applied function, in this case we should use HO_APPLY     
       if( args.size()>=2 && args[0].getType().isFunction() &&
-          ( !args[0].isVariable() || args[0].getKind()==kind::BOUND_VARIABLE || 
-            (args.size()-1)<((FunctionType)args[0].getType()).getArity() ) ){
-        Debug("parser") << "Partial or non-standard operator application of " << args[0];
+          (args.size()-1)<((FunctionType)args[0].getType()).getArity() ){
+        Debug("parser") << "Partial application of " << args[0];
         Debug("parser") << " : #argTypes = " << ((FunctionType)args[0].getType()).getArity();  
         Debug("parser") << ", #args = " << args.size()-1 << std::endl;  
         // must curry the application

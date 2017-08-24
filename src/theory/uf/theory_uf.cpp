@@ -49,6 +49,7 @@ TheoryUF::TheoryUF(context::Context* c, context::UserContext* u,
                        true),
       d_conflict(c, false),
       d_extensionality_deq(u),
+      d_full_apply_ho_conv(u),
       d_functionsTerms(c),
       d_symb(u, instanceName)
 {
@@ -157,25 +158,33 @@ void TheoryUF::check(Effort level) {
   }
 }/* TheoryUF::check() */
 
+Node TheoryUF::getApplyUfForHoApply( Node node ) {
+  Assert( node[0].getType().getNumChildren()==2 );
+  std::vector< TNode > args;
+  Node f = TheoryUfRewriter::decomposeHoApply( node, args );
+  Node new_f = f;
+  if( !TheoryUfRewriter::isStdApplyUfOperator( f ) ){
+    // introduce skolem
+    new_f = NodeManager::currentNM()->mkSkolem( "a", f.getType() );
+    Node lem = new_f.eqNode( f );
+    Trace("uf-ho-lemma") << "uf-ho-lemma : Skolem definition for apply-conversion : " << lem << std::endl;
+    d_out->lemma( lem );
+  }
+  Assert( TheoryUfRewriter::isStdApplyUfOperator( new_f ) );
+  args.push_back( new_f );
+  std::reverse( args.begin(), args.end() );
+  Node ret = NodeManager::currentNM()->mkNode( kind::APPLY_UF, args );
+  return ret;
+}
+
+
 Node TheoryUF::expandDefinition(LogicRequest &logicRequest, Node node) {
+  Trace("uf-ho-debug") << "uf-ho-debug : expanding definition : " << node << std::endl;
   if( node.getKind()==kind::HO_APPLY ){
-    // may convert HO_APPLY to APPLY_UF if fully applied
+    // convert HO_APPLY to APPLY_UF if fully applied
     if( node[0].getType().getNumChildren()==2 ){
       Trace("uf-ho") << "uf-ho : expanding definition : " << node << std::endl;
-      std::vector< TNode > args;
-      Node f = TheoryUfRewriter::decomposeHoApply( node, args );
-      Node new_f = f;
-      if( !TheoryUfRewriter::isStdApplyUfOperator( f ) ){
-        // introduce skolem
-        new_f = NodeManager::currentNM()->mkSkolem( "a", f.getType() );
-        Node lem = new_f.eqNode( f );
-        Trace("uf-ho") << "uf-ho-lemma : Skolem definition for apply-conversion : " << lem << std::endl;
-        d_out->lemma( lem );
-      }
-      Assert( TheoryUfRewriter::isStdApplyUfOperator( new_f ) );
-      args.push_back( new_f );
-      std::reverse( args.begin(), args.end() );
-      Node ret = NodeManager::currentNM()->mkNode( kind::APPLY_UF, args );
+      Node ret = getApplyUfForHoApply( node );
       Trace("uf-ho") << "uf-ho : expandDefinition : " << node << " to " << ret << std::endl;
       return ret;
     }
@@ -206,6 +215,18 @@ void TheoryUF::preRegisterTerm(TNode node) {
     }
     // Remember the function and predicate terms
     d_functionsTerms.push_back(node);
+    break;
+  case kind::HO_APPLY:
+    // convert HO_APPLY to APPLY_UF if fully applied
+    if( d_full_apply_ho_conv.find( node )==d_full_apply_ho_conv.end() ){
+      if( node[0].getType().getNumChildren()==2 ){
+        d_full_apply_ho_conv.insert( node );
+        Node ret = getApplyUfForHoApply( node );
+        Node lem = ret.eqNode( node );
+        Trace("uf-ho-lemma") << "uf-ho-lemma : apply-conversion : " << lem << std::endl;
+        d_out->lemma( lem );
+      }
+    }
     break;
   case kind::CARDINALITY_CONSTRAINT:
   case kind::COMBINED_CARDINALITY_CONSTRAINT:
@@ -642,7 +663,7 @@ void TheoryUF::applyExtensionality(TNode deq) {
     }
     Node conc = t[0].eqNode( t[1] ).negate();
     Node lem = NodeManager::currentNM()->mkNode( kind::OR, deq[0], conc );
-    Trace("uf-ho") << "uf-ho-lemma : extensionality : " << lem << std::endl;
+    Trace("uf-ho-lemma") << "uf-ho-lemma : extensionality : " << lem << std::endl;
     d_out->lemma( lem );
   }
 }

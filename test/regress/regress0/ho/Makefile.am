@@ -28,7 +28,8 @@ TESTS = \
   ext-sat.smt2 \     
   cong-full-apply.smt2 \     
   def-fun-flatten.smt2 \     
-  lambda-equality-non-canon.smt2
+  lambda-equality-non-canon.smt2 \     
+  ite-apply-eq.smt2
 
 EXTRA_DIST = $(TESTS)
 
