@@ -390,7 +390,9 @@ command [std::unique_ptr<CVC4::Command>* cmd]
     { 
       Debug("parser") << "defining function, #sorts = " << sorts.size() << ", #terms = " << terms.size() << std::endl;
       for( unsigned i=terms.size(); i<sorts.size(); i++ ){
-        Expr var = EXPR_MANAGER->mkBoundVar(sorts[i]);
+        std::stringstream ss;
+        ss << "__" << name << "_" << i << "__";
+        Expr var = PARSER_STATE->mkBoundVar(ss.str(), sorts[i]);
         terms.push_back( var );
         Debug("parser") << "Add variable " << var << " to flatten function " << name << std::endl;
         expr = MK_EXPR( CVC4::kind::HO_APPLY, expr, var );
@@ -1149,6 +1151,7 @@ smt25Command[std::unique_ptr<CVC4::Command>* cmd]
   std::vector<std::pair<std::string, Type> > sortedVarNames;
   SExpr sexpr;
   Type t;
+  Expr func;
   Expr func_app;
   std::vector<Expr> bvs;
   std::vector< std::vector<std::pair<std::string, Type> > > sortedVarNamesList;
@@ -1215,34 +1218,37 @@ smt25Command[std::unique_ptr<CVC4::Command>* cmd]
         }
         t = EXPR_MANAGER->mkFunctionType(sorts, t);
       }
-      Expr func = PARSER_STATE->mkVar(fname, t);
+      func = PARSER_STATE->mkVar(fname, t);
       seq->addCommand(new DeclareFunctionCommand(fname, func, t));
+      PARSER_STATE->pushScope(true);
+      for(std::vector<std::pair<std::string, CVC4::Type> >::const_iterator i =
+            sortedVarNames.begin(), iend = sortedVarNames.end(); i != iend;
+          ++i) {
+        Expr v = PARSER_STATE->mkBoundVar((*i).first, (*i).second);
+        bvs.push_back( v );
+      }
+    }
+    term[expr, expr2]
+    { 
       if( sorts.empty() ){
         func_app = func;
       }else{
         std::vector< Expr > f_app;
         f_app.push_back( func );
-        PARSER_STATE->pushScope(true);
-        for(std::vector<std::pair<std::string, CVC4::Type> >::const_iterator i =
-              sortedVarNames.begin(), iend = sortedVarNames.end(); i != iend;
-            ++i) {
-          Expr v = PARSER_STATE->mkBoundVar((*i).first, (*i).second);
-          bvs.push_back( v );
-          f_app.push_back( v );
-        }
         // carry variables if functional
-        for( unsigned i=sortedVarNames.size(); i<sorts.size(); i++ ){
-          Expr v = EXPR_MANAGER->mkBoundVar(sorts[i]);
-          bvs.push_back( v );
-          f_app.push_back( v );
+        for( unsigned i=0; i<sorts.size(); i++ ){
+          if( i<bvs.size() ){
+            f_app.push_back( bvs[i] );
+          }else{
+            std::stringstream ss;
+            ss << "__" << fname << "_" << i << "__";
+            Expr v = PARSER_STATE->mkBoundVar(ss.str(), sorts[i]);
+            bvs.push_back( v );
+            f_app.push_back( v );
+            expr = MK_EXPR( CVC4::kind::HO_APPLY, expr, bvs[i] );
+          }
         }
         func_app = MK_EXPR( kind::APPLY_UF, f_app );
-      }
-    }
-    term[expr, expr2]
-    { // carry function variables if higher-order
-      for( unsigned i=sortedVarNames.size(); i<sorts.size(); i++ ){
-        expr = MK_EXPR( CVC4::kind::HO_APPLY, expr, bvs[i] );
       }
       PARSER_STATE->popScope(); 
       Expr as = MK_EXPR( kind::EQUAL, func_app, expr);
