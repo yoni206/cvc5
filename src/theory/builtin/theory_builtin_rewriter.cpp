@@ -79,41 +79,49 @@ Node TheoryBuiltinRewriter::blastChain(TNode in) {
 
 
 
-Node TheoryBuiltinRewriter::getLambdaForArrayRepresentationRec( Node a, Node bvl ){
-  if( a.getKind()==kind::STORE ){
-    Node body = getLambdaForArrayRepresentationRec( a[0], bvl );
-    if( !body.isNull() ){
-      Node cond;
-      if( bvl.getNumChildren()>1 ){
-        Assert( a[1].getType().isTuple() );
-        Assert( a[1].getKind()==kind::APPLY_CONSTRUCTOR );
-        Assert( a[1].getNumChildren()==bvl.getNumChildren() );
-        std::vector< Node > conds;
-        for( unsigned i=0; i<bvl.getNumChildren(); i++ ){
-          Assert( a[1][i].getType()==bvl[i].getType() );
-          //must orient the equality based on rewriter
-          conds.push_back( Rewriter::rewrite( bvl[i].eqNode( a[1][i] ) ) );
+Node TheoryBuiltinRewriter::getLambdaForArrayRepresentationRec( Node a, Node bvl, unsigned bvlIndex, 
+                                                                std::map< Node, Node >& visited ){
+  std::map< Node, Node >::iterator it = visited.find( a );
+  if( it==visited.end() ){
+    Node ret;
+    if( bvlIndex<bvl.getNumChildren() ){
+      Assert( a.getType().isArray() );
+      if( a.getKind()==kind::STORE ){
+        // convert the array recursively
+        Node body = getLambdaForArrayRepresentationRec( a[0], bvl, bvlIndex, visited );
+        if( !body.isNull() ){
+          // convert the value
+          Node val = getLambdaForArrayRepresentationRec( a[2], bvl, bvlIndex+1, visited );
+          if( !val.isNull() ){
+            Assert( !TypeNode::leastCommonTypeNode( a[1].getType(), bvl[bvlIndex].getType() ).isNull() );
+            Assert( !TypeNode::leastCommonTypeNode( val.getType(), body.getType() ).isNull() );
+            //must orient the equality based on rewriter
+            Node cond = Rewriter::rewrite( bvl[bvlIndex].eqNode( a[1] ) );
+            ret = NodeManager::currentNM()->mkNode( kind::ITE, cond, val, body );
+          }
         }
-        cond = NodeManager::currentNM()->mkNode( kind::AND, conds );
-      }else{
-        //must orient the equality based on rewriter
-        cond = Rewriter::rewrite( bvl[0].eqNode( a[1] ) );
+      }else if( a.getKind()==kind::STORE_ALL ){
+        ArrayStoreAll storeAll = a.getConst<ArrayStoreAll>();
+        Node sa = Node::fromExpr(storeAll.getExpr());
+        ret = getLambdaForArrayRepresentationRec( sa, bvl, bvlIndex+1, visited );
       }
-      return NodeManager::currentNM()->mkNode( kind::ITE, cond, a[2], body );
+    }else{
+      ret = a;
     }
-  }else if( a.getKind()==kind::STORE_ALL ){
-    ArrayStoreAll storeAll = a.getConst<ArrayStoreAll>();
-    return Node::fromExpr(storeAll.getExpr());
+    visited[a] = ret;
+    return ret;
+  }else{
+    return it->second;
   }
-  return Node::null();
 }
 
 Node TheoryBuiltinRewriter::getLambdaForArrayRepresentation( Node a, Node bvl ){
   Assert( a.getType().isArray() );
+  std::map< Node, Node > visited;
   Trace("builtin-rewrite-debug") << "Get lambda for : " << a << ", with variables " << bvl << std::endl;
-  Node body = getLambdaForArrayRepresentationRec( a, bvl );
+  Node body = getLambdaForArrayRepresentationRec( a, bvl, 0, visited );
   if( !body.isNull() ){
-    Trace("builtin-rewrite-debug") << "...got lambda body" << body << std::endl;
+    Trace("builtin-rewrite-debug") << "...got lambda body " << body << std::endl;
     return NodeManager::currentNM()->mkNode( kind::LAMBDA, bvl, body );
   }else{
     Trace("builtin-rewrite-debug") << "...failed to get lambda body" << std::endl;
@@ -121,145 +129,128 @@ Node TheoryBuiltinRewriter::getLambdaForArrayRepresentation( Node a, Node bvl ){
   }
 }
 
-Node TheoryBuiltinRewriter::getArrayRepresentationForLambda( Node n, bool allowPermute, bool reqConst ){
+Node TheoryBuiltinRewriter::getArrayRepresentationForLambda( Node n, bool reqConst ){
   Assert( n.getKind()==kind::LAMBDA );
   Trace("builtin-rewrite-debug") << "Get array representation for : " << n << std::endl;
-  std::vector< Node > args;
-  std::vector< TypeNode > arg_types;
-  for( unsigned i=0; i<n[0].getNumChildren(); i++ ){
-    args.push_back( n[0][i] );
-    arg_types.push_back( n[0][i].getType() );
+
+  Node first_arg = n[0][0];
+  Node rec_bvl;
+  if( n[0].getNumChildren()>1 ){
+    std::vector< Node > args;
+    for( unsigned i=1; i<n[0].getNumChildren(); i++ ){
+      args.push_back( n[0][i] );
+    }
+    rec_bvl = NodeManager::currentNM()->mkNode( kind::BOUND_VAR_LIST, args );
   }
-  Trace("builtin-rewrite-debug2") << "  array arg types..." << std::endl;
-  TypeNode arg_type;
-  Node cv_cons;
-  if( arg_types.size()>1 ){
-    arg_type = NodeManager::currentNM()->mkTupleType( arg_types );
-    cv_cons = Node::fromExpr( ((DatatypeType)arg_type.toType()).getDatatype()[0].getConstructor() );
-  }else{
-    arg_type = arg_types[0];    
-  }
-  Trace("builtin-rewrite-debug2") << "  making array type : " << arg_type << " " << n[1].getType() << "..." << std::endl;
-  TypeNode array_type = NodeManager::currentNM()->mkArrayType( arg_type, n[1].getType() );
-  
+
   Trace("builtin-rewrite-debug2") << "  process body..." << std::endl;
   std::vector< Node > conds;
   std::vector< Node > vals;
   Node curr = n[1];
   while( curr.getKind()==kind::ITE ){
     Trace("builtin-rewrite-debug2") << "  process condition : " << curr[0] << std::endl;
-    std::vector< Node > curr_conds;
-    if( curr[0].getKind()==kind::AND ){
-      for( unsigned i=0; i<curr[0].getNumChildren(); i++ ){
-        curr_conds.push_back( curr[0][i] );
-      }      
-    }else{  
-      curr_conds.push_back( curr[0] );
-    }
-    if( curr_conds.size()!=args.size() ){
+    if( curr[0].getKind()!=kind::EQUAL ){
+      // non-equality condition
+      Trace("builtin-rewrite-debug2") << "  ...non-equality condition." << std::endl;
+      return Node::null();
+    }else if( Rewriter::rewrite( curr[0] )!=curr[0] ){
+      // equality must be oriented correctly based on rewriter
+      Trace("builtin-rewrite-debug2") << "  ...equality not oriented properly." << std::endl;
       return Node::null();
     }else{
-      std::map< Node, Node > arg_to_val; 
-      for( unsigned i=0; i<curr_conds.size(); i++ ){
-        if( curr_conds[i].getKind()!=kind::EQUAL ){
-          // non-equality condition
-          Trace("builtin-rewrite-debug2") << "  ...non-equality condition." << std::endl;
-          return Node::null();
-        }else{
-          if( !allowPermute ){
-            // equality must be oriented correctly based on rewriter
-            if( Rewriter::rewrite( curr_conds[i] )!=curr_conds[i] ){
-              Trace("builtin-rewrite-debug2") << "  ...equality not oriented properly." << std::endl;
-              return Node::null();
-            }
-          }
-          for( unsigned r=0; r<2; r++ ){
-            Node arg = curr_conds[i][r];
-            Node val = curr_conds[i][1-r];
-            bool success = true;
-            if( allowPermute ){
-              if( std::find( args.begin(), args.end(), arg )==args.end() ){
-                // not an argument
-                success = false;
-              }else if( arg_to_val.find( arg )!=arg_to_val.end() ){
-                // repeated arg
-                Trace("builtin-rewrite-debug2") << "  ...repeated argument." << std::endl;
-                return Node::null();
-              }
-            }else{  
-              if( arg!=args[i] ){
-                //out of order argument
-                success = false;
-              }
-            }
-            if( success ){
-              if( reqConst && !val.isConst() ){
-                // non-constant value
-                Trace("builtin-rewrite-debug2") << "  ...non-constant value." << std::endl;
-                return Node::null();
-              }else{
-                arg_to_val[arg] = val;
-                Trace("builtin-rewrite-debug2") << "    " << arg << " -> " << val << std::endl;
-                break;
-              }
-            }
+      Node curr_index;
+      for( unsigned r=0; r<2; r++ ){
+        Node arg = curr[0][r];
+        Node val = curr[0][1-r];
+        if( arg==first_arg ){
+          if( reqConst && !val.isConst() ){
+            // non-constant value
+            Trace("builtin-rewrite-debug2") << "  ...non-constant value." << std::endl;
+            return Node::null();
+          }else{
+            curr_index = val;
+            Trace("builtin-rewrite-debug2") << "    " << arg << " -> " << val << std::endl;
+            break;
           }
         }
       }
-      Node cond_val;
-      if( args.size()==1 ){
-        Assert( arg_to_val.find( args[0] )!=arg_to_val.end() );
-        cond_val = arg_to_val[args[0]];
+      if( !curr_index.isNull() ){
+        Node curr_val = curr[1];
+        if( !rec_bvl.isNull() ){
+          curr_val = NodeManager::currentNM()->mkNode( kind::LAMBDA, rec_bvl, curr_val );
+          curr_val = getArrayRepresentationForLambda( curr_val, reqConst );
+          if( curr_val.isNull() ){
+            Trace("builtin-rewrite-debug2") << "  ...non-constant value." << std::endl;
+            return Node::null();
+          }
+        }      
+        Trace("builtin-rewrite-debug2") << "  ...condition is index " << curr_val << std::endl;
+        conds.push_back( curr_index );
+        vals.push_back( curr_val );
       }else{
-        std::vector< Node > cond_val_children;
-        cond_val_children.push_back( cv_cons );
-        for( unsigned i=0; i<args.size(); i++ ){
-          Assert( arg_to_val.find( args[i] )!=arg_to_val.end() );
-          cond_val_children.push_back( arg_to_val[args[i]] );
-        }
-        cond_val = NodeManager::currentNM()->mkNode( kind::APPLY_CONSTRUCTOR, cond_val_children );
+        Trace("builtin-rewrite-debug2") << "  ...non-constant value." << std::endl;
+        return Node::null();
       }
-      Trace("builtin-rewrite-debug2") << "  ...condition is index " << cond_val << std::endl;
-      conds.push_back( cond_val );
-      vals.push_back( curr[1] );
       //recurse
       curr = curr[2];
     }
-  }    
-  if( curr.isConst() ){
+  }
+  if( !rec_bvl.isNull() ){
+    curr = NodeManager::currentNM()->mkNode( kind::LAMBDA, rec_bvl, curr );
+    curr = getArrayRepresentationForLambda( curr );
+  }
+  if( !curr.isNull() && curr.isConst() ){
+    TypeNode array_type = NodeManager::currentNM()->mkArrayType( first_arg.getType(), curr.getType() );
+    curr = NodeManager::currentNM()->mkConst(ArrayStoreAll(((ArrayType)array_type.toType()),curr.toExpr()));
     Trace("builtin-rewrite-debug2") << "  build array..." << std::endl;
     // can only build if default value is constant (since array store all must be constant)
-    Node array_val = NodeManager::currentNM()->mkConst(ArrayStoreAll(((ArrayType)array_type.toType()),curr.toExpr()));
-    Trace("builtin-rewrite-debug2") << "  got constant base " << array_val << std::endl;
+    Trace("builtin-rewrite-debug2") << "  got constant base " << curr << std::endl;
     // construct store chain
     for( int i=((int)conds.size()-1); i>=0; i-- ){
-      array_val = NodeManager::currentNM()->mkNode( kind::STORE, array_val, conds[i], vals[i] );
+      Assert( conds[i].getType().isSubtypeOf( first_arg.getType() ) );
+      curr = NodeManager::currentNM()->mkNode( kind::STORE, curr, conds[i], vals[i] );
     }
-    Trace("builtin-rewrite-debug") << "...got array " << array_val << std::endl;
-    return array_val;
+    Trace("builtin-rewrite-debug") << "...got array " << curr << " for " << n << std::endl;
+    return curr;
   }else{
-    Trace("builtin-rewrite-debug") << "...failed to get array (default value not constant)" << std::endl;
+    Trace("builtin-rewrite-debug") << "...failed to get array (cannot get constant default value)" << std::endl;
     return Node::null();    
   }
 }
 
-Node TheoryBuiltinRewriter::getLambdaBoundVarListForType( TypeNode tn ) {
-  Node bvl = tn.getAttribute(LambdaBoundVarListAttr());
+TypeNode TheoryBuiltinRewriter::getTruncatedArrayType( TypeNode tn, unsigned nargs ) {
+  if( nargs==0 ){
+    // dummy type : this is to prevent functions with array return type to be considered as arguments
+    return NodeManager::currentNM()->integerType();
+  }else{
+    Assert( tn.isArray() );
+    TypeNode tnt = getTruncatedArrayType( tn.getArrayConstituentType(), nargs-1 );
+    return NodeManager::currentNM()->mkArrayType( tn.getArrayIndexType(), tnt );
+  }
+}
+
+Node TheoryBuiltinRewriter::getLambdaBoundVarListForType( TypeNode tn, unsigned nargs ) {
+  Trace("builtin-rewrite-debug") << "Truncate " << tn << " to [" << nargs << "]" << std::endl;
+  Assert( tn.isArray() );
+  TypeNode tnt = getTruncatedArrayType( tn, nargs );
+  Trace("builtin-rewrite-debug") << "...got truncated type : " << tnt << std::endl;
+  Node bvl = tnt.getAttribute(LambdaBoundVarListAttr());
   if( bvl.isNull() ){
     std::vector< TypeNode > types;
-    if( tn.isTuple() ){
-      types = tn.getTupleTypes();
-    }else{
-      types.push_back( tn );  
+    TypeNode tnc = tnt;
+    while( tnc.isArray() ){
+      types.push_back( tnc.getArrayIndexType() );
+      tnc = tnc.getArrayConstituentType();
     }
     std::vector< Node > vars;
     for( unsigned i=0; i<types.size(); i++ ){
       vars.push_back( NodeManager::currentNM()->mkBoundVar( types[i] ) );
     }
-    Assert( !vars.empty() );
     bvl = NodeManager::currentNM()->mkNode( kind::BOUND_VAR_LIST, vars );
-    tn.setAttribute(LambdaBoundVarListAttr(),bvl);
+    Trace("builtin-rewrite-debug") << "Make standard bound var list " << bvl << " for " << tnt << std::endl;
+    tnt.setAttribute(LambdaBoundVarListAttr(),bvl);
   }
+  Assert( bvl.getNumChildren()==nargs );
   return bvl;
 }
 

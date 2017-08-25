@@ -195,8 +195,7 @@ private: // for higher-order
   /** check first-order completion */
   unsigned checkApplyCompletion();
 
-  unsigned checkApplyCompletionEqc( TNode on, TNode n, std::vector< Node >& args, std::vector< Node >& exp,
-                                    std::map< TNode, bool >& visited );
+  unsigned checkApplyCompletionEqc( TNode cn );
 
   /** get apply uf for ho apply */
   Node getApplyUfForHoApply( Node node );

@@ -29,8 +29,11 @@ TESTS = \
   cong-full-apply.smt2 \     
   def-fun-flatten.smt2 \     
   lambda-equality-non-canon.smt2 \     
-  ite-apply-eq.smt2  \     
-  apply-collapse-unsat.smt2
+  ite-apply-eq.smt2 \     
+  apply-collapse-unsat.smt2 \     
+  apply-collapse-sat.smt2 \     
+  ho-exponential-model.smt2 \     
+  ext-sat-partial-eval.smt2
 
 EXTRA_DIST = $(TESTS)
 

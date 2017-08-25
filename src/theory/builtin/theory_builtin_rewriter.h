@@ -53,7 +53,7 @@ public:
         anode = Rewriter::rewrite( anode );
         Assert( anode.getType().isArray() );
         //must get the standard bound variable list
-        Node varList = getLambdaBoundVarListForType( anode.getType().getArrayIndexType() );
+        Node varList = getLambdaBoundVarListForType( anode.getType(), node[0].getNumChildren() );
         Node retNode = getLambdaForArrayRepresentation( anode, varList );
         if( !retNode.isNull() && retNode!=node ){
           Trace("builtin-rewrite") << "Rewrote lambda : " << std::endl;
@@ -61,6 +61,7 @@ public:
           Trace("builtin-rewrite") << "     output : " << retNode << ", constant = " << retNode.isConst() << std::endl;
           Trace("builtin-rewrite") << "  array rep : " << anode << ", constant = " << anode.isConst() << std::endl;
           Assert( anode.isConst()==retNode.isConst() );
+          Assert( retNode.getType()==node.getType() );
           return RewriteResponse(REWRITE_DONE, retNode);
         } 
       }else{
@@ -81,11 +82,13 @@ public:
 
 // conversions between lambdas and arrays
 private:  
-  static Node getLambdaForArrayRepresentationRec( Node a, Node bvl );
+  static Node getLambdaForArrayRepresentationRec( Node a, Node bvl, unsigned bvlIndex, 
+                                                  std::map< Node, Node >& visited );
+  static TypeNode getTruncatedArrayType( TypeNode tn, unsigned nargs );
 public:
   static Node getLambdaForArrayRepresentation( Node a, Node bvl );
-  static Node getArrayRepresentationForLambda( Node n, bool allowPermute = true, bool reqConst = false );
-  static Node getLambdaBoundVarListForType( TypeNode tn );
+  static Node getArrayRepresentationForLambda( Node n, bool reqConst = false );
+  static Node getLambdaBoundVarListForType( TypeNode tn, unsigned nargs );
 };/* class TheoryBuiltinRewriter */
 
 }/* CVC4::theory::builtin namespace */
