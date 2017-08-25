@@ -49,10 +49,13 @@ TheoryUF::TheoryUF(context::Context* c, context::UserContext* u,
                        true),
       d_conflict(c, false),
       d_extensionality_deq(u),
-      d_full_apply_ho_conv(u),
+      d_collapse_apply_uf(c),
+      d_keep_alive(c),
       d_functionsTerms(c),
       d_symb(u, instanceName)
 {
+  d_true = NodeManager::currentNM()->mkConst( true );
+
   // The kinds we are treating as function application in congruence
   d_equalityEngine.addFunctionKind(kind::APPLY_UF);
   d_equalityEngine.addFunctionKind(kind::HO_APPLY);
@@ -153,7 +156,6 @@ void TheoryUF::check(Effort level) {
     }
     if(! d_conflict && fullEffort(level) ){
       checkHigherOrder();
-      checkExtensionality();
     }
   }
 }/* TheoryUF::check() */
@@ -164,11 +166,17 @@ Node TheoryUF::getApplyUfForHoApply( Node node ) {
   Node f = TheoryUfRewriter::decomposeHoApply( node, args );
   Node new_f = f;
   if( !TheoryUfRewriter::isStdApplyUfOperator( f ) ){
-    // introduce skolem
-    new_f = NodeManager::currentNM()->mkSkolem( "a", f.getType() );
-    Node lem = new_f.eqNode( f );
-    Trace("uf-ho-lemma") << "uf-ho-lemma : Skolem definition for apply-conversion : " << lem << std::endl;
-    d_out->lemma( lem );
+    std::map< Node, Node >::iterator itus = d_uf_std_skolem.find( f );
+    if( itus==d_uf_std_skolem.end() ){
+      // introduce skolem to make a standard APPLY_UF
+      new_f = NodeManager::currentNM()->mkSkolem( "a", f.getType() );
+      Node lem = new_f.eqNode( f );
+      Trace("uf-ho-lemma") << "uf-ho-lemma : Skolem definition for apply-conversion : " << lem << std::endl;
+      d_out->lemma( lem );
+      d_uf_std_skolem[f] = new_f;
+    }else{
+      new_f = itus->second;
+    }
   }
   Assert( TheoryUfRewriter::isStdApplyUfOperator( new_f ) );
   args.push_back( new_f );
@@ -217,15 +225,14 @@ void TheoryUF::preRegisterTerm(TNode node) {
     d_functionsTerms.push_back(node);
     break;
   case kind::HO_APPLY:
+    d_equalityEngine.addTerm(node);
     // convert HO_APPLY to APPLY_UF if fully applied
-    if( d_full_apply_ho_conv.find( node )==d_full_apply_ho_conv.end() ){
-      if( node[0].getType().getNumChildren()==2 ){
-        d_full_apply_ho_conv.insert( node );
-        Node ret = getApplyUfForHoApply( node );
-        Node lem = ret.eqNode( node );
-        Trace("uf-ho-lemma") << "uf-ho-lemma : apply-conversion : " << lem << std::endl;
-        d_out->lemma( lem );
-      }
+    if( node[0].getType().getNumChildren()==2 ){
+      Node ret = getApplyUfForHoApply( node );
+      d_collapse_apply_uf.push_back( ret );
+      Node lem = ret.eqNode( node );
+      Trace("uf-ho") << "uf-ho : infer, by apply-collapse (during preregister) : " << lem << std::endl;
+      d_equalityEngine.assertEquality(lem,true,d_true);
     }
     break;
   case kind::CARDINALITY_CONSTRAINT:
@@ -301,33 +308,20 @@ Node TheoryUF::explain(TNode literal, eq::EqProof* pf) {
 }
 
 void TheoryUF::collectModelInfo( TheoryModel* m ){
+  Debug("uf") << "UF : collectModelInfo " << std::endl;
   set<Node> termSet;
 
   // Compute terms appearing in assertions and shared terms
   computeRelevantTerms(termSet);
 
+  // APPLY_UF terms introduced by collapsing HO_APPLY are also relevant
+  for( NodeList::const_iterator i = d_collapse_apply_uf.begin(); i != d_collapse_apply_uf.end(); ++i ) {
+    termSet.insert( *i );
+  }
+
   m->assertEqualityEngine( &d_equalityEngine, &termSet );
-  // if( fullModel ){
-  //   std::map< TypeNode, TypeEnumerator* > type_enums;
-  //   //must choose proper representatives
-  //   // for each equivalence class, specify fresh constant as representative
-  //   eq::EqClassesIterator eqcs_i = eq::EqClassesIterator( &d_equalityEngine );
-  //   while( !eqcs_i.isFinished() ){
-  //     Node eqc = (*eqcs_i);
-  //     TypeNode tn = eqc.getType();
-  //     if( tn.isSort() ){
-  //       if( type_enums.find( tn )==type_enums.end() ){
-  //         type_enums[tn] = new TypeEnumerator( tn );
-  //       }
-  //       Node rep = *(*type_enums[tn]);
-  //       ++(*type_enums[tn]);
-  //       //specify the constant as the representative
-  //       m->assertEquality( eqc, rep, true );
-  //       m->assertRepresentative( rep );
-  //     }
-  //     ++eqcs_i;
-  //   }
-  // }
+
+  Debug("uf") << "UF : finish collectModelInfo " << std::endl;
 }
 
 void TheoryUF::presolve() {
@@ -702,23 +696,148 @@ unsigned TheoryUF::checkExtensionality() {
   return num_lemmas;
 }
 
+
+unsigned TheoryUF::checkApplyCompletionEqc( TNode on, TNode cn, std::vector< Node >& args, std::vector< Node >& exp,
+                                            std::map< TNode, bool >& visited ) {
+  Assert( d_equalityEngine.hasTerm( cn ) );
+  Assert( d_equalityEngine.getRepresentative( cn )==cn );
+  if( visited.find( cn )==visited.end() ){
+    visited[cn] = true;
+    Trace("uf-ho-debug") << "  apply completion : visit eqc " << cn << ", depth = " << args.size() << std::endl;
+    eq::EqClassIterator eqc_i = eq::EqClassIterator( cn, &d_equalityEngine );
+    while( !eqc_i.isFinished() ){
+      Node n = (*eqc_i);
+      Trace("uf-ho-debug") << "    visiting term " << n << std::endl;
+      if( n.getKind()==kind::APPLY_UF ){
+        //since we start at first-order equivalence classes, we should have no arguments at this point
+        Assert( args.size()==0 );
+        Node op = n.getOperator();
+        if( d_equalityEngine.hasTerm( op ) ){
+          Trace("uf-ho-debug") << "    ...is apply uf term with first-class operator." << std::endl;
+          //must expand into APPLY_HO version if not there already
+          Node ret = TheoryUfRewriter::getHoApplyForApplyUf( n );
+          if( !d_equalityEngine.hasTerm( ret ) || !d_equalityEngine.areEqual( ret, n ) ){
+            Node eq = ret.eqNode( n );
+            Trace("uf-ho") << "uf-ho : infer, by apply-expand : " << eq << std::endl;
+            d_equalityEngine.assertEquality(eq, true, d_true);
+            return 1;
+          }else{
+            Trace("uf-ho-debug") << "    ...already have " << ret << " == " << n << "." << std::endl;
+          }
+        }
+      }else if( n.getKind()==kind::HO_APPLY || 
+                ( args.size()>0 && TheoryUfRewriter::isStdApplyUfOperator( n ) ) ){
+        Node prev;
+        Node curr_exp;
+        if( args.size()>0 ){ 
+          //track explanation and finalize argument
+          prev = args[ args.size()-1 ];
+          Assert( d_equalityEngine.hasTerm( prev[0] ) );
+          Assert( d_equalityEngine.areEqual( n, prev[0] ) );
+          curr_exp = prev[0];
+          args[ args.size()-1 ] = prev[1]; 
+        }else{  
+          Assert( cn==on );
+          curr_exp = on;
+        }
+        Assert( d_equalityEngine.areEqual( n, curr_exp ) );
+        if( n!=curr_exp ){
+          exp.push_back( curr_exp.eqNode( n ) );
+        }
+        args.push_back( n );
+        if( n.getKind()==kind::HO_APPLY ){
+          //recurse
+          unsigned rec = checkApplyCompletionEqc( on, d_equalityEngine.getRepresentative( n[0] ), args, exp, visited );
+          if( rec>0 ){
+            return rec;
+          }
+        }else{
+          std::reverse( args.begin(), args.end() );
+          Node ret = NodeManager::currentNM()->mkNode( kind::APPLY_UF, args );
+          if( !d_equalityEngine.hasTerm( ret ) || !d_equalityEngine.areEqual( ret, on ) ){
+            Node eq = ret.eqNode( on );
+            //regress the explanation here
+            std::vector< TNode > r_exp;
+            for( unsigned i=0; i<exp.size(); i++ ){
+              explain( exp[i], r_exp, NULL );
+            }
+            Node expn;
+            if( r_exp.empty() ){
+              expn = d_true;
+            }else if( r_exp.size()==1 ){
+              expn = r_exp[0];
+            }else{
+              expn = NodeManager::currentNM()->mkNode( kind::AND, r_exp );
+            }
+            Trace("uf-ho") << "uf-ho : infer, by apply-collapse : " << eq << ", exp = " << expn << std::endl;
+            d_collapse_apply_uf.push_back( ret );
+            d_keep_alive.insert( expn );
+            d_equalityEngine.assertEquality(eq, true, expn);
+            return 1;
+          }
+          std::reverse( args.begin(), args.end() );
+        }
+        //revert
+        args.pop_back();
+        if( n!=curr_exp ){
+          exp.pop_back();
+        }
+        if( args.size()>0 ){
+          args[ args.size()-1 ] = prev;
+        }
+      }
+      ++eqc_i;
+    }
+  }
+  return 0;
+}
+
+unsigned TheoryUF::checkApplyCompletion() {
+  Trace("uf-ho") << "TheoryUF::checkApplyCompletion..." << std::endl;
+  std::map< TNode, bool > visited;
+  eq::EqClassesIterator eqcs_i = eq::EqClassesIterator( &d_equalityEngine );
+  while( !eqcs_i.isFinished() ){
+    Node eqc = (*eqcs_i);
+    TypeNode tn = eqc.getType();
+    if( !tn.isFunction() ){
+      Assert( visited.find( eqc )==visited.end() );
+      std::vector< Node > args;
+      std::vector< Node > exp;
+      unsigned curr_sum = checkApplyCompletionEqc( eqc, eqc, args, exp, visited );
+      if( d_conflict ){
+        return 1;      
+      }
+      if( curr_sum>0 ){
+        return curr_sum;      
+      }
+    }
+    ++eqcs_i;
+  }
+
+  return 0;
+}
+
 unsigned TheoryUF::checkHigherOrder() {
   Trace("uf-ho") << "TheoryUF::checkHigherOrder..." << std::endl;
-  unsigned num_lemmas = 0;
   
-/*
-  num_lemmas = checkApplyConversion();
-  if( num_lemmas>0 ){
-    Trace("uf-ho") << "...apply-conversion returned " << num_lemmas << " lemmas." << std::endl;
-    return num_lemmas;
-  }
-*/
+  // infer new facts based on apply completion until fixed point 
+  unsigned num_facts;
+  do{
+    num_facts = checkApplyCompletion();
+    if( d_conflict ){
+      Trace("uf-ho") << "...conflict during apply completion." << std::endl;
+      return 1;  
+    }
+  }while( num_facts>0 );
+
+  unsigned num_lemmas = 0;
 
   num_lemmas = checkExtensionality();
   if( num_lemmas>0 ){
     Trace("uf-ho") << "...extensionality returned " << num_lemmas << " lemmas." << std::endl;
     return num_lemmas;
   }
+
   return 0;
 }
 

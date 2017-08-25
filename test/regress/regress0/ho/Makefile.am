@@ -29,7 +29,8 @@ TESTS = \
   cong-full-apply.smt2 \     
   def-fun-flatten.smt2 \     
   lambda-equality-non-canon.smt2 \     
-  ite-apply-eq.smt2
+  ite-apply-eq.smt2  \     
+  apply-collapse-unsat.smt2
 
 EXTRA_DIST = $(TESTS)
 

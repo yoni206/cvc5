@@ -139,7 +139,7 @@ Node TheoryModel::getModelValue(TNode n, bool hasBoundVars, bool useDontCares) c
     return (*it).second;
   }
   Debug("model-getvalue-debug") << "Get model value " << n << " ... ";
-  Debug("model-getvalue-debug") << d_equalityEngine->hasTerm(n) << " " << d_equalityEngine->hasExternalTerm(n) << std::endl;
+  Debug("model-getvalue-debug") << d_equalityEngine->hasTerm(n) << std::endl;
   Node ret = n;
   if(n.getKind() == kind::EXISTS || n.getKind() == kind::FORALL || n.getKind() == kind::COMBINED_CARDINALITY_CONSTRAINT ||
      ( n.getKind() == kind::CARDINALITY_CONSTRAINT && options::ufssMode()!=theory::uf::UF_SS_FULL ) ) {
@@ -165,7 +165,7 @@ Node TheoryModel::getModelValue(TNode n, bool hasBoundVars, bool useDontCares) c
       ret = nr;
     }
   } else {
-      // FIXME : special case not necessary
+      // FIXME : special case not necessary?
     if(n.getKind() == kind::LAMBDA) {
       NodeManager* nm = NodeManager::currentNM();
       Node body = getModelValue(n[1], true);
@@ -215,7 +215,7 @@ Node TheoryModel::getModelValue(TNode n, bool hasBoundVars, bool useDontCares) c
     }
   
     Debug("model-getvalue-debug") << "Handling special cases for types..." << std::endl;
-    if (!d_equalityEngine->hasExternalTerm(n)) {
+    if (!d_equalityEngine->hasTerm(n)) {
       TypeNode t = n.getType();
       if (t.isFunction() || t.isPredicate()) {
         if (d_enableFuncModels) {
@@ -309,12 +309,12 @@ void TheoryModel::addTerm(TNode n ){
     Node op = n.getOperator();
     if( std::find( d_uf_terms[ op ].begin(), d_uf_terms[ op ].end(), n )==d_uf_terms[ op ].end() ){
       d_uf_terms[ op ].push_back( n );
-      Trace("model-add-term-uf") << "Add term for function " << n << std::endl;
+      Trace("model-builder-fun") << "Add term for function " << n << std::endl;
     }
   }else if( n.isVar() && n.getType().isFunction() ){
     if( d_uf_terms.find( n )==d_uf_terms.end() ){
       d_uf_terms[n].clear();
-      Trace("model-add-term-uf") << "Add function variable (without term) " << n << std::endl;
+      Trace("model-builder-fun") << "Add function variable (without term) " << n << std::endl;
     }
   }
 }
@@ -482,7 +482,7 @@ void TheoryModel::assignFunctionDefinition( Node f, Node f_def ) {
   Trace("model-builder") << "  Assigning function (" << f << ") to (" << f_def << ")" << endl;
 
   // if the function is a first-class member of the equality engine
-  bool hasExternalTerm = d_equalityEngine->hasExternalTerm( f );
+  bool hasExternalTerm = d_equalityEngine->hasTerm( f );
   if( hasExternalTerm ){
     //we must rewrite the function value since the definition needs to be a constant value
     f_def = Rewriter::rewrite( f_def );
@@ -551,7 +551,7 @@ std::vector< Node > TheoryModel::getFunctionsToAssign() {
     Node n = it->first;
     if( !hasAssignedFunctionDefinition( n ) ){
       // if the function is a first-class member of the equality engine
-      if( d_equalityEngine->hasExternalTerm( n ) ){
+      if( d_equalityEngine->hasTerm( n ) ){
         // if function is a part of equality engine, 
         //   we are higher-order, assign function definitions modulo equality
         Node r = getRepresentative( n );
@@ -559,9 +559,14 @@ std::vector< Node > TheoryModel::getFunctionsToAssign() {
         if( itf==func_to_rep.end() ){
           func_to_rep[r] = n;
           funcs_to_assign.push_back( n );
+          Trace("model-builder-fun") << "Make function " << n;
+          Trace("model-builder-fun") << " the assignable function in its equivalence class." << std::endl;
         }else{
           // must combine uf terms
           d_uf_terms[itf->second].insert( d_uf_terms[itf->second].end(), it->second.begin(), it->second.end() );
+          Trace("model-builder-fun") << "Copy " << it->second.size() << " uf terms from " << n;
+          Trace("model-builder-fun") << " to its assignable representative function " << itf->second << std::endl;
+          it->second.clear();
         }
       }else{
         funcs_to_assign.push_back( n );
@@ -1202,9 +1207,9 @@ bool TheoryEngineModelBuilder::processBuildModel(TheoryModel* m){
     TypeNode type = n.getType();
     Trace("model-builder") << "  Assign function value for " << n << " " << type << std::endl;
     uf::UfModelTree ufmt( n );
-    Node default_v, un, simp, v;
+    Node default_v;
     for( size_t i=0; i<m->d_uf_terms[n].size(); i++ ){
-      un = m->d_uf_terms[n][i];
+      Node un = m->d_uf_terms[n][i];
       vector<TNode> children;
       children.push_back(n);
       Trace("model-builder-debug") << "  process term : " << un << std::endl;
@@ -1214,19 +1219,21 @@ bool TheoryEngineModelBuilder::processBuildModel(TheoryModel* m){
         Assert( rc.isConst() ); 
         children.push_back(rc);
       }
-      simp = NodeManager::currentNM()->mkNode(un.getKind(), children);
-      v = m->getRepresentative(un);
+      Node simp = NodeManager::currentNM()->mkNode(un.getKind(), children);
+      Node v = m->getRepresentative(un);
       Trace("model-builder") << "  Setting (" << simp << ") to (" << v << ")" << endl;
       ufmt.setValue(m, simp, v);
       default_v = v;
     }
-    if( default_v.isNull() ){
+    bool firstClassMember = m->d_equalityEngine->hasTerm( n );
+    // all first-class member functions must use same default value
+    if( firstClassMember || default_v.isNull() ){
       //choose default value from model if none exists
       TypeEnumerator te(type.getRangeType());
       default_v = (*te);
     }
-    bool condenseFuncValues = options::condenseFunctionValues() && !m->d_equalityEngine->hasExternalTerm( n );
     ufmt.setDefaultValue( m, default_v );
+    bool condenseFuncValues = options::condenseFunctionValues() && !firstClassMember;
     if(condenseFuncValues) {
       ufmt.simplify();
     }

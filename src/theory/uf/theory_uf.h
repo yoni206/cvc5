@@ -48,6 +48,7 @@ class TheoryUF : public Theory {
 
   friend class StrongSolverTheoryUF;
   typedef context::CDHashSet<Node, NodeHashFunction> NodeSet;
+  typedef context::CDChunkList<Node> NodeList;
 
 public:
 
@@ -131,8 +132,17 @@ private:
   /** extensionality applied to these disequalities */
   NodeSet d_extensionality_deq;
 
-  /** extensionality applied to these disequalities */
-  NodeSet d_full_apply_ho_conv;
+  /** APPLY_UF terms introduced by collapsing HO_APPLY */
+  NodeList d_collapse_apply_uf;
+
+  /** keep alive cache for explanations of eq inferences */
+  NodeSet d_keep_alive;
+
+  /** map from non-standard operators to their skolems */
+  std::map< Node, Node > d_uf_std_skolem;
+
+  /** node for true */
+  Node d_true;
 
   /**
    * Should be called to propagate the literal. We use a node here
@@ -181,6 +191,12 @@ private: // for higher-order
   
   /** check higher order */
   unsigned checkHigherOrder();
+
+  /** check first-order completion */
+  unsigned checkApplyCompletion();
+
+  unsigned checkApplyCompletionEqc( TNode on, TNode n, std::vector< Node >& args, std::vector< Node >& exp,
+                                    std::map< TNode, bool >& visited );
 
   /** get apply uf for ho apply */
   Node getApplyUfForHoApply( Node node );

@@ -704,6 +704,11 @@ private:
   /** The internal addTerm */
   void addTermInternal(TNode t, bool isOperator = false);
 
+  /**
+   * Check whether the node is in the database
+   */
+  bool hasTermInternal(TNode t) const;
+
 public:
 
   /**
@@ -733,14 +738,9 @@ public:
   }
 
   /**
-   * Check whether the node is already in the database.
+   * Check whether the node is already in the database and is an external node.
    */
   bool hasTerm(TNode t) const;
-
-  /**
-   * Check whether the node is in the database and is an external node.
-   */
-  bool hasExternalTerm(TNode t) const;
 
   /**
    * Adds a predicate p with given polarity. The predicate asserted

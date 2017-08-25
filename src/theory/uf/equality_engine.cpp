@@ -278,24 +278,22 @@ void EqualityEngine::addTermInternal(TNode t, bool isOperator) {
     return;
   }
 
-  // If there already, we're done
-  //if (hasTerm(t)) {
-  //  Debug("equality") << d_name << "::eq::addTermInternal(" << t << "): already there" << std::endl;
-  //  return;
-  //}
   EqualityNodeId result;
   std::unordered_map<TNode, EqualityNodeId, TNodeHashFunction>::iterator itn = d_nodeIds.find(t);
   if( itn!=d_nodeIds.end() ){
     result = itn->second;
-    if( d_isInternal[result] && !isOperator && t.getKind() != kind::EQUAL && 
-        ( t.getNumChildren()==0 || !d_congruenceKinds[t.getKind()] ) ){
-      // update isInternal flag
-      //   the issue is that with higher-order, we could have two calls:
-      //   addTermInternal( t, true ) followed by addTermInternal( t, false )
-      //   at the second call, hasTerm( t ) is true but d_isInternal needs to be updated
-      d_isInternal[result] = false;
-      d_isConstant[result] = t.isConst();
+    if( d_isInternal[result] && !isOperator ){
+      if( t.getKind() != kind::EQUAL && 
+          ( t.getNumChildren()==0 || !d_congruenceKinds[t.getKind()] ) ){
+        // update isInternal flag
+        //   the issue is that with higher-order, we could have two calls:
+        //   addTermInternal( t, true ) followed by addTermInternal( t, false )
+        //   at the second call, hasTerm( t ) is true but d_isInternal needs to be updated
+        d_isInternal[result] = false;
+        d_isConstant[result] = t.isConst();
+      }
     }else{
+      //already there, we're done
       return;
     }
   }else{
@@ -373,25 +371,26 @@ void EqualityEngine::addTermInternal(TNode t, bool isOperator) {
   // Empty the queue
   propagate();
 
-  Assert(hasTerm(t));
+  Assert(hasTermInternal(t));
 
   Debug("equality") << d_name << "::eq::addTermInternal(" << t << ") => " << result << std::endl;
 }
 
-bool EqualityEngine::hasTerm(TNode t) const {
+bool EqualityEngine::hasTermInternal(TNode t) const {
   return d_nodeIds.find(t) != d_nodeIds.end();
 }
 
-bool EqualityEngine::hasExternalTerm(TNode t) const {
-  if( hasTerm(t) ){
-    return !d_isInternal[getNodeId(t)];
+bool EqualityEngine::hasTerm(TNode t) const {
+  std::unordered_map<TNode, EqualityNodeId, TNodeHashFunction>::const_iterator it = d_nodeIds.find(t);
+  if( it!=d_nodeIds.end() ){
+    return !d_isInternal[it->second];
   }else{
     return false;  
   }
 }
 
 EqualityNodeId EqualityEngine::getNodeId(TNode node) const {
-  Assert(hasTerm(node), node.toString().c_str());
+  Assert(hasTermInternal(node), node.toString().c_str());
   return (*d_nodeIds.find(node)).second;
 }
 
@@ -448,7 +447,7 @@ void EqualityEngine::assertEquality(TNode eq, bool polarity, TNode reason, unsig
   Debug("equality") << d_name << "::eq::addEquality(" << eq << "," << (polarity ? "true" : "false") << ")" << std::endl;
   if (polarity) {
     // If two terms are already equal, don't assert anything
-    if (hasTerm(eq[0]) && hasTerm(eq[1]) && areEqual(eq[0], eq[1])) {
+    if (hasTermInternal(eq[0]) && hasTermInternal(eq[1]) && areEqual(eq[0], eq[1])) {
       return;
     }
     // Add equality between terms
@@ -456,7 +455,7 @@ void EqualityEngine::assertEquality(TNode eq, bool polarity, TNode reason, unsig
     propagate();
   } else {
     // If two terms are already dis-equal, don't assert anything
-    if (hasTerm(eq[0]) && hasTerm(eq[1]) && areDisequal(eq[0], eq[1], false)) {
+    if (hasTermInternal(eq[0]) && hasTermInternal(eq[1]) && areDisequal(eq[0], eq[1], false)) {
       return;
     }
 
@@ -538,7 +537,6 @@ TNode EqualityEngine::getRepresentative(TNode t) const {
   Debug("equality::internal") << d_name << "::eq::getRepresentative(" << t << ")" << std::endl;
   Assert(hasTerm(t));
   EqualityNodeId representativeId = getEqualityNode(t).getFind();
-  Assert(!d_isInternal[representativeId]);
   Debug("equality::internal") << d_name << "::eq::getRepresentative(" << t << ") => " << d_nodes[representativeId] << std::endl;
   return d_nodes[representativeId];
 }
@@ -946,7 +944,7 @@ void EqualityEngine::explainEquality(TNode t1, TNode t2, bool polarity, std::vec
   Debug("equality") << d_name << "::eq::explainEquality(" << t1 << ", " << t2 << ", " << (polarity ? "true" : "false") << ")" << ", proof = " << (eqp ? "ON" : "OFF") << std::endl;
 
   // The terms must be there already
-  Assert(hasTerm(t1) && hasTerm(t2));;
+  Assert(hasTermInternal(t1) && hasTermInternal(t2));
 
   // Get the ids
   EqualityNodeId t1Id = getNodeId(t1);
@@ -1033,7 +1031,7 @@ void EqualityEngine::explainEquality(TNode t1, TNode t2, bool polarity, std::vec
 void EqualityEngine::explainPredicate(TNode p, bool polarity, std::vector<TNode>& assertions, EqProof * eqp) const {
   Debug("equality") << d_name << "::eq::explainPredicate(" << p << ")" << std::endl;
   // Must have the term
-  Assert(hasTerm(p));
+  Assert(hasTermInternal(p));
   // Get the explanation
   getExplanation(getNodeId(p), polarity ? d_trueId : d_falseId, assertions, eqp);
 }
@@ -1386,8 +1384,8 @@ void EqualityEngine::addTriggerEqualityInternal(TNode t1, TNode t2, TNode trigge
 
   Debug("equality") << d_name << "::eq::addTrigger(" << t1 << ", " << t2 << ", " << trigger << ")" << std::endl;
 
-  Assert(hasTerm(t1));
-  Assert(hasTerm(t2));
+  Assert(hasTermInternal(t1));
+  Assert(hasTermInternal(t2));
 
   if (d_done) {
     return;
@@ -1653,8 +1651,8 @@ void EqualityEngine::debugPrintGraph() const {
 bool EqualityEngine::areEqual(TNode t1, TNode t2) const {
   Debug("equality") << d_name << "::eq::areEqual(" << t1 << "," << t2 << ")";
 
-  Assert(hasTerm(t1));
-  Assert(hasTerm(t2));
+  Assert(hasTermInternal(t1));
+  Assert(hasTermInternal(t2));
 
   bool result = getEqualityNode(t1).getFind() == getEqualityNode(t2).getFind();
   Debug("equality") << (result ? "\t(YES)" : "\t(NO)") << std::endl;
@@ -1666,8 +1664,8 @@ bool EqualityEngine::areDisequal(TNode t1, TNode t2, bool ensureProof) const
   Debug("equality") << d_name << "::eq::areDisequal(" << t1 << "," << t2 << ")";
 
   // Add the terms
-  Assert(hasTerm(t1));
-  Assert(hasTerm(t2));
+  Assert(hasTermInternal(t1));
+  Assert(hasTermInternal(t2));
 
   // Get ids
   EqualityNodeId t1Id = getNodeId(t1);
@@ -1834,7 +1832,7 @@ void EqualityEngine::addTriggerTerm(TNode t, TheoryId tag)
 }
 
 bool EqualityEngine::isTriggerTerm(TNode t, TheoryId tag) const {
-  if (!hasTerm(t)) return false;
+  if (!hasTermInternal(t)) return false;
   EqualityNodeId classId = getEqualityNode(t).getFind();
   TriggerTermSetRef triggerSetRef = d_nodeIndividualTrigger[classId];
   return triggerSetRef != +null_set_id && getTriggerTermSet(triggerSetRef).hasTrigger(tag);
@@ -1873,7 +1871,7 @@ void EqualityEngine::storeApplicationLookup(FunctionApplication& funNormalized, 
 }
 
 void EqualityEngine::getUseListTerms(TNode t, std::set<TNode>& output) {
-  if (hasTerm(t)) {
+  if (hasTermInternal(t)) {
     // Get the equivalence class
     EqualityNodeId classId = getEqualityNode(t).getFind();
     // Go through the equivalence class and get where t is used in
