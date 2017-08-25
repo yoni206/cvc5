@@ -317,10 +317,6 @@ void TheoryModel::addTerm(TNode n ){
       d_ho_uf_terms[ op ].push_back( n );
       Trace("model-builder-fun") << "Add ho apply term " << n << std::endl;
     }
-    //should not be necessary assuming addTerm is also called on op
-    //if( d_uf_terms.find( op )==d_uf_terms.end() ){
-    //  d_uf_terms[op].clear();
-    //}
   }
   // all functions must be included
   if( n.getType().isFunction() ){
@@ -500,7 +496,8 @@ void TheoryModel::assignFunctionDefinition( Node f, Node f_def ) {
     f_def = Rewriter::rewrite( f_def );
     Assert( f_def.isConst() );
   }
-
+ 
+  // d_uf_models only stores models for variables
   if( f.isVar() ){
     d_uf_models[f] = f_def;
   }
@@ -516,37 +513,13 @@ void TheoryModel::assignFunctionDefinition( Node f, Node f_def ) {
     eq::EqClassIterator eqc_i = eq::EqClassIterator(r,d_equalityEngine);
     while( !eqc_i.isFinished() ) {
       Node n = *eqc_i;
-      // if an unassigned function
+      // if an unassigned variable function
       if( n.isVar() && d_uf_terms.find( n )!=d_uf_terms.end() && !hasAssignedFunctionDefinition( n ) ){
-        // then, assign
         d_uf_models[n] = f_def;
         Trace("model-builder") << "  Assigning function (" << n << ") to function definition of " << f << std::endl;
       }
       ++eqc_i;
     }
-    /*
-    Assert( f_def.getKind()==kind::LAMBDA );
-    if( f_def[0].getNumChildren()>1 ){
-      // set representatives of all HO_APPLY terms 
-      std::map< Node, std::vector< Node > >::iterator it = d_ho_uf_terms.find( f );
-      for( unsigned i=0; i<it->second.size(); i++ ){
-        Node hn = it->second[i];
-        Node hn_r = getRepresentative( hn );
-        Assert( hn.getKind()==kind::HO_APPLY );
-        Node arg = getRepresentative( hn[1] );
-        Node new_val = NodeManager::currentNM()->mkNode( kind::HO_APPLY, f_def, arg );
-        Trace("model-builder-debug") << "  Evaluate (" << new_val << "), got = ";
-        new_val = Rewriter::rewrite( new_val );
-        Trace("model-builder-debug") << new_val << std::endl;
-        Trace("model-builder-debug") << "  ...assign to representative of " << hn << std::endl
-        Assert( new_val.isConst() );
-        Assert( !TypeNode::leastCommonTypeNode( new_val.getType(), hn.getType() ).isNull() );
-        // assign representative
-        Assert( d_reps[hn_r]==hn_r || d_reps[hn_r]==new_val );
-        d_reps[hn_r] = new_val;
-      }
-    }
-    */
   }
 }
 
@@ -1168,8 +1141,7 @@ void TheoryEngineModelBuilder::debugCheckModel(Model* m){
       ++repCheckInstance;
       
       // non-linear mult is not necessarily accurate wrt getValue
-      // HO_APPLY terms may have unassigned representatives (FIXME)
-      if( n.getKind()!=kind::NONLINEAR_MULT && n.getKind()!=kind::HO_APPLY ){
+      if( n.getKind()!=kind::NONLINEAR_MULT ){
         Debug("check-model::rep-checking")
           << "( " << repCheckInstance <<") "
           << "n: " << n << endl
@@ -1253,7 +1225,6 @@ bool TheoryEngineModelBuilder::processBuildModel(TheoryModel* m){
     Node n = funcs_to_assign[k];
     Trace("model-builder") << "  Function #" << k << " is " << n << std::endl;
     TypeNode type = n.getType();
-    //bool firstClassMember = m->d_equalityEngine->hasTerm( n );
     std::map< Node, std::vector< Node > >::iterator itht = m->d_ho_uf_terms.find( n );
     if( itht==m->d_ho_uf_terms.end() ){
       Trace("model-builder") << "  Assign function value for " << n << " based on APPLY_UF" << std::endl;

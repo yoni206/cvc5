@@ -195,12 +195,16 @@ Node TheoryBuiltinRewriter::getArrayRepresentationForLambda( Node n, bool reqCon
       curr = curr[2];
     }
   }
+  TypeNode retType;
   if( !rec_bvl.isNull() ){
     curr = NodeManager::currentNM()->mkNode( kind::LAMBDA, rec_bvl, curr );
     curr = getArrayRepresentationForLambda( curr );
+    retType = curr.getType();
+  }else{
+    retType = n[1].getType();
   }
   if( !curr.isNull() && curr.isConst() ){
-    TypeNode array_type = NodeManager::currentNM()->mkArrayType( first_arg.getType(), curr.getType() );
+    TypeNode array_type = NodeManager::currentNM()->mkArrayType( first_arg.getType(), retType );
     curr = NodeManager::currentNM()->mkConst(ArrayStoreAll(((ArrayType)array_type.toType()),curr.toExpr()));
     Trace("builtin-rewrite-debug2") << "  build array..." << std::endl;
     // can only build if default value is constant (since array store all must be constant)
