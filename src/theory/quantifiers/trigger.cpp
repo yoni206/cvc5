@@ -54,14 +54,14 @@ Trigger::Trigger( QuantifiersEngine* qe, Node f, std::vector< Node >& nodes )
     if( isSimpleTrigger( d_nodes[0] ) ){
       d_mg = new InstMatchGeneratorSimple( f, d_nodes[0], qe );
     }else{
-      d_mg = InstMatchGenerator::mkInstMatchGenerator( f, d_nodes[0], qe );
+      d_mg = InstMatchGenerator::mkInstMatchGenerator( f, d_nodes[0], qe, this );
       d_mg->setActiveAdd(true);
     }
   }else{
     if( options::multiTriggerCache() ){
-      d_mg = new InstMatchGeneratorMulti( f, d_nodes, qe );
+      d_mg = new InstMatchGeneratorMulti( f, d_nodes, qe, this );
     }else{
-      d_mg = InstMatchGenerator::mkInstMatchGeneratorMulti( f, d_nodes, qe );
+      d_mg = InstMatchGenerator::mkInstMatchGeneratorMulti( f, d_nodes, qe, this );
       d_mg->setActiveAdd(true);
     }
     //d_mg = InstMatchGenerator::mkInstMatchGenerator( d_nodes, qe );
@@ -105,7 +105,7 @@ Node Trigger::getInstPattern(){
   return NodeManager::currentNM()->mkNode( INST_PATTERN, d_nodes );
 }
 
-int Trigger::addInstantiations( InstMatch& baseMatch ){
+int Trigger::addFoInstantiations( InstMatch& baseMatch ){
   int addedLemmas = d_mg->addInstantiations( d_f, baseMatch, d_quantEngine );
   if( addedLemmas>0 ){
     Debug("inst-trigger") << "Added " << addedLemmas << " lemmas, trigger was ";
@@ -115,6 +115,16 @@ int Trigger::addInstantiations( InstMatch& baseMatch ){
     Debug("inst-trigger") << std::endl;
   }
   return addedLemmas;
+}
+
+int Trigger::addInstantiations( InstMatch& baseMatch ) {
+  int addedFoLemmas = addFoInstantiations( baseMatch );
+  if( !d_ho_var_types.empty() ){
+    int addedHoLemmas = addHoTypeMatchPredicateLemmas();
+    return addedHoLemmas+addedFoLemmas;
+  }else{
+    return addedFoLemmas;
+  }
 }
 
 bool Trigger::mkTriggerTerms( Node q, std::vector< Node >& nodes, unsigned n_vars, std::vector< Node >& trNodes ) {
@@ -737,6 +747,36 @@ InstMatchGenerator* Trigger::getInstMatchGenerator( Node q, Node n ) {
 
 int Trigger::getActiveScore() {
   return d_mg->getActiveScore( d_quantEngine );
+}
+
+
+void Trigger::addHoTypeMatchType( TypeNode tn ) {
+  if( std::find( d_ho_var_types.begin(), d_ho_var_types.end(), tn )==d_ho_var_types.end() ){
+    d_ho_var_types.push_back( tn );
+  }
+}
+
+int Trigger::addHoTypeMatchPredicateLemmas() {
+  unsigned numLemmas = 0;
+
+  if( !d_ho_var_types.empty() ){
+    for( std::map< Node, std::vector< Node > >::iterator it = d_quantEngine->getTermDatabase()->d_op_map.begin(); 
+         it != d_quantEngine->getTermDatabase()->d_op_map.end(); ++it ){
+      if( it->first.isVar() ){
+        TypeNode tn = it->first.getType();
+        if( std::find( d_ho_var_types.begin(), d_ho_var_types.end(), tn )!=d_ho_var_types.end() ){
+          Node u = d_quantEngine->getTermDatabase()->getHoTypeMatchPredicate( tn );
+          Node au = NodeManager::currentNM()->mkNode( kind::APPLY_UF, u, it->first );
+          if( d_quantEngine->addLemma( au ) ){
+            //this forces it->first to be a first-class member of the quantifier-free equality engine
+            Trace("ho-quant") << "Added ho match predicate lemma : " << au << std::endl;
+            numLemmas++;
+          }
+        }
+      }
+    }
+  }
+  return numLemmas;
 }
 
 Trigger* TriggerTrie::getTrigger2( std::vector< Node >& nodes ){

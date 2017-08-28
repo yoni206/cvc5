@@ -30,6 +30,8 @@ namespace quantifiers{
 
 namespace inst {
 
+class Trigger;
+
 /** base class for producing InstMatch objects */
 class IMGenerator {
 public:
@@ -74,7 +76,8 @@ protected:
   /** indepdendent generate (failures should be cached) */
   bool d_independent_gen;
   /** initialize pattern */
-  void initialize( Node q, QuantifiersEngine* qe, std::vector< InstMatchGenerator * > & gens );
+  void initialize( Node q, QuantifiersEngine* qe, std::vector< InstMatchGenerator * > & gens, 
+                   Trigger * tparent );
   /** children types 0 : variable, 1 : child term, -1 : ground term */
   std::vector< int > d_children_types;
   /** continue */
@@ -126,10 +129,12 @@ public:
   void excludeMatch( Node n ) { d_curr_exclude_match[n] = true; }
   void setIndependent() { d_independent_gen = true; }
 
-  static InstMatchGenerator* mkInstMatchGenerator( Node q, Node pat, QuantifiersEngine* qe );
-  static InstMatchGenerator* mkInstMatchGeneratorMulti( Node q, std::vector< Node >& pats, QuantifiersEngine* qe );
+  static InstMatchGenerator* mkInstMatchGenerator( Node q, Node pat, QuantifiersEngine* qe, Trigger * tparent );
+  static InstMatchGenerator* mkInstMatchGeneratorMulti( Node q, std::vector< Node >& pats, QuantifiersEngine* qe, 
+                                                        Trigger * tparent );
   static InstMatchGenerator* mkInstMatchGenerator( Node q, std::vector< Node >& pats, QuantifiersEngine* qe, 
-                                                   std::map< Node, InstMatchGenerator * >& pat_map_init );
+                                                   std::map< Node, InstMatchGenerator * >& pat_map_init, 
+                                                   Trigger * tparent );
 };/* class InstMatchGenerator */
 
 //match generator for boolean term ITEs
@@ -225,7 +230,7 @@ private:
   void calculateMatches( QuantifiersEngine* qe );
 public:
   /** constructors */
-  InstMatchGeneratorMulti( Node q, std::vector< Node >& pats, QuantifiersEngine* qe );
+  InstMatchGeneratorMulti( Node q, std::vector< Node >& pats, QuantifiersEngine* qe, Trigger * tparent );
   /** destructor */
   virtual ~InstMatchGeneratorMulti() throw();
   /** reset instantiation round (call this whenever equivalence classes have changed) */

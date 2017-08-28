@@ -72,9 +72,11 @@ class Trigger {
   /** get inst pattern list */
   Node getInstPattern();
 
-  /** add all available instantiations exhaustively, in any equivalence class
-      if limitInst>0, limitInst is the max # of instantiations to try */
+  /** add all available instantiations exhaustively */
+  int addFoInstantiations( InstMatch& baseMatch );
+  /** add all available instantiations (includes higher-order) */
   int addInstantiations( InstMatch& baseMatch );
+public:
   /** mkTrigger method
      ie     : quantifier engine;
      f      : forall something ....
@@ -149,6 +151,14 @@ private:
   Node d_f;
   /** match generators */
   IMGenerator* d_mg;
+
+private: // for higher-order
+  std::vector< TypeNode > d_ho_var_types;
+public:
+  /** add higher-order type var */
+  void addHoTypeMatchType( TypeNode tn );
+  /** add higher-order type predicate lemmas */
+  int addHoTypeMatchPredicateLemmas();
 }; /* class Trigger */
 
 /** a trie of triggers */

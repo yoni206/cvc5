@@ -517,6 +517,12 @@ public:
   /** is bool connective term */
   static bool isBoolConnectiveTerm( TNode n );
 
+//for higher-order
+private:
+  std::map< TypeNode, Node > d_ho_type_match_pred;
+public:
+  Node getHoTypeMatchPredicate( TypeNode tn );
+
 //for sygus
 private:
   TermDbSygus * d_sygus_tdb;
