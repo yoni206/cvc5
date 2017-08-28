@@ -90,19 +90,19 @@ Node TheoryBuiltinRewriter::getLambdaForArrayRepresentationRec( TNode a, TNode b
         // convert the array recursively
         Node body = getLambdaForArrayRepresentationRec( a[0], bvl, bvlIndex, visited );
         if( !body.isNull() ){
-          // convert the value
+          // convert the value recursively
           Node val = getLambdaForArrayRepresentationRec( a[2], bvl, bvlIndex+1, visited );
           if( !val.isNull() ){
             Assert( !TypeNode::leastCommonTypeNode( a[1].getType(), bvl[bvlIndex].getType() ).isNull() );
             Assert( !TypeNode::leastCommonTypeNode( val.getType(), body.getType() ).isNull() );
-            //must orient the equality based on rewriter
-            Node cond = Rewriter::rewrite( bvl[bvlIndex].eqNode( a[1] ) );
+            Node cond = bvl[bvlIndex].eqNode( a[1] );
             ret = NodeManager::currentNM()->mkNode( kind::ITE, cond, val, body );
           }
         }
       }else if( a.getKind()==kind::STORE_ALL ){
         ArrayStoreAll storeAll = a.getConst<ArrayStoreAll>();
         Node sa = Node::fromExpr(storeAll.getExpr());
+        // convert the default value recursively
         ret = getLambdaForArrayRepresentationRec( sa, bvl, bvlIndex+1, visited );
       }
     }else{
@@ -121,6 +121,7 @@ Node TheoryBuiltinRewriter::getLambdaForArrayRepresentation( TNode a, TNode bvl 
   Trace("builtin-rewrite-debug") << "Get lambda for : " << a << ", with variables " << bvl << std::endl;
   Node body = getLambdaForArrayRepresentationRec( a, bvl, 0, visited );
   if( !body.isNull() ){
+    body = Rewriter::rewrite( body );
     Trace("builtin-rewrite-debug") << "...got lambda body " << body << std::endl;
     return NodeManager::currentNM()->mkNode( kind::LAMBDA, bvl, body );
   }else{
@@ -148,55 +149,68 @@ Node TheoryBuiltinRewriter::getArrayRepresentationForLambda( TNode n, bool reqCo
   std::vector< Node > conds;
   std::vector< Node > vals;
   Node curr = n[1];
-  while( curr.getKind()==kind::ITE ){
+  while( curr.getKind()==kind::ITE || curr.getKind()==kind::EQUAL || curr.getKind()==kind::NOT ){
     Trace("builtin-rewrite-debug2") << "  process condition : " << curr[0] << std::endl;
-    if( curr[0].getKind()!=kind::EQUAL ){
+    Node index_eq;
+    Node curr_val;
+    Node next;
+    if( curr.getKind()==kind::ITE ){
+      index_eq = curr[0];
+      curr_val = curr[1];
+      next = curr[2];
+    }else{
+      bool pol = curr.getKind()!=kind::NOT;
+      //Boolean case, e.g. lambda x. (= x v) is lambda x. (ite (= x v) true false)
+      index_eq = curr.getKind()==kind::NOT ? curr[0] : curr;
+      curr_val = NodeManager::currentNM()->mkConst( pol );
+      next = NodeManager::currentNM()->mkConst( !pol );
+    }
+    if( index_eq.getKind()!=kind::EQUAL ){
       // non-equality condition
       Trace("builtin-rewrite-debug2") << "  ...non-equality condition." << std::endl;
       return Node::null();
-    }else if( Rewriter::rewrite( curr[0] )!=curr[0] ){
+    }else if( reqConst && Rewriter::rewrite( index_eq )!=index_eq ){
       // equality must be oriented correctly based on rewriter
       Trace("builtin-rewrite-debug2") << "  ...equality not oriented properly." << std::endl;
       return Node::null();
-    }else{
-      Node curr_index;
-      for( unsigned r=0; r<2; r++ ){
-        Node arg = curr[0][r];
-        Node val = curr[0][1-r];
-        if( arg==first_arg ){
-          if( reqConst && !val.isConst() ){
-            // non-constant value
-            Trace("builtin-rewrite-debug2") << "  ...non-constant value." << std::endl;
-            return Node::null();
-          }else{
-            curr_index = val;
-            Trace("builtin-rewrite-debug2") << "    " << arg << " -> " << val << std::endl;
-            break;
-          }
+    }
+
+    Node curr_index;
+    for( unsigned r=0; r<2; r++ ){
+      Node arg = index_eq[r];
+      Node val = index_eq[1-r];
+      if( arg==first_arg ){
+        if( reqConst && !val.isConst() ){
+          // non-constant value
+          Trace("builtin-rewrite-debug2") << "  ...non-constant value." << std::endl;
+          return Node::null();
+        }else{
+          curr_index = val;
+          Trace("builtin-rewrite-debug2") << "    " << arg << " -> " << val << std::endl;
+          break;
         }
       }
-      if( !curr_index.isNull() ){
-        Node curr_val = curr[1];
-        if( !rec_bvl.isNull() ){
-          curr_val = NodeManager::currentNM()->mkNode( kind::LAMBDA, rec_bvl, curr_val );
-          curr_val = getArrayRepresentationForLambda( curr_val, reqConst );
-          if( curr_val.isNull() ){
-            Trace("builtin-rewrite-debug2") << "  ...non-constant value." << std::endl;
-            return Node::null();
-          }
-        }      
-        Trace("builtin-rewrite-debug2") << "  ...condition is index " << curr_val << std::endl;
-        conds.push_back( curr_index );
-        vals.push_back( curr_val );
-        TypeNode vtype = curr_val.getType();
-        retType = retType.isNull() ? vtype : TypeNode::leastCommonTypeNode( retType, vtype );
-      }else{
-        Trace("builtin-rewrite-debug2") << "  ...non-constant value." << std::endl;
-        return Node::null();
-      }
-      //recurse
-      curr = curr[2];
     }
+    if( !curr_index.isNull() ){
+      if( !rec_bvl.isNull() ){
+        curr_val = NodeManager::currentNM()->mkNode( kind::LAMBDA, rec_bvl, curr_val );
+        curr_val = getArrayRepresentationForLambda( curr_val, reqConst );
+        if( curr_val.isNull() ){
+          Trace("builtin-rewrite-debug2") << "  ...non-constant value." << std::endl;
+          return Node::null();
+        }
+      }      
+      Trace("builtin-rewrite-debug2") << "  ...condition is index " << curr_val << std::endl;
+    }else{
+      Trace("builtin-rewrite-debug2") << "  ...non-constant value." << std::endl;
+      return Node::null();
+    }
+    conds.push_back( curr_index );
+    vals.push_back( curr_val );
+    TypeNode vtype = curr_val.getType();
+    retType = retType.isNull() ? vtype : TypeNode::leastCommonTypeNode( retType, vtype );
+    //recurse
+    curr = next;
   }
   if( !rec_bvl.isNull() ){
     curr = NodeManager::currentNM()->mkNode( kind::LAMBDA, rec_bvl, curr );

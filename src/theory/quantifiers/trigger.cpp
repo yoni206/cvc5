@@ -391,6 +391,9 @@ bool Trigger::isSimpleTrigger( Node n ){
     if( options::purifyDtTriggers() && t.getKind()==APPLY_SELECTOR_TOTAL ){
       return false;
     }
+    if( t.getKind()==HO_APPLY && t[0].getKind()==INST_CONSTANT ){
+      return false;    
+    }
     return true;
   }else{
     return false;

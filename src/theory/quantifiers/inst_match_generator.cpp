@@ -126,28 +126,37 @@ void InstMatchGenerator::initialize( Node q, QuantifiersEngine* qe, std::vector<
     d_match_pattern_op = qe->getTermDatabase()->getMatchOperator( d_match_pattern );
 
     //now, collect children of d_match_pattern
-    for( unsigned i=0; i<d_match_pattern.getNumChildren(); i++ ){
-      Node qa = quantifiers::TermDb::getInstConstAttr(d_match_pattern[i]);
-      if( !qa.isNull() ){
-        InstMatchGenerator * cimg = Trigger::getInstMatchGenerator( q, d_match_pattern[i] );
-        if( cimg ){
-          d_children.push_back( cimg );
-          d_children_index.push_back( i );
-          d_children_types.push_back( 1 );
-        }else{
-          if( d_match_pattern[i].getKind()==INST_CONSTANT && qa==q ){
-            d_var_num[i] = d_match_pattern[i].getAttribute(InstVarNumAttribute());
-            d_children_types.push_back( 0 );
-          }else{
-            d_children_types.push_back( -1 );
-          }
-        }
-      }else{
-        d_children_types.push_back( -1 );
-      }
-    }
     if( d_match_pattern.getKind()==INST_CONSTANT ){
       d_var_num[0] = d_match_pattern.getAttribute(InstVarNumAttribute());
+    }else{
+      for( unsigned i=0; i<d_match_pattern.getNumChildren(); i++ ){
+        Node qa = quantifiers::TermDb::getInstConstAttr(d_match_pattern[i]);
+        if( !qa.isNull() ){
+          InstMatchGenerator * cimg = Trigger::getInstMatchGenerator( q, d_match_pattern[i] );
+          if( cimg ){
+            d_children.push_back( cimg );
+            d_children_index.push_back( i );
+            d_children_types.push_back( 1 );
+          }else{
+            if( d_match_pattern[i].getKind()==INST_CONSTANT && qa==q ){
+              d_var_num[i] = d_match_pattern[i].getAttribute(InstVarNumAttribute());
+              d_children_types.push_back( 0 );
+            }else{
+              d_children_types.push_back( -1 );
+            }
+          }
+        }else{
+          d_children_types.push_back( -1 );
+        }
+      }
+    }
+
+    // if APPLY_HO and first argument is a variable, mark type for higher-order matching
+    if( d_match_pattern.getKind()==HO_APPLY ){
+      if( d_var_num.find( 0 )!=d_var_num.end() ){
+        TypeNode tn = d_match_pattern[0].getType();
+        Trace("ho-quant") << "Type " << tn << " needs higher-order matching." << std::endl;
+      }
     }
 
     //create candidate generator

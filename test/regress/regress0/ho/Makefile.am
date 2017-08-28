@@ -33,7 +33,8 @@ TESTS = \
   apply-collapse-unsat.smt2 \     
   apply-collapse-sat.smt2 \     
   ho-exponential-model.smt2 \     
-  ext-sat-partial-eval.smt2
+  ext-sat-partial-eval.smt2 \     
+  ho-std-fmf.smt2
 
 EXTRA_DIST = $(TESTS)
 

@@ -319,11 +319,14 @@ void TheoryModel::addTerm(TNode n ){
       Trace("model-builder-fun") << "Add ho apply term " << n << std::endl;
     }
   }
-  // all functions must be included
+  // all functions must be included, marked as higher-order
   if( n.getType().isFunction() ){
     Trace("model-builder-fun") << "Add function variable (without term) " << n << std::endl;
     if( d_uf_terms.find( n )==d_uf_terms.end() ){
       d_uf_terms[n].clear();
+    }
+    if( d_ho_uf_terms.find( n )==d_ho_uf_terms.end() ){
+      d_ho_uf_terms[n].clear();
     }
   }
 }
@@ -507,9 +510,10 @@ void TheoryModel::assignFunctionDefinition( Node f, Node f_def ) {
   if( hasExternalTerm ){
     Trace("model-builder-debug") << "  ...function is first-class member of equality engine" << std::endl;
     // assign to representative if higher-order
-    Node r = getRepresentative( f );
+    Node r = d_equalityEngine->getRepresentative( f );
     //if( d_reps.find( r )==d_reps.end() )
     //always replace the representative, since it is initially assigned to itself
+    Trace("model-builder") << "    Assign: Setting function rep " << r << " to " << f_def << endl;
     d_reps[r] = f_def;  
     // also assign to other assignable functions in the same equivalence class
     eq::EqClassIterator eqc_i = eq::EqClassIterator(r,d_equalityEngine);
@@ -522,6 +526,7 @@ void TheoryModel::assignFunctionDefinition( Node f, Node f_def ) {
       }
       ++eqc_i;
     }
+    Trace("model-builder-debug") << "  ...finished." << std::endl;
   }
 }
 
@@ -594,7 +599,8 @@ std::vector< Node > TheoryModel::getFunctionsToAssign() {
     }
   }
 
-  // sort based on type dependencies if higher-order
+  // sort based on type size if higher-order
+  //   this means we assign T -> T before ( T x T ) -> T and before ( T -> T ) -> T
   if( !func_to_rep.empty() ){
     Trace("model-builder-fun") << "Sort functions by type..." << std::endl;
     sortTypeSize sts;
@@ -1217,23 +1223,7 @@ bool TheoryEngineModelBuilder::preProcessBuildModel(TheoryModel* m) {
 }
 
 bool TheoryEngineModelBuilder::processBuildModel(TheoryModel* m){
-  Trace("model-builder") << "Assigning function values..." << endl;
-  std::vector< Node > funcs_to_assign = m->getFunctionsToAssign();
-  Trace("model-builder") << "...have " << funcs_to_assign.size() << " functions to assign." << std::endl;
-  // construct function values
-  for( unsigned k=0; k<funcs_to_assign.size(); k++ ){
-    Node f = funcs_to_assign[k];
-    Trace("model-builder") << "  Function #" << k << " is " << f << std::endl;
-    std::map< Node, std::vector< Node > >::iterator itht = m->d_ho_uf_terms.find( f );
-    if( itht==m->d_ho_uf_terms.end() ){
-      Trace("model-builder") << "  Assign function value for " << f << " based on APPLY_UF" << std::endl;
-      assignFunction( m, f );
-    }else{
-      Trace("model-builder") << "  Assign function value for " << f << " based on curried HO_APPLY" << std::endl;
-      assignHoFunction( m, f );
-    }
-  }
-  Trace("model-builder") << "Finished assigning function values." << std::endl;
+  assignFunctions(m, true, true );
   return true;
 }
 
@@ -1324,16 +1314,47 @@ void TheoryEngineModelBuilder::assignHoFunction(TheoryModel* m, Node f) {
   m->assignFunctionDefinition( f, val );
 }
 
-void TheoryEngineModelBuilder::assignHoFunctions(TheoryModel* m) {
+void TheoryEngineModelBuilder::assignFunctions(TheoryModel* m, bool doFo, bool doHo) {
+  Trace("model-builder") << "Assigning function values (" << doFo << ", " << doHo << ")..." << endl;
   std::vector< Node > funcs_to_assign = m->getFunctionsToAssign();
-  for( unsigned k=0; k<funcs_to_assign.size(); k++ ){
-    Node f = funcs_to_assign[k];
-    std::map< Node, std::vector< Node > >::iterator itht = m->d_ho_uf_terms.find( f );
-    if( itht!=m->d_ho_uf_terms.end() ){
-      Trace("model-builder") << "  Assign function value for " << f << " based on curried HO_APPLY" << std::endl;
-      assignHoFunction( m, f );
+  if( Trace.isOn("model-builder") ){
+    Trace("model-builder") << "...have " << funcs_to_assign.size() << " functions to assign:" << std::endl;
+    for( unsigned k=0; k<funcs_to_assign.size(); k++ ){
+      Node f = funcs_to_assign[k];
+      Trace("model-builder") << "  [" << k << "] : " << f << " : " << f.getType() << std::endl;
     }
   }
+  // construct function values
+  for( unsigned k=0; k<funcs_to_assign.size(); k++ ){
+    Node f = funcs_to_assign[k];
+    Trace("model-builder") << "  Function #" << k << " is " << f << std::endl;
+    std::map< Node, std::vector< Node > >::iterator itht = m->d_ho_uf_terms.find( f );
+    if( itht==m->d_ho_uf_terms.end() ){
+      if( doFo ){
+        Trace("model-builder") << "  Assign function value for " << f << " based on APPLY_UF" << std::endl;
+        assignFunction( m, f );
+      }else{
+        Trace("model-builder") << "  Skip " << f << std::endl;
+      }
+    }else{
+      if( doHo ){
+        Trace("model-builder") << "  Assign function value for " << f << " based on curried HO_APPLY" << std::endl;
+        assignHoFunction( m, f );
+      }else{
+        Trace("model-builder") << "  Skip " << f << std::endl;
+      }
+    }
+  }
+  Trace("model-builder") << "Finished assigning function values." << std::endl;
+}
+
+void TheoryEngineModelBuilder::assignFoFunctions(TheoryModel* m) {
+  assignFunctions(m, true, false);
+}
+
+void TheoryEngineModelBuilder::assignHoFunctions(TheoryModel* m) {
+  assignFunctions(m, false, true);
+  
 }
 
 } /* namespace CVC4::theory */

@@ -224,17 +224,6 @@ void TheoryUF::preRegisterTerm(TNode node) {
     // Remember the function and predicate terms
     d_functionsTerms.push_back(node);
     break;
-  case kind::HO_APPLY:
-    d_equalityEngine.addTerm(node);
-    // convert HO_APPLY to APPLY_UF if fully applied
-    if( node[0].getType().getNumChildren()==2 ){
-      Node ret = getApplyUfForHoApply( node );
-      d_collapse_apply_uf.push_back( ret );
-      Node lem = ret.eqNode( node );
-      Trace("uf-ho-lemma") << "uf-ho-lemma : infer, by apply-collapse (during preregister) : " << lem << std::endl;
-      d_equalityEngine.assertEquality(lem,true,d_true);
-    }
-    break;
   case kind::CARDINALITY_CONSTRAINT:
   case kind::COMBINED_CARDINALITY_CONSTRAINT:
     //do nothing
@@ -316,7 +305,16 @@ void TheoryUF::collectModelInfo( TheoryModel* m ){
 
   // terms introduced by collapsing/expanding HO_APPLY/APPLY_UF are also relevant
   for( NodeList::const_iterator i = d_collapse_apply_uf.begin(); i != d_collapse_apply_uf.end(); ++i ) {
-    termSet.insert( *i );
+    Node n = *i;
+    if( termSet.find( n )==termSet.end() ){
+      Node un = getApplyUfForHoApply( n );
+      Assert( !un.isNull() );
+      // relevant if its APPLY_UF version is relevant 
+      if( termSet.find( un )!=termSet.end() ){
+        Debug("uf") << "  insert " << n << " to relevant term set." << std::endl;
+        termSet.insert( n );
+      }
+    }
   }
 
   m->assertEqualityEngine( &d_equalityEngine, &termSet );
