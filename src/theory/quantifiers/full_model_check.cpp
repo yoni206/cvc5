@@ -398,145 +398,158 @@ bool FullModelChecker::processBuildModel(TheoryModel* m){
     }
   }
 
+  //assign higher-order functions in default way (not supported by this builder)
+  assignHoFunctions( fm );
+
   //now, make models
   for( std::map<Node, Def * >::iterator it = fm->d_models.begin(); it != fm->d_models.end(); ++it ) {
     Node op = it->first;
     //reset the model
     fm->d_models[op]->reset();
-
-    std::vector< Node > add_conds;
-    std::vector< Node > add_values;      
-    bool needsDefault = true;
-    std::map< Node, std::vector< Node > >::iterator itut = fm->d_uf_terms.find( op );
-    if( itut!=fm->d_uf_terms.end() ){
-      Trace("fmc-model-debug") << itut->second.size() << " model values for " << op << " ... " << std::endl;
-      for( size_t i=0; i<itut->second.size(); i++ ){
-        Node n = itut->second[i];
-        // only consider unique up to congruence (in model equality engine)?
-        add_conds.push_back( n );
-        add_values.push_back( n );
-        Node r = fm->getRepresentative(n);
-        Trace("fmc-model-debug") << n << " -> " << r << std::endl;
-        //AlwaysAssert( fm->areEqual( itut->second[i], r ) );
-      }
-    }else{
-      Trace("fmc-model-debug") << "No model values for " << op << " ... " << std::endl;
-    }
-    Trace("fmc-model-debug") << std::endl;
-    //possibly get default
-    if( needsDefault ){
-      Node nmb = d_qe->getTermDatabase()->getModelBasisOpTerm(op);
-      //add default value if necessary
-      if( fm->hasTerm( nmb ) ){
-        Trace("fmc-model-debug") << "Add default " << nmb << std::endl;
-        add_conds.push_back( nmb );
-        add_values.push_back( nmb );
-      }else{
-        Node vmb = getSomeDomainElement(fm, nmb.getType());
-        Trace("fmc-model-debug") << "Add default to default representative " << nmb << " ";
-        Trace("fmc-model-debug") << fm->d_rep_set.d_type_reps[nmb.getType()].size() << std::endl;
-        add_conds.push_back( nmb );
-        add_values.push_back( vmb );
-      }
-    }
-
-    std::vector< Node > conds;
-    std::vector< Node > values;
-    std::vector< Node > entry_conds;
-    //get the entries for the model
-    for( size_t i=0; i<add_conds.size(); i++ ){
-      Node c = add_conds[i];
-      Node v = add_values[i];
-      std::vector< Node > children;
-      std::vector< Node > entry_children;
-      children.push_back(op);
-      entry_children.push_back(op);
-      bool hasNonStar = false;
-      for( unsigned i=0; i<c.getNumChildren(); i++) {
-        Node ri = fm->getRepresentative( c[i] );
-        children.push_back(ri);
-        bool isStar = false;
-        if( options::mbqiMode()!=quantifiers::MBQI_FMC_INTERVAL || !ri.getType().isInteger() ){
-          if (fm->isModelBasisTerm(ri) ) {
-            ri = fm->getStar( ri.getType() );
-            isStar = true;
-          }else{
-            hasNonStar = true;
-          }
+    // if it is assignable
+    if( !fm->hasAssignedFunctionDefinition( op ) ){
+      std::vector< Node > add_conds;
+      std::vector< Node > add_values;      
+      bool needsDefault = true;
+      std::map< Node, std::vector< Node > >::iterator itut = fm->d_uf_terms.find( op );
+      if( itut!=fm->d_uf_terms.end() ){
+        Trace("fmc-model-debug") << itut->second.size() << " model values for " << op << " ... " << std::endl;
+        for( size_t i=0; i<itut->second.size(); i++ ){
+          Node n = itut->second[i];
+          // only consider unique up to congruence (in model equality engine)?
+          add_conds.push_back( n );
+          add_values.push_back( n );
+          Node r = fm->getRepresentative(n);
+          Trace("fmc-model-debug") << n << " -> " << r << std::endl;
+          //AlwaysAssert( fm->areEqual( itut->second[i], r ) );
         }
-        if( !isStar && !ri.isConst() ){
-          Trace("fmc-warn") << "Warning : model for " << op << " has non-constant argument in model " << ri << " (from " << c[i] << ")" << std::endl;
+      }else{
+        Trace("fmc-model-debug") << "No model values for " << op << " ... " << std::endl;
+      }
+      Trace("fmc-model-debug") << std::endl;
+      //possibly get default
+      if( needsDefault ){
+        Node nmb = d_qe->getTermDatabase()->getModelBasisOpTerm(op);
+        //add default value if necessary
+        if( fm->hasTerm( nmb ) ){
+          Trace("fmc-model-debug") << "Add default " << nmb << std::endl;
+          add_conds.push_back( nmb );
+          add_values.push_back( nmb );
+        }else{
+          Node vmb = getSomeDomainElement(fm, nmb.getType());
+          Trace("fmc-model-debug") << "Add default to default representative " << nmb << " ";
+          Trace("fmc-model-debug") << fm->d_rep_set.d_type_reps[nmb.getType()].size() << std::endl;
+          add_conds.push_back( nmb );
+          add_values.push_back( vmb );
+        }
+      }
+
+      std::vector< Node > conds;
+      std::vector< Node > values;
+      std::vector< Node > entry_conds;
+      //get the entries for the model
+      for( size_t i=0; i<add_conds.size(); i++ ){
+        Node c = add_conds[i];
+        Node v = add_values[i];
+        std::vector< Node > children;
+        std::vector< Node > entry_children;
+        children.push_back(op);
+        entry_children.push_back(op);
+        bool hasNonStar = false;
+        for( unsigned i=0; i<c.getNumChildren(); i++) {
+          Node ri = fm->getRepresentative( c[i] );
+          children.push_back(ri);
+          bool isStar = false;
+          if( options::mbqiMode()!=quantifiers::MBQI_FMC_INTERVAL || !ri.getType().isInteger() ){
+            if (fm->isModelBasisTerm(ri) ) {
+              ri = fm->getStar( ri.getType() );
+              isStar = true;
+            }else{
+              hasNonStar = true;
+            }
+          }
+          if( !isStar && !ri.isConst() ){
+            Trace("fmc-warn") << "Warning : model for " << op << " has non-constant argument in model " << ri;
+            Trace("fmc-warn") << " (from " << c[i] << ")" << std::endl;
+            Assert( false );
+          }
+          entry_children.push_back(ri);
+        }
+        Node n = NodeManager::currentNM()->mkNode( APPLY_UF, children );
+        Node nv = fm->getRepresentative( v );
+        if( !nv.isConst() ){
+          Trace("fmc-warn") << "Warning : model for " << op << " has non-constant value in model " << nv << std::endl;
           Assert( false );
         }
-        entry_children.push_back(ri);
+        Node en = (useSimpleModels() && hasNonStar) ? n : NodeManager::currentNM()->mkNode( APPLY_UF, entry_children );
+        if( std::find(conds.begin(), conds.end(), n )==conds.end() ){
+          Trace("fmc-model-debug") << "- add " << n << " -> " << nv << " (entry is " << en << ")" << std::endl;
+          conds.push_back(n);
+          values.push_back(nv);
+          entry_conds.push_back(en);
+        }
+        else {
+          Trace("fmc-model-debug") << "Already have entry for : " << n << " -> " << nv << " (entry is " << en << ")" << std::endl;
+        }
       }
-      Node n = NodeManager::currentNM()->mkNode( APPLY_UF, children );
-      Node nv = fm->getRepresentative( v );
-      if( !nv.isConst() ){
-        Trace("fmc-warn") << "Warning : model for " << op << " has non-constant value in model " << nv << std::endl;
-        Assert( false );
+
+
+      //sort based on # default arguments
+      std::vector< int > indices;
+      ModelBasisArgSort mbas;
+      for (int i=0; i<(int)conds.size(); i++) {
+        d_qe->getTermDatabase()->computeModelBasisArgAttribute( conds[i] );
+        mbas.d_terms.push_back(conds[i]);
+        indices.push_back(i);
       }
-      Node en = (useSimpleModels() && hasNonStar) ? n : NodeManager::currentNM()->mkNode( APPLY_UF, entry_children );
-      if( std::find(conds.begin(), conds.end(), n )==conds.end() ){
-        Trace("fmc-model-debug") << "- add " << n << " -> " << nv << " (entry is " << en << ")" << std::endl;
-        conds.push_back(n);
-        values.push_back(nv);
-        entry_conds.push_back(en);
+      std::sort( indices.begin(), indices.end(), mbas );
+
+      for (int i=0; i<(int)indices.size(); i++) {
+        fm->d_models[op]->addEntry(fm, entry_conds[indices[i]], values[indices[i]]);
       }
-      else {
-        Trace("fmc-model-debug") << "Already have entry for : " << n << " -> " << nv << " (entry is " << en << ")" << std::endl;
+
+
+      if( options::mbqiMode()==quantifiers::MBQI_FMC_INTERVAL ){
+        convertIntervalModel( fm, op );
       }
-    }
 
+      Trace("fmc-model-simplify") << "Before simplification : " << std::endl;
+      fm->d_models[op]->debugPrint("fmc-model-simplify", op, this);
+      Trace("fmc-model-simplify") << std::endl;
 
-    //sort based on # default arguments
-    std::vector< int > indices;
-    ModelBasisArgSort mbas;
-    for (int i=0; i<(int)conds.size(); i++) {
-      d_qe->getTermDatabase()->computeModelBasisArgAttribute( conds[i] );
-      mbas.d_terms.push_back(conds[i]);
-      indices.push_back(i);
-    }
-    std::sort( indices.begin(), indices.end(), mbas );
+      Trace("fmc-model-simplify") << "Simplifying " << op << "..." << std::endl;
+      fm->d_models[op]->simplify( this, fm );
+      fm->d_models[op]->d_is_valid = true;
 
-    for (int i=0; i<(int)indices.size(); i++) {
-      fm->d_models[op]->addEntry(fm, entry_conds[indices[i]], values[indices[i]]);
-    }
+      fm->d_models[op]->debugPrint("fmc-model", op, this);
+      Trace("fmc-model") << std::endl;
 
-
-    if( options::mbqiMode()==quantifiers::MBQI_FMC_INTERVAL ){
-      convertIntervalModel( fm, op );
-    }
-
-    Trace("fmc-model-simplify") << "Before simplification : " << std::endl;
-    fm->d_models[op]->debugPrint("fmc-model-simplify", op, this);
-    Trace("fmc-model-simplify") << std::endl;
-
-    Trace("fmc-model-simplify") << "Simplifying " << op << "..." << std::endl;
-    fm->d_models[op]->simplify( this, fm );
-
-    fm->d_models[op]->debugPrint("fmc-model", op, this);
-    Trace("fmc-model") << std::endl;
-
-    //for debugging
-    /*
-    for( size_t i=0; i<fm->d_uf_terms[op].size(); i++ ){
-      std::vector< Node > inst;
-      for( unsigned j=0; j<fm->d_uf_terms[op][i].getNumChildren(); j++ ){
-        Node r = fm->getRepresentative( fm->d_uf_terms[op][i][j] );
-        inst.push_back( r );
+      //for debugging
+      /*
+      for( size_t i=0; i<fm->d_uf_terms[op].size(); i++ ){
+        std::vector< Node > inst;
+        for( unsigned j=0; j<fm->d_uf_terms[op][i].getNumChildren(); j++ ){
+          Node r = fm->getRepresentative( fm->d_uf_terms[op][i][j] );
+          inst.push_back( r );
+        }
+        Node ev = fm->d_models[op]->evaluate( fm, inst );
+        Trace("fmc-model-debug") << ".....Checking eval( " << fm->d_uf_terms[op][i] << " ) = " << ev << std::endl;
+        AlwaysAssert( fm->areEqual( ev, fm->d_uf_terms[op][i] ) );
       }
-      Node ev = fm->d_models[op]->evaluate( fm, inst );
-      Trace("fmc-model-debug") << ".....Checking eval( " << fm->d_uf_terms[op][i] << " ) = " << ev << std::endl;
-      AlwaysAssert( fm->areEqual( ev, fm->d_uf_terms[op][i] ) );
+      */
+    }else{
+      Trace("fmc-model-debug") << "Cannot assign " << op << " (might have higher-order constraints)" << std::endl;
+      fm->d_models[op]->d_is_valid = false;
     }
-    */
   }
   Assert( d_addedLemmas==0 );
   
   //make function values
   for( std::map<Node, Def * >::iterator it = fm->d_models.begin(); it != fm->d_models.end(); ++it ){
-    m->assignFunctionDefinition( it->first, getFunctionValue( fm, it->first, "$x" ) );
+    Node op = it->first;
+    if( !fm->hasAssignedFunctionDefinition( op ) ){
+      m->assignFunctionDefinition( op, getFunctionValue( fm, op, "$x" ) );
+    }
   }
   return TheoryEngineModelBuilder::processBuildModel( m );
 }
@@ -872,21 +885,16 @@ void FullModelChecker::doCheck(FirstOrderModelFmc * fm, Node f, Def & d, Node n 
         var_ch.push_back(i);
       }
     }
-
+    bool needsCheck = false;
     if( n.getKind()==APPLY_UF ){
-      Trace("fmc-debug") << "Do uninterpreted compose " << n << std::endl;
-      //uninterpreted compose
-      doUninterpretedCompose( fm, f, d, n.getOperator(), children );
-      /*
-    } else if( n.getKind()==SELECT ){
-      Trace("fmc-debug") << "Do select compose " << n << std::endl;
-      std::vector< Def > children2;
-      children2.push_back( children[1] );
-      std::vector< Node > cond;
-      mkCondDefaultVec(fm, f, cond);
-      std::vector< Node > val;
-      doUninterpretedCompose(fm, f, d, children[0], children2, 0, cond, val );
-      */
+      Node op = n.getOperator();
+      if( fm->d_models[op]->isValid() ){
+        Trace("fmc-debug") << "Do uninterpreted compose " << n << std::endl;
+        //uninterpreted compose
+        doUninterpretedCompose( fm, f, d, op, children );
+      }else{
+        needsCheck = true;
+      }
     } else {
       if( !var_ch.empty() ){
         if( n.getKind()==EQUAL && !n[0].getType().isBoolean() ){
@@ -898,8 +906,7 @@ void FullModelChecker::doCheck(FirstOrderModelFmc * fm, Node f, Def & d, Node n 
             doVariableRelation( fm, f, d, var_ch[0]==0 ? children[1] : children[0], var_ch[0]==0 ? n[0] : n[1] );
           }
         }else{
-          Trace("fmc-warn") << "Don't know how to check " << n << std::endl;
-          d.addEntry(fm, mkCondDefault(fm, f), Node::null());
+          needsCheck = true;
         }
       }else{
         Trace("fmc-debug") << "Do interpreted compose " << n << std::endl;
@@ -909,6 +916,10 @@ void FullModelChecker::doCheck(FirstOrderModelFmc * fm, Node f, Def & d, Node n 
         //interpreted compose
         doInterpretedCompose( fm, f, d, n, children, 0, cond, val );
       }
+    }
+    if( needsCheck ){
+      Trace("fmc-warn") << "Don't know how to check " << n << std::endl;
+      d.addEntry(fm, mkCondDefault(fm, f), Node::null());
     }
     Trace("fmc-debug") << "Simplify the definition..." << std::endl;
     d.debugPrint("fmc-debug", Node::null(), this);
@@ -980,6 +991,8 @@ void FullModelChecker::doVariableRelation( FirstOrderModelFmc * fm, Node f, Def 
 }
 
 void FullModelChecker::doUninterpretedCompose( FirstOrderModelFmc * fm, Node f, Def & d, Node op, std::vector< Def > & dc ) {
+  Assert( fm->d_models.find( op )!=fm->d_models.end() );
+  Assert( fm->d_models[op]->isValid() );
   Trace("fmc-uf-debug") << "Definition : " << std::endl;
   fm->d_models[op]->debugPrint("fmc-uf-debug", op, this);
   Trace("fmc-uf-debug") << std::endl;

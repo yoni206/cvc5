@@ -93,7 +93,7 @@ void FirstOrderModel::initializeModelForTerm( Node n, std::map< Node, bool >& vi
   if( visited.find( n )==visited.end() ){
     visited[n] = true;
     processInitializeModelForTerm( n );
-    for( int i=0; i<(int)n.getNumChildren(); i++ ){
+    for( unsigned i=0; i<n.getNumChildren(); i++ ){
       initializeModelForTerm( n[i], visited );
     }
   }
@@ -108,7 +108,7 @@ Node FirstOrderModel::getSomeDomainElement(TypeNode tn){
     d_rep_set.add(tn, mbt);
   }else if( d_rep_set.d_type_reps[tn].size()==0 ){
     Message() << "empty reps" << std::endl;
-    exit(0);
+    exit(1);
   }
   return d_rep_set.d_type_reps[tn][0];
 }
@@ -218,24 +218,10 @@ void FirstOrderModelIG::processInitializeModelForTerm( Node n ){
     if( d_uf_model_tree.find( op )==d_uf_model_tree.end() ){
       TypeNode tn = op.getType();
       tn = tn[ (int)tn.getNumChildren()-1 ];
-      //only generate models for predicates and functions with uninterpreted range types
-      //if( tn==NodeManager::currentNM()->booleanType() || tn.isSort() ){
-        d_uf_model_tree[ op ] = uf::UfModelTree( op );
-        d_uf_model_gen[ op ].clear();
-      //}
+      d_uf_model_tree[ op ] = uf::UfModelTree( op );
+      d_uf_model_gen[ op ].clear();
     }
   }
-  /*
-  if( n.getType().isArray() ){
-    while( n.getKind()==STORE ){
-      n = n[0];
-    }
-    Node nn = getRepresentative( n );
-    if( d_array_model.find( nn )==d_array_model.end() ){
-      d_array_model[nn] = arrays::ArrayModel( nn, this );
-    }
-  }
-  */
 }
 
 //for evaluation of quantifier bodies
@@ -585,25 +571,6 @@ void FirstOrderModelIG::makeEvalUfIndexOrder( Node n ){
   }
 }
 
-/*
-Node FirstOrderModelIG::getCurrentUfModelValue( Node n, std::vector< Node > & args, bool partial ) {
-  std::vector< Node > children;
-  children.push_back(n.getOperator());
-  children.insert(children.end(), args.begin(), args.end());
-  Node nv = NodeManager::currentNM()->mkNode(APPLY_UF, children);
-  //make the term model specifically for nv
-  makeEvalUfModel( nv );
-  int argDepIndex;
-  if( d_eval_uf_use_default[nv] ){
-    return d_uf_model_tree[ n.getOperator() ].getValue( this, nv, argDepIndex );
-  }else{
-    return d_eval_uf_model[ nv ].getValue( this, nv, argDepIndex );
-  }
-}
-*/
-
-
-
 FirstOrderModelFmc::FirstOrderModelFmc(QuantifiersEngine * qe, context::Context* c, std::string name) :
 FirstOrderModel(qe, c, name){
 
@@ -614,17 +581,6 @@ FirstOrderModelFmc::~FirstOrderModelFmc() throw() {
     delete (*i).second;
   }
 }
-
-/*
-Node FirstOrderModelFmc::getCurrentUfModelValue( Node n, std::vector< Node > & args, bool partial ) {
-  Trace("fmc-uf-model") << "Get model value for " << n << " " << n.getKind() << std::endl;
-  for(unsigned i=0; i<args.size(); i++) {
-    args[i] = getUsedRepresentative(args[i]);
-  }
-  Assert( n.getKind()==APPLY_UF );
-  return d_models[n.getOperator()]->evaluate(this, args);
-}
-*/
 
 void FirstOrderModelFmc::processInitialize( bool ispre ) {
   if( ispre ){

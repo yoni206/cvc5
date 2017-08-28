@@ -56,6 +56,8 @@ public:
   std::vector< Node > d_cond;
   //value is returned by FullModelChecker::getRepresentative
   std::vector< Node > d_value;
+  // is this a valid definition
+  bool d_is_valid;
   void basic_simplify( FirstOrderModelFmc * m );
 private:
   enum {
@@ -66,19 +68,21 @@ private:
   std::vector< int > d_status;
   bool d_has_simplified;
 public:
-  Def() : d_has_simplified(false){}
+  Def() : d_is_valid(false), d_has_simplified(false){}
   void reset() {
     d_et.reset();
     d_cond.clear();
     d_value.clear();
     d_status.clear();
     d_has_simplified = false;
+    d_is_valid = false;
   }
   bool addEntry( FirstOrderModelFmc * m, Node c, Node v);
   Node evaluate( FirstOrderModelFmc * m, std::vector<Node>& inst );
   int getGeneralizationIndex( FirstOrderModelFmc * m, std::vector<Node>& inst );
   void simplify( FullModelChecker * mc, FirstOrderModelFmc * m );
   void debugPrint(const char * tr, Node op, FullModelChecker * m);
+  bool isValid() { return d_is_valid; }
 };/* class Def */
 
 

@@ -166,15 +166,9 @@ QModelBuilder( c, qe ), d_basisNoMatch( c ) {
 
 }
 
-/*
-Node QModelBuilderIG::getCurrentUfModelValue( FirstOrderModel* fm, Node n, std::vector< Node > & args, bool partial ) {
-  return n;
-}
-*/
-
 bool QModelBuilderIG::processBuildModel( TheoryModel* m ) {
-  FirstOrderModel* f = (FirstOrderModel*)m;
-  FirstOrderModelIG* fm = f->asFirstOrderModelIG();
+  FirstOrderModel* fom = (FirstOrderModel*)m;
+  FirstOrderModelIG* fm = fom->asFirstOrderModelIG();
   Trace("model-engine-debug") << "Process build model " << optUseModel() << std::endl;
   d_didInstGen = false;
   //reset the internal information
@@ -201,6 +195,26 @@ bool QModelBuilderIG::processBuildModel( TheoryModel* m ) {
       Assert( !d_qe->inConflict() );
       //initialize model
       fm->initialize();
+
+      //assign higher-order functions
+      assignHoFunctions( fm );
+
+      //mark higher-order functions as ineligible
+      std::vector< Node > ho_f;
+      for( std::map< Node, uf::UfModelTree >::iterator it = fm->d_uf_model_tree.begin(); 
+           it != fm->d_uf_model_tree.end(); ++it ){
+        Node op = it->first;
+        if( fm->hasAssignedFunctionDefinition( op ) ){
+          Trace("model-engine-debug2") << "Already assigned function " << op;
+          Trace("model-engine-debug2") << ", do not use fmf model." << std::endl;
+          ho_f.push_back( op );
+        }
+      }
+      for( unsigned i=0; i<ho_f.size(); i++ ){
+        fm->d_uf_model_tree.erase( ho_f[i] );
+      }
+      
+
       //analyze the functions
       Trace("model-engine-debug") << "Analyzing model..." << std::endl;
       analyzeModel( fm );
@@ -259,6 +273,7 @@ bool QModelBuilderIG::processBuildModel( TheoryModel* m ) {
         //if no immediate exceptions, build the model
         //  this model will be an approximation that will need to be tested via exhaustive instantiation
         Trace("model-engine-debug") << "Building model..." << std::endl;
+
         //build model for UF
         for( std::map< Node, uf::UfModelTree >::iterator it = fm->d_uf_model_tree.begin(); it != fm->d_uf_model_tree.end(); ++it ){
           Trace("model-engine-debug-uf") << "Building model for " << it->first << "..." << std::endl;
@@ -273,9 +288,11 @@ bool QModelBuilderIG::processBuildModel( TheoryModel* m ) {
   //update models
   for( std::map< Node, uf::UfModelTree >::iterator it = fm->d_uf_model_tree.begin(); it != fm->d_uf_model_tree.end(); ++it ){
     it->second.update( fm );
-    Trace("model-func") << "QModelBuilder: Make function value from tree " << it->first << std::endl;
+    Node op = it->first;
+    Trace("model-func") << "QModelBuilder: Make function value from tree " << op << std::endl;
     //construct function values
-    fm->assignFunctionDefinition( it->first, it->second.getFunctionValue( "$x" ) );
+    Assert( !fm->hasAssignedFunctionDefinition( op ) );
+    fm->assignFunctionDefinition( op, it->second.getFunctionValue( "$x" ) );
   }
   Assert( d_addedLemmas==0 );
   return TheoryEngineModelBuilder::processBuildModel( m );

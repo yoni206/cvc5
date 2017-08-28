@@ -295,6 +295,10 @@ protected:
   /** involves usort */
   bool involvesUSort( TypeNode tn );
   bool isExcludedUSortValue( std::map< TypeNode, unsigned >& eqc_usort_count, Node v, std::map< Node, bool >& visited );
+protected:
+  void assignFunction(TheoryModel* m, Node f);
+  void assignHoFunction(TheoryModel* m, Node f);
+  void assignHoFunctions(TheoryModel* m);
 public:
   TheoryEngineModelBuilder(TheoryEngine* te);
   virtual ~TheoryEngineModelBuilder(){}

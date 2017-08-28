@@ -63,6 +63,7 @@ void TheoryModel::reset(){
   d_reps.clear();
   d_rep_set.clear();
   d_uf_terms.clear();
+  d_ho_uf_terms.clear();
   d_uf_models.clear();
   d_eeContext->pop();
   d_eeContext->push();
@@ -487,6 +488,7 @@ void TheoryModel::printRepresentative( std::ostream& out, Node r ){
 }
 
 void TheoryModel::assignFunctionDefinition( Node f, Node f_def ) {
+  Assert( d_uf_models.find( f )==d_uf_models.end() );
   Trace("model-builder") << "  Assigning function (" << f << ") to (" << f_def << ")" << endl;
 
   // if the function is a first-class member of the equality engine
@@ -1214,104 +1216,124 @@ bool TheoryEngineModelBuilder::preProcessBuildModel(TheoryModel* m) {
   return true;
 }
 
-
-
 bool TheoryEngineModelBuilder::processBuildModel(TheoryModel* m){
   Trace("model-builder") << "Assigning function values..." << endl;
   std::vector< Node > funcs_to_assign = m->getFunctionsToAssign();
   Trace("model-builder") << "...have " << funcs_to_assign.size() << " functions to assign." << std::endl;
   // construct function values
   for( unsigned k=0; k<funcs_to_assign.size(); k++ ){
-    Node n = funcs_to_assign[k];
-    Trace("model-builder") << "  Function #" << k << " is " << n << std::endl;
-    TypeNode type = n.getType();
-    std::map< Node, std::vector< Node > >::iterator itht = m->d_ho_uf_terms.find( n );
+    Node f = funcs_to_assign[k];
+    Trace("model-builder") << "  Function #" << k << " is " << f << std::endl;
+    std::map< Node, std::vector< Node > >::iterator itht = m->d_ho_uf_terms.find( f );
     if( itht==m->d_ho_uf_terms.end() ){
-      Trace("model-builder") << "  Assign function value for " << n << " based on APPLY_UF" << std::endl;
-      uf::UfModelTree ufmt( n );
-      Node default_v;
-      for( size_t i=0; i<m->d_uf_terms[n].size(); i++ ){
-        Node un = m->d_uf_terms[n][i];
-        vector<TNode> children;
-        children.push_back(n);
-        Trace("model-builder-debug") << "  process term : " << un << std::endl;
-        for (size_t j = 0; j < un.getNumChildren(); ++j) {
-          Node rc = m->getRepresentative(un[j]);
-          Trace("model-builder-debug2") << "    get rep : " << un[j] << " returned " << rc << std::endl;
-          Assert( rc.isConst() ); 
-          children.push_back(rc);
-        }
-        Node simp = NodeManager::currentNM()->mkNode(un.getKind(), children);
-        Node v = m->getRepresentative(un);
-        Trace("model-builder") << "  Setting (" << simp << ") to (" << v << ")" << endl;
-        ufmt.setValue(m, simp, v);
-        default_v = v;
-      }
-      // all first-class member functions must use same default value
-      if( default_v.isNull() ){
-        //choose default value from model if none exists
-        TypeEnumerator te(type.getRangeType());
-        default_v = (*te);
-      }
-      ufmt.setDefaultValue( m, default_v );
-      bool condenseFuncValues = options::condenseFunctionValues();
-      if(condenseFuncValues) {
-        ufmt.simplify();
-      }
-      std::stringstream ss;
-      ss << "_arg_" << n << "_";
-      Node val = ufmt.getFunctionValue( ss.str().c_str(), condenseFuncValues );
-      m->assignFunctionDefinition( n, val );
-      //ufmt.debugPrint( std::cout, m );
+      Trace("model-builder") << "  Assign function value for " << f << " based on APPLY_UF" << std::endl;
+      assignFunction( m, f );
     }else{
-      Trace("model-builder") << "  Assign function value for " << n << " based on curried HO_APPLY" << std::endl;
-
-      std::vector< TypeNode > argTypes = type.getArgTypes();
-      std::vector< Node > args;
-      std::vector< TNode > apply_args;
-      for( unsigned i=0; i<argTypes.size(); i++ ){
-        Node v = NodeManager::currentNM()->mkBoundVar( argTypes[i] );
-        args.push_back( v );
-        if( i>0 ){
-          apply_args.push_back( v );
-        }
-      }
-      //start with the base return value (must use the same default value for all functions)
-      TypeEnumerator te(type.getRangeType());
-      Node curr = (*te);
-      for( size_t i=0; i<itht->second.size(); i++ ){
-        Node hn = itht->second[i];
-        Trace("model-builder-debug") << "    process : " << hn << std::endl;
-        Assert( hn.getKind()==kind::HO_APPLY );   
-        Assert( m->areEqual( hn[0], n ) );     
-        Node hni = m->getRepresentative(hn[1]);
-        Trace("model-builder-debug2") << "      get rep : " << hn[0] << " returned " << hni << std::endl;
-        Assert( hni.isConst() );
-        Assert( hni.getType()==args[0].getType() );
-        hni = Rewriter::rewrite( args[0].eqNode( hni ) );
-        Node hnv = m->getRepresentative(hn);
-        Trace("model-builder-debug2") << "      get rep val : " << hn << " returned " << hnv << std::endl;
-        Assert( hnv.isConst() );
-        if( !apply_args.empty() ){
-          Assert( hnv.getKind()==kind::LAMBDA && hnv[0].getNumChildren()+1==args.size() );
-          std::vector< TNode > largs;
-          for( unsigned j=0; j<hnv[0].getNumChildren(); j++ ){
-            largs.push_back( hnv[0][j] );
-          }
-          Assert( largs.size()==apply_args.size() );
-          hnv = hnv[1].substitute( largs.begin(), largs.end(), apply_args.begin(), apply_args.end() );
-          hnv = Rewriter::rewrite( hnv );
-        }
-        Assert( hnv.getType()==curr.getType() );
-        curr = NodeManager::currentNM()->mkNode( kind::ITE, hni, hnv, curr );
-      }
-      Node val = NodeManager::currentNM()->mkNode( kind::LAMBDA, 
-                   NodeManager::currentNM()->mkNode( kind::BOUND_VAR_LIST, args ), curr );
-      m->assignFunctionDefinition( n, val );
+      Trace("model-builder") << "  Assign function value for " << f << " based on curried HO_APPLY" << std::endl;
+      assignHoFunction( m, f );
     }
   }
   Trace("model-builder") << "Finished assigning function values." << std::endl;
   return true;
+}
+
+void TheoryEngineModelBuilder::assignFunction(TheoryModel* m, Node f) {
+  uf::UfModelTree ufmt( f );
+  Node default_v;
+  for( size_t i=0; i<m->d_uf_terms[f].size(); i++ ){
+    Node un = m->d_uf_terms[f][i];
+    vector<TNode> children;
+    children.push_back(f);
+    Trace("model-builder-debug") << "  process term : " << un << std::endl;
+    for (size_t j = 0; j < un.getNumChildren(); ++j) {
+      Node rc = m->getRepresentative(un[j]);
+      Trace("model-builder-debug2") << "    get rep : " << un[j] << " returned " << rc << std::endl;
+      Assert( rc.isConst() ); 
+      children.push_back(rc);
+    }
+    Node simp = NodeManager::currentNM()->mkNode(un.getKind(), children);
+    Node v = m->getRepresentative(un);
+    Trace("model-builder") << "  Setting (" << simp << ") to (" << v << ")" << endl;
+    ufmt.setValue(m, simp, v);
+    default_v = v;
+  }
+  // all first-class member functions must use same default value
+  if( default_v.isNull() ){
+    //choose default value from model if none exists
+    TypeEnumerator te(f.getType().getRangeType());
+    default_v = (*te);
+  }
+  ufmt.setDefaultValue( m, default_v );
+  bool condenseFuncValues = options::condenseFunctionValues();
+  if(condenseFuncValues) {
+    ufmt.simplify();
+  }
+  std::stringstream ss;
+  ss << "_arg_" << f << "_";
+  Node val = ufmt.getFunctionValue( ss.str().c_str(), condenseFuncValues );
+  m->assignFunctionDefinition( f, val );
+  //ufmt.debugPrint( std::cout, m );
+}
+
+void TheoryEngineModelBuilder::assignHoFunction(TheoryModel* m, Node f) {
+  TypeNode type = f.getType();
+  std::vector< TypeNode > argTypes = type.getArgTypes();
+  std::vector< Node > args;
+  std::vector< TNode > apply_args;
+  for( unsigned i=0; i<argTypes.size(); i++ ){
+    Node v = NodeManager::currentNM()->mkBoundVar( argTypes[i] );
+    args.push_back( v );
+    if( i>0 ){
+      apply_args.push_back( v );
+    }
+  }
+  //start with the base return value (must use the same default value for all functions?)
+  TypeEnumerator te(type.getRangeType());
+  Node curr = (*te);
+  std::map< Node, std::vector< Node > >::iterator itht = m->d_ho_uf_terms.find( f );
+  if( itht!=m->d_ho_uf_terms.end() ){
+    for( size_t i=0; i<itht->second.size(); i++ ){
+      Node hn = itht->second[i];
+      Trace("model-builder-debug") << "    process : " << hn << std::endl;
+      Assert( hn.getKind()==kind::HO_APPLY );   
+      Assert( m->areEqual( hn[0], f ) );     
+      Node hni = m->getRepresentative(hn[1]);
+      Trace("model-builder-debug2") << "      get rep : " << hn[0] << " returned " << hni << std::endl;
+      Assert( hni.isConst() );
+      Assert( hni.getType().isSubtypeOf( args[0].getType() ) );
+      hni = Rewriter::rewrite( args[0].eqNode( hni ) );
+      Node hnv = m->getRepresentative(hn);
+      Trace("model-builder-debug2") << "      get rep val : " << hn << " returned " << hnv << std::endl;
+      Assert( hnv.isConst() );
+      if( !apply_args.empty() ){
+        Assert( hnv.getKind()==kind::LAMBDA && hnv[0].getNumChildren()+1==args.size() );
+        std::vector< TNode > largs;
+        for( unsigned j=0; j<hnv[0].getNumChildren(); j++ ){
+          largs.push_back( hnv[0][j] );
+        }
+        Assert( largs.size()==apply_args.size() );
+        hnv = hnv[1].substitute( largs.begin(), largs.end(), apply_args.begin(), apply_args.end() );
+        hnv = Rewriter::rewrite( hnv );
+      }
+      Assert( hnv.getType()==curr.getType() );
+      curr = NodeManager::currentNM()->mkNode( kind::ITE, hni, hnv, curr );
+    }
+  }
+  Node val = NodeManager::currentNM()->mkNode( kind::LAMBDA, 
+               NodeManager::currentNM()->mkNode( kind::BOUND_VAR_LIST, args ), curr );
+  m->assignFunctionDefinition( f, val );
+}
+
+void TheoryEngineModelBuilder::assignHoFunctions(TheoryModel* m) {
+  std::vector< Node > funcs_to_assign = m->getFunctionsToAssign();
+  for( unsigned k=0; k<funcs_to_assign.size(); k++ ){
+    Node f = funcs_to_assign[k];
+    std::map< Node, std::vector< Node > >::iterator itht = m->d_ho_uf_terms.find( f );
+    if( itht!=m->d_ho_uf_terms.end() ){
+      Trace("model-builder") << "  Assign function value for " << f << " based on curried HO_APPLY" << std::endl;
+      assignHoFunction( m, f );
+    }
+  }
 }
 
 } /* namespace CVC4::theory */

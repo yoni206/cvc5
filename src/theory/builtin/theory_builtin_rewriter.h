@@ -82,12 +82,12 @@ public:
 
 // conversions between lambdas and arrays
 private:  
-  static Node getLambdaForArrayRepresentationRec( Node a, Node bvl, unsigned bvlIndex, 
-                                                  std::map< Node, Node >& visited );
+  static Node getLambdaForArrayRepresentationRec( TNode a, TNode bvl, unsigned bvlIndex, 
+                                                  std::map< TNode, Node >& visited );
   static TypeNode getTruncatedArrayType( TypeNode tn, unsigned nargs );
 public:
-  static Node getLambdaForArrayRepresentation( Node a, Node bvl );
-  static Node getArrayRepresentationForLambda( Node n, bool reqConst = false );
+  static Node getLambdaForArrayRepresentation( TNode a, TNode bvl );
+  static Node getArrayRepresentationForLambda( TNode n, bool reqConst = false );
   static Node getLambdaBoundVarListForType( TypeNode tn, unsigned nargs );
 };/* class TheoryBuiltinRewriter */
 

@@ -723,8 +723,8 @@ QModelBuilder( c, qe ){
 
 bool AbsMbqiBuilder::processBuildModel(TheoryModel* m) {
   Trace("ambqi-debug") << "process build model " << std::endl;
-  FirstOrderModel* f = (FirstOrderModel*)m;
-  FirstOrderModelAbs* fm = f->asFirstOrderModelAbs();
+  FirstOrderModel* fom = (FirstOrderModel*)m;
+  FirstOrderModelAbs* fm = fom->asFirstOrderModelAbs();
   fm->initialize();
   //process representatives
   fm->d_rep_id.clear();
@@ -760,39 +760,47 @@ bool AbsMbqiBuilder::processBuildModel(TheoryModel* m) {
     }
   }
 
+  //assign higher-order functions in default way (not supported by this builder)
+  assignHoFunctions( fm );
+
   Trace("ambqi-model") << std::endl << "Making function definitions..." << std::endl;
   //construct the models for functions
   for( std::map<Node, AbsDef * >::iterator it = fm->d_models.begin(); it != fm->d_models.end(); ++it ) {
     Node f = it->first;
-    Trace("ambqi-model-debug") << "Building Model for " << f << std::endl;
-    //reset the model
-    it->second->clear();
+    bool fValid = true;
     //get all (non-redundant) f-applications
     std::vector< TNode > fapps;
-    Trace("ambqi-model-debug") << "Initial terms: " << std::endl;
-    std::map< Node, std::vector< Node > >::iterator itut = fm->d_uf_terms.find( f );
-    if( itut!=fm->d_uf_terms.end() ){
-      for( size_t i=0; i<itut->second.size(); i++ ){
-        Node n = itut->second[i];
-        // only consider unique up to congruence (in model equality engine)?
-        Trace("ambqi-model-debug") << "  " << n << " -> " << fm->getRepresentativeId( n ) << std::endl;
-        fapps.push_back( n );
+    // if we haven't already assigned the function definition
+    if( !fm->hasAssignedFunctionDefinition( f ) ){
+      Trace("ambqi-model-debug") << "Building Model for " << f << std::endl;
+      //reset the model
+      it->second->clear();
+      Trace("ambqi-model-debug") << "Initial terms: " << std::endl;
+      std::map< Node, std::vector< Node > >::iterator itut = fm->d_uf_terms.find( f );
+      if( itut!=fm->d_uf_terms.end() ){
+        for( size_t i=0; i<itut->second.size(); i++ ){
+          Node n = itut->second[i];
+          // only consider unique up to congruence (in model equality engine)?
+          Trace("ambqi-model-debug") << "  " << n << " -> " << fm->getRepresentativeId( n ) << std::endl;
+          fapps.push_back( n );
+        }
       }
-    }
-    if( fapps.empty() ){
-      //choose arbitrary value
-      Node mbt = d_qe->getTermDatabase()->getModelBasisOpTerm(f);
-      Trace("ambqi-model-debug") << "Initial terms empty, add " << mbt << std::endl;
-      fapps.push_back( mbt );
-    }
-    bool fValid = true;
-    for( unsigned i=0; i<fapps[0].getNumChildren(); i++ ){
-      if( fm->d_domain.find( fapps[0][i].getType() )==fm->d_domain.end() ){
-        Trace("ambqi-model") << "Interpretation of " << f << " is not valid.";
-        Trace("ambqi-model") << " (domain for " << fapps[0][i].getType() << " is too large)." << std::endl;
-        fValid = false;
-        break;
+      if( fapps.empty() ){
+        //choose arbitrary value
+        Node mbt = d_qe->getTermDatabase()->getModelBasisOpTerm(f);
+        Trace("ambqi-model-debug") << "Initial terms empty, add " << mbt << std::endl;
+        fapps.push_back( mbt );
       }
+      for( unsigned i=0; i<fapps[0].getNumChildren(); i++ ){
+        if( fm->d_domain.find( fapps[0][i].getType() )==fm->d_domain.end() ){
+          Trace("ambqi-model") << "Interpretation of " << f << " is not valid.";
+          Trace("ambqi-model") << " (domain for " << fapps[0][i].getType() << " is too large)." << std::endl;
+          fValid = false;
+          break;
+        }
+      }
+    }else{
+      fValid = false;
     }
     fm->d_models_valid[f] = fValid;
     if( fValid ){
@@ -819,9 +827,11 @@ bool AbsMbqiBuilder::processBuildModel(TheoryModel* m) {
   Trace("ambqi-model") << "Construct model representation..." << std::endl;
   //make function values
   for( std::map<Node, AbsDef * >::iterator it = fm->d_models.begin(); it != fm->d_models.end(); ++it ) {
-    if( it->first.getType().getNumChildren()>1 ){
-      Trace("ambqi-model") << "Construct for " << it->first << "..." << std::endl;
-      m->assignFunctionDefinition( it->first, fm->getFunctionValue( it->first, "$x" ) );
+    Node f = it->first;
+    if( !fm->hasAssignedFunctionDefinition( f ) && f.getType().isFunction() ){
+      //FIXME: should only assign if function model is valid?
+      Trace("ambqi-model") << "Construct for " << f << "..." << std::endl;
+      m->assignFunctionDefinition( f, fm->getFunctionValue( f, "$x" ) );
     }
   }
   Assert( d_addedLemmas==0 );

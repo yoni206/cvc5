@@ -79,9 +79,9 @@ Node TheoryBuiltinRewriter::blastChain(TNode in) {
 
 
 
-Node TheoryBuiltinRewriter::getLambdaForArrayRepresentationRec( Node a, Node bvl, unsigned bvlIndex, 
-                                                                std::map< Node, Node >& visited ){
-  std::map< Node, Node >::iterator it = visited.find( a );
+Node TheoryBuiltinRewriter::getLambdaForArrayRepresentationRec( TNode a, TNode bvl, unsigned bvlIndex, 
+                                                                std::map< TNode, Node >& visited ){
+  std::map< TNode, Node >::iterator it = visited.find( a );
   if( it==visited.end() ){
     Node ret;
     if( bvlIndex<bvl.getNumChildren() ){
@@ -115,9 +115,9 @@ Node TheoryBuiltinRewriter::getLambdaForArrayRepresentationRec( Node a, Node bvl
   }
 }
 
-Node TheoryBuiltinRewriter::getLambdaForArrayRepresentation( Node a, Node bvl ){
+Node TheoryBuiltinRewriter::getLambdaForArrayRepresentation( TNode a, TNode bvl ){
   Assert( a.getType().isArray() );
-  std::map< Node, Node > visited;
+  std::map< TNode, Node > visited;
   Trace("builtin-rewrite-debug") << "Get lambda for : " << a << ", with variables " << bvl << std::endl;
   Node body = getLambdaForArrayRepresentationRec( a, bvl, 0, visited );
   if( !body.isNull() ){
@@ -129,7 +129,7 @@ Node TheoryBuiltinRewriter::getLambdaForArrayRepresentation( Node a, Node bvl ){
   }
 }
 
-Node TheoryBuiltinRewriter::getArrayRepresentationForLambda( Node n, bool reqConst ){
+Node TheoryBuiltinRewriter::getArrayRepresentationForLambda( TNode n, bool reqConst ){
   Assert( n.getKind()==kind::LAMBDA );
   Trace("builtin-rewrite-debug") << "Get array representation for : " << n << std::endl;
 
@@ -144,6 +144,7 @@ Node TheoryBuiltinRewriter::getArrayRepresentationForLambda( Node n, bool reqCon
   }
 
   Trace("builtin-rewrite-debug2") << "  process body..." << std::endl;
+  TypeNode retType;
   std::vector< Node > conds;
   std::vector< Node > vals;
   Node curr = n[1];
@@ -187,6 +188,8 @@ Node TheoryBuiltinRewriter::getArrayRepresentationForLambda( Node n, bool reqCon
         Trace("builtin-rewrite-debug2") << "  ...condition is index " << curr_val << std::endl;
         conds.push_back( curr_index );
         vals.push_back( curr_val );
+        TypeNode vtype = curr_val.getType();
+        retType = retType.isNull() ? vtype : TypeNode::leastCommonTypeNode( retType, vtype );
       }else{
         Trace("builtin-rewrite-debug2") << "  ...non-constant value." << std::endl;
         return Node::null();
@@ -195,17 +198,15 @@ Node TheoryBuiltinRewriter::getArrayRepresentationForLambda( Node n, bool reqCon
       curr = curr[2];
     }
   }
-  TypeNode retType;
   if( !rec_bvl.isNull() ){
     curr = NodeManager::currentNM()->mkNode( kind::LAMBDA, rec_bvl, curr );
     curr = getArrayRepresentationForLambda( curr );
-    retType = curr.getType();
-  }else{
-    retType = n[1].getType();
   }
   if( !curr.isNull() && curr.isConst() ){
+    TypeNode ctype = curr.getType();
+    retType = retType.isNull() ? ctype : TypeNode::leastCommonTypeNode( retType, ctype );
     TypeNode array_type = NodeManager::currentNM()->mkArrayType( first_arg.getType(), retType );
-    curr = NodeManager::currentNM()->mkConst(ArrayStoreAll(((ArrayType)array_type.toType()),curr.toExpr()));
+    curr = NodeManager::currentNM()->mkConst(ArrayStoreAll(((ArrayType)array_type.toType()), curr.toExpr()));
     Trace("builtin-rewrite-debug2") << "  build array..." << std::endl;
     // can only build if default value is constant (since array store all must be constant)
     Trace("builtin-rewrite-debug2") << "  got constant base " << curr << std::endl;
