@@ -86,9 +86,9 @@ struct QuantifierInstPatternTypeRule {
     Assert(n.getKind() == kind::INST_PATTERN );
     if( check ){
       TypeNode tn = n[0].getType(check);
-      if( tn.isFunction() ){
-        throw TypeCheckingExceptionPrivate(n[0], "Pattern must be a list of fully-applied terms.");
-      }
+      //if( tn.isFunction() ){
+      //  throw TypeCheckingExceptionPrivate(n[0], "Pattern must be a list of fully-applied terms.");
+      //}
     }
     return nodeManager->instPatternType();
   }

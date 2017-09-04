@@ -2961,10 +2961,10 @@ sortSymbol[CVC4::Type& t, CVC4::parser::DeclarationCheck check]
       //flatten the type
       Type rangeType = args[args.size()-1];
       args.pop_back();
-      if( rtype.isFunction() ){
-        std::vector< Type > domainTypes = ((FunctionType)rtype).getArgTypes();
+      if( rangeType.isFunction() ){
+        std::vector< Type > domainTypes = ((FunctionType)rangeType).getArgTypes();
         args.insert( args.end(), domainTypes.begin(), domainTypes.end() );
-        rangeType = ((FunctionType)rtype).getRangeType();
+        rangeType = ((FunctionType)rangeType).getRangeType();
       }
       Debug("parser") << "Make function type, #argTypes=" << args.size() << ", rangeType " << rangeType << std::endl;
       t = EXPR_MANAGER->mkFunctionType( args, rangeType );
