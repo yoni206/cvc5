@@ -36,7 +36,10 @@ TESTS = \
   ext-sat-partial-eval.smt2 \     
   ho-std-fmf.smt2 \     
   simple-matching.smt2 \     
-  simple-matching-partial.smt2
+  simple-matching-partial.smt2 \     
+  hoa0111.smt2 \     
+  fta0409.smt2 \     
+  auth0068.smt2
 
 EXTRA_DIST = $(TESTS)
 
