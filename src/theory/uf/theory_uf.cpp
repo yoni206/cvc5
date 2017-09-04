@@ -734,9 +734,6 @@ unsigned TheoryUF::checkApplyCompletion() {
     Node eqc = (*eqcs_i);
     TypeNode tn = eqc.getType();
     if( !tn.isFunction() ){
-      //std::map< TNode, bool > visited;
-      std::vector< Node > args;
-      std::vector< Node > exp;
       unsigned curr_sum = checkApplyCompletionEqc( eqc );
       if( d_conflict ){
         return 1;      
@@ -747,13 +744,26 @@ unsigned TheoryUF::checkApplyCompletion() {
     }
     ++eqcs_i;
   }
-
   return 0;
 }
 
 unsigned TheoryUF::checkHigherOrder() {
+  // return immediately if no first-class functions in the equality engine
+  bool hasFunction = false;
+  eq::EqClassesIterator eqcs_i = eq::EqClassesIterator( &d_equalityEngine );
+  while( !eqcs_i.isFinished() ){
+    TypeNode tn = (*eqcs_i).getType();
+    if( tn.isFunction() ){
+      hasFunction = true;
+      break;
+    }
+    ++eqcs_i;
+  }
+  if( !hasFunction ){
+    return 0;  
+  }
   Trace("uf-ho") << "TheoryUF::checkHigherOrder..." << std::endl;
-  
+
   // infer new facts based on apply completion until fixed point 
   unsigned num_facts;
   do{
