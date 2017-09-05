@@ -142,7 +142,7 @@ bool HigherOrderTrigger::sendInstantiation( InstMatch& m ) {
     for( unsigned i=0; i<ith->second.size(); i++ ){
       std::vector<TNode> args;
       Node f = uf::TheoryUfRewriter::decomposeHoApply( ith->second[i], args );
-      Assert( f==var );
+      //Assert( f==value );
       for( unsigned k=0; k<args.size(); k++ ){
         Node val = args[k];
         std::map< unsigned, Node >::iterator itf = fixed_vals.find( k );

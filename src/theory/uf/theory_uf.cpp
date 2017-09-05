@@ -163,7 +163,7 @@ void TheoryUF::check(Effort level) {
 Node TheoryUF::getApplyUfForHoApply( Node node ) {
   Assert( node[0].getType().getNumChildren()==2 );
   std::vector< TNode > args;
-  Node f = TheoryUfRewriter::decomposeHoApply( node, args );
+  Node f = TheoryUfRewriter::decomposeHoApply( node, args, true );
   Node new_f = f;
   if( !TheoryUfRewriter::isStdApplyUfOperator( f ) ){
     std::map< Node, Node >::iterator itus = d_uf_std_skolem.find( f );
@@ -179,8 +179,7 @@ Node TheoryUF::getApplyUfForHoApply( Node node ) {
     }
   }
   Assert( TheoryUfRewriter::isStdApplyUfOperator( new_f ) );
-  args.push_back( new_f );
-  std::reverse( args.begin(), args.end() );
+  args[0] = new_f;
   Node ret = NodeManager::currentNM()->mkNode( kind::APPLY_UF, args );
   return ret;
 }

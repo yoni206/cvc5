@@ -39,7 +39,8 @@ TESTS = \
   simple-matching-partial.smt2 \     
   hoa0111.smt2 \     
   fta0409.smt2 \     
-  auth0068.smt2
+  auth0068.smt2 \     
+  ho-matching-enum.smt2
 
 EXTRA_DIST = $(TESTS)
 
