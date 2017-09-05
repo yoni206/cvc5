@@ -23,7 +23,6 @@
 #include "theory/quantifiers/inst_match.h"
 #include "options/quantifiers_options.h"
 
-// Forward declarations for defining the Trigger and TriggerTrie.
 namespace CVC4 {
 namespace theory {
 
@@ -33,14 +32,6 @@ namespace inst {
 
 class IMGenerator;
 class InstMatchGenerator;
-}/* CVC4::theory::inst namespace */
-}/* CVC4::theory namespace */
-}/* CVC4 namespace */
-
-
-namespace CVC4 {
-namespace theory {
-namespace inst {
 
 class TriggerTermInfo {
 public:
@@ -52,10 +43,13 @@ public:
   void init( Node q, Node n, int reqPol = 0, Node reqPolEq = Node::null() );
 };
 
+class HigherOrderTrigger;
+
 /** A collect of nodes representing a trigger. */
 class Trigger {
- public:
-  ~Trigger();
+  friend class IMGenerator;
+public:
+  virtual ~Trigger();
 
   IMGenerator* getGenerator() { return d_mg; }
 
@@ -72,10 +66,13 @@ class Trigger {
   /** get inst pattern list */
   Node getInstPattern();
 
+  /** add all available instantiations */
+  virtual int addInstantiations( InstMatch& baseMatch );
+protected:
   /** add all available instantiations exhaustively */
-  int addFoInstantiations( InstMatch& baseMatch );
-  /** add all available instantiations (includes higher-order) */
-  int addInstantiations( InstMatch& baseMatch );
+  int addBasicInstantiations( InstMatch& baseMatch );
+  /** add an instantiation (called by InstMatchGenerator) */
+  virtual bool sendInstantiation( InstMatch& m );
 public:
   /** mkTrigger method
      ie     : quantifier engine;
@@ -130,7 +127,7 @@ public:
     Trace(c) << " )";
   }
   int getActiveScore();
-private:
+protected:
   /** trigger constructor */
   Trigger( QuantifiersEngine* ie, Node f, std::vector< Node >& nodes );
 
@@ -151,14 +148,6 @@ private:
   Node d_f;
   /** match generators */
   IMGenerator* d_mg;
-
-private: // for higher-order
-  std::vector< TypeNode > d_ho_var_types;
-public:
-  /** add higher-order type var */
-  void addHoTypeMatchType( TypeNode tn );
-  /** add higher-order type predicate lemmas */
-  int addHoTypeMatchPredicateLemmas();
 }; /* class Trigger */
 
 /** a trie of triggers */

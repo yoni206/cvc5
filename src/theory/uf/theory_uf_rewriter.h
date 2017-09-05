@@ -153,23 +153,25 @@ public: //conversion between HO_APPLY AND APPLY_UF
   static Node getApplyUfForHoApply(TNode n) {
     Assert( n.getType().getNumChildren()==2 );
     std::vector< TNode > children;
-    TNode curr = decomposeHoApply( n, children );
+    TNode curr = decomposeHoApply( n, children, true );
     // if operator is standard
     if( isStdApplyUfOperator( curr ) ){
-      children.push_back( curr );
-      std::reverse( children.begin(), children.end() );
       return NodeManager::currentNM()->mkNode( kind::APPLY_UF, children );
     }
     // cannot construct APPLY_UF if operator is partially applied or is not standard       
     return Node::null();
   }
   // gets arguments, returns operator
-  static Node decomposeHoApply(TNode n, std::vector<TNode>& args) {
+  static Node decomposeHoApply(TNode n, std::vector<TNode>& args, bool opInArgs = false) {
     TNode curr = n;
     while( curr.getKind() == kind::HO_APPLY ){
       args.push_back( curr[1] );
       curr = curr[0];        
     }
+    if( opInArgs ){
+      args.push_back( curr );
+    }
+    std::reverse( args.begin(), args.end() );
     return curr;
   }
   static inline bool isStdApplyUfOperator(TNode n){

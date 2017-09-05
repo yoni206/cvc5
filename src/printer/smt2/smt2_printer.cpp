@@ -346,10 +346,10 @@ void Smt2Printer::toStream(std::ostream& out, TNode n,
     break;
   case kind::CHAIN: break;
   case kind::FUNCTION_TYPE:
-    out << "-> ";
+    out << "->";
     for(size_t i = 0; i < n.getNumChildren(); ++i) {
-      toStream(out, n[i], toDepth, types, TypeNode::null());   
       out << " ";
+      toStream(out, n[i], toDepth, types, TypeNode::null());
     }
     out << ")";
     return;

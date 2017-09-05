@@ -420,6 +420,8 @@ libcvc4_la_SOURCES = \
 	theory/quantifiers/theory_quantifiers_type_rules.h \
 	theory/quantifiers/trigger.cpp \
 	theory/quantifiers/trigger.h \
+	theory/quantifiers/ho_trigger.cpp \
+	theory/quantifiers/ho_trigger.h \
 	theory/sep/theory_sep.cpp \
 	theory/sep/theory_sep.h \
 	theory/sep/theory_sep_rewriter.cpp \

@@ -129,6 +129,7 @@ class QuantifiersEngine;
 
 namespace inst{
   class Trigger;
+  class HigherOrderTrigger;
 }
 
 namespace quantifiers {
@@ -185,6 +186,7 @@ class TermDb : public QuantifiersUtil {
   friend class ::CVC4::theory::QuantifiersEngine;
   //TODO: eliminate most of these
   friend class ::CVC4::theory::inst::Trigger;
+  friend class ::CVC4::theory::inst::HigherOrderTrigger;
   friend class ::CVC4::theory::quantifiers::fmcheck::FullModelChecker;
   friend class ::CVC4::theory::quantifiers::QuantConflictFind;
   friend class ::CVC4::theory::quantifiers::RelevantDomain;

@@ -13,6 +13,7 @@
  **/
 
 #include "theory/quantifiers/trigger.h"
+#include "theory/quantifiers/ho_trigger.h"
 #include "theory/quantifiers/candidate_generator.h"
 #include "theory/quantifiers/inst_match_generator.h"
 #include "theory/quantifiers/term_database.h"
@@ -80,6 +81,7 @@ Trigger::Trigger( QuantifiersEngine* qe, Node f, std::vector< Node >& nodes )
     }
     ++(qe->d_statistics.d_multi_triggers);
   }
+
   //Notice() << "Trigger : " << (*this) << "  for " << f << std::endl;
   Trace("trigger-debug") << "Finished making trigger." << std::endl;
 }
@@ -97,7 +99,7 @@ void Trigger::reset( Node eqc ){
 }
 
 bool Trigger::getNextMatch( Node f, InstMatch& m ){
-  int retVal = d_mg->getNextMatch( f, m, d_quantEngine );
+  int retVal = d_mg->getNextMatch( f, m, d_quantEngine, this );
   return retVal>0;
 }
 
@@ -105,11 +107,11 @@ Node Trigger::getInstPattern(){
   return NodeManager::currentNM()->mkNode( INST_PATTERN, d_nodes );
 }
 
-int Trigger::addFoInstantiations( InstMatch& baseMatch ){
-  int addedLemmas = d_mg->addInstantiations( d_f, baseMatch, d_quantEngine );
+int Trigger::addBasicInstantiations( InstMatch& baseMatch ){
+  int addedLemmas = d_mg->addInstantiations( d_f, baseMatch, d_quantEngine, this );
   if( addedLemmas>0 ){
     Debug("inst-trigger") << "Added " << addedLemmas << " lemmas, trigger was ";
-    for( int i=0; i<(int)d_nodes.size(); i++ ){
+    for( unsigned i=0; i<d_nodes.size(); i++ ){
       Debug("inst-trigger") << d_nodes[i] << " ";
     }
     Debug("inst-trigger") << std::endl;
@@ -118,13 +120,11 @@ int Trigger::addFoInstantiations( InstMatch& baseMatch ){
 }
 
 int Trigger::addInstantiations( InstMatch& baseMatch ) {
-  int addedFoLemmas = addFoInstantiations( baseMatch );
-  if( !d_ho_var_types.empty() ){
-    int addedHoLemmas = addHoTypeMatchPredicateLemmas();
-    return addedHoLemmas+addedFoLemmas;
-  }else{
-    return addedFoLemmas;
-  }
+  return addBasicInstantiations( baseMatch );
+}
+
+bool Trigger::sendInstantiation( InstMatch& m ) {
+  return d_quantEngine->addInstantiation( d_f, m );  
 }
 
 bool Trigger::mkTriggerTerms( Node q, std::vector< Node >& nodes, unsigned n_vars, std::vector< Node >& trNodes ) {
@@ -222,7 +222,21 @@ Trigger* Trigger::mkTrigger( QuantifiersEngine* qe, Node f, std::vector< Node >&
       }
     }
   }
-  Trigger* t = new Trigger( qe, f, trNodes );
+
+  // check if higher-order
+  Trace("trigger") << "Collect higher-order variable triggers..." << std::endl;
+  std::map< TNode, bool > visited;
+  std::map< Node, std::vector< Node > > ho_apps;
+  for( unsigned i=0; i<trNodes.size(); i++ ){
+    HigherOrderTrigger::collectHoVarApplyTerms( f, trNodes[i], ho_apps, visited );
+  }
+  Trigger* t;
+  if( !ho_apps.empty() ){
+    t = new HigherOrderTrigger( qe, f, trNodes, ho_apps );  
+  }else{
+    t = new Trigger( qe, f, trNodes );
+  }
+  
   qe->getTriggerDatabase()->addTrigger( trNodes, t );
   return t;
 }
@@ -747,36 +761,6 @@ InstMatchGenerator* Trigger::getInstMatchGenerator( Node q, Node n ) {
 
 int Trigger::getActiveScore() {
   return d_mg->getActiveScore( d_quantEngine );
-}
-
-
-void Trigger::addHoTypeMatchType( TypeNode tn ) {
-  if( std::find( d_ho_var_types.begin(), d_ho_var_types.end(), tn )==d_ho_var_types.end() ){
-    d_ho_var_types.push_back( tn );
-  }
-}
-
-int Trigger::addHoTypeMatchPredicateLemmas() {
-  unsigned numLemmas = 0;
-
-  if( !d_ho_var_types.empty() ){
-    for( std::map< Node, std::vector< Node > >::iterator it = d_quantEngine->getTermDatabase()->d_op_map.begin(); 
-         it != d_quantEngine->getTermDatabase()->d_op_map.end(); ++it ){
-      if( it->first.isVar() ){
-        TypeNode tn = it->first.getType();
-        if( std::find( d_ho_var_types.begin(), d_ho_var_types.end(), tn )!=d_ho_var_types.end() ){
-          Node u = d_quantEngine->getTermDatabase()->getHoTypeMatchPredicate( tn );
-          Node au = NodeManager::currentNM()->mkNode( kind::APPLY_UF, u, it->first );
-          if( d_quantEngine->addLemma( au ) ){
-            //this forces it->first to be a first-class member of the quantifier-free equality engine
-            Trace("ho-quant") << "Added ho match predicate lemma : " << au << std::endl;
-            numLemmas++;
-          }
-        }
-      }
-    }
-  }
-  return numLemmas;
 }
 
 Trigger* TriggerTrie::getTrigger2( std::vector< Node >& nodes ){
