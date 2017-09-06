@@ -22,26 +22,27 @@ TESTS = \
   cong.smt2 \
   ext-ho-nested-lambda-model.smt2 \
   declare-fun-variants.smt2 \
-  ext-ho.smt2 \     
+  ext-ho.smt2 \
   trans.smt2 \
-  ext-finite-unsat.smt2 \     
-  ext-sat.smt2 \     
-  cong-full-apply.smt2 \     
-  def-fun-flatten.smt2 \     
-  lambda-equality-non-canon.smt2 \     
-  ite-apply-eq.smt2 \     
-  apply-collapse-unsat.smt2 \     
-  apply-collapse-sat.smt2 \     
-  ho-exponential-model.smt2 \     
-  ext-sat-partial-eval.smt2 \     
-  ho-std-fmf.smt2 \     
-  simple-matching.smt2 \     
-  simple-matching-partial.smt2 \     
-  hoa0111.smt2 \     
-  fta0409.smt2 \     
-  auth0068.smt2 \     
-  ho-matching-enum.smt2 \     
-  ho-matching-enum-2.smt2
+  ext-finite-unsat.smt2 \
+  ext-sat.smt2 \
+  cong-full-apply.smt2 \
+  def-fun-flatten.smt2 \
+  lambda-equality-non-canon.smt2 \
+  ite-apply-eq.smt2 \
+  apply-collapse-unsat.smt2 \
+  apply-collapse-sat.smt2 \
+  ho-exponential-model.smt2 \
+  ext-sat-partial-eval.smt2 \
+  ho-std-fmf.smt2 \
+  simple-matching.smt2 \
+  simple-matching-partial.smt2 \
+  hoa0102.smt2 \
+  fta0409.smt2 \
+  auth0068.smt2 \
+  ho-matching-enum.smt2 \
+  ho-matching-enum-2.smt2 \
+  ho-matching-nested-app.smt2
 
 EXTRA_DIST = $(TESTS)
 

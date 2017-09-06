@@ -2804,8 +2804,8 @@ functionName[std::string& name, CVC4::parser::DeclarationCheck check]
 
 
 /**
- * Matches a sequence of sort symbols and fills them into the given
- * vector.
+ * Matches a sequence of sort symbols with a return sort,
+ * fills them into sorts and t. Flattens the return type if applicable.
  */
 sortListReturn[std::vector<CVC4::Type>& sorts, CVC4::Type& t]
   : LPAREN_TOK sortList[sorts] RPAREN_TOK
@@ -2866,8 +2866,6 @@ sortSymbol[CVC4::Type& t, CVC4::parser::DeclarationCheck check]
   std::vector<CVC4::Type> args;
   std::vector<uint64_t> numerals;
   bool indexed = false;
-  CVC4::Type dtype;
-  CVC4::Type rtype;
 }
   : sortName[name,CHECK_NONE]
     {

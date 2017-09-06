@@ -237,37 +237,18 @@ Node TheoryBuiltinRewriter::getArrayRepresentationForLambda( TNode n, bool reqCo
   }
 }
 
-TypeNode TheoryBuiltinRewriter::getTruncatedArrayType( TypeNode tn, unsigned nargs ) {
-  if( nargs==0 ){
-    // dummy type : this is to prevent functions with array return type to be considered as arguments
-    return NodeManager::currentNM()->integerType();
-  }else{
-    Assert( tn.isArray() );
-    TypeNode tnt = getTruncatedArrayType( tn.getArrayConstituentType(), nargs-1 );
-    return NodeManager::currentNM()->mkArrayType( tn.getArrayIndexType(), tnt );
-  }
-}
-
 Node TheoryBuiltinRewriter::getLambdaBoundVarListForType( TypeNode tn, unsigned nargs ) {
   Trace("builtin-rewrite-debug") << "Truncate " << tn << " to [" << nargs << "]" << std::endl;
-  Assert( tn.isArray() );
-  TypeNode tnt = getTruncatedArrayType( tn, nargs );
-  Trace("builtin-rewrite-debug") << "...got truncated type : " << tnt << std::endl;
-  Node bvl = tnt.getAttribute(LambdaBoundVarListAttr());
+  Assert( tn.isFunction() );
+  Node bvl = tn.getAttribute(LambdaBoundVarListAttr());
   if( bvl.isNull() ){
-    std::vector< TypeNode > types;
-    TypeNode tnc = tnt;
-    while( tnc.isArray() ){
-      types.push_back( tnc.getArrayIndexType() );
-      tnc = tnc.getArrayConstituentType();
-    }
     std::vector< Node > vars;
-    for( unsigned i=0; i<types.size(); i++ ){
-      vars.push_back( NodeManager::currentNM()->mkBoundVar( types[i] ) );
+    for( unsigned i=0; i<tn.getNumChildren()-1; i++ ){
+      vars.push_back( NodeManager::currentNM()->mkBoundVar( tn[i] ) );
     }
     bvl = NodeManager::currentNM()->mkNode( kind::BOUND_VAR_LIST, vars );
-    Trace("builtin-rewrite-debug") << "Make standard bound var list " << bvl << " for " << tnt << std::endl;
-    tnt.setAttribute(LambdaBoundVarListAttr(),bvl);
+    Trace("builtin-rewrite-debug") << "Make standard bound var list " << bvl << " for " << tn << std::endl;
+    tn.setAttribute(LambdaBoundVarListAttr(),bvl);
   }
   Assert( bvl.getNumChildren()==nargs );
   return bvl;

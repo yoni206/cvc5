@@ -1128,8 +1128,6 @@ void TheoryEngineModelBuilder::debugCheckModel(Model* m){
   for (eqcs_i = eq::EqClassesIterator(tm->d_equalityEngine); !eqcs_i.isFinished(); ++eqcs_i) {
     // eqc is the equivalence class representative
     Node eqc = (*eqcs_i);
-    // some types it is not possible to check equivalence
-    //if( !eqc.getType().isFunction() ){
     Node rep = tm->getRepresentative( eqc );
 /*
     itMap = d_constantReps.find(eqc);
@@ -1158,7 +1156,6 @@ void TheoryEngineModelBuilder::debugCheckModel(Model* m){
         Assert(tm->getValue(*eqc_i) == rep, "run with -d check-model::rep-checking for details");
       }
     }
-    //}
   }
 #endif /* CVC4_ASSERTIONS */
 
