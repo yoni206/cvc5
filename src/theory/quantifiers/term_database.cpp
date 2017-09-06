@@ -1272,7 +1272,7 @@ bool TermDb::isClosedEnumerableType( TypeNode tn ) {
   if( it==d_typ_closed_enum.end() ){
     d_typ_closed_enum[tn] = true;
     bool ret = true;
-    if( tn.isArray() || tn.isSort() || tn.isCodatatype() ){
+    if( tn.isArray() || tn.isSort() || tn.isCodatatype() || tn.isFunction() ){
       ret = false;
     }else if( tn.isSet() ){
       ret = isClosedEnumerableType( tn.getSetElementType() );
@@ -1290,9 +1290,8 @@ bool TermDb::isClosedEnumerableType( TypeNode tn ) {
           break;
         }
       }
-    }else{
-      //TODO: all subfields must be closed enumerable
     }
+    //TODO: other parametric sorts go here
     d_typ_closed_enum[tn] = ret;
     return ret;
   }else{

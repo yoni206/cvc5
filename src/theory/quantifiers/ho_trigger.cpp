@@ -118,114 +118,119 @@ int HigherOrderTrigger::addInstantiations( InstMatch& baseMatch ){
 }
 
 bool HigherOrderTrigger::sendInstantiation( InstMatch& m ) {
-  // get substitution corresponding to m
-  std::vector< TNode > vars;
-  std::vector< TNode > subs;
-  for( unsigned i=0; i<d_f[0].getNumChildren(); i++ ){
-    subs.push_back( m.d_vals[i] );  
-  }
-  std::map< Node, std::vector< Node > >::iterator itic = d_quantEngine->getTermDatabase()->d_inst_constants.find( d_f );
-  Assert( itic!=d_quantEngine->getTermDatabase()->d_inst_constants.end() );
-  vars.insert( vars.end(), itic->second.begin(), itic->second.end() );
-  Assert( vars.size()==subs.size() );
+  if( options::hoMatching() ){
+    // get substitution corresponding to m
+    std::vector< TNode > vars;
+    std::vector< TNode > subs;
+    for( unsigned i=0; i<d_f[0].getNumChildren(); i++ ){
+      subs.push_back( m.d_vals[i] );  
+    }
+    std::map< Node, std::vector< Node > >::iterator itic = d_quantEngine->getTermDatabase()->d_inst_constants.find( d_f );
+    Assert( itic!=d_quantEngine->getTermDatabase()->d_inst_constants.end() );
+    vars.insert( vars.end(), itic->second.begin(), itic->second.end() );
+    Assert( vars.size()==subs.size() );
 
-  Trace("ho-unif-debug") << "Run higher-order unification..." << std::endl;
+    Trace("ho-unif-debug") << "Run higher-order unification..." << std::endl;
 
-  // get the substituted form of all variable-operator ho application terms
-  std::map< TNode, std::vector< Node > > ho_var_apps_subs;
-  for( std::map< Node, std::vector< Node > >::iterator it = d_ho_var_apps.begin(); 
-       it != d_ho_var_apps.end(); ++it ){
-    TNode var = it->first;
-    for( unsigned j=0; j<it->second.size(); j++ ){
-      TNode app = it->second[j];
-      Node sapp = app.substitute( vars.begin(), vars.end(), subs.begin(), subs.end() );
-      ho_var_apps_subs[var].push_back( sapp );
-      Trace("ho-unif-debug") << "  app[" << var << "] : " << app << " -> " << sapp << std::endl;
-    }  
-  }
+    // get the substituted form of all variable-operator ho application terms
+    std::map< TNode, std::vector< Node > > ho_var_apps_subs;
+    for( std::map< Node, std::vector< Node > >::iterator it = d_ho_var_apps.begin(); 
+         it != d_ho_var_apps.end(); ++it ){
+      TNode var = it->first;
+      for( unsigned j=0; j<it->second.size(); j++ ){
+        TNode app = it->second[j];
+        Node sapp = app.substitute( vars.begin(), vars.end(), subs.begin(), subs.end() );
+        ho_var_apps_subs[var].push_back( sapp );
+        Trace("ho-unif-debug") << "  app[" << var << "] : " << app << " -> " << sapp << std::endl;
+      }  
+    }
 
-  // compute argument vectors for each variable
-  d_lchildren.clear();
-  d_arg_to_arg_rep.clear();
-  d_arg_vector.clear();
-  EqualityQuery* eq = d_quantEngine->getEqualityQuery();
-  for( std::map< TNode, std::vector< Node > >::iterator ith = ho_var_apps_subs.begin();
-       ith != ho_var_apps_subs.end(); ++ith ){
-    TNode var = ith->first;
-    unsigned vnum = var.getAttribute(InstVarNumAttribute());
-    Node value = m.d_vals[vnum];
-    Trace("ho-unif-debug") << "  val[" << var << "] = " << value << std::endl;
+    // compute argument vectors for each variable
+    d_lchildren.clear();
+    d_arg_to_arg_rep.clear();
+    d_arg_vector.clear();
+    EqualityQuery* eq = d_quantEngine->getEqualityQuery();
+    for( std::map< TNode, std::vector< Node > >::iterator ith = ho_var_apps_subs.begin();
+         ith != ho_var_apps_subs.end(); ++ith ){
+      TNode var = ith->first;
+      unsigned vnum = var.getAttribute(InstVarNumAttribute());
+      Node value = m.d_vals[vnum];
+      Trace("ho-unif-debug") << "  val[" << var << "] = " << value << std::endl;
 
-    Trace("ho-unif-debug2") << "initialize lambda information..." << std::endl;
-    // initialize the lambda children
-    d_lchildren[vnum].push_back( value );
-    std::map< TNode, std::vector< Node > >::iterator ithb = d_ho_var_bvs.find( var );
-    Assert( ithb!=d_ho_var_bvs.end() );
-    d_lchildren[vnum].insert( d_lchildren[vnum].end(), ithb->second.begin(), ithb->second.end() );
+      Trace("ho-unif-debug2") << "initialize lambda information..." << std::endl;
+      // initialize the lambda children
+      d_lchildren[vnum].push_back( value );
+      std::map< TNode, std::vector< Node > >::iterator ithb = d_ho_var_bvs.find( var );
+      Assert( ithb!=d_ho_var_bvs.end() );
+      d_lchildren[vnum].insert( d_lchildren[vnum].end(), ithb->second.begin(), ithb->second.end() );
 
-    Trace("ho-unif-debug2") << "compute fixed arguments..." << std::endl;
-    // compute for each argument if it is only applied to a fixed value modulo equality
-    std::map< unsigned, Node > fixed_vals;
-    for( unsigned i=0; i<ith->second.size(); i++ ){
-      std::vector<TNode> args;
-      Node f = uf::TheoryUfRewriter::decomposeHoApply( ith->second[i], args );
-      //Assert( f==value );
-      for( unsigned k=0; k<args.size(); k++ ){
-        Node val = args[k];
-        std::map< unsigned, Node >::iterator itf = fixed_vals.find( k );
-        if( itf==fixed_vals.end() ){
-          fixed_vals[k] = val;
-        }else if( !itf->second.isNull() ){
-          if( !eq->areEqual( itf->second, args[k] ) ){
-            fixed_vals[k] = Node::null();
+      Trace("ho-unif-debug2") << "compute fixed arguments..." << std::endl;
+      // compute for each argument if it is only applied to a fixed value modulo equality
+      std::map< unsigned, Node > fixed_vals;
+      for( unsigned i=0; i<ith->second.size(); i++ ){
+        std::vector<TNode> args;
+        Node f = uf::TheoryUfRewriter::decomposeHoApply( ith->second[i], args );
+        //Assert( f==value );
+        for( unsigned k=0; k<args.size(); k++ ){
+          Node val = args[k];
+          std::map< unsigned, Node >::iterator itf = fixed_vals.find( k );
+          if( itf==fixed_vals.end() ){
+            fixed_vals[k] = val;
+          }else if( !itf->second.isNull() ){
+            if( !eq->areEqual( itf->second, args[k] ) ){
+              fixed_vals[k] = Node::null();
+            }
           }
         }
       }
-    }
-    if( Trace.isOn("ho-unif-debug") ){
-      for( std::map< unsigned, Node >::iterator itf = fixed_vals.begin(); itf != fixed_vals.end(); ++itf ){
-        Trace("ho-unif-debug") << "  arg[" << var << "][" << itf->first << "] : " << itf->second << std::endl;
+      if( Trace.isOn("ho-unif-debug") ){
+        for( std::map< unsigned, Node >::iterator itf = fixed_vals.begin(); itf != fixed_vals.end(); ++itf ){
+          Trace("ho-unif-debug") << "  arg[" << var << "][" << itf->first << "] : " << itf->second << std::endl;
+        }
       }
-    }
 
-    // now construct argument vectors
-    Trace("ho-unif-debug2") << "compute argument vectors..." << std::endl;
-    std::map< Node, unsigned > arg_to_rep;
-    for( unsigned index=0; index<ithb->second.size(); index++ ){
-      Node bv_at_index = ithb->second[index];
-      std::map< unsigned, Node >::iterator itf = fixed_vals.find( index );
-      Trace("ho-unif-debug") << "  * arg[" << var << "][" << index << "]";
-      if( itf!=fixed_vals.end() ){
-        if( !itf->second.isNull() ){
-          Node r = eq->getRepresentative( itf->second );
-          std::map< Node, unsigned >::iterator itfr = arg_to_rep.find( r );
-          if( itfr!=arg_to_rep.end() ){
-            d_arg_to_arg_rep[vnum][index] = itfr->second;
-            // function applied to equivalent values at multiple arguments, can permute variables
-            d_arg_vector[vnum][itfr->second].push_back( bv_at_index );
-            Trace("ho-unif-debug") << " = { self } ++ arg[" << var << "][" << itfr->second << "]" << std::endl;
+      // now construct argument vectors
+      Trace("ho-unif-debug2") << "compute argument vectors..." << std::endl;
+      std::map< Node, unsigned > arg_to_rep;
+      for( unsigned index=0; index<ithb->second.size(); index++ ){
+        Node bv_at_index = ithb->second[index];
+        std::map< unsigned, Node >::iterator itf = fixed_vals.find( index );
+        Trace("ho-unif-debug") << "  * arg[" << var << "][" << index << "]";
+        if( itf!=fixed_vals.end() ){
+          if( !itf->second.isNull() ){
+            Node r = eq->getRepresentative( itf->second );
+            std::map< Node, unsigned >::iterator itfr = arg_to_rep.find( r );
+            if( itfr!=arg_to_rep.end() ){
+              d_arg_to_arg_rep[vnum][index] = itfr->second;
+              // function applied to equivalent values at multiple arguments, can permute variables
+              d_arg_vector[vnum][itfr->second].push_back( bv_at_index );
+              Trace("ho-unif-debug") << " = { self } ++ arg[" << var << "][" << itfr->second << "]" << std::endl;
+            }else{
+              arg_to_rep[r] = index;
+              // function applied to single value, can either use variable or value at this argument position
+              d_arg_vector[vnum][index].push_back( itf->second );
+              d_arg_vector[vnum][index].push_back( bv_at_index );
+              Trace("ho-unif-debug") << " = { " << itf->second << ", self } " << std::endl;
+            }
           }else{
-            arg_to_rep[r] = index;
-            // function applied to single value, can either use variable or value at this argument position
-            d_arg_vector[vnum][index].push_back( itf->second );
+            // function is applied to disequal values, can only use variable at this argument position
             d_arg_vector[vnum][index].push_back( bv_at_index );
-            Trace("ho-unif-debug") << " = { " << itf->second << ", self } " << std::endl;
+              Trace("ho-unif-debug") << " = { self } (disequal)" << std::endl;
           }
         }else{
-          // function is applied to disequal values, can only use variable at this argument position
+          // argument is irrelevant to matching, assume identity variable
           d_arg_vector[vnum][index].push_back( bv_at_index );
-            Trace("ho-unif-debug") << " = { self } (disequal)" << std::endl;
+          Trace("ho-unif-debug") << " = { self } (irrelevant)" << std::endl;
         }
-      }else{
-        // argument is irrelevant to matching, assume identity variable
-        d_arg_vector[vnum][index].push_back( bv_at_index );
-        Trace("ho-unif-debug") << " = { self } (irrelevant)" << std::endl;
       }
+      Trace("ho-unif-debug2") << "finished." << std::endl;
     }
-    Trace("ho-unif-debug2") << "finished." << std::endl;
-  }
 
-  return sendInstantiation( m, 0 );
+    return sendInstantiation( m, 0 );
+  }else{
+    // do not run higher-order matching
+    return d_quantEngine->addInstantiation( d_f, m );
+  }
 }
 
 // recursion depth limited by number of arguments of higher order variables occurring as pattern operators (very small)

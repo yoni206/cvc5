@@ -356,6 +356,11 @@ option quantAntiSkolem --quant-anti-skolem bool :read-write :default false
 option quantEqualityEngine --quant-ee bool :default false
   maintain congrunce closure over universal equalities
  
+### higher-order options
+
+option hoMatching --ho-matching bool :default true
+  do higher-order matching algorithm for triggers with variable operators
+
 ### proof options
 
 option trackInstLemmas --track-inst-lemmas bool :read-write :default false
