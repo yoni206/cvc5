@@ -67,7 +67,13 @@ Trigger( qe, q, nodes ), d_ho_var_apps( ho_apps ) {
     Node n = it->first;
     d_ho_var_list.push_back( n );
     TypeNode tn = n.getType();
-    Trace("ho-quant-trigger") << "  have " << it->second.size() << " patterns with variable operator " << n << std::endl;
+    if( Trace.isOn("ho-quant-trigger") ){
+      Trace("ho-quant-trigger") << "  have " << it->second.size();
+      Trace("ho-quant-trigger") << " patterns with variable operator " << n << ":" << std::endl;
+      for( unsigned j=0; j<it->second.size(); j++ ){
+        Trace("ho-quant-trigger") << "  " << it->second[j] << std::endl;
+      }
+    }
     if( std::find( d_ho_var_types.begin(), d_ho_var_types.end(), tn )==d_ho_var_types.end() ){
       Trace("ho-quant-trigger") << "  type " << tn << " needs higher-order matching." << std::endl;
       d_ho_var_types.push_back( tn );
@@ -98,9 +104,10 @@ void HigherOrderTrigger::collectHoVarApplyTerms( Node q, TNode n, std::map< Node
         Trace("ho-quant-trigger-debug") << "Ho variable apply term : " << n << " with head " << curr << std::endl;
         apps[curr].push_back( n );
       }
+      withinApply = true;
     }
     for( unsigned i=0; i<n.getNumChildren(); i++ ){
-      bool newWithinApply = !withinApply || i!=0;
+      bool newWithinApply = withinApply && i==0;
       collectHoVarApplyTerms( q, n[i], apps, visited, newWithinApply );
     }
   }
@@ -178,7 +185,9 @@ bool HigherOrderTrigger::sendInstantiation( InstMatch& m ) {
             fixed_vals[k] = val;
           }else if( !itf->second.isNull() ){
             if( !eq->areEqual( itf->second, args[k] ) ){
-              fixed_vals[k] = Node::null();
+              if( !d_quantEngine->getTermDatabase()->isEntailed( itf->second.eqNode( args[k] ), true, eq ) ){
+                fixed_vals[k] = Node::null();
+              }
             }
           }
         }
@@ -208,9 +217,12 @@ bool HigherOrderTrigger::sendInstantiation( InstMatch& m ) {
             }else{
               arg_to_rep[r] = index;
               // function applied to single value, can either use variable or value at this argument position
-              d_arg_vector[vnum][index].push_back( itf->second );
               d_arg_vector[vnum][index].push_back( bv_at_index );
-              Trace("ho-unif-debug") << " = { " << itf->second << ", self } " << std::endl;
+              d_arg_vector[vnum][index].push_back( itf->second );
+              if( !options::hoMatchingVarArgPriority() ){
+                std::reverse( d_arg_vector[vnum][index].begin(), d_arg_vector[vnum][index].end() );
+              }
+              Trace("ho-unif-debug") << " = { self, " << itf->second << " } " << std::endl;
             }
           }else{
             // function is applied to disequal values, can only use variable at this argument position

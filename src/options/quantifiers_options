@@ -360,6 +360,8 @@ option quantEqualityEngine --quant-ee bool :default false
 
 option hoMatching --ho-matching bool :default true
   do higher-order matching algorithm for triggers with variable operators
+option hoMatchingVarArgPriority --ho-matching-var-priority bool :default true
+  give priority to variable arguments over constant arguments
 
 ### proof options
 
