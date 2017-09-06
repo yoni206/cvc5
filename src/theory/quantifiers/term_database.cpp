@@ -1973,6 +1973,12 @@ bool TermDb::isBoolConnectiveTerm( TNode n ) {
          ( n.getKind()!=ITE || n.getType().isBoolean() );
 }
 
+void TermDb::registerTrigger( theory::inst::Trigger* tr, Node op ){
+  if( std::find( d_op_triggers[op].begin(), d_op_triggers[op].end(), tr )==d_op_triggers[op].end() ){
+    d_op_triggers[op].push_back( tr );
+  }
+}
+
 Node TermDb::getHoTypeMatchPredicate( TypeNode tn ) {
   std::map< TypeNode, Node >::iterator ithp = d_ho_type_match_pred.find( tn );
   if( ithp==d_ho_type_match_pred.end() ){
@@ -1985,9 +1991,19 @@ Node TermDb::getHoTypeMatchPredicate( TypeNode tn ) {
   }
 }
 
-void TermDb::registerTrigger( theory::inst::Trigger* tr, Node op ){
-  if( std::find( d_op_triggers[op].begin(), d_op_triggers[op].end(), tr )==d_op_triggers[op].end() ){
-    d_op_triggers[op].push_back( tr );
+void TermDb::getLambdaArgs( Node f, std::vector< Node >& args ) {
+  Assert( args.empty() );
+  std::map< Node, std::vector< Node > >::iterator it = d_lambda_args.find( f );
+  if( it==d_lambda_args.end() ){
+    TypeNode tn = f.getType();
+    Assert( tn.isFunction() );
+    for( unsigned j=0; j<tn.getNumChildren()-1; j++ ){
+      Node nv = NodeManager::currentNM()->mkBoundVar( tn[j] );
+      d_lambda_args[f].push_back( nv );
+      args.push_back( nv );
+    }
+  }else{
+    args.insert( args.end(), it->second.begin(), it->second.end() );
   }
 }
 

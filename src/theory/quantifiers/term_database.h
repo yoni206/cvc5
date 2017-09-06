@@ -521,9 +521,15 @@ public:
 
 //for higher-order
 private:
+  /** dummy predicate that states terms should be considered first-class members of equality engine */
   std::map< TypeNode, Node > d_ho_type_match_pred;
+  /** bound variables for lambda expressions associated with variables (typically used in instantiations) */
+  std::map< Node, std::vector< Node > > d_lambda_args;
 public:
+  /** get higher-order type match predicate */
   Node getHoTypeMatchPredicate( TypeNode tn );
+  /** get lambda args */
+  void getLambdaArgs( Node f, std::vector< Node >& args );
 
 //for sygus
 private:

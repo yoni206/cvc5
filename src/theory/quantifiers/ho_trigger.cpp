@@ -10,6 +10,36 @@
  ** directory for licensing information.\endverbatim
  **
  ** \brief Implementation of higher-order trigger class
+ ** 
+ ** This class implements higher-order matching, examples (f, x, y are universal variables):
+ ** 
+ ** (f x y) matches (k 0 1) with possible solutions:
+ ** 
+ ** f -> \ xy. (k x y), x -> 0, y -> 1
+ ** f -> \ xy. (k 0 y), x -> 0, y -> 1
+ ** f -> \ xy. (k x 1), x -> 0, y -> 1
+ ** f -> \ xy. (k 0 1), x -> 0, y -> 1
+ ** 
+ ** (f x y) matches (k 0 0) with possible solutions:
+ ** 
+ ** f -> \ xy. (k x x), x -> 0, y -> 0
+ ** f -> \ xy. (k y x), x -> 0, y -> 0
+ ** f -> \ xy. (k 0 x), x -> 0, y -> 0
+ ** f -> \ xy. (k x y), x -> 0, y -> 0
+ ** f -> \ xy. (k y y), x -> 0, y -> 0
+ ** f -> \ xy. (k 0 y), x -> 0, y -> 0
+ ** f -> \ xy. (k x 0), x -> 0, y -> 0
+ ** f -> \ xy. (k y 0), x -> 0, y -> 0
+ ** f -> \ xy. (k 0 0), x -> 0, y -> 0
+ ** 
+ ** (f x y), (f x z) simultaneously match (k 0 1), (k 0 2) with possible solutions:
+ ** 
+ ** f -> \ xy. (k x y), x -> 0, y -> 1, z -> 2
+ ** f -> \ xy. (k 0 y), x -> 0, y -> 1, z -> 2
+ ** 
+ ** It also implements a way of forcing APPLY_UF to expand to curried HO_APPLY to
+ ** handle a corner case where matching is stuck (addHoTypeMatchPredicateLemmas).
+ ** 
  **/
 
 #include "theory/quantifiers/ho_trigger.h"
@@ -43,11 +73,8 @@ Trigger( qe, q, nodes ), d_ho_var_apps( ho_apps ) {
       d_ho_var_types.push_back( tn );
     }
     // make the bound variable lists
-    Assert( tn.isFunction() && tn.getNumChildren()>1 );
-    for( unsigned j=0; j<tn.getNumChildren()-1; j++ ){
-      Node nv = NodeManager::currentNM()->mkBoundVar( tn[j] );
-      d_ho_var_bvs[n].push_back( nv );
-    }
+    qe->getTermDatabase()->getLambdaArgs( n, d_ho_var_bvs[n] );
+    Assert( !d_ho_var_bvs[n].empty() );
     d_ho_var_bvl[n] = NodeManager::currentNM()->mkNode( kind::BOUND_VAR_LIST, d_ho_var_bvs[n] );
   }
 }
@@ -270,7 +297,8 @@ int HigherOrderTrigger::addHoTypeMatchPredicateLemmas() {
           Node u = d_quantEngine->getTermDatabase()->getHoTypeMatchPredicate( tn );
           Node au = NodeManager::currentNM()->mkNode( kind::APPLY_UF, u, it->first );
           if( d_quantEngine->addLemma( au ) ){
-            //this forces it->first to be a first-class member of the quantifier-free equality engine
+            //this forces it->first to be a first-class member of the quantifier-free equality engine,
+            //  which in turn forces the quantifier-free theory solver to expand it to HO_APPLY
             Trace("ho-quant") << "Added ho match predicate lemma : " << au << std::endl;
             numLemmas++;
           }
