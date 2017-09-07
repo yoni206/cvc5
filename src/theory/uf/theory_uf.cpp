@@ -245,10 +245,7 @@ void TheoryUF::preRegisterTerm(TNode node) {
       d_equalityEngine.addTerm(node);
     }
     // Remember the function and predicate terms
-    // FIXME : should also do this for HO_APPLY
-    if (node.getKind()==kind::APPLY_UF) {
-      d_functionsTerms.push_back(node);
-    }
+    d_functionsTerms.push_back(node);
     break;
   case kind::CARDINALITY_CONSTRAINT:
   case kind::COMBINED_CARDINALITY_CONSTRAINT:
@@ -535,7 +532,8 @@ void TheoryUF::addCarePairs( quantifiers::TermArgTrie * t1, quantifiers::TermArg
       if( !d_equalityEngine.areEqual( f1, f2 ) ){
         Debug("uf::sharing") << "TheoryUf::computeCareGraph(): checking function " << f1 << " and " << f2 << std::endl;
         vector< pair<TNode, TNode> > currentPairs;
-        for (unsigned k = 0; k < f1.getNumChildren(); ++ k) {
+        unsigned arg_start_index = f1.getKind() == kind::HO_APPLY ? 1 : 0;
+        for (unsigned k = arg_start_index; k < f1.getNumChildren(); ++ k) {
           TNode x = f1[k];
           TNode y = f2[k];
           Assert( d_equalityEngine.hasTerm(x) );
@@ -619,7 +617,7 @@ void TheoryUF::computeCareGraph() {
         }
       }
       if( has_trigger_arg ){
-        index[op].addTerm( f1, reps );
+        index[op].addTerm( f1, reps, arg_start_index );
         arity[op] = reps.size();
       }
     }
@@ -731,6 +729,7 @@ unsigned TheoryUF::checkExtensionality() {
 }
 
 
+// TODO : can improve performance
 unsigned TheoryUF::checkApplyCompletionEqc( TNode cn ) {
   Assert( d_equalityEngine.hasTerm( cn ) );
   Assert( d_equalityEngine.getRepresentative( cn )==cn );
@@ -743,9 +742,6 @@ unsigned TheoryUF::checkApplyCompletionEqc( TNode cn ) {
     Trace("uf-ho-debug") << "    visiting term " << n << std::endl;
     if( n.getKind()==kind::APPLY_UF ){
       Node op = n.getOperator();
-      //if( d_equalityEngine.hasTerm( op ) ){
-      //Trace("uf-ho-debug") << "    ...is apply uf term with first-class operator." << std::endl;
-
       //must expand into APPLY_HO version if not there already
       Node ret = TheoryUfRewriter::getHoApplyForApplyUf( n );
       if( !d_equalityEngine.hasTerm( ret ) || !d_equalityEngine.areEqual( ret, n ) ){
@@ -757,7 +753,6 @@ unsigned TheoryUF::checkApplyCompletionEqc( TNode cn ) {
       }else{
         Trace("uf-ho-debug") << "    ...already have " << ret << " == " << n << "." << std::endl;
       }
-      //}
     }
     ++eqc_i;
   }
