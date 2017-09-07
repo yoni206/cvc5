@@ -308,6 +308,30 @@ bool HigherOrderTrigger::sendInstantiationArg( InstMatch& m, unsigned var_index,
   }
 }
 
+int HigherOrderTrigger::addHoTypeMatchPredicateLemmas() {
+  unsigned numLemmas = 0;
+  if( !d_ho_var_types.empty() ){
+    // this forces expansion of APPLY_UF terms to curried HO_APPLY chains
+    for( std::map< Node, std::vector< Node > >::iterator it = d_quantEngine->getTermDatabase()->d_op_map.begin(); 
+         it != d_quantEngine->getTermDatabase()->d_op_map.end(); ++it ){
+      if( it->first.isVar() ){
+        TypeNode tn = it->first.getType();
+        if( std::find( d_ho_var_types.begin(), d_ho_var_types.end(), tn )!=d_ho_var_types.end() ){
+          Node u = d_quantEngine->getTermDatabase()->getHoTypeMatchPredicate( tn );
+          Node au = NodeManager::currentNM()->mkNode( kind::APPLY_UF, u, it->first );
+          if( d_quantEngine->addLemma( au ) ){
+            //this forces it->first to be a first-class member of the quantifier-free equality engine,
+            //  which in turn forces the quantifier-free theory solver to expand it to HO_APPLY
+            Trace("ho-quant") << "Added ho match predicate lemma : " << au << std::endl;
+            numLemmas++;
+          }
+        }
+      }
+    }
+  }
+  return numLemmas;
+}
+
 }/* CVC4::theory::inst namespace */
 }/* CVC4::theory namespace */
 }/* CVC4 namespace */

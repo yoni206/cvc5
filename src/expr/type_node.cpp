@@ -185,6 +185,20 @@ bool TypeNode::isComparableTo(TypeNode t) const {
     return true;
   //}else if( isRecord() && t.isRecord() ){
     //record types are incomparable in current implementation
+  }else if(isFunction() && t.isFunction()) {
+    if( getRangeType().isComparableTo(t.getRangeType()) ){
+      std::vector<TypeNode> argTypes = getArgTypes();
+      std::vector<TypeNode> targTypes = t.getArgTypes();
+      if( argTypes.size()==targTypes.size() ){
+        for(unsigned j=0; j<argTypes.size(); j++) {
+          if(!targTypes[j].isComparableTo(argTypes[j])) {
+            return false;
+          }
+        }
+        return true;
+      }
+    }
+    return false;
   } else if(isParametricDatatype() && t.isParametricDatatype()) {
     Assert(getKind() == kind::PARAMETRIC_DATATYPE);
     Assert(t.getKind() == kind::PARAMETRIC_DATATYPE);

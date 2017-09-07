@@ -39,7 +39,7 @@ TheoryModel::TheoryModel(context::Context* c, std::string name, bool enableFuncM
   d_equalityEngine = new eq::EqualityEngine(d_eeContext, name, false);
 
   // The kinds we are treating as function application in congruence
-  d_equalityEngine->addFunctionKind(kind::APPLY_UF);
+  d_equalityEngine->addFunctionKind(kind::APPLY_UF, false, options::ufHo());
   d_equalityEngine->addFunctionKind(kind::HO_APPLY);
   d_equalityEngine->addFunctionKind(kind::SELECT);
   // d_equalityEngine->addFunctionKind(kind::STORE);
@@ -607,8 +607,8 @@ bool TheoryEngineModelBuilder::isAssignable(TNode n)
       Assert( !n.getType().isFunction() );
       return n.isVar() || n.getKind() == kind::APPLY_UF;
     }else{
-      Assert( n.getKind() != kind::APPLY_UF );
-      return ( n.isVar() && !n.getType().isFunction() ) || 
+      //Assert( n.getKind() != kind::APPLY_UF );
+      return ( n.isVar() && !n.getType().isFunction() ) || n.getKind() == kind::APPLY_UF || 
              ( n.getKind() == kind::HO_APPLY && n[0].getType().getNumChildren()==2 );
     }
   }

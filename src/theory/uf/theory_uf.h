@@ -132,6 +132,15 @@ private:
   /** extensionality applied to these disequalities */
   NodeSet d_extensionality_deq;
 
+  /** APPLY_UF terms introduced by collapsing HO_APPLY */
+  NodeList d_collapse_apply_uf;
+
+  /** keep alive cache for explanations of eq inferences */
+  NodeSet d_keep_alive;
+
+  /** map from non-standard operators to their skolems */
+  std::map< Node, Node > d_uf_std_skolem;
+
   /** node for true */
   Node d_true;
 
@@ -182,6 +191,14 @@ private: // for higher-order
   
   /** check higher order */
   unsigned checkHigherOrder();
+
+  /** check first-order completion */
+  unsigned checkApplyCompletion();
+
+  unsigned checkApplyCompletionEqc( TNode cn );
+
+  /** get apply uf for ho apply */
+  Node getApplyUfForHoApply( Node node );
 public:
 
   /** Constructs a new instance of TheoryUF w.r.t. the provided context.*/

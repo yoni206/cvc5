@@ -73,7 +73,7 @@ public:
           substitutions.addSubstitution(*formal, n);
         }
         return RewriteResponse(REWRITE_AGAIN_FULL, substitutions.apply(lambda[1]));
-      }else if( options::ufHo() || !isStdApplyUfOperator( node.getOperator() ) ){
+      }else if( !isStdApplyUfOperator( node.getOperator() ) ){
         return RewriteResponse(REWRITE_AGAIN_FULL, getHoApplyForApplyUf(node));
       }
     }else if( node.getKind() == kind::HO_APPLY ){

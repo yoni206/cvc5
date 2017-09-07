@@ -17,6 +17,8 @@
 
 #include "theory/uf/equality_engine.h"
 
+#include "options/uf_options.h"
+
 #include "smt/smt_statistics_registry.h"
 
 namespace CVC4 {
@@ -250,11 +252,17 @@ EqualityNodeId EqualityEngine::newNode(TNode node) {
   return newId;
 }
 
-void EqualityEngine::addFunctionKind(Kind fun, bool interpreted) {
+void EqualityEngine::addFunctionKind(Kind fun, bool interpreted, bool extOperator) {
   d_congruenceKinds |= fun;
-  if (interpreted && fun != kind::EQUAL) {
-    Debug("equality::evaluation") << d_name << "::eq::addFunctionKind(): " << fun << " is interpreted " << std::endl;
-    d_congruenceKindsInterpreted |= fun;
+  if (fun != kind::EQUAL) {
+    if (interpreted) {
+      Debug("equality::evaluation") << d_name << "::eq::addFunctionKind(): " << fun << " is interpreted " << std::endl;
+      d_congruenceKindsInterpreted |= fun;
+    }
+    if (extOperator) {
+      Debug("equality::extoperator") << d_name << "::eq::addFunctionKind(): " << fun << " is an external operator kind " << std::endl;
+      d_congruenceKindsExtOperators |= fun;
+    }
   }
 }
 
@@ -297,7 +305,7 @@ void EqualityEngine::addTermInternal(TNode t, bool isOperator) {
   } else if (t.getNumChildren() > 0 && d_congruenceKinds[t.getKind()]) {
     TNode tOp = t.getOperator();
     // Add the operator
-    addTermInternal(tOp, true);
+    addTermInternal(tOp, !isExternalOperatorKind(t.getKind()));
     result = getNodeId(tOp);
     // Add all the children and Curryfy
     bool isInterpreted = isInterpretedFunctionKind(t.getKind());
