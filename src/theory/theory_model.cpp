@@ -508,7 +508,6 @@ void TheoryModel::assignFunctionDefinition( Node f, Node f_def ) {
   Assert( d_uf_models.find( f )==d_uf_models.end() );
   Trace("model-builder") << "  Assigning function (" << f << ") to (" << f_def << ")" << endl;
 
-  // if the function is a first-class member of the equality engine
   if( options::ufHo() ){
     //we must rewrite the function value since the definition needs to be a constant value
     f_def = Rewriter::rewrite( f_def );
@@ -524,7 +523,6 @@ void TheoryModel::assignFunctionDefinition( Node f, Node f_def ) {
     Trace("model-builder-debug") << "  ...function is first-class member of equality engine" << std::endl;
     // assign to representative if higher-order
     Node r = d_equalityEngine->getRepresentative( f );
-    //if( d_reps.find( r )==d_reps.end() )
     //always replace the representative, since it is initially assigned to itself
     Trace("model-builder") << "    Assign: Setting function rep " << r << " to " << f_def << endl;
     d_reps[r] = f_def;  
@@ -553,11 +551,8 @@ std::vector< Node > TheoryModel::getFunctionsToAssign() {
     Assert( !n.isNull() );
     if( !hasAssignedFunctionDefinition( n ) ){
       Trace("model-builder-fun-debug") << "Look at function : " << n << std::endl;
-      // if the function is a first-class member of the equality engine
-      //if( d_equalityEngine->hasTerm( n ) ){
       if( options::ufHo() ){
-        // if function is a part of equality engine, 
-        //   we are higher-order, assign function definitions modulo equality
+        // if in higher-order mode, assign function definitions modulo equality
         Node r = getRepresentative( n );
         std::map< Node, Node >::iterator itf = func_to_rep.find( r );
         if( itf==func_to_rep.end() ){
@@ -1173,7 +1168,7 @@ void TheoryEngineModelBuilder::debugCheckModel(Model* m){
     // eqc is the equivalence class representative
     Node eqc = (*eqcs_i);
     Node rep = tm->getRepresentative( eqc );
-    if( !rep.isConst() ){
+    if( !rep.isConst() && eqc.getType().isBoolean() ){
       rep = tm->getValue(eqc);
       Assert(rep.isConst());
     }
@@ -1293,7 +1288,6 @@ void TheoryEngineModelBuilder::assignFunction(TheoryModel* m, Node f) {
     ufmt.setValue(m, simp, v);
     default_v = v;
   }
-  // all first-class member functions must use same default value
   if( default_v.isNull() ){
     //choose default value from model if none exists
     TypeEnumerator te(f.getType().getRangeType());
@@ -1352,7 +1346,7 @@ void TheoryEngineModelBuilder::assignHoFunction(TheoryModel* m, Node f) {
         hnv = hnv[1].substitute( largs.begin(), largs.end(), apply_args.begin(), apply_args.end() );
         hnv = Rewriter::rewrite( hnv );
       }
-      Assert( hnv.getType()==curr.getType() );
+      Assert( !TypeNode::leastCommonTypeNode( hnv.getType(), curr.getType() ).isNull() );
       curr = NodeManager::currentNM()->mkNode( kind::ITE, hni, hnv, curr );
     }
   }

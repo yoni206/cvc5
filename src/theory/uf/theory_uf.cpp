@@ -168,6 +168,7 @@ void TheoryUF::check(Effort level) {
 
 Node TheoryUF::expandDefinition(LogicRequest &logicRequest, Node node) {
   Trace("uf-ho-debug") << "uf-ho-debug : expanding definition : " << node << std::endl;
+/*
   if( options::ufHo() ){
     if( node.getKind()==kind::APPLY_UF ){
       Node ret = TheoryUfRewriter::getHoApplyForApplyUf( node );
@@ -175,6 +176,7 @@ Node TheoryUF::expandDefinition(LogicRequest &logicRequest, Node node) {
       return ret;
     }
   }
+*/
   return node;
 }
 
