@@ -168,10 +168,25 @@ void TheoryUF::check(Effort level) {
 
 Node TheoryUF::expandDefinition(LogicRequest &logicRequest, Node node) {
   Trace("uf-ho-debug") << "uf-ho-debug : expanding definition : " << node << std::endl;
-/*
-  if( options::ufHo() ){
+  if( !options::ufHo() ){
+    if( node.getKind()==kind::HO_APPLY ){
+      std::stringstream ss;
+      ss << "Partial function applications are not supported in default mode, try --uf-ho.";
+      throw LogicException(ss.str());
+    }
+  }else{
     if( node.getKind()==kind::APPLY_UF ){
       Node ret = TheoryUfRewriter::getHoApplyForApplyUf( node );
+      Trace("uf-ho") << "uf-ho : expandDefinition : " << node << " to " << ret << std::endl;
+      return ret;
+    }
+  }
+/*
+  if( node.getKind()==kind::HO_APPLY ){
+    // convert HO_APPLY to APPLY_UF if fully applied
+    if( node[0].getType().getNumChildren()==2 ){
+      Trace("uf-ho") << "uf-ho : expanding definition : " << node << std::endl;
+      Node ret = getApplyUfForHoApply( node );
       Trace("uf-ho") << "uf-ho : expandDefinition : " << node << " to " << ret << std::endl;
       return ret;
     }
@@ -198,6 +213,12 @@ void TheoryUF::preRegisterTerm(TNode node) {
     break;
   case kind::APPLY_UF:
   case kind::HO_APPLY:
+    //if( options::ufHo() && node.getKind()==kind::APPLY_UF ){
+    //  // must add the HO_APPLY version first 
+    //  // this ensures that its head is initially marked as 
+    //  Node ret = TheoryUfRewriter::getHoApplyForApplyUf( node );
+    //  d_equalityEngine.addTerm(ret);
+    //}
     // Maybe it's a predicate
     if (node.getType().isBoolean()) {
       // Get triggered for both equal and dis-equal

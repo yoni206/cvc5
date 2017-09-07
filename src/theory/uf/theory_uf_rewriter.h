@@ -73,7 +73,7 @@ public:
           substitutions.addSubstitution(*formal, n);
         }
         return RewriteResponse(REWRITE_AGAIN_FULL, substitutions.apply(lambda[1]));
-      }else if( options::ufHo() ){
+      }else if( options::ufHo() || !isStdApplyUfOperator( node.getOperator() ) ){
         return RewriteResponse(REWRITE_AGAIN_FULL, getHoApplyForApplyUf(node));
       }
     }else if( node.getKind() == kind::HO_APPLY ){
@@ -94,19 +94,6 @@ public:
         }
         return RewriteResponse( REWRITE_AGAIN_FULL, new_body );
       }
-      // this is disabled since we may want to reason about both representations 
-      //of a function application simultaneously (e.g. for higher-order unification)
-/*
-      else{
-        //rewrite to APPLY_UF if full application of non-variable function?
-        if( node[0].getType().getNumChildren()==2 ){
-          Node ret = getApplyUfForHoApply( node );
-          if( !ret.isNull() ){
-            return RewriteResponse( REWRITE_AGAIN_FULL, ret );
-          }
-        }
-      }
-*/
     }
     return RewriteResponse(REWRITE_DONE, node);
   }

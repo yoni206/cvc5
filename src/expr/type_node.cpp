@@ -119,15 +119,25 @@ bool TypeNode::isSubtypeOf(TypeNode t) const {
       }
     }
     return true;
-  }else if( t.isRecord() && t.isRecord() ){
-    //records are not subtypes of each other in current implementation
   }
-  if(isFunction()) {
-    // A function is a subtype of another if the args are the same type, and
-    // the return type is a subtype of the other's.  This is enough for now
-    // (and it's necessary for model generation, since a Real-valued function
-    // might return a constant Int and thus the model value is typed differently).
-    return t.isFunction() && getArgTypes() == t.getArgTypes() && getRangeType().isSubtypeOf(t.getRangeType());
+  if( isRecord() && t.isRecord() ){
+    //records are not subtypes of each other in current implementation
+    return false;
+  }
+  if(isFunction() && t.isFunction()) {
+    if( getRangeType().isSubtypeOf(t.getRangeType()) ){
+      std::vector<TypeNode> argTypes = getArgTypes();
+      std::vector<TypeNode> targTypes = t.getArgTypes();
+      if( argTypes.size()==targTypes.size() ){
+        for(unsigned j=0; j<argTypes.size(); j++) {
+          if(!targTypes[j].isSubtypeOf(argTypes[j])) {
+            return false;
+          }
+        }
+        return true;
+      }
+    }
+    return false;
   }
   if(isParametricDatatype() && t.isParametricDatatype()) {
     Assert(getKind() == kind::PARAMETRIC_DATATYPE);
