@@ -1,4 +1,4 @@
-; COMMAND-LINE: --finite-model-find
+; COMMAND-LINE: --uf-ho --finite-model-find
 ; EXPECT: sat
 (set-logic UF)
 (set-info :status sat)

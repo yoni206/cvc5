@@ -196,25 +196,12 @@ bool QModelBuilderIG::processBuildModel( TheoryModel* m ) {
       //initialize model
       fm->initialize();
 
-      //assign higher-order functions
-      assignHoFunctions( fm );
-
-      //mark higher-order functions as ineligible
-      std::vector< Node > ho_f;
+      //mark already-built functions as ineligible
       for( std::map< Node, uf::UfModelTree >::iterator it = fm->d_uf_model_tree.begin(); 
            it != fm->d_uf_model_tree.end(); ++it ){
-        Node op = it->first;
-        if( fm->hasAssignedFunctionDefinition( op ) ){
-          Trace("model-engine-debug2") << "Already assigned function " << op;
-          Trace("model-engine-debug2") << ", do not use fmf model." << std::endl;
-          ho_f.push_back( op );
-        }
-      }
-      for( unsigned i=0; i<ho_f.size(); i++ ){
-        fm->d_uf_model_tree.erase( ho_f[i] );
+        Assert( !fm->hasAssignedFunctionDefinition( it->first ) );
       }
       
-
       //analyze the functions
       Trace("model-engine-debug") << "Analyzing model..." << std::endl;
       analyzeModel( fm );

@@ -704,11 +704,6 @@ private:
   /** The internal addTerm */
   void addTermInternal(TNode t, bool isOperator = false);
 
-  /**
-   * Check whether the node is in the database
-   */
-  bool hasTermInternal(TNode t) const;
-
 public:
 
   /**
@@ -738,7 +733,7 @@ public:
   }
 
   /**
-   * Check whether the node is already in the database and is an external node.
+   * Check whether the node is already in the database.
    */
   bool hasTerm(TNode t) const;
 

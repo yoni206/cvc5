@@ -165,7 +165,7 @@ Node TheoryModel::getModelValue(TNode n, bool hasBoundVars, bool useDontCares) c
       ret = nr;
     }
   } else {
-      // FIXME : special case not necessary?
+    // FIXME : special case not necessary? (also address BV_ACKERMANIZE functions below)
     if(n.getKind() == kind::LAMBDA) {
       NodeManager* nm = NodeManager::currentNM();
       Node body = getModelValue(n[1], true);
@@ -179,7 +179,7 @@ Node TheoryModel::getModelValue(TNode n, bool hasBoundVars, bool useDontCares) c
       d_modelCache[n] = ret;
       return ret;
     }
-
+  
     if (n.getNumChildren() > 0 &&
         n.getKind() != kind::BITVECTOR_ACKERMANIZE_UDIV &&
         n.getKind() != kind::BITVECTOR_ACKERMANIZE_UREM) {
@@ -215,8 +215,19 @@ Node TheoryModel::getModelValue(TNode n, bool hasBoundVars, bool useDontCares) c
     }
   
     Debug("model-getvalue-debug") << "Handling special cases for types..." << std::endl;
-    if (!d_equalityEngine->hasTerm(n)) {
-      TypeNode t = n.getType();
+    TypeNode t = n.getType();
+    bool eeHasTerm;
+    if( !options::ufHo() && (t.isFunction() || t.isPredicate()) ){
+      // functions are in the equality engine, but not as first-class members
+      // e.g. we should not query representatives for functions. However, they
+      // are first class members when higher-order is enabled. Hence, the special
+      // case here.
+      eeHasTerm = false;
+    }else{
+      eeHasTerm = d_equalityEngine->hasTerm(n);
+    }
+    // if the term does not exist in the equality engine, return an arbitrary value
+    if (!eeHasTerm) {
       if (t.isFunction() || t.isPredicate()) {
         if (d_enableFuncModels) {
           std::map< Node, Node >::const_iterator it = d_uf_models.find(n);
@@ -365,16 +376,20 @@ void TheoryModel::assertEqualityEngine(const eq::EqualityEngine* ee, set<Node>* 
     bool predicate = false;
     bool predTrue = false;
     bool predFalse = false;
+    Trace("model-builder-debug") << "...asserting terms in equivalence class " << eqc;
     if (eqc.getType().isBoolean()) {
       predicate = true;
       predTrue = ee->areEqual(eqc, d_true);
       predFalse = ee->areEqual(eqc, d_false);
+      Trace("model-builder-debug") << ", pred = " << predTrue << "/" << predFalse;
     }
+    Trace("model-builder-debug") << std::endl;
     eq::EqClassIterator eqc_i = eq::EqClassIterator(eqc, ee);
     bool first = true;
     Node rep;
     for (; !eqc_i.isFinished(); ++eqc_i) {
       if (termSet != NULL && termSet->find(*eqc_i) == termSet->end()) {
+        Trace("model-builder-debug") << "...skip node " << (*eqc_i) << " in eqc " << eqc << std::endl;
         continue;
       }
       if (predicate) {
@@ -494,8 +509,7 @@ void TheoryModel::assignFunctionDefinition( Node f, Node f_def ) {
   Trace("model-builder") << "  Assigning function (" << f << ") to (" << f_def << ")" << endl;
 
   // if the function is a first-class member of the equality engine
-  bool hasExternalTerm = d_equalityEngine->hasTerm( f );
-  if( hasExternalTerm ){
+  if( options::ufHo() ){
     //we must rewrite the function value since the definition needs to be a constant value
     f_def = Rewriter::rewrite( f_def );
     Assert( f_def.isConst() );
@@ -506,7 +520,7 @@ void TheoryModel::assignFunctionDefinition( Node f, Node f_def ) {
     d_uf_models[f] = f_def;
   }
 
-  if( hasExternalTerm ){
+  if( options::ufHo() ){
     Trace("model-builder-debug") << "  ...function is first-class member of equality engine" << std::endl;
     // assign to representative if higher-order
     Node r = d_equalityEngine->getRepresentative( f );
@@ -529,35 +543,6 @@ void TheoryModel::assignFunctionDefinition( Node f, Node f_def ) {
   }
 }
 
-struct sortTypeSize {
-  std::map< TypeNode, unsigned > d_type_size;
-  unsigned getTypeSize( TypeNode tn ) {
-    std::map< TypeNode, unsigned >::iterator it = d_type_size.find( tn );
-    if( it!=d_type_size.end() ){
-      return it->second;    
-    }else{
-      unsigned sum = 1;
-      for( unsigned i=0; i<tn.getNumChildren(); i++ ){
-        sum += getTypeSize( tn[i] );
-      }  
-      d_type_size[tn] = sum;
-      return sum;
-    }
-  }
-public:
-  bool operator() (Node i, Node j) {
-    int si = getTypeSize( i.getType() );
-    int sj = getTypeSize( j.getType() );
-    if( si<sj ){
-      return true;
-    }else if( si==sj ){
-      return i<j;
-    }else{
-      return false;
-    }
-  }
-};
-
 std::vector< Node > TheoryModel::getFunctionsToAssign() {
   std::vector< Node > funcs_to_assign;
   std::map< Node, Node > func_to_rep;
@@ -569,7 +554,8 @@ std::vector< Node > TheoryModel::getFunctionsToAssign() {
     if( !hasAssignedFunctionDefinition( n ) ){
       Trace("model-builder-fun-debug") << "Look at function : " << n << std::endl;
       // if the function is a first-class member of the equality engine
-      if( d_equalityEngine->hasTerm( n ) ){
+      //if( d_equalityEngine->hasTerm( n ) ){
+      if( options::ufHo() ){
         // if function is a part of equality engine, 
         //   we are higher-order, assign function definitions modulo equality
         Node r = getRepresentative( n );
@@ -598,14 +584,6 @@ std::vector< Node > TheoryModel::getFunctionsToAssign() {
     }
   }
 
-  // sort based on type size if higher-order
-  //   this means we assign T -> T before ( T x T ) -> T and before ( T -> T ) -> T
-  if( !func_to_rep.empty() ){
-    Trace("model-builder-fun") << "Sort functions by type..." << std::endl;
-    sortTypeSize sts;
-    std::sort( funcs_to_assign.begin(), funcs_to_assign.end(), sts );
-  }
-
   Trace("model-builder-fun") << "return " << funcs_to_assign.size() << " functions to assign..." << std::endl;
   return funcs_to_assign;
 }
@@ -617,7 +595,28 @@ TheoryEngineModelBuilder::TheoryEngineModelBuilder( TheoryEngine* te ) : d_te( t
 
 bool TheoryEngineModelBuilder::isAssignable(TNode n)
 {
-  return ( ( n.isVar() && !n.getType().isFunction() ) || n.getKind() == kind::APPLY_UF || n.getKind() == kind::SELECT || n.getKind() == kind::APPLY_SELECTOR_TOTAL);
+  if( n.getKind() == kind::SELECT || n.getKind() == kind::APPLY_SELECTOR_TOTAL ){
+    // selectors are always assignable (where we guarantee that they are not evaluatable here)
+    if( !options::ufHo() ){
+      Assert( !n.getType().isFunction() );
+      return true;
+    }else{
+      // might be a function field
+      return !n.getType().isFunction();
+    }
+  }else{
+    // non-function variables, and fully applied functions
+    if( !options::ufHo() ){
+      // no functions exist, all functions are fully applied
+      Assert( n.getKind() != kind::HO_APPLY );
+      Assert( !n.getType().isFunction() );
+      return n.isVar() || n.getKind() == kind::APPLY_UF;
+    }else{
+      Assert( n.getKind() != kind::APPLY_UF );
+      return ( n.isVar() && !n.getType().isFunction() ) || 
+             ( n.getKind() == kind::HO_APPLY && n[0].getType().getNumChildren()==2 );
+    }
+  }
 }
 
 
@@ -1174,6 +1173,10 @@ void TheoryEngineModelBuilder::debugCheckModel(Model* m){
     // eqc is the equivalence class representative
     Node eqc = (*eqcs_i);
     Node rep = tm->getRepresentative( eqc );
+    if( !rep.isConst() ){
+      rep = tm->getValue(eqc);
+      Assert(rep.isConst());
+    }
 /*
     itMap = d_constantReps.find(eqc);
     if (itMap == d_constantReps.end() && eqc.getType().isBoolean()) {
@@ -1265,11 +1268,12 @@ bool TheoryEngineModelBuilder::preProcessBuildModel(TheoryModel* m) {
 }
 
 bool TheoryEngineModelBuilder::processBuildModel(TheoryModel* m){
-  assignFunctions(m, true, true );
+  assignFunctions(m);
   return true;
 }
 
 void TheoryEngineModelBuilder::assignFunction(TheoryModel* m, Node f) {
+  Assert( !options::ufHo() );
   uf::UfModelTree ufmt( f );
   Node default_v;
   for( size_t i=0; i<m->d_uf_terms[f].size(); i++ ){
@@ -1308,6 +1312,7 @@ void TheoryEngineModelBuilder::assignFunction(TheoryModel* m, Node f) {
 }
 
 void TheoryEngineModelBuilder::assignHoFunction(TheoryModel* m, Node f) {
+  Assert( options::ufHo() );
   TypeNode type = f.getType();
   std::vector< TypeNode > argTypes = type.getArgTypes();
   std::vector< Node > args;
@@ -1356,9 +1361,48 @@ void TheoryEngineModelBuilder::assignHoFunction(TheoryModel* m, Node f) {
   m->assignFunctionDefinition( f, val );
 }
 
-void TheoryEngineModelBuilder::assignFunctions(TheoryModel* m, bool doFo, bool doHo) {
-  Trace("model-builder") << "Assigning function values (" << doFo << ", " << doHo << ")..." << endl;
+
+struct sortTypeSize {
+  std::map< TypeNode, unsigned > d_type_size;
+  unsigned getTypeSize( TypeNode tn ) {
+    std::map< TypeNode, unsigned >::iterator it = d_type_size.find( tn );
+    if( it!=d_type_size.end() ){
+      return it->second;    
+    }else{
+      unsigned sum = 1;
+      for( unsigned i=0; i<tn.getNumChildren(); i++ ){
+        sum += getTypeSize( tn[i] );
+      }  
+      d_type_size[tn] = sum;
+      return sum;
+    }
+  }
+public:
+  bool operator() (Node i, Node j) {
+    int si = getTypeSize( i.getType() );
+    int sj = getTypeSize( j.getType() );
+    if( si<sj ){
+      return true;
+    }else if( si==sj ){
+      return i<j;
+    }else{
+      return false;
+    }
+  }
+};
+
+void TheoryEngineModelBuilder::assignFunctions(TheoryModel* m) {
+  Trace("model-builder") << "Assigning function values..." << std::endl;
   std::vector< Node > funcs_to_assign = m->getFunctionsToAssign();
+
+  if( options::ufHo() ){
+    // sort based on type size if higher-order
+    //   this means we assign T -> T before ( T x T ) -> T and before ( T -> T ) -> T
+    Trace("model-builder") << "Sort functions by type..." << std::endl;
+    sortTypeSize sts;
+    std::sort( funcs_to_assign.begin(), funcs_to_assign.end(), sts );
+  }
+
   if( Trace.isOn("model-builder") ){
     Trace("model-builder") << "...have " << funcs_to_assign.size() << " functions to assign:" << std::endl;
     for( unsigned k=0; k<funcs_to_assign.size(); k++ ){
@@ -1366,37 +1410,21 @@ void TheoryEngineModelBuilder::assignFunctions(TheoryModel* m, bool doFo, bool d
       Trace("model-builder") << "  [" << k << "] : " << f << " : " << f.getType() << std::endl;
     }
   }
+
   // construct function values
   for( unsigned k=0; k<funcs_to_assign.size(); k++ ){
     Node f = funcs_to_assign[k];
     Trace("model-builder") << "  Function #" << k << " is " << f << std::endl;
-    std::map< Node, std::vector< Node > >::iterator itht = m->d_ho_uf_terms.find( f );
-    if( itht==m->d_ho_uf_terms.end() ){
-      if( doFo ){
-        Trace("model-builder") << "  Assign function value for " << f << " based on APPLY_UF" << std::endl;
-        assignFunction( m, f );
-      }else{
-        Trace("model-builder") << "  Skip " << f << std::endl;
-      }
+    //std::map< Node, std::vector< Node > >::iterator itht = m->d_ho_uf_terms.find( f );
+    if( !options::ufHo() ){
+      Trace("model-builder") << "  Assign function value for " << f << " based on APPLY_UF" << std::endl;
+      assignFunction( m, f );
     }else{
-      if( doHo ){
-        Trace("model-builder") << "  Assign function value for " << f << " based on curried HO_APPLY" << std::endl;
-        assignHoFunction( m, f );
-      }else{
-        Trace("model-builder") << "  Skip " << f << std::endl;
-      }
+      Trace("model-builder") << "  Assign function value for " << f << " based on curried HO_APPLY" << std::endl;
+      assignHoFunction( m, f );
     }
   }
   Trace("model-builder") << "Finished assigning function values." << std::endl;
-}
-
-void TheoryEngineModelBuilder::assignFoFunctions(TheoryModel* m) {
-  assignFunctions(m, true, false);
-}
-
-void TheoryEngineModelBuilder::assignHoFunctions(TheoryModel* m) {
-  assignFunctions(m, false, true);
-  
 }
 
 } /* namespace CVC4::theory */

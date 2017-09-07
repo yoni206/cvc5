@@ -760,9 +760,6 @@ bool AbsMbqiBuilder::processBuildModel(TheoryModel* m) {
     }
   }
 
-  //assign higher-order functions in default way (not supported by this builder)
-  assignHoFunctions( fm );
-
   Trace("ambqi-model") << std::endl << "Making function definitions..." << std::endl;
   //construct the models for functions
   for( std::map<Node, AbsDef * >::iterator it = fm->d_models.begin(); it != fm->d_models.end(); ++it ) {

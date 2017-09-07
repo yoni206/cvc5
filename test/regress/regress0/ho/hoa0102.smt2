@@ -1,4 +1,4 @@
-; COMMAND-LINE: --full-saturate-quant
+; COMMAND-LINE: --uf-ho --full-saturate-quant
 ; EXPECT: unsat
 (set-logic AUFLIA)
 (set-info :status unsat)

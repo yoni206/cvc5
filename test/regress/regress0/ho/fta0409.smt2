@@ -1,3 +1,5 @@
+; COMMAND-LINE: --uf-ho
+; EXPECT: unsat
 (set-logic AUFLIA)
 (set-info :status unsat)
 (declare-sort Nat$ 0)

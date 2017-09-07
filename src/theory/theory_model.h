@@ -317,9 +317,7 @@ protected:
 protected:
   void assignFunction(TheoryModel* m, Node f);
   void assignHoFunction(TheoryModel* m, Node f);
-  void assignFunctions(TheoryModel* m, bool doFo, bool doHo);
-  void assignFoFunctions(TheoryModel* m);
-  void assignHoFunctions(TheoryModel* m);
+  void assignFunctions(TheoryModel* m);
 public:
   TheoryEngineModelBuilder(TheoryEngine* te);
   virtual ~TheoryEngineModelBuilder(){}

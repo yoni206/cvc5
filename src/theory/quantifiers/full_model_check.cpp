@@ -398,9 +398,6 @@ bool FullModelChecker::processBuildModel(TheoryModel* m){
     }
   }
 
-  //assign higher-order functions in default way (not supported by this builder)
-  assignHoFunctions( fm );
-
   //now, make models
   for( std::map<Node, Def * >::iterator it = fm->d_models.begin(); it != fm->d_models.end(); ++it ) {
     Node op = it->first;
