@@ -43,5 +43,7 @@ option ufssFairnessMonotone --uf-ss-fair-monotone bool :read-write :default fals
 
 option ufHo --uf-ho bool :read-write :default false
  enable support for higher-order reasoning
+option ufHoExt --uf-ho-ext bool :read-write :default true
+ apply extensionality on function symbols
 
 endmodule

@@ -130,7 +130,7 @@ void TheoryUF::check(Effort level) {
     TNode atom = polarity ? fact : fact[0];
     if (atom.getKind() == kind::EQUAL) {
       d_equalityEngine.assertEquality(atom, polarity, fact);
-      if( options::ufHo() ){
+      if( options::ufHo() && options::ufHoExt() ){
         if( !polarity && !d_conflict && atom[0].getType().isFunction() ){
           applyExtensionality( fact );
         }
@@ -717,7 +717,7 @@ unsigned TheoryUF::checkExtensionality() {
       for( unsigned k=(j+1); k<itf->second.size(); k++ ){ 
         // if these equivalence classes are not explicitly disequal, do extensionality to ensure distinctness
         if( !d_equalityEngine.areDisequal( itf->second[j], itf->second[k], false ) ){
-          Node deq = itf->second[j].eqNode( itf->second[k] ).negate();
+          Node deq = Rewriter::rewrite( itf->second[j].eqNode( itf->second[k] ).negate() );
           num_lemmas += applyExtensionality( deq );
         }
       }   
@@ -819,12 +819,14 @@ unsigned TheoryUF::checkHigherOrder() {
     }
   }while( num_facts>0 );
 
-  unsigned num_lemmas = 0;
+  if( options::ufHoExt() ){
+    unsigned num_lemmas = 0;
 
-  num_lemmas = checkExtensionality();
-  if( num_lemmas>0 ){
-    Trace("uf-ho") << "...extensionality returned " << num_lemmas << " lemmas." << std::endl;
-    return num_lemmas;
+    num_lemmas = checkExtensionality();
+    if( num_lemmas>0 ){
+      Trace("uf-ho") << "...extensionality returned " << num_lemmas << " lemmas." << std::endl;
+      return num_lemmas;
+    }
   }
 
   Trace("uf-ho") << "...finished check higher order." << std::endl;

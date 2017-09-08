@@ -288,24 +288,42 @@ void TermDb::computeUfTerms( TNode f ) {
                 if( at!=n && ee->areDisequal( at, n, false ) ){
                   std::vector< Node > lits;
                   lits.push_back( NodeManager::currentNM()->mkNode( EQUAL, at, n ) );
-                  for( unsigned k=0; k<at.getNumChildren(); k++ ){
-                    if( at[k]!=n[k] ){
-                      lits.push_back( NodeManager::currentNM()->mkNode( EQUAL, at[k], n[k] ).negate() );
+                  bool success = true;
+                  if( options::ufHo() ){
+                    //operators might be disequal
+                    if( ops.size()>1 ){
+                      Node atf = getMatchOperator( at );
+                      Node nf = getMatchOperator( n );
+                      if( atf!=nf ){
+                        if( at.getKind()==APPLY_UF && nf.getKind()==APPLY_UF ){
+                          lits.push_back( atf.eqNode( nf ).negate() );
+                        }else{
+                          success = false;
+                          Assert( false );
+                        }
+                      }
                     }
                   }
-                  Node lem = lits.size()==1 ? lits[0] : NodeManager::currentNM()->mkNode( OR, lits );
-                  if( Trace.isOn("term-db-lemma") ){
-                    Trace("term-db-lemma") << "Disequal congruent terms : " << at << " " << n << "!!!!" << std::endl;
-                    if( !d_quantEngine->getTheoryEngine()->needCheck() ){
-                      Trace("term-db-lemma") << "  all theories passed with no lemmas." << std::endl;
-                      // we should be a full effort check, prior to theory combination
+                  if( success ){
+                    for( unsigned k=0; k<at.getNumChildren(); k++ ){
+                      if( at[k]!=n[k] ){
+                        lits.push_back( NodeManager::currentNM()->mkNode( EQUAL, at[k], n[k] ).negate() );
+                      }
                     }
-                    Trace("term-db-lemma") << "  add lemma : " << lem << std::endl;
+                    Node lem = lits.size()==1 ? lits[0] : NodeManager::currentNM()->mkNode( OR, lits );
+                    if( Trace.isOn("term-db-lemma") ){
+                      Trace("term-db-lemma") << "Disequal congruent terms : " << at << " " << n << "!!!!" << std::endl;
+                      if( !d_quantEngine->getTheoryEngine()->needCheck() ){
+                        Trace("term-db-lemma") << "  all theories passed with no lemmas." << std::endl;
+                        // we should be a full effort check, prior to theory combination
+                      }
+                      Trace("term-db-lemma") << "  add lemma : " << lem << std::endl;
+                    }
+                    d_quantEngine->addLemma( lem );
+                    d_quantEngine->setConflict();
+                    d_consistent_ee = false;
+                    return;
                   }
-                  d_quantEngine->addLemma( lem );
-                  d_quantEngine->setConflict();
-                  d_consistent_ee = false;
-                  return;
                 }
                 nonCongruentCount++;
                 d_op_nonred_count[ f ]++;
@@ -768,6 +786,7 @@ bool TermDb::reset( Theory::Effort effort ){
     Trace("quant-ho") << "TermDb::reset : compute equal functions..." << std::endl;
     // build operator representative map
     d_ho_op_rep.clear();
+    d_ho_op_rep_slaves.clear();
     eq::EqClassesIterator eqcs_i = eq::EqClassesIterator( ee );
     while( !eqcs_i.isFinished() ){
       TNode r = (*eqcs_i);
