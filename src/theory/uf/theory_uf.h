@@ -183,19 +183,38 @@ private:
   void eqNotifyDisequal(TNode t1, TNode t2, TNode reason);
 
 private: // for higher-order
-  /** apply extensionality */
-  void applyExtensionality(TNode deq);
+  /** applyExtensionality 
+   * Given disequality deq 
+   * If not already cached, this sends a lemma of the form 
+   *   f = g V (f k) != (g k) for fresh constant k.
+   * on the output channel.
+   * Return value is the number of lemmas sent.
+   */
+  unsigned applyExtensionality(TNode deq);
 
-  /** check extensionality */
+  /** check whether extensionality should be applied for any
+   * pair of terms in the equality engine.
+   */
   unsigned checkExtensionality();
   
+  /** applyAppCompletion
+   * This infers a correspondence between APPLY_UF and HO_APPLY 
+   * versions of terms for higher-order.
+   * Given APPLY_UF node e.g. (f a b c), this adds the equality to its 
+   * HO_APPLY equivalent:
+   *   (f a b c) == (@ (@ (@ f a) b) c)
+   * to equality engine, if not already equal.
+   * Return value is the number of equalities added.
+   */
+  unsigned applyAppCompletion( TNode n );
+
+  /** check whether app-completion should be applied for any
+   * pair of terms in the equality engine.
+   */
+  unsigned checkAppCompletion();
+
   /** check higher order */
   unsigned checkHigherOrder();
-
-  /** check first-order completion */
-  unsigned checkApplyCompletion();
-
-  unsigned checkApplyCompletionEqc( TNode cn );
 
   /** get apply uf for ho apply */
   Node getApplyUfForHoApply( Node node );

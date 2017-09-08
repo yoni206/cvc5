@@ -250,6 +250,16 @@ private:
   Node evaluateTerm2( TNode n, std::map< TNode, Node >& visited, EqualityQuery * qy, bool useEntailmentTests );
   TNode getEntailedTerm2( TNode n, std::map< TNode, TNode >& subs, bool subsRep, bool hasSubs, EqualityQuery * qy );
   bool isEntailed2( TNode n, std::map< TNode, TNode >& subs, bool subsRep, bool hasSubs, bool pol, EqualityQuery * qy );
+  /** compute uf eqc terms */
+  void computeUfEqcTerms( TNode f );
+  /** compute uf terms */
+  void computeUfTerms( TNode f );
+private:
+  /** for higher-order, representative maps */
+  std::map< TNode, TNode > d_ho_op_rep;
+  std::map< TNode, std::vector< TNode > > d_ho_op_rep_slaves;
+  /** get operator representative */
+  Node getOperatorRepresentative( TNode op ) const;
 public:
   /** ground terms for operator */
   unsigned getNumGroundTerms( Node f );
@@ -271,10 +281,6 @@ public:
   TNode getCongruentTerm( Node f, std::vector< TNode >& args );
   /** compute arg reps */
   void computeArgReps( TNode n );
-  /** compute uf eqc terms */
-  void computeUfEqcTerms( TNode f );
-  /** compute uf terms */
-  void computeUfTerms( TNode f );
   /** in relevant domain */
   bool inRelevantDomain( TNode f, unsigned i, TNode r );
   /** evaluate a term under a substitution.  Return representative in EE if possible.

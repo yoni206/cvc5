@@ -42,7 +42,8 @@ TESTS = \
   auth0068.smt2 \
   ho-matching-enum.smt2 \
   ho-matching-enum-2.smt2 \
-  ho-matching-nested-app.smt2
+  ho-matching-nested-app.smt2 \
+  modulo-func-equality.smt2
 
 EXTRA_DIST = $(TESTS)
 

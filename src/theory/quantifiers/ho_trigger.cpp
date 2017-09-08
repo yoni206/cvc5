@@ -119,10 +119,9 @@ void HigherOrderTrigger::collectHoVarApplyTerms( Node q, TNode n, std::map< Node
 }
 
 int HigherOrderTrigger::addInstantiations( InstMatch& baseMatch ){
-  //int addedFoLemmas = addBasicInstantiations( baseMatch );
-  //int addedHoLemmas = addHoTypeMatchPredicateLemmas();
-  //return addedHoLemmas+addedFoLemmas;
-  return addBasicInstantiations( baseMatch );
+  int addedFoLemmas = addBasicInstantiations( baseMatch );
+  int addedHoLemmas = addHoTypeMatchPredicateLemmas();
+  return addedHoLemmas+addedFoLemmas;
 }
 
 bool HigherOrderTrigger::sendInstantiation( InstMatch& m ) {
@@ -275,12 +274,7 @@ bool HigherOrderTrigger::sendInstantiationArg( InstMatch& m, unsigned var_index,
   if( arg_index==lbvl.getNumChildren() ){
     // construct the lambda
     if( arg_changed ){
-      //Node body = NodeManager::currentNM()->mkNode( kind::APPLY_UF, d_lchildren[vnum] );
-      Assert( !d_lchildren[vnum].empty() );
-      Node body = d_lchildren[vnum][0];
-      for( unsigned j=1; j<d_lchildren[vnum].size(); j++ ){
-        body = NodeManager::currentNM()->mkNode( kind::HO_APPLY, body, d_lchildren[vnum][j] );
-      }
+      Node body = NodeManager::currentNM()->mkNode( kind::APPLY_UF, d_lchildren[vnum] );
       Node lam = NodeManager::currentNM()->mkNode( kind::LAMBDA, lbvl, body );
       m.d_vals[vnum] = lam;
       Trace("ho-unif-debug2") << "  try " << vnum << " -> " << lam << std::endl;
@@ -306,6 +300,30 @@ bool HigherOrderTrigger::sendInstantiationArg( InstMatch& m, unsigned var_index,
     d_lchildren[vnum][arg_index+1] = prev;
     return ret;
   }
+}
+
+int HigherOrderTrigger::addHoTypeMatchPredicateLemmas() {
+  unsigned numLemmas = 0;
+  if( !d_ho_var_types.empty() ){
+    // this forces expansion of APPLY_UF terms to curried HO_APPLY chains
+    for( std::map< Node, std::vector< Node > >::iterator it = d_quantEngine->getTermDatabase()->d_op_map.begin(); 
+         it != d_quantEngine->getTermDatabase()->d_op_map.end(); ++it ){
+      if( it->first.isVar() ){
+        TypeNode tn = it->first.getType();
+        if( std::find( d_ho_var_types.begin(), d_ho_var_types.end(), tn )!=d_ho_var_types.end() ){
+          Node u = d_quantEngine->getTermDatabase()->getHoTypeMatchPredicate( tn );
+          Node au = NodeManager::currentNM()->mkNode( kind::APPLY_UF, u, it->first );
+          if( d_quantEngine->addLemma( au ) ){
+            //this forces it->first to be a first-class member of the quantifier-free equality engine,
+            //  which in turn forces the quantifier-free theory solver to expand it to HO_APPLY
+            Trace("ho-quant") << "Added ho match predicate lemma : " << au << std::endl;
+            numLemmas++;
+          }
+        }
+      }
+    }
+  }
+  return numLemmas;
 }
 
 }/* CVC4::theory::inst namespace */

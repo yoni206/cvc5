@@ -45,6 +45,8 @@ protected:
   std::map< TNode, Node > d_ho_var_bvl;
   /** the set of types of ho variables */
   std::vector< TypeNode > d_ho_var_types;
+  /** add higher-order type predicate lemmas */
+  int addHoTypeMatchPredicateLemmas();
   /** add an instantiation */
   virtual bool sendInstantiation( InstMatch& m );
 private:
