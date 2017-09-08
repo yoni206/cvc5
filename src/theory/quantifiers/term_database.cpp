@@ -295,7 +295,7 @@ void TermDb::computeUfTerms( TNode f ) {
                       Node atf = getMatchOperator( at );
                       Node nf = getMatchOperator( n );
                       if( atf!=nf ){
-                        if( at.getKind()==APPLY_UF && nf.getKind()==APPLY_UF ){
+                        if( at.getKind()==APPLY_UF && n.getKind()==APPLY_UF ){
                           lits.push_back( atf.eqNode( nf ).negate() );
                         }else{
                           success = false;
