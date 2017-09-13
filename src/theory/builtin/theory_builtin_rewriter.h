@@ -53,7 +53,7 @@ public:
         anode = Rewriter::rewrite( anode );
         Assert( anode.getType().isArray() );
         //must get the standard bound variable list
-        Node varList = getLambdaBoundVarListForType( node.getType(), node[0].getNumChildren() );
+        Node varList = NodeManager::currentNM()->getLambdaBoundVarListForFunctionType( node.getType() );
         Node retNode = getLambdaForArrayRepresentation( anode, varList );
         if( !retNode.isNull() && retNode!=node ){
           Trace("builtin-rewrite") << "Rewrote lambda : " << std::endl;
@@ -89,8 +89,6 @@ public:
   static Node getLambdaForArrayRepresentation( TNode a, TNode bvl );
   /** given a lambda expression n, returns an array term. reqConst is true if we require the return value to be a constant. */
   static Node getArrayRepresentationForLambda( TNode n, bool reqConst = false );
-  /** get a canonical bound variable list for function type tn */
-  static Node getLambdaBoundVarListForType( TypeNode tn, unsigned nargs );
 };/* class TheoryBuiltinRewriter */
 
 }/* CVC4::theory::builtin namespace */
