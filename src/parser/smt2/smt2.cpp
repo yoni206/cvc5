@@ -61,6 +61,17 @@ void Smt2::addArithmeticOperators() {
   addOperator(kind::SINE, "sin");
   addOperator(kind::COSINE, "cos");
   addOperator(kind::TANGENT, "tan");
+  addOperator(kind::COSECANT, "csc");
+  addOperator(kind::SECANT, "sec");
+  addOperator(kind::COTANGENT, "cot");
+  addOperator(kind::ARCSINE, "arcsin");
+  addOperator(kind::ARCCOSINE, "arccos");
+  addOperator(kind::ARCTANGENT, "arctan");
+  addOperator(kind::ARCCOSECANT, "arccsc");
+  addOperator(kind::ARCSECANT, "arcsec");
+  addOperator(kind::ARCCOTANGENT, "arccot");
+
+  addOperator(kind::SQRT, "sqrt");
 }
 
 void Smt2::addBitvectorOperators() {
@@ -386,15 +397,12 @@ void Smt2::pushDefineFunRecScope(
 {
   pushScope(bindingLevel);
 
-  std::vector<Expr> f_app;
-  f_app.push_back(func);
   // bound variables are those that are explicitly named in the preamble
   // of the define-fun(s)-rec command, we define them here
   for (const std::pair<std::string, CVC4::Type>& svn : sortedVarNames)
   {
     Expr v = mkBoundVar(svn.first, svn.second);
     bvs.push_back(v);
-    f_app.push_back(v);
   }
 
   bvs.insert(bvs.end(), flattenVars.begin(), flattenVars.end());

@@ -121,6 +121,23 @@ class NonlinearExtension {
   void check(Theory::Effort e);
   /** Does this class need a call to check(...) at last call effort? */
   bool needsCheckLastEffort() const { return d_needsLastCall; }
+  /** add definition
+   *
+   * This function notifies this class that lem is a formula that defines or
+   * constrains an auxiliary variable. For example, during
+   * TheoryArith::expandDefinitions, we replace a term like arcsin( x ) with an
+   * auxiliary variable k. The lemmas 0 <= k < pi and sin( x ) = k are added as
+   * definitions to this class.
+   */
+  void addDefinition(Node lem);
+  /** presolve
+   *
+   * This function is called during TheoryArith's presolve command.
+   * In this function, we send lemmas we accumulated during preprocessing,
+   * for instance, definitional lemmas from expandDefinitions are sent out
+   * on the output channel of TheoryArith in this function.
+   */
+  void presolve();
   /** Compare arithmetic terms i and j based an ordering.
    *
    * orderType = 0 : compare concrete model values
@@ -373,6 +390,10 @@ class NonlinearExtension {
   typedef std::map<Node, NodeMultiset> MonomialExponentMap;
   MonomialExponentMap d_m_exp;
 
+  /**
+   * Mapping from monomials to the list of variables that occur in it. For
+   * example, x*x*y*z -> { x, y, z }.
+   */
   std::map<Node, std::vector<Node> > d_m_vlist;
   NodeMultiset d_m_degree;
   // monomial index, by sorted variables
@@ -387,8 +408,11 @@ class NonlinearExtension {
   // ( x*y, x*z, y ) for each pair of monomials ( x*y, x*z ) with common factors
   std::map<Node, std::map<Node, Node> > d_mono_diff;
 
-  // cache of all lemmas sent
+  /** cache of definition lemmas (user-context-dependent) */
+  NodeSet d_def_lemmas;
+  /** cache of all lemmas sent on the output channel (user-context-dependent) */
   NodeSet d_lemmas;
+  /** cache of terms t for which we have added the lemma ( t = 0 V t != 0 ). */
   NodeSet d_zero_split;
   
   // literals with Skolems (need not be satisfied by model)
@@ -455,7 +479,8 @@ private:
   std::vector< Node > d_ms;
   std::vector< Node > d_ms_vars;
   std::map<Node, bool> d_ms_proc;
-  std::vector<Node> d_mterms;  
+  std::vector<Node> d_mterms;
+
   //list of monomials with factors whose model value is non-constant in model 
   //  e.g. y*cos( x )
   std::map<Node, bool> d_m_nconst_factor;
@@ -648,6 +673,12 @@ private:
   *
   * |x|>|y| => |x*z|>|y*z|
   * |x|>|y| ^ |z|>|w| ^ |x|>=1 => |x*x*z*u|>|y*w|
+  *
+  * Argument c indicates the class of inferences to perform for the (non-linear)
+  * monomials in the vector d_ms.
+  *   0 : compare non-linear monomials against 1,
+  *   1 : compare non-linear monomials against variables,
+  *   2 : compare non-linear monomials against other non-linear monomials.
   */
   std::vector<Node> checkMonomialMagnitude( unsigned c );
 

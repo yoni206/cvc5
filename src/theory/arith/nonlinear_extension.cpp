@@ -216,12 +216,14 @@ bool hasNewMonomials(Node n, const std::vector<Node>& existing) {
 
 NonlinearExtension::NonlinearExtension(TheoryArith& containing,
                                        eq::EqualityEngine* ee)
-    : d_lemmas(containing.getUserContext()),
+    : d_def_lemmas(containing.getUserContext()),
+      d_lemmas(containing.getUserContext()),
       d_zero_split(containing.getUserContext()),
       d_skolem_atoms(containing.getUserContext()),
       d_containing(containing),
       d_ee(ee),
-      d_needsLastCall(false) {
+      d_needsLastCall(false)
+{
   d_true = NodeManager::currentNM()->mkConst(true);
   d_false = NodeManager::currentNM()->mkConst(false);
   d_zero = NodeManager::currentNM()->mkConst(Rational(0));
@@ -1032,7 +1034,9 @@ Kind NonlinearExtension::transKinds(Kind k1, Kind k2) {
 }
 
 bool NonlinearExtension::isTranscendentalKind(Kind k) {
-  Assert(k != TANGENT && k != COSINE);  // eliminated
+  // many operators are eliminated during rewriting
+  Assert(k != TANGENT && k != COSINE && k != COSECANT && k != SECANT
+         && k != COTANGENT);
   return k == EXPONENTIAL || k == SINE || k == PI;
 }
  
@@ -1133,9 +1137,12 @@ std::vector<Node> NonlinearExtension::checkModel(
 bool NonlinearExtension::checkModelTf(const std::vector<Node>& assertions)
 {
   Trace("nl-ext-tf-check-model") << "check-model : Run" << std::endl;
-  // add bounds for PI
-  d_tf_check_model_bounds[d_pi] =
-      std::pair<Node, Node>(d_pi_bound[0], d_pi_bound[1]);
+  if (!d_pi.isNull())
+  {
+    // add bounds for PI
+    d_tf_check_model_bounds[d_pi] =
+        std::pair<Node, Node>(d_pi_bound[0], d_pi_bound[1]);
+  }
   for (const std::pair<const Node, std::pair<Node, Node> >& tfb :
        d_tf_check_model_bounds)
   {
@@ -1161,10 +1168,12 @@ bool NonlinearExtension::checkModelTf(const std::vector<Node>& assertions)
 
   if (check_assertions.empty())
   {
+    Trace("nl-ext-tf-check-model") << "...simple check succeeded." << std::endl;
     return true;
   }
   else
   {
+    Trace("nl-ext-tf-check-model") << "...simple check failed." << std::endl;
     // TODO (#1450) check model for general case
     return false;
   }
@@ -1250,6 +1259,26 @@ bool NonlinearExtension::simpleCheckModelTfLit(Node lit)
       return comp == d_true;
     }
   }
+  else if (atom.getKind() == EQUAL)
+  {
+    // x = a is ( x >= a ^ x <= a )
+    for (unsigned i = 0; i < 2; i++)
+    {
+      Node lit = nm->mkNode(GEQ, atom[i], atom[1 - i]);
+      if (!pol)
+      {
+        lit = lit.negate();
+      }
+      lit = Rewriter::rewrite(lit);
+      bool success = simpleCheckModelTfLit(lit);
+      if (success != pol)
+      {
+        // false != true -> one conjunct of equality is false, we fail
+        // true != false -> one disjunct of disequality is true, we succeed
+        return success;
+      }
+    }
+  }
 
   Trace("nl-ext-tf-check-model-simple") << "  failed due to unknown literal."
                                         << std::endl;
@@ -1288,11 +1317,14 @@ int NonlinearExtension::checkLastCall(const std::vector<Node>& assertions,
   d_tf_check_model_bounds.clear();
 
   int lemmas_proc = 0;
-  std::vector<Node> lemmas;  
-  
+  std::vector<Node> lemmas;
+  NodeManager* nm = NodeManager::currentNM();
+
   Trace("nl-ext-mv") << "Extended terms : " << std::endl;
   // register the extended function terms
   std::map< Node, Node > mvarg_to_term;
+  std::vector<Node> trig_no_base;
+  bool needPi = false;
   for( unsigned i=0; i<xts.size(); i++ ){
     Node a = xts[i];
     computeModelValue(a, 0);
@@ -1301,7 +1333,6 @@ int NonlinearExtension::checkLastCall(const std::vector<Node>& assertions,
                        << d_mv[0][a] << " ]" << std::endl;
     //Assert(d_mv[1][a].isConst());
     //Assert(d_mv[0][a].isConst());
-
     if (a.getKind() == NONLINEAR_MULT)
     {
       d_ms.push_back( a );
@@ -1341,39 +1372,8 @@ int NonlinearExtension::checkLastCall(const std::vector<Node>& assertions,
       {
         if( d_trig_is_base.find( a )==d_trig_is_base.end() ){
           consider = false;
-          if( d_trig_base.find( a )==d_trig_base.end() ){
-            Node y = NodeManager::currentNM()->mkSkolem("y",NodeManager::currentNM()->realType(),"phase shifted trigonometric arg");
-            Node new_a = NodeManager::currentNM()->mkNode( a.getKind(), y );
-            d_trig_is_base[new_a] = true;
-            d_trig_base[a] = new_a;
-            Trace("nl-ext-tf") << "Basis sine : " << new_a << " for " << a << std::endl;
-            if( d_pi.isNull() ){
-              mkPi();
-              getCurrentPiBounds( lemmas );
-            }
-            Node shift = NodeManager::currentNM()->mkSkolem( "s", NodeManager::currentNM()->integerType(), "number of shifts" );
-            // FIXME : do not introduce shift here, instead needs model-based
-            // refinement for constant shifts (#1284)
-            Node shift_lem = NodeManager::currentNM()->mkNode(
-                AND,
-                mkValidPhase(y, d_pi),
-                a[0].eqNode(NodeManager::currentNM()->mkNode(
-                    PLUS,
-                    y,
-                    NodeManager::currentNM()->mkNode(
-                        MULT,
-                        NodeManager::currentNM()->mkConst(Rational(2)),
-                        shift,
-                        d_pi))),
-                // particular case of above for shift=0
-                NodeManager::currentNM()->mkNode(
-                    IMPLIES, mkValidPhase(a[0], d_pi), a[0].eqNode(y)),
-                new_a.eqNode(a));
-            //must do preprocess on this one
-            Trace("nl-ext-lemma") << "NonlinearExtension::Lemma : shift : " << shift_lem << std::endl;
-            d_containing.getOutputChannel().lemma(shift_lem, false, true);
-            lemmas_proc++;
-          }
+          trig_no_base.push_back(a);
+          needPi = true;
         }
       }
       if( consider ){
@@ -1383,7 +1383,7 @@ int NonlinearExtension::checkLastCall(const std::vector<Node>& assertions,
           //verify they have the same model value
           if( d_mv[1][a]!=d_mv[1][itrm->second] ){
             // if not, add congruence lemma
-            Node cong_lemma = NodeManager::currentNM()->mkNode(
+            Node cong_lemma = nm->mkNode(
                 IMPLIES, a[0].eqNode(itrm->second[0]), a.eqNode(itrm->second));
             lemmas.push_back( cong_lemma );
             //Assert( false );
@@ -1395,18 +1395,67 @@ int NonlinearExtension::checkLastCall(const std::vector<Node>& assertions,
     }
     else if (a.getKind() == PI)
     {
-      //TODO?
-    }else{
+      needPi = true;
+      d_tf_rep_map[a.getKind()][a] = a;
+    }
+    else
+    {
       Assert( false );
     }
   }
-  
+  // initialize pi if necessary
+  if (needPi && d_pi.isNull())
+  {
+    mkPi();
+    getCurrentPiBounds(lemmas);
+  }
+
   lemmas_proc = flushLemmas(lemmas);
   if (lemmas_proc > 0) {
     Trace("nl-ext") << "  ...finished with " << lemmas_proc << " new lemmas during registration." << std::endl;
     return lemmas_proc;
   }
 
+  // process SINE phase shifting
+  for (const Node& a : trig_no_base)
+  {
+    if (d_trig_base.find(a) == d_trig_base.end())
+    {
+      Node y =
+          nm->mkSkolem("y", nm->realType(), "phase shifted trigonometric arg");
+      Node new_a = nm->mkNode(a.getKind(), y);
+      d_trig_is_base[new_a] = true;
+      d_trig_base[a] = new_a;
+      Trace("nl-ext-tf") << "Basis sine : " << new_a << " for " << a
+                         << std::endl;
+      Assert(!d_pi.isNull());
+      Node shift = nm->mkSkolem("s", nm->integerType(), "number of shifts");
+      // FIXME : do not introduce shift here, instead needs model-based
+      // refinement for constant shifts (#1284)
+      Node shift_lem = nm->mkNode(
+          AND,
+          mkValidPhase(y, d_pi),
+          a[0].eqNode(nm->mkNode(
+              PLUS,
+              y,
+              nm->mkNode(MULT, nm->mkConst(Rational(2)), shift, d_pi))),
+          // particular case of above for shift=0
+          nm->mkNode(IMPLIES, mkValidPhase(a[0], d_pi), a[0].eqNode(y)),
+          new_a.eqNode(a));
+      // must do preprocess on this one
+      Trace("nl-ext-lemma")
+          << "NonlinearExtension::Lemma : shift : " << shift_lem << std::endl;
+      d_containing.getOutputChannel().lemma(shift_lem, false, true);
+      lemmas_proc++;
+    }
+  }
+  if (lemmas_proc > 0)
+  {
+    Trace("nl-ext") << "  ...finished with " << lemmas_proc
+                    << " new lemmas SINE phase shifting." << std::endl;
+    return lemmas_proc;
+  }
+  Trace("nl-ext") << "We have " << d_ms.size() << " monomials." << std::endl;
 
   // register constants
   registerMonomial(d_one);
@@ -1478,11 +1527,12 @@ int NonlinearExtension::checkLastCall(const std::vector<Node>& assertions,
   for (unsigned c = 0; c < 3; c++) {
     // c is effort level
     lemmas = checkMonomialMagnitude( c );
+    unsigned nlem = lemmas.size();
     lemmas_proc = flushLemmas(lemmas);
     if (lemmas_proc > 0) {
       Trace("nl-ext") << "  ...finished with " << lemmas_proc
-                      << " new lemmas (out of possible " << lemmas.size()
-                      << ")." << std::endl;
+                      << " new lemmas (out of possible " << nlem << ")."
+                      << std::endl;
       return lemmas_proc;
     }
   }
@@ -1659,9 +1709,8 @@ void NonlinearExtension::check(Theory::Effort e) {
             // the problem is that we cannot evaluate transcendental functions
             // (they don't have a rewriter that returns constants)
             // thus, the actual value in their model can be themselves, hence we
-            // have no reference
-            //   point to rule out the current model.  In this case, we may set
-            //   incomplete below.
+            // have no reference point to rule out the current model.  In this
+            // case, we may set incomplete below.
           }
         }
       }
@@ -1739,6 +1788,24 @@ void NonlinearExtension::check(Theory::Effort e) {
         }
       }
     } while (needsRecheck);
+  }
+}
+
+void NonlinearExtension::addDefinition(Node lem)
+{
+  Trace("nl-ext") << "NonlinearExtension::addDefinition : " << lem << std::endl;
+  d_def_lemmas.insert(lem);
+}
+
+void NonlinearExtension::presolve()
+{
+  Trace("nl-ext") << "NonlinearExtension::presolve, #defs = "
+                  << d_def_lemmas.size() << std::endl;
+  for (NodeSet::const_iterator it = d_def_lemmas.begin();
+       it != d_def_lemmas.end();
+       ++it)
+  {
+    flushLemma(*it);
   }
 }
 
@@ -2295,7 +2362,7 @@ std::vector<Node> NonlinearExtension::checkMonomialMagnitude( unsigned c ) {
   }
   // remove redundant lemmas, e.g. if a > b, b > c, a > c were
   // inferred, discard lemma with conclusion a > c
-  Trace("nl-ext-comp") << "Compute redundand_cies for " << lemmas.size()
+  Trace("nl-ext-comp") << "Compute redundancies for " << lemmas.size()
                        << " lemmas." << std::endl;
   // naive
   std::vector<Node> r_lemmas;
@@ -3064,15 +3131,24 @@ std::vector<Node> NonlinearExtension::checkTranscendentalMonotonic() {
   std::map< Kind, std::map< Node, Node > > tf_arg_to_term;
   
   for( std::map< Kind, std::map< Node, Node > >::iterator it = d_tf_rep_map.begin(); it != d_tf_rep_map.end(); ++it ){
-    for( std::map< Node, Node >::iterator itt = it->second.begin(); itt != it->second.end(); ++itt ){
-      computeModelValue( itt->second[0], 1 );
-      Assert( d_mv[1].find( itt->second[0] )!=d_mv[1].end() );
-      if( d_mv[1][itt->second[0]].isConst() ){
-        Trace("nl-ext-tf-mono-debug") << "...tf term : " << itt->second[0] << std::endl;
-        sorted_tf_args[ it->first ].push_back( itt->second[0] );
-        tf_arg_to_term[ it->first ][ itt->second[0] ] = itt->second;
+    Kind k = it->first;
+    if (k == EXPONENTIAL || k == SINE)
+    {
+      for (std::map<Node, Node>::iterator itt = it->second.begin();
+           itt != it->second.end();
+           ++itt)
+      {
+        Node a = itt->second[0];
+        computeModelValue(a, 1);
+        Assert(d_mv[1].find(a) != d_mv[1].end());
+        if (d_mv[1][a].isConst())
+        {
+          Trace("nl-ext-tf-mono-debug") << "...tf term : " << a << std::endl;
+          sorted_tf_args[k].push_back(a);
+          tf_arg_to_term[k][a] = itt->second;
+        }
       }
-    } 
+    }
   }
   
   SortNonlinearExtension smv;
@@ -3219,6 +3295,13 @@ std::vector<Node> NonlinearExtension::checkTranscendentalTangentPlanes()
   for (std::pair<const Kind, std::map<Node, Node> >& tfs : d_tf_rep_map)
   {
     Kind k = tfs.first;
+    if (k == PI)
+    {
+      // We do not use Taylor approximation for PI currently.
+      // This is because the convergence is extremely slow, and hence an
+      // initial approximation is superior.
+      continue;
+    }
     Node tft = nm->mkNode(k, d_zero);
     Trace("nl-ext-tf-tplanes-debug") << "Taylor variables: " << std::endl;
     Trace("nl-ext-tf-tplanes-debug")
@@ -3237,8 +3320,6 @@ std::vector<Node> NonlinearExtension::checkTranscendentalTangentPlanes()
     // Figure 3: P_l, P_u
     // mapped to for signs of c
     std::map<int, Node> poly_approx_bounds[2];
-    std::map<int, Node>
-        poly_approx_bounds_neg[2];  // the negative case is different for exp
     // n is the Taylor degree we are currently considering
     unsigned n = 2 * d_taylor_degree;
     // n must be even
@@ -3487,6 +3568,10 @@ std::vector<Node> NonlinearExtension::checkTranscendentalTangentPlanes()
                   antec.size() == 1 ? antec[0] : nm->mkNode(AND, antec);
               lem = nm->mkNode(IMPLIES, antec_n, lem);
             }
+            Trace("nl-ext-tf-tplanes-debug")
+                << "*** Tangent plane lemma (pre-rewrite): " << lem
+                << std::endl;
+            lem = Rewriter::rewrite(lem);
             Trace("nl-ext-tf-tplanes") << "*** Tangent plane lemma : " << lem
                                        << std::endl;
             // Figure 3 : line 9
@@ -3607,6 +3692,10 @@ std::vector<Node> NonlinearExtension::checkTranscendentalTangentPlanes()
                                nm->mkNode(GEQ, tf[0], s == 0 ? bounds[s] : c),
                                nm->mkNode(LEQ, tf[0], s == 0 ? c : bounds[s]));
                 lem = nm->mkNode(IMPLIES, antec_n, lem);
+                Trace("nl-ext-tf-tplanes-debug")
+                    << "*** Secant plane lemma (pre-rewrite) : " << lem
+                    << std::endl;
+                lem = Rewriter::rewrite(lem);
                 Trace("nl-ext-tf-tplanes") << "*** Secant plane lemma : " << lem
                                            << std::endl;
                 // Figure 3 : line 22
