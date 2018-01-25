@@ -97,14 +97,7 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
                               unsigned tb,
                               const ProofLetMap& map)
 {
-  Debug("pf::uf") << std::endl
-                  << std::endl
-                  << "toStreamRecLFSC called. tb = " << tb
-                  << " . proof:" << std::endl;
-  pf.debug_print("pf::uf");
-  Debug("pf::uf") << std::endl;
-
-  if (tb == 0) {
+   if (tb == 0) {
     // Special case: false was an input, so the proof is just "false".
     if (pf.d_id == theory::eq::MERGED_THROUGH_EQUALITY &&
         pf.d_node == NodeManager::currentNM()->mkConst(false)) {
@@ -113,127 +106,15 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
       out << ")" << std::endl;
       return Node();
     }
+	
+	int negVal = -1;	
+	int& neg = negVal;
+	std::shared_ptr<theory::eq::EqProof> subTrans =
+			std::make_shared<theory::eq::EqProof>();
 
-    Assert(pf.d_id == theory::eq::MERGED_THROUGH_TRANS);
-    Assert(!pf.d_node.isNull());
-    Assert(pf.d_children.size() >= 2);
+    tp->assertAndPrint(out, pf, tb, map, "uf", neg, subTrans);
 
-    int neg = -1;
-    std::shared_ptr<theory::eq::EqProof> subTrans =
-        std::make_shared<theory::eq::EqProof>();
-    subTrans->d_id = theory::eq::MERGED_THROUGH_TRANS;
-    subTrans->d_node = pf.d_node;
 
-    size_t i = 0;
-
-    while (i < pf.d_children.size()) {
-      pf.d_children[i]->d_node = simplifyBooleanNode(pf.d_children[i]->d_node);
-
-      // Look for the negative clause, with which we will form a contradiction.
-      if(!pf.d_children[i]->d_node.isNull() && pf.d_children[i]->d_node.getKind() == kind::NOT) {
-        Assert(neg < 0);
-        Node node = pf.d_children[i]->d_node[0];
-        neg = i;
-        ++i;
-      }
-
-      // Handle congruence closures over equalities.
-      else if (pf.d_children[i]->d_id==theory::eq::MERGED_THROUGH_CONGRUENCE && pf.d_children[i]->d_node.isNull()) {
-        Debug("pf::uf") << "Handling congruence over equalities" << std::endl;
-
-        // Gather the sequence of consecutive congruence closures.
-        std::vector<std::shared_ptr<const theory::eq::EqProof>> congruenceClosures;
-        unsigned count;
-        Debug("pf::uf") << "Collecting congruence sequence" << std::endl;
-        for (count = 0;
-             i + count < pf.d_children.size() &&
-               pf.d_children[i + count]->d_id==theory::eq::MERGED_THROUGH_CONGRUENCE &&
-               pf.d_children[i + count]->d_node.isNull();
-             ++count) {
-          Debug("pf::uf") << "Found a congruence: " << std::endl;
-          pf.d_children[i+count]->debug_print("pf::uf");
-          congruenceClosures.push_back(pf.d_children[i+count]);
-        }
-
-        Debug("pf::uf") << "Total number of congruences found: " << congruenceClosures.size() << std::endl;
-
-        // Determine if the "target" of the congruence sequence appears right before or right after the sequence.
-        bool targetAppearsBefore = true;
-        bool targetAppearsAfter = true;
-
-        if ((i == 0) || (i == 1 && neg == 0)) {
-          Debug("pf::uf") << "Target does not appear before" << std::endl;
-          targetAppearsBefore = false;
-        }
-
-        if ((i + count >= pf.d_children.size()) ||
-            (!pf.d_children[i + count]->d_node.isNull() &&
-             pf.d_children[i + count]->d_node.getKind() == kind::NOT)) {
-          Debug("pf::uf") << "Target does not appear after" << std::endl;
-          targetAppearsAfter = false;
-        }
-
-        // Assert that we have precisely at least one possible clause.
-        Assert(targetAppearsBefore || targetAppearsAfter);
-
-        // If both are valid, assume the one after the sequence is correct
-        if (targetAppearsAfter && targetAppearsBefore)
-          targetAppearsBefore = false;
-
-        // Begin breaking up the congruences and ordering the equalities correctly.
-        std::vector<std::shared_ptr<theory::eq::EqProof>> orderedEqualities;
-
-        // Insert target clause first.
-        if (targetAppearsBefore) {
-          orderedEqualities.push_back(pf.d_children[i - 1]);
-          // The target has already been added to subTrans; remove it.
-          subTrans->d_children.pop_back();
-        } else {
-          orderedEqualities.push_back(pf.d_children[i + count]);
-        }
-
-        // Start with the congruence closure closest to the target clause, and work our way back/forward.
-        if (targetAppearsBefore) {
-          for (unsigned j = 0; j < count; ++j) {
-            if (pf.d_children[i + j]->d_children[0]->d_id != theory::eq::MERGED_THROUGH_REFLEXIVITY)
-              orderedEqualities.insert(orderedEqualities.begin(), pf.d_children[i + j]->d_children[0]);
-            if (pf.d_children[i + j]->d_children[1]->d_id != theory::eq::MERGED_THROUGH_REFLEXIVITY)
-              orderedEqualities.insert(orderedEqualities.end(), pf.d_children[i + j]->d_children[1]);
-          }
-        } else {
-          for (unsigned j = 0; j < count; ++j) {
-            if (pf.d_children[i + count - 1 - j]->d_children[0]->d_id != theory::eq::MERGED_THROUGH_REFLEXIVITY)
-              orderedEqualities.insert(orderedEqualities.begin(), pf.d_children[i + count - 1 - j]->d_children[0]);
-            if (pf.d_children[i + count - 1 - j]->d_children[1]->d_id != theory::eq::MERGED_THROUGH_REFLEXIVITY)
-              orderedEqualities.insert(orderedEqualities.end(), pf.d_children[i + count - 1 - j]->d_children[1]);
-          }
-        }
-
-        // Copy the result into the main transitivity proof.
-        subTrans->d_children.insert(subTrans->d_children.end(), orderedEqualities.begin(), orderedEqualities.end());
-
-        // Increase i to skip over the children that have been processed.
-        i += count;
-        if (targetAppearsAfter) {
-          ++i;
-        }
-      }
-
-      // Else, just copy the child proof as is
-      else {
-        subTrans->d_children.push_back(pf.d_children[i]);
-        ++i;
-      }
-    }
-
-    bool disequalityFound = (neg >= 0);
-    if (!disequalityFound) {
-      Debug("pf::uf") << "A disequality was NOT found. UNSAT due to merged constants" << std::endl;
-      Debug("pf::uf") << "Proof for: " << pf.d_node << std::endl;
-      Assert(pf.d_node.getKind() == kind::EQUAL);
-      Assert(pf.d_node.getNumChildren() == 2);
-      Assert (pf.d_node[0].isConst() && pf.d_node[1].isConst());
-    }
 
     Node n1;
     std::stringstream ss;
@@ -243,7 +124,9 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
       n1 = toStreamRecLFSC(ss, tp, *subTrans, 1, map);
     } else {
       n1 = toStreamRecLFSC(ss, tp, *(subTrans->d_children[0]), 1, map);
-      Debug("pf::uf") << "\nsubTrans unique child " << subTrans->d_children[0]->d_id << " was proven\ngot: " << n1 << std::endl;
+      Debug("pf::uf") << "\nsubTrans unique child " 
+			  << subTrans->d_children[0]->d_id 
+			  << " was proven\ngot: " << n1 << std::endl;
     }
 
     Debug("pf::uf") << "\nhave proven: " << n1 << std::endl;

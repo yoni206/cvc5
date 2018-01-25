@@ -29,7 +29,7 @@
 #include "prop/sat_solver_types.h"
 #include "util/proof.h"
 #include "proof/proof_utils.h"
-
+#include "theory/uf/equality_engine.h"
 namespace CVC4 {
 
 namespace theory {
@@ -229,6 +229,23 @@ public:
   void printSort(Type type, std::ostream& os) {
     d_proofEngine->printSort(type, os);
   }
+
+  /**
+   * Helper function for ProofUF::toStreamRecLFSC and ProofArray::toStreamRecLFSC
+   * TODO temporary name!!!
+   */
+
+
+   void assertAndPrint(std::ostream& out,
+						  const theory::eq::EqProof& pf,
+						  unsigned tb,
+						  const ProofLetMap& map,
+						  const std::string theoryName,
+						  int& neg,
+						  std::shared_ptr<theory::eq::EqProof> subTrans, 
+						  theory::eq::EqProof::PrettyPrinter* pPrettyPrinter = nullptr);
+
+
   /**
    * Print the proof representation of the given type that belongs to THIS theory.
    *
