@@ -35,7 +35,7 @@ inline static bool match(TNode n1, TNode n2) {
     n1 = ProofManager::currentPM()->lookupOp(n1);
   }
   if(ProofManager::currentPM()->hasOp(n2)) {
-    n2 = ProofManager::currentPM()->lookupOp(n2);
+    n2 = ProofManager::currentPM()->lookupOp(n2); 
   }
   Debug("pf::uf") << "+ match " << n1 << " " << n2 << std::endl;
   if(n1 == n2) {
@@ -119,6 +119,7 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
     Node n1;
     std::stringstream ss;
     Debug("pf::uf") << "\nsubtrans has " << subTrans->d_children.size() << " children\n";
+	bool disequalityFound = (neg >= 0);
 
     if(!disequalityFound || subTrans->d_children.size() >= 2) {
       n1 = toStreamRecLFSC(ss, tp, *subTrans, 1, map);
@@ -132,7 +133,6 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
     Debug("pf::uf") << "\nhave proven: " << n1 << std::endl;
 
     out << "(clausify_false (contra _ ";
-
     if (disequalityFound) {
       Node n2 = pf.d_children[neg]->d_node;
       Assert(n2.getKind() == kind::NOT);

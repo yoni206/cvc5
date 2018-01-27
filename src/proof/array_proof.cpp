@@ -168,6 +168,7 @@ Node ProofArray::toStreamRecLFSC(std::ostream& out,
     Node n1;
     std::stringstream ss, ss2;
     Debug("mgdx") << "\nsubtrans has " << subTrans->d_children.size() << " children\n";
+	bool disequalityFound = (neg >= 0);
 
 	if(!disequalityFound || pf.d_children.size() > 2) {
       n1 = toStreamRecLFSC(ss, tp, *subTrans, 1, map);
@@ -179,7 +180,6 @@ Node ProofArray::toStreamRecLFSC(std::ostream& out,
     }
 
     out << "(clausify_false (contra _ ";
-
     if (disequalityFound) {
       Node n2 = pf.d_children[neg]->d_node;
       Assert(n2.getKind() == kind::NOT);
