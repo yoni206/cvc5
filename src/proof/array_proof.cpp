@@ -232,7 +232,8 @@ Node ProofArray::toStreamRecLFSC(std::ostream& out,
     return Node();
   }
 
-  if (pf.d_id == theory::eq::MERGED_THROUGH_CONGRUENCE) {
+  switch (pf.d_id) {
+  case theory::eq::MERGED_THROUGH_CONGRUENCE: {
     Debug("mgd") << "\nok, looking at congruence:\n";
     pf.debug_print("mgd", 0, &proofPrinter);
     std::stack<const theory::eq::EqProof*> stk;
@@ -424,13 +425,6 @@ Node ProofArray::toStreamRecLFSC(std::ostream& out,
       b1.append(n1.begin(), n1.end());
       n1 = b1;
       Debug("mgd") << "New n1: " << n1 << std::endl;
-      // } else if (n1.getKind() == kind::PARTIAL_SELECT_0 && n1.getNumChildren() == 1) {
-      //   Debug("mgd") << "Finished a PARTIAL_SELECT_1. Updating.." << std::endl;
-      //   b1.clear(kind::PARTIAL_SELECT_1);
-      //   b1.append(n1.begin(), n1.end());
-      //   n1 = b1;
-      //   Debug("mgd") << "New n1: " << n1 << std::endl;
-      // } else
     } else if(n1.getOperator().getType().getNumChildren() == n1.getNumChildren() + 1) {
       if(ProofManager::currentPM()->hasOp(n1.getOperator())) {
         b1.clear(ProofManager::currentPM()->lookupOp(n2.getOperator()).getConst<Kind>());
@@ -458,13 +452,6 @@ Node ProofArray::toStreamRecLFSC(std::ostream& out,
       b2.append(n2.begin(), n2.end());
       n2 = b2;
       Debug("mgd") << "New n2: " << n2 << std::endl;
-      // } else if (n2.getKind() == kind::PARTIAL_SELECT_0 && n2.getNumChildren() == 1) {
-      //   Debug("mgd") << "Finished a PARTIAL_SELECT_1. Updating.." << std::endl;
-      //   b2.clear(kind::PARTIAL_SELECT_1);
-      //   b2.append(n2.begin(), n2.end());
-      //   n2 = b2;
-      //   Debug("mgd") << "New n2: " << n2 << std::endl;
-      // } else
     } else if(n2.getOperator().getType().getNumChildren() == n2.getNumChildren() + 1) {
       if(ProofManager::currentPM()->hasOp(n2.getOperator())) {
         b2.clear(ProofManager::currentPM()->lookupOp(n2.getOperator()).getConst<Kind>());
@@ -480,8 +467,9 @@ Node ProofArray::toStreamRecLFSC(std::ostream& out,
     Debug("mgdx") << "\ncong proved: " << n << "\n";
     return n;
   }
+  case theory::eq::MERGED_THROUGH_REFLEXIVITY: {
 
-  else if (pf.d_id == theory::eq::MERGED_THROUGH_REFLEXIVITY) {
+
     Assert(!pf.d_node.isNull());
     Assert(pf.d_children.empty());
     out << "(refl _ ";
@@ -489,8 +477,8 @@ Node ProofArray::toStreamRecLFSC(std::ostream& out,
     out << ")";
     return eqNode(pf.d_node, pf.d_node);
   }
+  case theory::eq::MERGED_THROUGH_EQUALITY: {
 
-  else if (pf.d_id == theory::eq::MERGED_THROUGH_EQUALITY) {
     Assert(!pf.d_node.isNull());
     Assert(pf.d_children.empty());
     Debug("pf::array") << "ArrayProof::toStream: getLitName( " << pf.d_node.negate() << " ) = " <<
@@ -499,25 +487,11 @@ Node ProofArray::toStreamRecLFSC(std::ostream& out,
     return pf.d_node;
   }
 
-  else if (pf.d_id == theory::eq::MERGED_THROUGH_CONSTANTS) {
-    Debug("pf::array") << "Proof for: " << pf.d_node << std::endl;
-    Assert(pf.d_node.getKind() == kind::NOT);
-    Node n = pf.d_node[0];
-    Assert(n.getKind() == kind::EQUAL);
-    Assert(n.getNumChildren() == 2);
-    Assert(n[0].isConst() && n[1].isConst());
-
-    ProofManager::getTheoryProofEngine()->printConstantDisequalityProof(out,
-                                                                        n[0].toExpr(),
-                                                                        n[1].toExpr(),
-                                                                        map);
-    return pf.d_node;
-  }
-
-  else if (pf.d_id == theory::eq::MERGED_THROUGH_TRANS) {
+    
+		case theory::eq::MERGED_THROUGH_TRANS: {
     bool firstNeg = false;
     bool secondNeg = false;
-
+	
     Assert(!pf.d_node.isNull());
     Assert(pf.d_children.size() >= 2);
     std::stringstream ss;
@@ -797,211 +771,226 @@ Node ProofArray::toStreamRecLFSC(std::ostream& out,
     return n1;
   }
 
-  else if (pf.d_id == d_reasonRow) {
-    Debug("mgd") << "row lemma: " << pf.d_node << std::endl;
-    Assert(pf.d_node.getKind() == kind::EQUAL);
+  case theory::eq::MERGED_THROUGH_CONSTANTS: {
+    Debug("pf::array") << "Proof for: " << pf.d_node << std::endl;
+    Assert(pf.d_node.getKind() == kind::NOT);
+    Node n = pf.d_node[0];
+    Assert(n.getKind() == kind::EQUAL);
+    Assert(n.getNumChildren() == 2);
+    Assert(n[0].isConst() && n[1].isConst());
 
-
-    if (pf.d_node[1].getKind() == kind::SELECT) {
-      // This is the case where ((a[i]:=t)[k] == a[k]), and the sub-proof explains why (i != k).
-      TNode t1, t2, t3, t4;
-      Node ret;
-      if(pf.d_node[1].getKind() == kind::SELECT &&
-         pf.d_node[1][0].getKind() == kind::STORE &&
-         pf.d_node[0].getKind() == kind::SELECT &&
-         pf.d_node[0][0] == pf.d_node[1][0][0] &&
-         pf.d_node[0][1] == pf.d_node[1][1]) {
-        t2 = pf.d_node[1][0][1];
-        t3 = pf.d_node[1][1];
-        t1 = pf.d_node[0][0];
-        t4 = pf.d_node[1][0][2];
-        ret = pf.d_node[1].eqNode(pf.d_node[0]);
-        Debug("mgd") << "t1 " << t1 << "\nt2 " << t2 << "\nt3 " << t3 << "\nt4 " << t4 << "\n";
-      } else {
-        Assert(pf.d_node[0].getKind() == kind::SELECT &&
-               pf.d_node[0][0].getKind() == kind::STORE &&
-               pf.d_node[1].getKind() == kind::SELECT &&
-               pf.d_node[1][0] == pf.d_node[0][0][0] &&
-               pf.d_node[1][1] == pf.d_node[0][1]);
-        t2 = pf.d_node[0][0][1];
-        t3 = pf.d_node[0][1];
-        t1 = pf.d_node[1][0];
-        t4 = pf.d_node[0][0][2];
-        ret = pf.d_node;
-        Debug("mgd") << "t1 " << t1 << "\nt2 " << t2 << "\nt3 " << t3 << "\nt4 " << t4 << "\n";
-      }
-
-      // inner index != outer index
-      // t3 is the outer index
-
-      Assert(pf.d_children.size() == 1);
-      std::stringstream ss;
-      Node subproof = toStreamRecLFSC(ss, tp, *(pf.d_children[0]), tb + 1, map);
-
-      out << "(row _ _ ";
-      tp->printTerm(t2.toExpr(), out, map);
-      out << " ";
-      tp->printTerm(t3.toExpr(), out, map);
-      out << " ";
-      tp->printTerm(t1.toExpr(), out, map);
-      out << " ";
-      tp->printTerm(t4.toExpr(), out, map);
-      out << " ";
-
-
-      Debug("pf::array") << "pf.d_children[0]->d_node is: " << pf.d_children[0]->d_node
-                         << ". t3 is: " << t3 << std::endl
-                         << "subproof is: " << subproof << std::endl;
-
-      Debug("pf::array") << "Subproof is: " << ss.str() << std::endl;
-
-      // The subproof needs to show that t2 != t3. This can either be a direct disequality,
-      // or, if (wlog) t2 is constant, it can show that t3 is equal to another constant.
-      if (subproof.getKind() == kind::NOT) {
-        // The subproof is for t2 != t3 (or t3 != t2)
-        if (subproof[0][1] == t3) {
-          Debug("pf::array") << "Dont need symmetry!" << std::endl;
-          out << ss.str();
-        } else {
-          Debug("pf::array") << "Need symmetry!" << std::endl;
-          out << "(negsymm _ _ _ " << ss.str() << ")";
-        }
-      } else {
-        // Either t2 or t3 is a constant.
-        Assert(subproof.getKind() == kind::EQUAL);
-        Assert(subproof[0].isConst() || subproof[1].isConst());
-        Assert(t2.isConst() || t3.isConst());
-        Assert(!(t2.isConst() && t3.isConst()));
-
-        bool t2IsConst = t2.isConst();
-        if (subproof[0].isConst()) {
-          if (t2IsConst) {
-            // (t3 == subproof[1]) == subproof[0] != t2
-            // goal is t2 != t3
-            // subproof already shows constant = t3
-            Assert(t3 == subproof[1]);
-            out << "(negtrans _ _ _ _ ";
-            tp->printConstantDisequalityProof(out, t2.toExpr(), subproof[0].toExpr(), map);
-            out << " ";
-            out << ss.str();
-            out << ")";
-          } else {
-            Assert(t2 == subproof[1]);
-            out << "(negsymm _ _ _ ";
-            out << "(negtrans _ _ _ _ ";
-            tp->printConstantDisequalityProof(out, t3.toExpr(), subproof[0].toExpr(), map);
-            out << " ";
-            out << ss.str();
-            out << "))";
-          }
-        } else {
-          if (t2IsConst) {
-            // (t3 == subproof[0]) == subproof[1] != t2
-            // goal is t2 != t3
-            // subproof already shows constant = t3
-            Assert(t3 == subproof[0]);
-            out << "(negtrans _ _ _ _ ";
-            tp->printConstantDisequalityProof(out, t2.toExpr(), subproof[1].toExpr(), map);
-            out << " ";
-            out << "(symm _ _ _ " << ss.str() << ")";
-            out << ")";
-          } else {
-            Assert(t2 == subproof[0]);
-            out << "(negsymm _ _ _ ";
-            out << "(negtrans _ _ _ _ ";
-            tp->printConstantDisequalityProof(out, t3.toExpr(), subproof[1].toExpr(), map);
-            out << " ";
-            out << "(symm _ _ _ " << ss.str() << ")";
-            out << "))";
-          }
-        }
-      }
-
-      out << ")";
-      return ret;
-    } else {
-      Debug("pf::array") << "In the case of NEGATIVE ROW" << std::endl;
-
-      Debug("pf::array") << "pf.d_children[0]->d_node is: " << pf.d_children[0]->d_node << std::endl;
-
-      // This is the case where (i == k), and the sub-proof explains why ((a[i]:=t)[k] != a[k])
-
-      // If we wanted to remove the need for "negativerow", we would need to prove i==k using a new satlem. We would:
-      // 1. Create a new satlem.
-      // 2. Assume that i != k
-      // 3. Apply ROW to show that ((a[i]:=t)[k] == a[k])
-      // 4. Contradict this with the fact that ((a[i]:=t)[k] != a[k]), obtaining our contradiction
-
-      TNode t1, t2, t3, t4;
-      Node ret;
-
-      // pf.d_node is an equality, i==k.
-      t1 = pf.d_node[0];
-      t2 = pf.d_node[1];
-
-      // pf.d_children[0]->d_node will have the form: (not (= (select (store a_565 i7 e_566) i1) (select a_565 i1))),
-      // or its symmetrical version.
-
-      unsigned side;
-      if (pf.d_children[0]->d_node[0][0].getKind() == kind::SELECT &&
-          pf.d_children[0]->d_node[0][0][0].getKind() == kind::STORE) {
-        side = 0;
-      } else if (pf.d_children[0]->d_node[0][1].getKind() == kind::SELECT &&
-                 pf.d_children[0]->d_node[0][1][0].getKind() == kind::STORE) {
-        side = 1;
-      }
-      else {
-        Unreachable();
-      }
-
-      Debug("pf::array") << "Side is: " << side << std::endl;
-
-      // The array's index and element types will come from the subproof...
-      t3 = pf.d_children[0]->d_node[0][side][0][0];
-      t4 = pf.d_children[0]->d_node[0][side][0][2];
-      ret = pf.d_node;
-
-      // The order of indices needs to match; we might have to swap t1 and t2 and then apply symmetry.
-      bool swap = (t2 == pf.d_children[0]->d_node[0][side][0][1]);
-
-      Debug("mgd") << "t1 " << t1 << "\nt2 " << t2 << "\nt3 " << t3 << "\nt4 " << t4 << "\n";
-
-      Assert(pf.d_children.size() == 1);
-      std::stringstream ss;
-      Node subproof = toStreamRecLFSC(ss, tp, *(pf.d_children[0]), tb + 1, map);
-
-      Debug("pf::array") << "Subproof is: " << ss.str() << std::endl;
-
-      if (swap) {
-        out << "(symm _ _ _ ";
-      }
-
-      out << "(negativerow _ _ ";
-      tp->printTerm(swap ? t2.toExpr() : t1.toExpr(), out, map);
-      out << " ";
-      tp->printTerm(swap ? t1.toExpr() : t2.toExpr(), out, map);
-      out << " ";
-      tp->printTerm(t3.toExpr(), out, map);
-      out << " ";
-      tp->printTerm(t4.toExpr(), out, map);
-      out << " ";
-
-      if (side != 0) {
-        out << "(negsymm _ _ _ " << ss.str() << ")";
-      } else {
-        out << ss.str();
-      }
-
-      out << ")";
-
-      if (swap) {
-        out << ") ";
-      }
-
-      return ret;
-    }
+    ProofManager::getTheoryProofEngine()->printConstantDisequalityProof(out,
+                                                                        n[0].toExpr(),
+                                                                        n[1].toExpr(),
+                                                                        map);
+    return pf.d_node;
   }
+  
+  default: {
+    if (pf.d_id == d_reasonRow) { 
+			Debug("mgd") << "row lemma: " << pf.d_node << std::endl;
+			Assert(pf.d_node.getKind() == kind::EQUAL);
 
+
+			if (pf.d_node[1].getKind() == kind::SELECT) {
+			  // This is the case where ((a[i]:=t)[k] == a[k]), and the sub-proof explains why (i != k).
+			  TNode t1, t2, t3, t4;
+			  Node ret;
+			  if(pf.d_node[1].getKind() == kind::SELECT &&
+				 pf.d_node[1][0].getKind() == kind::STORE &&
+				 pf.d_node[0].getKind() == kind::SELECT &&
+				 pf.d_node[0][0] == pf.d_node[1][0][0] &&
+				 pf.d_node[0][1] == pf.d_node[1][1]) {
+				t2 = pf.d_node[1][0][1];
+				t3 = pf.d_node[1][1];
+				t1 = pf.d_node[0][0];
+				t4 = pf.d_node[1][0][2];
+				ret = pf.d_node[1].eqNode(pf.d_node[0]);
+				Debug("mgd") << "t1 " << t1 << "\nt2 " << t2 << "\nt3 " << t3 << "\nt4 " << t4 << "\n";
+			  } else {
+				Assert(pf.d_node[0].getKind() == kind::SELECT &&
+					   pf.d_node[0][0].getKind() == kind::STORE &&
+					   pf.d_node[1].getKind() == kind::SELECT &&
+					   pf.d_node[1][0] == pf.d_node[0][0][0] &&
+					   pf.d_node[1][1] == pf.d_node[0][1]);
+				t2 = pf.d_node[0][0][1];
+				t3 = pf.d_node[0][1];
+				t1 = pf.d_node[1][0];
+				t4 = pf.d_node[0][0][2];
+				ret = pf.d_node;
+				Debug("mgd") << "t1 " << t1 << "\nt2 " << t2 << "\nt3 " << t3 << "\nt4 " << t4 << "\n";
+			  }
+
+			  // inner index != outer index
+			  // t3 is the outer index
+
+			  Assert(pf.d_children.size() == 1);
+			  std::stringstream ss;
+			  Node subproof = toStreamRecLFSC(ss, tp, *(pf.d_children[0]), tb + 1, map);
+
+			  out << "(row _ _ ";
+			  tp->printTerm(t2.toExpr(), out, map);
+			  out << " ";
+			  tp->printTerm(t3.toExpr(), out, map);
+			  out << " ";
+			  tp->printTerm(t1.toExpr(), out, map);
+			  out << " ";
+			  tp->printTerm(t4.toExpr(), out, map);
+			  out << " ";
+
+
+			  Debug("pf::array") << "pf.d_children[0]->d_node is: " << pf.d_children[0]->d_node
+								 << ". t3 is: " << t3 << std::endl
+								 << "subproof is: " << subproof << std::endl;
+
+			  Debug("pf::array") << "Subproof is: " << ss.str() << std::endl;
+
+			  // The subproof needs to show that t2 != t3. This can either be a direct disequality,
+			  // or, if (wlog) t2 is constant, it can show that t3 is equal to another constant.
+			  if (subproof.getKind() == kind::NOT) {
+				// The subproof is for t2 != t3 (or t3 != t2)
+				if (subproof[0][1] == t3) {
+				  Debug("pf::array") << "Dont need symmetry!" << std::endl;
+				  out << ss.str();
+				} else {
+				  Debug("pf::array") << "Need symmetry!" << std::endl;
+				  out << "(negsymm _ _ _ " << ss.str() << ")";
+				}
+			  } else {
+				// Either t2 or t3 is a constant.
+				Assert(subproof.getKind() == kind::EQUAL);
+				Assert(subproof[0].isConst() || subproof[1].isConst());
+				Assert(t2.isConst() || t3.isConst());
+				Assert(!(t2.isConst() && t3.isConst()));
+
+				bool t2IsConst = t2.isConst();
+				if (subproof[0].isConst()) {
+				  if (t2IsConst) {
+					// (t3 == subproof[1]) == subproof[0] != t2
+					// goal is t2 != t3
+					// subproof already shows constant = t3
+					Assert(t3 == subproof[1]);
+					out << "(negtrans _ _ _ _ ";
+					tp->printConstantDisequalityProof(out, t2.toExpr(), subproof[0].toExpr(), map);
+					out << " ";
+					out << ss.str();
+					out << ")";
+				  } else {
+					Assert(t2 == subproof[1]);
+					out << "(negsymm _ _ _ ";
+					out << "(negtrans _ _ _ _ ";
+					tp->printConstantDisequalityProof(out, t3.toExpr(), subproof[0].toExpr(), map);
+					out << " ";
+					out << ss.str();
+					out << "))";
+				  }
+				} else {
+				  if (t2IsConst) {
+					// (t3 == subproof[0]) == subproof[1] != t2
+					// goal is t2 != t3
+					// subproof already shows constant = t3
+					Assert(t3 == subproof[0]);
+					out << "(negtrans _ _ _ _ ";
+					tp->printConstantDisequalityProof(out, t2.toExpr(), subproof[1].toExpr(), map);
+					out << " ";
+					out << "(symm _ _ _ " << ss.str() << ")";
+					out << ")";
+				  } else {
+					Assert(t2 == subproof[0]);
+					out << "(negsymm _ _ _ ";
+					out << "(negtrans _ _ _ _ ";
+					tp->printConstantDisequalityProof(out, t3.toExpr(), subproof[1].toExpr(), map);
+					out << " ";
+					out << "(symm _ _ _ " << ss.str() << ")";
+					out << "))";
+				  }
+				}
+			  }
+
+			  out << ")";
+			  return ret;
+			} else {
+			  Debug("pf::array") << "In the case of NEGATIVE ROW" << std::endl;
+
+			  Debug("pf::array") << "pf.d_children[0]->d_node is: " << pf.d_children[0]->d_node << std::endl;
+
+			  // This is the case where (i == k), and the sub-proof explains why ((a[i]:=t)[k] != a[k])
+
+			  // If we wanted to remove the need for "negativerow", we would need to prove i==k using a new satlem. We would:
+			  // 1. Create a new satlem.
+			  // 2. Assume that i != k
+			  // 3. Apply ROW to show that ((a[i]:=t)[k] == a[k])
+			  // 4. Contradict this with the fact that ((a[i]:=t)[k] != a[k]), obtaining our contradiction
+
+			  TNode t1, t2, t3, t4;
+			  Node ret;
+
+			  // pf.d_node is an equality, i==k.
+			  t1 = pf.d_node[0];
+			  t2 = pf.d_node[1];
+
+			  // pf.d_children[0]->d_node will have the form: (not (= (select (store a_565 i7 e_566) i1) (select a_565 i1))),
+			  // or its symmetrical version.
+
+			  unsigned side;
+			  if (pf.d_children[0]->d_node[0][0].getKind() == kind::SELECT &&
+				  pf.d_children[0]->d_node[0][0][0].getKind() == kind::STORE) {
+				side = 0;
+			  } else if (pf.d_children[0]->d_node[0][1].getKind() == kind::SELECT &&
+						 pf.d_children[0]->d_node[0][1][0].getKind() == kind::STORE) {
+				side = 1;
+			  }
+			  else {
+				Unreachable();
+			  }
+
+			  Debug("pf::array") << "Side is: " << side << std::endl;
+
+			  // The array's index and element types will come from the subproof...
+			  t3 = pf.d_children[0]->d_node[0][side][0][0];
+			  t4 = pf.d_children[0]->d_node[0][side][0][2];
+			  ret = pf.d_node;
+
+			  // The order of indices needs to match; we might have to swap t1 and t2 and then apply symmetry.
+			  bool swap = (t2 == pf.d_children[0]->d_node[0][side][0][1]);
+
+			  Debug("mgd") << "t1 " << t1 << "\nt2 " << t2 << "\nt3 " << t3 << "\nt4 " << t4 << "\n";
+
+			  Assert(pf.d_children.size() == 1);
+			  std::stringstream ss;
+			  Node subproof = toStreamRecLFSC(ss, tp, *(pf.d_children[0]), tb + 1, map);
+
+			  Debug("pf::array") << "Subproof is: " << ss.str() << std::endl;
+
+			  if (swap) {
+				out << "(symm _ _ _ ";
+			  }
+
+			  out << "(negativerow _ _ ";
+			  tp->printTerm(swap ? t2.toExpr() : t1.toExpr(), out, map);
+			  out << " ";
+			  tp->printTerm(swap ? t1.toExpr() : t2.toExpr(), out, map);
+			  out << " ";
+			  tp->printTerm(t3.toExpr(), out, map);
+			  out << " ";
+			  tp->printTerm(t4.toExpr(), out, map);
+			  out << " ";
+
+			  if (side != 0) {
+				out << "(negsymm _ _ _ " << ss.str() << ")";
+			  } else {
+				out << ss.str();
+			  }
+
+			  out << ")";
+
+			  if (swap) {
+				out << ") ";
+			  }
+
+			  return ret;
+			}
+		  }
   else if (pf.d_id == d_reasonRow1) {
     Debug("mgd") << "row1 lemma: " << pf.d_node << std::endl;
     Assert(pf.d_node.getKind() == kind::EQUAL);
@@ -1036,7 +1025,6 @@ Node ProofArray::toStreamRecLFSC(std::ostream& out,
     out << ")";
     return ret;
   }
-
   else if (pf.d_id == d_reasonExt) {
     Assert(pf.d_node.getKind() == kind::NOT);
     Assert(pf.d_node[0].getKind() == kind::EQUAL);
@@ -1070,6 +1058,8 @@ Node ProofArray::toStreamRecLFSC(std::ostream& out,
     AlwaysAssert(false);
     return pf.d_node;
   }
+}
+}
 }
 
 ArrayProof::ArrayProof(theory::arrays::TheoryArrays* arrays, TheoryProofEngine* pe)

@@ -139,7 +139,9 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
 
       Debug("pf::uf") << "n2 is " << n2[0] << std::endl;
 
-      if (n2[0].getNumChildren() > 0) { Debug("pf::uf") << "\nn2[0]: " << n2[0][0] << std::endl; }
+
+
+	  if (n2[0].getNumChildren() > 0) { Debug("pf::uf") << "\nn2[0]: " << n2[0][0] << std::endl; }
       if (n1.getNumChildren() > 1) { Debug("pf::uf") << "n1[1]: " << n1[1] << std::endl; }
 
       if(n2[0].getKind() == kind::APPLY_UF) {
@@ -172,7 +174,10 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
 
       out << ss.str();
       out << " ";
-      ProofManager::getTheoryProofEngine()->printConstantDisequalityProof(out, n1[0].toExpr(), n1[1].toExpr(), map);
+      ProofManager::getTheoryProofEngine()->printConstantDisequalityProof(out, 
+					  n1[0].toExpr(), 
+					  n1[1].toExpr(), 
+					  map);
       out << "))" << std::endl;
     }
 
@@ -188,7 +193,11 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
          pf2->d_id == theory::eq::MERGED_THROUGH_CONGRUENCE;
          pf2 = pf2->d_children[0].get()) {
       Assert(!pf2->d_node.isNull());
-      Assert(pf2->d_node.getKind() == kind::PARTIAL_APPLY_UF || pf2->d_node.getKind() == kind::BUILTIN || pf2->d_node.getKind() == kind::APPLY_UF || pf2->d_node.getKind() == kind::SELECT || pf2->d_node.getKind() == kind::STORE);
+      Assert(pf2->d_node.getKind() == kind::PARTIAL_APPLY_UF || 
+					  pf2->d_node.getKind() == kind::BUILTIN || 
+					  pf2->d_node.getKind() == kind::APPLY_UF || 
+					  pf2->d_node.getKind() == kind::SELECT || 
+					  pf2->d_node.getKind() == kind::STORE);
       Assert(pf2->d_children.size() == 2);
       out << "(cong _ _ _ _ _ _ ";
       stk.push(pf2);
@@ -224,8 +233,12 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
       Assert(match(pf2->d_node, n1[1]));
       side = 1;
     }
-    if(n1[side].getKind() == kind::APPLY_UF || n1[side].getKind() == kind::PARTIAL_APPLY_UF || n1[side].getKind() == kind::SELECT || n1[side].getKind() == kind::STORE) {
-      if(n1[side].getKind() == kind::APPLY_UF || n1[side].getKind() == kind::PARTIAL_APPLY_UF) {
+    if(n1[side].getKind() == kind::APPLY_UF || 
+					n1[side].getKind() == kind::PARTIAL_APPLY_UF || 
+					n1[side].getKind() == kind::SELECT || 
+					n1[side].getKind() == kind::STORE) {
+      if(n1[side].getKind() == kind::APPLY_UF || 
+					  n1[side].getKind() == kind::PARTIAL_APPLY_UF) {
         b1 << n1[side].getOperator();
       } else {
         b1 << ProofManager::currentPM()->mkOp(n1[side].getOperator());
@@ -235,7 +248,8 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
       b1 << n1[side];
     }
     if(n1[1-side].getKind() == kind::PARTIAL_APPLY_UF || n1[1-side].getKind() == kind::APPLY_UF || n1[side].getKind() == kind::SELECT || n1[side].getKind() == kind::STORE) {
-      if(n1[1-side].getKind() == kind::PARTIAL_APPLY_UF || n1[1-side].getKind() == kind::APPLY_UF) {
+      if(n1[1-side].getKind() == kind::PARTIAL_APPLY_UF || 
+					  n1[1-side].getKind() == kind::APPLY_UF) {
         b2 << n1[1-side].getOperator();
       } else {
         b2 << ProofManager::currentPM()->mkOp(n1[1-side].getOperator());
@@ -325,14 +339,14 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
     return n;
   }
 
-  case theory::eq::MERGED_THROUGH_REFLEXIVITY:
+  case theory::eq::MERGED_THROUGH_REFLEXIVITY: {
     Assert(!pf.d_node.isNull());
     Assert(pf.d_children.empty());
     out << "(refl _ ";
     tp->printTerm(NodeManager::currentNM()->toExpr(pf.d_node), out, map);
     out << ")";
     return eqNode(pf.d_node, pf.d_node);
-
+  }
   case theory::eq::MERGED_THROUGH_EQUALITY:
     Assert(!pf.d_node.isNull());
     Assert(pf.d_children.empty());
