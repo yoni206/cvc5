@@ -230,6 +230,15 @@ public:
     d_proofEngine->printSort(type, os);
   }
 
+
+   //Copied from uf_proof.cpp and array_proof.cpp
+   inline static bool match(TNode n1, TNode n2, std::string theoryName);
+
+   //Copied from uf_proof.cpp and array_proof.cpp
+   inline static Node eqNode(TNode n1, TNode n2) {
+		return NodeManager::currentNM()->mkNode(kind::EQUAL, n1, n2);
+   }
+
   /**
    * Helper function for ProofUF::toStreamRecLFSC and ProofArray::toStreamRecLFSC
    * TODO temporary name!!!
@@ -244,6 +253,21 @@ public:
 						  int& neg,
 						  std::shared_ptr<theory::eq::EqProof> subTrans, 
 						  theory::eq::EqProof::PrettyPrinter* pPrettyPrinter = nullptr);
+
+  /**
+   * Helper function for ProofUF::toStreamRecLFSC and ProofArray::toStreamRecLFSC
+   * TODO temporary name!!!
+   */
+	void transPrint(std::string theoryName,
+					const theory::eq::EqProof& pf,
+					int i,
+					unsigned int tb,
+					const ProofLetMap& map,
+					Node& n1,
+					Node* p_n2,
+					std::stringstream* p_ss, 
+					std::stringstream* p_ss1,
+					std::stringstream* p_ss2);
 
 
   /**

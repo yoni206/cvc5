@@ -24,47 +24,8 @@
 
 namespace CVC4 {
 
-inline static Node eqNode(TNode n1, TNode n2) {
-  return NodeManager::currentNM()->mkNode(kind::EQUAL, n1, n2);
-}
 
-// congrence matching term helper
-inline static bool match(TNode n1, TNode n2) {
-  Debug("pf::uf") << "match " << n1 << " " << n2 << std::endl;
-  if(ProofManager::currentPM()->hasOp(n1)) {
-    n1 = ProofManager::currentPM()->lookupOp(n1);
-  }
-  if(ProofManager::currentPM()->hasOp(n2)) {
-    n2 = ProofManager::currentPM()->lookupOp(n2); 
-  }
-  Debug("pf::uf") << "+ match " << n1 << " " << n2 << std::endl;
-  if(n1 == n2) {
-    return true;
-  }
-  if(n1.getType().isFunction() && n2.hasOperator()) {
-    if(ProofManager::currentPM()->hasOp(n2.getOperator())) {
-      return n1 == ProofManager::currentPM()->lookupOp(n2.getOperator());
-    } else {
-      return n1 == n2.getOperator();
-    }
-  }
-  if(n2.getType().isFunction() && n1.hasOperator()) {
-    if(ProofManager::currentPM()->hasOp(n1.getOperator())) {
-      return n2 == ProofManager::currentPM()->lookupOp(n1.getOperator());
-    } else {
-      return n2 == n1.getOperator();
-    }
-  }
-  if(n1.hasOperator() && n2.hasOperator() && n1.getOperator() != n2.getOperator()) {
-    return false;
-  }
-  for(size_t i = 0; i < n1.getNumChildren() && i < n2.getNumChildren(); ++i) {
-    if(n1[i] != n2[i]) {
-      return false;
-    }
-  }
-  return true;
-}
+
 
 void ProofUF::toStream(std::ostream& out) const
 {
@@ -117,7 +78,7 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
 
 
     Node n1;
-    std::stringstream ss;
+    std::stringstream ss,ss2;
     Debug("pf::uf") << "\nsubtrans has " << subTrans->d_children.size() << " children\n";
 	bool disequalityFound = (neg >= 0);
 
@@ -217,7 +178,7 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
     Debug("pf::uf") << "           " << n1 << "\n";
     Debug("pf::uf") << "           " << n2 << "\n";
     int side = 0;
-    if(match(pf2->d_node, n1[0])) {
+    if(TheoryProof::match(pf2->d_node, n1[0], "uf")) {
       //if(tb == 1) {
       Debug("pf::uf") << "SIDE IS 0\n";
       //}
@@ -226,11 +187,11 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
       //if(tb == 1) {
       Debug("pf::uf") << "SIDE IS 1\n";
       //}
-      if(!match(pf2->d_node, n1[1])) {
+      if(!TheoryProof::match(pf2->d_node, n1[1], "uf")) {
         Debug("pf::uf") << "IN BAD CASE, our first subproof is\n";
         pf2->d_children[0]->debug_print("pf::uf");
       }
-      Assert(match(pf2->d_node, n1[1]));
+      Assert(TheoryProof::match(pf2->d_node, n1[1], "uf"));
       side = 1;
     }
     if(n1[side].getKind() == kind::APPLY_UF || 
@@ -332,7 +293,7 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
       b2.append(n2.begin(), n2.end());
       n2 = b2;
     }
-    Node n = (side == 0 ? eqNode(n1, n2) : eqNode(n2, n1));
+    Node n = (side == 0 ? TheoryProof::eqNode(n1, n2) : TheoryProof::eqNode(n2, n1));
     if(tb == 1) {
       Debug("pf::uf") << "\ncong proved: " << n << "\n";
     }
@@ -345,7 +306,7 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
     out << "(refl _ ";
     tp->printTerm(NodeManager::currentNM()->toExpr(pf.d_node), out, map);
     out << ")";
-    return eqNode(pf.d_node, pf.d_node);
+    return TheoryProof::eqNode(pf.d_node, pf.d_node);
   }
   case theory::eq::MERGED_THROUGH_EQUALITY:
     Assert(!pf.d_node.isNull());
@@ -363,161 +324,23 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
 
     pf.d_children[0]->d_node = simplifyBooleanNode(pf.d_children[0]->d_node);
 
-    Node n1 = toStreamRecLFSC(ss, tp, *(pf.d_children[0]), tb + 1, map);
+    Node n1Val = toStreamRecLFSC(ss, tp, *(pf.d_children[0]), tb + 1, map);
+	Node& n1 = n1Val;
     Debug("pf::uf") << "\ndoing trans proof, got n1 " << n1 << "\n";
+   	//TODO make n2 a reference too.
+	Node n2; 
     if(tb == 1) {
       Debug("pf::uf") << "\ntrans proof[0], got n1 " << n1 << "\n";
     }
 
-    bool identicalEqualities = false;
-    bool evenLengthSequence;
-    Node nodeAfterEqualitySequence;
 
     std::map<size_t, Node> childToStream;
+	std::stringstream ss1(ss.str()), ss2;
 
     for(size_t i = 1; i < pf.d_children.size(); ++i) {
-      std::stringstream ss1(ss.str()), ss2;
-      ss.str("");
+	  tp->transPrint("array", pf, i, tb, map, n1, &n2, &ss1, &ss2);
+      //YONI UNMERGABLE CODE BELOW
 
-      pf.d_children[i]->d_node = simplifyBooleanNode(pf.d_children[i]->d_node);
-
-      // It is possible that we've already converted the i'th child to stream. If so,
-      // use previously stored result. Otherwise, convert and store.
-      Node n2;
-      if (childToStream.find(i) != childToStream.end())
-        n2 = childToStream[i];
-      else {
-        n2 = toStreamRecLFSC(ss2, tp, *(pf.d_children[i]), tb + 1, map);
-        childToStream[i] = n2;
-      }
-
-      // The following branch is dedicated to handling sequences of identical equalities,
-      // i.e. trans[ a=b, a=b, a=b ].
-      //
-      // There are two cases:
-      //    1. The number of equalities is odd. Then, the sequence can be collapsed to just one equality,
-      //       i.e. a=b.
-      //    2. The number of equalities is even. Now, we have two options: a=a or b=b. To determine this,
-      //       we look at the node after the equality sequence. If it needs a, we go for a=a; and if it needs
-      //       b, we go for b=b. If there is no following node, we look at the goal of the transitivity proof,
-      //       and use it to determine which option we need.
-      if(n2.getKind() == kind::EQUAL) {
-        if (((n1[0] == n2[0]) && (n1[1] == n2[1])) || ((n1[0] == n2[1]) && (n1[1] == n2[0]))) {
-          // We are in a sequence of identical equalities
-
-          Debug("pf::uf") << "Detected identical equalities: " << std::endl << "\t" << n1 << std::endl;
-
-          if (!identicalEqualities) {
-            // The sequence of identical equalities has started just now
-            identicalEqualities = true;
-
-            Debug("pf::uf") << "The sequence is just beginning. Determining length..." << std::endl;
-
-            // Determine whether the length of this sequence is odd or even.
-            evenLengthSequence = true;
-            bool sequenceOver = false;
-            size_t j = i + 1;
-
-            while (j < pf.d_children.size() && !sequenceOver) {
-              std::stringstream dontCare;
-              nodeAfterEqualitySequence = toStreamRecLFSC(dontCare, tp, *(pf.d_children[j]), tb + 1, map );
-
-              if (((nodeAfterEqualitySequence[0] == n1[0]) && (nodeAfterEqualitySequence[1] == n1[1])) ||
-                  ((nodeAfterEqualitySequence[0] == n1[1]) && (nodeAfterEqualitySequence[1] == n1[0]))) {
-                evenLengthSequence = !evenLengthSequence;
-              } else {
-                sequenceOver = true;
-              }
-
-              ++j;
-            }
-
-            if (evenLengthSequence) {
-              // If the length is even, we need to apply transitivity for the "correct" hand of the equality.
-
-              Debug("pf::uf") << "Equality sequence of even length" << std::endl;
-              Debug("pf::uf") << "n1 is: " << n1 << std::endl;
-              Debug("pf::uf") << "n2 is: " << n2 << std::endl;
-              Debug("pf::uf") << "pf-d_node is: " << pf.d_node << std::endl;
-              Debug("pf::uf") << "Next node is: " << nodeAfterEqualitySequence << std::endl;
-
-              ss << "(trans _ _ _ _ ";
-
-              // If the sequence is at the very end of the transitivity proof, use pf.d_node to guide us.
-              if (!sequenceOver) {
-                if (match(n1[0], pf.d_node[0])) {
-                  n1 = eqNode(n1[0], n1[0]);
-                  ss << ss1.str() << " (symm _ _ _ " << ss1.str() << ")";
-                } else if (match(n1[1], pf.d_node[1])) {
-                  n1 = eqNode(n1[1], n1[1]);
-                  ss << " (symm _ _ _ " << ss1.str() << ")" << ss1.str();
-                } else {
-                  Debug("pf::uf") << "Error: identical equalities over, but hands don't match what we're proving."
-                                  << std::endl;
-                  Assert(false);
-                }
-              } else {
-                // We have a "next node". Use it to guide us.
-
-                Assert(nodeAfterEqualitySequence.getKind() == kind::EQUAL);
-
-                if ((n1[0] == nodeAfterEqualitySequence[0]) || (n1[0] == nodeAfterEqualitySequence[1])) {
-
-                  // Eliminate n1[1]
-                  ss << ss1.str() << " (symm _ _ _ " << ss1.str() << ")";
-                  n1 = eqNode(n1[0], n1[0]);
-
-                } else if ((n1[1] == nodeAfterEqualitySequence[0]) || (n1[1] == nodeAfterEqualitySequence[1])) {
-
-                  // Eliminate n1[0]
-                  ss << " (symm _ _ _ " << ss1.str() << ")" << ss1.str();
-                  n1 = eqNode(n1[1], n1[1]);
-
-                } else {
-                  Debug("pf::uf") << "Error: even length sequence, but I don't know which hand to keep!" << std::endl;
-                  Assert(false);
-                }
-              }
-
-              ss << ")";
-
-            } else {
-              Debug("pf::uf") << "Equality sequence length is odd!" << std::endl;
-              ss.str(ss1.str());
-            }
-
-            Debug("pf::uf") << "Have proven: " << n1 << std::endl;
-          } else {
-            ss.str(ss1.str());
-          }
-
-          // Ignore the redundancy.
-          continue;
-        }
-      }
-
-      if (identicalEqualities) {
-        // We were in a sequence of identical equalities, but it has now ended. Resume normal operation.
-        identicalEqualities = false;
-      }
-
-      Debug("pf::uf") << "\ndoing trans proof, got n2 " << n2 << "\n";
-      if(tb == 1) {
-        Debug("pf::uf") << "\ntrans proof[" << i << "], got n2 " << n2 << "\n";
-        Debug("pf::uf") << (n2.getKind() == kind::EQUAL) << "\n";
-
-        if ((n1.getNumChildren() >= 2) && (n2.getNumChildren() >= 2)) {
-          Debug("pf::uf") << n1[0].getId() << " " << n1[1].getId() << " / " << n2[0].getId() << " " << n2[1].getId() << "\n";
-          Debug("pf::uf") << n1[0].getId() << " " << n1[0] << "\n";
-          Debug("pf::uf") << n1[1].getId() << " " << n1[1] << "\n";
-          Debug("pf::uf") << n2[0].getId() << " " << n2[0] << "\n";
-          Debug("pf::uf") << n2[1].getId() << " " << n2[1] << "\n";
-          Debug("pf::uf") << (n1[0] == n2[0]) << "\n";
-          Debug("pf::uf") << (n1[1] == n2[1]) << "\n";
-          Debug("pf::uf") << (n1[0] == n2[1]) << "\n";
-          Debug("pf::uf") << (n1[1] == n2[0]) << "\n";
-        }
-      }
       ss << "(trans _ _ _ _ ";
 
       if(n2.getKind() == kind::EQUAL && n1.getKind() == kind::EQUAL)
@@ -525,20 +348,20 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
       {
         if(n1[0] == n2[0]) {
           if(tb == 1) { Debug("pf::uf") << "case 1\n"; }
-          n1 = eqNode(n1[1], n2[1]);
+          n1 = TheoryProof::eqNode(n1[1], n2[1]);
           ss << "(symm _ _ _ " << ss1.str() << ") " << ss2.str();
         } else if(n1[1] == n2[1]) {
           if(tb == 1) { Debug("pf::uf") << "case 2\n"; }
-          n1 = eqNode(n1[0], n2[0]);
+          n1 = TheoryProof::eqNode(n1[0], n2[0]);
           ss << ss1.str() << " (symm _ _ _ " << ss2.str() << ")";
         } else if(n1[0] == n2[1]) {
           if(tb == 1) { Debug("pf::uf") << "case 3\n"; }
-          n1 = eqNode(n2[0], n1[1]);
+          n1 = TheoryProof::eqNode(n2[0], n1[1]);
           ss << ss2.str() << " " << ss1.str();
           if(tb == 1) { Debug("pf::uf") << "++ proved " << n1 << "\n"; }
         } else if(n1[1] == n2[0]) {
           if(tb == 1) { Debug("pf::uf") << "case 4\n"; }
-          n1 = eqNode(n1[0], n2[1]);
+          n1 = TheoryProof::eqNode(n1[0], n2[1]);
           ss << ss1.str() << " " << ss2.str();
         } else {
           Warning() << "\n\ntrans proof failure at step " << i << "\n\n";
@@ -654,8 +477,8 @@ void UFProof::registerTerm(Expr term) {
     if (term.getKind() == kind::BOOLEAN_TERM_VARIABLE) {
       // Ensure cnf literals
       Node asNode(term);
-      ProofManager::currentPM()->ensureLiteral(eqNode(term, NodeManager::currentNM()->mkConst(true)));
-      ProofManager::currentPM()->ensureLiteral(eqNode(term, NodeManager::currentNM()->mkConst(false)));
+      ProofManager::currentPM()->ensureLiteral(TheoryProof::eqNode(term, NodeManager::currentNM()->mkConst(true)));
+      ProofManager::currentPM()->ensureLiteral(TheoryProof::eqNode(term, NodeManager::currentNM()->mkConst(false)));
     }
   }
 

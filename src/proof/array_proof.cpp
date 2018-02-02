@@ -59,61 +59,7 @@ std::string ArrayProofPrinter::printTag(unsigned tag) {
 
 }  // namespace
 
-inline static Node eqNode(TNode n1, TNode n2) {
-  return NodeManager::currentNM()->mkNode(kind::EQUAL, n1, n2);
-}
 
-// congrence matching term helper
-inline static bool match(TNode n1, TNode n2) {
-  Debug("mgd") << "match " << n1 << " " << n2 << std::endl;
-  if(ProofManager::currentPM()->hasOp(n1)) {
-    n1 = ProofManager::currentPM()->lookupOp(n1);
-  }
-  if(ProofManager::currentPM()->hasOp(n2)) {
-    n2 = ProofManager::currentPM()->lookupOp(n2);
-  }
-  Debug("mgd") << "+ match " << n1 << " " << n2 << std::endl;
-  Debug("pf::array") << "+ match: step 1" << std::endl;
-  if(n1 == n2) {
-    return true;
-  }
-
-  if(n1.getType().isFunction() && n2.hasOperator()) {
-    if(ProofManager::currentPM()->hasOp(n2.getOperator())) {
-      return n1 == ProofManager::currentPM()->lookupOp(n2.getOperator());
-    } else {
-      return n1 == n2.getOperator();
-    }
-  }
-
-  if(n2.getType().isFunction() && n1.hasOperator()) {
-    if(ProofManager::currentPM()->hasOp(n1.getOperator())) {
-      return n2 == ProofManager::currentPM()->lookupOp(n1.getOperator());
-    } else {
-      return n2 == n1.getOperator();
-    }
-  }
-
-  if(n1.hasOperator() && n2.hasOperator() && n1.getOperator() != n2.getOperator()) {
-    if (!((n1.getKind() == kind::SELECT && n2.getKind() == kind::PARTIAL_SELECT_0) ||
-          (n1.getKind() == kind::SELECT && n2.getKind() == kind::PARTIAL_SELECT_1) ||
-          (n1.getKind() == kind::PARTIAL_SELECT_1 && n2.getKind() == kind::SELECT) ||
-          (n1.getKind() == kind::PARTIAL_SELECT_1 && n2.getKind() == kind::PARTIAL_SELECT_0) ||
-          (n1.getKind() == kind::PARTIAL_SELECT_0 && n2.getKind() == kind::SELECT) ||
-          (n1.getKind() == kind::PARTIAL_SELECT_0 && n2.getKind() == kind::PARTIAL_SELECT_1)
-          )) {
-      return false;
-    }
-  }
-
-  for(size_t i = 0; i < n1.getNumChildren() && i < n2.getNumChildren(); ++i) {
-    if(n1[i] != n2[i]) {
-      return false;
-    }
-  }
-
-  return true;
-}
 
 ProofArray::ProofArray(std::shared_ptr<theory::eq::EqProof> pf,
                        unsigned row,
@@ -279,16 +225,16 @@ Node ProofArray::toStreamRecLFSC(std::ostream& out,
     Debug("mgd") << "           " << n2 << "\n";
 
     int side = 0;
-    if(match(pf2->d_node, n1[0])) {
+    if(TheoryProof::match(pf2->d_node, n1[0], "array")) {
       Debug("mgd") << "SIDE IS 0\n";
       side = 0;
     } else {
       Debug("mgd") << "SIDE IS 1\n";
-      if(!match(pf2->d_node, n1[1])) {
+      if(!TheoryProof::match(pf2->d_node, n1[1], "array")) {
         Debug("mgd") << "IN BAD CASE, our first subproof is\n";
         pf2->d_children[0]->debug_print("mgd", 0, &proofPrinter);
       }
-      Assert(match(pf2->d_node, n1[1]));
+      Assert(TheoryProof::match(pf2->d_node, n1[1], "array"));
       side = 1;
     }
 
@@ -462,7 +408,7 @@ Node ProofArray::toStreamRecLFSC(std::ostream& out,
       b2.append(n2.begin(), n2.end());
       n2 = b2;
     }
-    Node n = (side == 0 ? eqNode(n1, n2) : eqNode(n2, n1));
+    Node n = (side == 0 ? TheoryProof::eqNode(n1, n2) : TheoryProof::eqNode(n2, n1));
 
     Debug("mgdx") << "\ncong proved: " << n << "\n";
     return n;
@@ -475,7 +421,7 @@ Node ProofArray::toStreamRecLFSC(std::ostream& out,
     out << "(refl _ ";
     tp->printTerm(NodeManager::currentNM()->toExpr(pf.d_node), out, map);
     out << ")";
-    return eqNode(pf.d_node, pf.d_node);
+    return TheoryProof::eqNode(pf.d_node, pf.d_node);
   }
   case theory::eq::MERGED_THROUGH_EQUALITY: {
 
@@ -501,172 +447,26 @@ Node ProofArray::toStreamRecLFSC(std::ostream& out,
 
     pf.d_children[0]->d_node = simplifyBooleanNode(pf.d_children[0]->d_node);
 
-    Node n1 = toStreamRecLFSC(ss, tp, *(pf.d_children[0]), tb + 1, map);
+
+
+int negVal = -1;
+	int& neg = negVal;
+
+
+    Node n1Val = toStreamRecLFSC(ss, tp, *(pf.d_children[0]), tb + 1, map);
+	Node& n1 = n1Val;
+	//TODO make n2 a reference too.
+	Node n2; 
     Debug("mgd") << "\ndoing trans proof, got n1 " << n1 << "\n";
     if(tb == 1) {
       Debug("mgdx") << "\ntrans proof[0], got n1 " << n1 << "\n";
     }
 
-    bool identicalEqualities = false;
-    bool evenLengthSequence;
-    Node nodeAfterEqualitySequence;
 
-    std::map<size_t, Node> childToStream;
-
-    for(size_t i = 1; i < pf.d_children.size(); ++i) {
-      std::stringstream ss1(ss.str()), ss2;
-      ss.str("");
-
-      // In congruences, we can have something like a[x] - it's important to keep these,
-      // and not turn them into (a[x]=true), because that will mess up the congruence application
-      // later.
-
-      if (pf.d_children[i]->d_id != theory::eq::MERGED_THROUGH_CONGRUENCE)
-        pf.d_children[i]->d_node = simplifyBooleanNode(pf.d_children[i]->d_node);
-
-      // It is possible that we've already converted the i'th child to stream. If so,
-      // use previously stored result. Otherwise, convert and store.
-      Node n2;
-      if (childToStream.find(i) != childToStream.end())
-        n2 = childToStream[i];
-      else {
-        n2 = toStreamRecLFSC(ss2, tp, *(pf.d_children[i]), tb + 1, map);
-        childToStream[i] = n2;
-      }
-
-      Debug("mgd") << "\ndoing trans proof, got (first) n2 " << n2 << "\n";
-
-      // The following branch is dedicated to handling sequences of identical equalities,
-      // i.e. trans[ a=b, a=b, a=b ].
-      //
-      // There are two cases:
-      //    1. The number of equalities is odd. Then, the sequence can be collapsed to just one equality,
-      //       i.e. a=b.
-      //    2. The number of equalities is even. Now, we have two options: a=a or b=b. To determine this,
-      //       we look at the node after the equality sequence. If it needs a, we go for a=a; and if it needs
-      //       b, we go for b=b. If there is no following node, we look at the goal of the transitivity proof,
-      //       and use it to determine which option we need.
-
-      if(n2.getKind() == kind::EQUAL) {
-        if (((n1[0] == n2[0]) && (n1[1] == n2[1])) || ((n1[0] == n2[1]) && (n1[1] == n2[0]))) {
-          // We are in a sequence of identical equalities
-
-          Debug("pf::array") << "Detected identical equalities: " << std::endl << "\t" << n1 << std::endl;
-
-          if (!identicalEqualities) {
-            // The sequence of identical equalities has started just now
-            identicalEqualities = true;
-
-            Debug("pf::array") << "The sequence is just beginning. Determining length..." << std::endl;
-
-            // Determine whether the length of this sequence is odd or even.
-            evenLengthSequence = true;
-            bool sequenceOver = false;
-            size_t j = i + 1;
-
-            while (j < pf.d_children.size() && !sequenceOver) {
-              std::stringstream dontCare;
-              nodeAfterEqualitySequence = toStreamRecLFSC(dontCare, tp, *(pf.d_children[j]), tb + 1, map );
-
-              if (((nodeAfterEqualitySequence[0] == n1[0]) && (nodeAfterEqualitySequence[1] == n1[1])) ||
-                  ((nodeAfterEqualitySequence[0] == n1[1]) && (nodeAfterEqualitySequence[1] == n1[0]))) {
-                evenLengthSequence = !evenLengthSequence;
-              } else {
-                sequenceOver = true;
-              }
-
-              ++j;
-            }
-
-            if (evenLengthSequence) {
-              // If the length is even, we need to apply transitivity for the "correct" hand of the equality.
-
-              Debug("pf::array") << "Equality sequence of even length" << std::endl;
-              Debug("pf::array") << "n1 is: " << n1 << std::endl;
-              Debug("pf::array") << "n2 is: " << n2 << std::endl;
-              Debug("pf::array") << "pf-d_node is: " << pf.d_node << std::endl;
-              Debug("pf::array") << "Next node is: " << nodeAfterEqualitySequence << std::endl;
-
-              ss << "(trans _ _ _ _ ";
-
-              // If the sequence is at the very end of the transitivity proof, use pf.d_node to guide us.
-              if (!sequenceOver) {
-                if (match(n1[0], pf.d_node[0])) {
-                  n1 = eqNode(n1[0], n1[0]);
-                  ss << ss1.str() << " (symm _ _ _ " << ss1.str() << ")";
-                } else if (match(n1[1], pf.d_node[1])) {
-                  n1 = eqNode(n1[1], n1[1]);
-                  ss << " (symm _ _ _ " << ss1.str() << ")" << ss1.str();
-                } else {
-                  Debug("pf::array") << "Error: identical equalities over, but hands don't match what we're proving."
-                                     << std::endl;
-                  Assert(false);
-                }
-              } else {
-                // We have a "next node". Use it to guide us.
-                if (nodeAfterEqualitySequence.getKind() == kind::NOT) {
-                  nodeAfterEqualitySequence = nodeAfterEqualitySequence[0];
-                }
-
-                Assert(nodeAfterEqualitySequence.getKind() == kind::EQUAL);
-
-                if ((n1[0] == nodeAfterEqualitySequence[0]) || (n1[0] == nodeAfterEqualitySequence[1])) {
-
-                  // Eliminate n1[1]
-                  ss << ss1.str() << " (symm _ _ _ " << ss1.str() << ")";
-                  n1 = eqNode(n1[0], n1[0]);
-
-                } else if ((n1[1] == nodeAfterEqualitySequence[0]) || (n1[1] == nodeAfterEqualitySequence[1])) {
-
-                  // Eliminate n1[0]
-                  ss << " (symm _ _ _ " << ss1.str() << ")" << ss1.str();
-                  n1 = eqNode(n1[1], n1[1]);
-
-                } else {
-                  Debug("pf::array") << "Error: even length sequence, but I don't know which hand to keep!" << std::endl;
-                  Assert(false);
-                }
-              }
-
-              ss << ")";
-
-            } else {
-              Debug("pf::array") << "Equality sequence length is odd!" << std::endl;
-              ss.str(ss1.str());
-            }
-
-            Debug("pf::array") << "Have proven: " << n1 << std::endl;
-          } else {
-            ss.str(ss1.str());
-          }
-
-          // Ignore the redundancy.
-          continue;
-        }
-      }
-
-      if (identicalEqualities) {
-        // We were in a sequence of identical equalities, but it has now ended. Resume normal operation.
-        identicalEqualities = false;
-      }
-
-      Debug("mgd") << "\ndoing trans proof, got n2 " << n2 << "\n";
-      if(tb == 1) {
-        Debug("mgdx") << "\ntrans proof[" << i << "], got n2 " << n2 << "\n";
-        Debug("mgdx") << (n2.getKind() == kind::EQUAL) << "\n";
-
-        if ((n1.getNumChildren() >= 2) && (n2.getNumChildren() >= 2)) {
-          Debug("mgdx") << n1[0].getId() << " " << n1[1].getId() << " / " << n2[0].getId() << " " << n2[1].getId() << "\n";
-          Debug("mgdx") << n1[0].getId() << " " << n1[0] << "\n";
-          Debug("mgdx") << n1[1].getId() << " " << n1[1] << "\n";
-          Debug("mgdx") << n2[0].getId() << " " << n2[0] << "\n";
-          Debug("mgdx") << n2[1].getId() << " " << n2[1] << "\n";
-          Debug("mgdx") << (n1[0] == n2[0]) << "\n";
-          Debug("mgdx") << (n1[1] == n2[1]) << "\n";
-          Debug("mgdx") << (n1[0] == n2[1]) << "\n";
-          Debug("mgdx") << (n1[1] == n2[0]) << "\n";
-        }
-      }
+	std::stringstream ss1(ss.str()), ss2;
+    for(size_t i = 1; i < pf.d_children.size(); ++i) { 
+	  tp->transPrint("array", pf, i, tb, map, n1, &n2, &ss, &ss1, &ss2);
+      //YONI UNMERGABLE CODE BELOW
 
       // We can hadnle one of the equalities being negative, but not both
       Assert((n1.getKind() != kind::NOT) || (n2.getKind() != kind::NOT));
@@ -695,29 +495,29 @@ Node ProofArray::toStreamRecLFSC(std::ostream& out,
       {
         if(n1[0] == n2[0]) {
           if(tb == 1) { Debug("mgdx") << "case 1\n"; }
-          n1 = eqNode(n1[1], n2[1]);
+          n1 = TheoryProof::eqNode(n1[1], n2[1]);
           ss << (firstNeg ? "(negsymm _ _ _ " : "(symm _ _ _ ") << ss1.str() << ") " << ss2.str();
         } else if(n1[1] == n2[1]) {
           if(tb == 1) { Debug("mgdx") << "case 2\n"; }
-          n1 = eqNode(n1[0], n2[0]);
+          n1 = TheoryProof::eqNode(n1[0], n2[0]);
           ss << ss1.str() << (secondNeg ? " (negsymm _ _ _ " : " (symm _ _ _ " ) << ss2.str() << ")";
         } else if(n1[0] == n2[1]) {
           if(tb == 1) { Debug("mgdx") << "case 3\n"; }
           if(!firstNeg && !secondNeg) {
-            n1 = eqNode(n2[0], n1[1]);
+            n1 = TheoryProof::eqNode(n2[0], n1[1]);
             ss << ss2.str() << " " << ss1.str();
           } else if (firstNeg) {
-            n1 = eqNode(n1[1], n2[0]);
+            n1 = TheoryProof::eqNode(n1[1], n2[0]);
             ss << " (negsymm _ _ _ " << ss1.str() << ") (symm _ _ _ " << ss2.str() << ")";
           } else {
             Assert(secondNeg);
-            n1 = eqNode(n1[1], n2[0]);
+            n1 = TheoryProof::eqNode(n1[1], n2[0]);
             ss << " (symm _ _ _ " << ss1.str() << ") (negsymm _ _ _ " << ss2.str() << ")";
           }
           if(tb == 1) { Debug("mgdx") << "++ proved " << n1 << "\n"; }
         } else if(n1[1] == n2[0]) {
           if(tb == 1) { Debug("mgdx") << "case 4\n"; }
-          n1 = eqNode(n1[0], n2[1]);
+          n1 = TheoryProof::eqNode(n1[0], n2[1]);
           ss << ss1.str() << " " << ss2.str();
         } else {
           Warning() << "\n\ntrans proof failure at step " << i << "\n\n";
@@ -1089,8 +889,8 @@ void ArrayProof::registerTerm(Expr term) {
   if (term.getKind() == kind::SELECT && term.getType().isBoolean()) {
     // Ensure cnf literals
     Node asNode(term);
-    ProofManager::currentPM()->ensureLiteral(eqNode(term, NodeManager::currentNM()->mkConst(true)));
-    ProofManager::currentPM()->ensureLiteral(eqNode(term, NodeManager::currentNM()->mkConst(false)));
+    ProofManager::currentPM()->ensureLiteral(TheoryProof::eqNode(term, NodeManager::currentNM()->mkConst(true)));
+    ProofManager::currentPM()->ensureLiteral(TheoryProof::eqNode(term, NodeManager::currentNM()->mkConst(false)));
   }
 
   // recursively declare all other terms
