@@ -332,14 +332,109 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
     if(tb == 1) {
       Debug("pf::uf") << "\ntrans proof[0], got n1 " << n1 << "\n";
     }
+    
+	bool identicalEqualities = false;
+    bool evenLengthSequence;
+    std::stringstream dontCare;
+	Node nodeAfterEqualitySequenceVal =  toStreamRecLFSC(dontCare, tp, *(pf.d_children[0]), tb + 1, map );
+    Node& nodeAfterEqualitySequence = nodeAfterEqualitySequenceVal;
 
 
     std::map<size_t, Node> childToStream;
 	std::stringstream ss1(ss.str()), ss2;
 
     for(size_t i = 1; i < pf.d_children.size(); ++i) {
-	  tp->transPrint("array", pf, i, tb, map, n1, &n2, &ss1, &ss2);
-      //YONI UNMERGABLE CODE BELOW
+	      std::stringstream ss1(ss.str()), ss2;
+       ss.str("");
+ 
+       pf.d_children[i]->d_node = simplifyBooleanNode(pf.d_children[i]->d_node);
+ 
+       // It is possible that we've already converted the i'th child to stream. If so,
+       // use previously stored result. Otherwise, convert and store.
+       Node n2;
+       if (childToStream.find(i) != childToStream.end())
+         n2 = childToStream[i];
+       else {
+         n2 = toStreamRecLFSC(ss2, tp, *(pf.d_children[i]), tb + 1, map);
+         childToStream[i] = n2;
+       }
+ 
+       // The following branch is dedicated to handling sequences of identical equalities,
+       // i.e. trans[ a=b, a=b, a=b ].
+       //
+       // There are two cases:
+       //    1. The number of equalities is odd. Then, the sequence can be collapsed to just one equality,
+       //       i.e. a=b.
+       //    2. The number of equalities is even. Now, we have two options: a=a or b=b. To determine this,
+       //       we look at the node after the equality sequence. If it needs a, we go for a=a; and if it needs
+       //       b, we go for b=b. If there is no following node, we look at the goal of the transitivity proof,
+       //       and use it to determine which option we need.
+       if(n2.getKind() == kind::EQUAL) {
+         if (((n1[0] == n2[0]) && (n1[1] == n2[1])) || ((n1[0] == n2[1]) && (n1[1] == n2[0]))) {
+           // We are in a sequence of identical equalities
+ 
+           Debug("pf::uf") << "Detected identical equalities: " << std::endl << "\t" << n1 << std::endl;
+ 
+           if (!identicalEqualities) {
+             // The sequence of identical equalities has started just now
+             identicalEqualities = true;
+ 
+             Debug("pf::uf") << "The sequence is just beginning. Determining length..." << std::endl;
+ 
+             // Determine whether the length of this sequence is odd or even.
+             evenLengthSequence = true;
+             bool sequenceOver = false;
+             size_t j = i + 1;
+ 
+             while (j < pf.d_children.size() && !sequenceOver) {
+               std::stringstream dontCare;
+               nodeAfterEqualitySequence = toStreamRecLFSC(dontCare, tp, *(pf.d_children[j]), tb + 1, map );
+ 
+               if (((nodeAfterEqualitySequence[0] == n1[0]) && (nodeAfterEqualitySequence[1] == n1[1])) ||
+                   ((nodeAfterEqualitySequence[0] == n1[1]) && (nodeAfterEqualitySequence[1] == n1[0]))) {
+                 evenLengthSequence = !evenLengthSequence;
+               } else {
+                 sequenceOver = true;
+               }
+ 
+               ++j;
+             }
+  
+			
+	  tp->transPrint("uf", pf, evenLengthSequence, sequenceOver, i, tb, map, n1, &n2, nodeAfterEqualitySequence, &ss, &ss1, &ss2);
+
+          } else {
+            ss.str(ss1.str());
+          }
+
+          // Ignore the redundancy.
+          continue;
+        }
+      }
+
+      if (identicalEqualities) {
+        // We were in a sequence of identical equalities, but it has now ended. Resume normal operation.
+        identicalEqualities = false;
+      }
+
+      Debug("pf::uf") << "\ndoing trans proof, got n2 " << n2 << "\n";
+      if(tb == 1) {
+        Debug("pf::uf") << "\ntrans proof[" << i << "], got n2 " << n2 << "\n";
+        Debug("pf::uf") << (n2.getKind() == kind::EQUAL) << "\n";
+
+        if ((n1.getNumChildren() >= 2) && (n2.getNumChildren() >= 2)) {
+          Debug("pf::uf") << n1[0].getId() << " " << n1[1].getId() << " / " << n2[0].getId() << " " << n2[1].getId() << "\n";
+          Debug("pf::uf") << n1[0].getId() << " " << n1[0] << "\n";
+          Debug("pf::uf") << n1[1].getId() << " " << n1[1] << "\n";
+          Debug("pf::uf") << n2[0].getId() << " " << n2[0] << "\n";
+          Debug("pf::uf") << n2[1].getId() << " " << n2[1] << "\n";
+          Debug("pf::uf") << (n1[0] == n2[0]) << "\n";
+          Debug("pf::uf") << (n1[1] == n2[1]) << "\n";
+          Debug("pf::uf") << (n1[0] == n2[1]) << "\n";
+          Debug("pf::uf") << (n1[1] == n2[0]) << "\n";
+        }
+      }
+
 
       ss << "(trans _ _ _ _ ";
 

@@ -260,11 +260,14 @@ public:
    */
 	void transPrint(std::string theoryName,
 					const theory::eq::EqProof& pf,
+					bool evenLengthSequence,
+					bool sequenceOver,
 					int i,
 					unsigned int tb,
 					const ProofLetMap& map,
 					Node& n1,
 					Node* p_n2,
+					Node& nodeAfterEqualitySequence,
 					std::stringstream* p_ss, 
 					std::stringstream* p_ss1,
 					std::stringstream* p_ss2);

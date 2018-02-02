@@ -1473,82 +1473,20 @@ void TheoryProof::assertAndPrint(std::ostream& out,
 
 void TheoryProof::transPrint(std::string theoryName,
 				const theory::eq::EqProof& pf,
+				bool evenLengthSequence,
+				bool sequenceOver,	
 				int i,
 				unsigned int tb,
 				const ProofLetMap& map,
 				Node& n1,
 				Node* p_n2,
+				Node& nodeAfterEqualitySequence,
 				std::stringstream* p_ss, 
 				std::stringstream* p_ss1,
 				std::stringstream* p_ss2) {
-	  bool ufProof = (theoryName == "uf");
-      (*p_ss).str("");
-		bool identicalEqualities = false;
-		bool evenLengthSequence;
-		Node nodeAfterEqualitySequence;
-		 std::map<size_t, Node> childToStream;
-
-      // In congruences, we can have something like a[x] - it's important to keep these,
-      // and not turn them into (a[x]=true), because that will mess up the congruence application
-      // later.
-
-      if (ufProof || pf.d_children[i]->d_id != theory::eq::MERGED_THROUGH_CONGRUENCE)
-        pf.d_children[i]->d_node = simplifyBooleanNode(pf.d_children[i]->d_node);
-
-      // It is possible that we've already converted the i'th child to stream. If so,
-      // use previously stored result. Otherwise, convert and store.
-      if ((childToStream).find(i) != (childToStream).end())
-        (*p_n2) = (childToStream)[i];
-      else {
-		(*p_n2) = toStreamRecLFSC((*p_ss2), this, *(pf.d_children[i]), tb + 1, map);
-        (childToStream)[i] = (*p_n2);
-      }
-
-      if (!ufProof) {
-			  Debug("mgd") << "\ndoing trans proof, got (first) n2 " << (*p_n2) << "\n";
-	  }
-
-      // The following branch is dedicated to handling sequences of identical equalities,
-      // i.e. trans[ a=b, a=b, a=b ].
-      //
-      // There are two cases:
-      //    1. The number of equalities is odd. Then, the sequence can be collapsed to just one equality,
-      //       i.e. a=b.
-      //    2. The number of equalities is even. Now, we have two options: a=a or b=b. To determine this,
-      //       we look at the node after the equality sequence. If it needs a, we go for a=a; and if it needs
-      //       b, we go for b=b. If there is no following node, we look at the goal of the transitivity proof,
-      //       and use it to determine which option we need.
-
-      if((*p_n2).getKind() == kind::EQUAL) {
-        if (((n1[0] == (*p_n2)[0]) && (n1[1] == (*p_n2)[1])) || ((n1[0] == (*p_n2)[1]) && (n1[1] == (*p_n2)[0]))) {
-          // We are in a sequence of identical equalities
-
-          Debug("pf::"+theoryName) << "Detected identical equalities: " << std::endl << "\t" << n1 << std::endl;
-
-          if (!identicalEqualities) {
-            // The sequence of identical equalities has started just now
-            identicalEqualities = true;
-
-            Debug("pf::"+theoryName) << "The sequence is just beginning. Determining length..." << std::endl;
-
-            // Determine whether the length of this sequence is odd or even.
-            evenLengthSequence = true;
-            bool sequenceOver = false;
-            size_t j = i + 1;
-
-            while (j < pf.d_children.size() && !sequenceOver) {
-              std::stringstream dontCare;
-			  nodeAfterEqualitySequence = toStreamRecLFSC(dontCare, this, *(pf.d_children[j]), tb + 1, map );
-
-              if (((nodeAfterEqualitySequence[0] == n1[0]) && (nodeAfterEqualitySequence[1] == n1[1])) ||
-                  ((nodeAfterEqualitySequence[0] == n1[1]) && (nodeAfterEqualitySequence[1] == n1[0]))) {
-                evenLengthSequence = !evenLengthSequence;
-              } else {
-                sequenceOver = true;
-              }
-
-              ++j;
-            }
+	  
+		bool ufProof = (theoryName == "uf");
+     
 
             if (evenLengthSequence) {
               // If the length is even, we need to apply transitivity for the "correct" hand of the equality.
@@ -1608,38 +1546,7 @@ void TheoryProof::transPrint(std::string theoryName,
             }
 
             Debug("pf::"+theoryName) << "Have proven: " << n1 << std::endl;
-          } else {
-            (*p_ss).str((*p_ss1).str());
-          }
+          } 
 
-          // Ignore the redundancy.
-          continue;
-        }
-      }
-
-      if (identicalEqualities) {
-        // We were in a sequence of identical equalities, but it has now ended. Resume normal operation.
-        identicalEqualities = false;
-      }
-	  std::string debugStream = ufProof ? "pf::uf" : "mgdx"; 
-      Debug(ufProof ? "pf::uf" : "mgd") << "\ndoing trans proof, got n2 " << (*p_n2) << "\n";
-      if(tb == 1) {
-        Debug(debugStream) << "\ntrans proof[" << i << "], got n2 " << (*p_n2) << "\n";
-        Debug(debugStream) << ((*p_n2).getKind() == kind::EQUAL) << "\n";
-
-        if ((n1.getNumChildren() >= 2) && ((*p_n2).getNumChildren() >= 2)) {
-          Debug(debugStream) << n1[0].getId() << " " << n1[1].getId() << " / " << (*p_n2)[0].getId() << " " << (*p_n2)[1].getId() << "\n";
-          Debug(debugStream) << n1[0].getId() << " " << n1[0] << "\n";
-          Debug(debugStream) << n1[1].getId() << " " << n1[1] << "\n";
-          Debug(debugStream) << (*p_n2)[0].getId() << " " << (*p_n2)[0] << "\n";
-          Debug(debugStream) << (*p_n2)[1].getId() << " " << (*p_n2)[1] << "\n";
-          Debug(debugStream) << (n1[0] == (*p_n2)[0]) << "\n";
-          Debug(debugStream) << (n1[1] == (*p_n2)[1]) << "\n";
-          Debug(debugStream) << (n1[0] == (*p_n2)[1]) << "\n";
-          Debug(debugStream) << (n1[1] == (*p_n2)[0]) << "\n";
-        }
-      }
-	return (*p_n2);
-}
 
 } /* namespace CVC4 */
