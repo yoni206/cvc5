@@ -84,6 +84,8 @@ libcvc4_la_SOURCES = \
 	printer/smt2/smt2_printer.h \
 	printer/tptp/tptp_printer.cpp \
 	printer/tptp/tptp_printer.h \
+	proof/abstract_proof.cpp \
+	proof/abstract_proof.h \
 	proof/arith_proof.cpp \
 	proof/arith_proof.h \
 	proof/array_proof.cpp \
@@ -96,10 +98,13 @@ libcvc4_la_SOURCES = \
 	proof/lemma_proof.cpp \
 	proof/lemma_proof.h \
 	proof/proof.h \
+	proof/proofs_header.h \
 	proof/proof_manager.cpp \
 	proof/proof_manager.h \
 	proof/proof_output_channel.cpp \
 	proof/proof_output_channel.h \
+	proof/proof_printer.h \
+	proof/proof_printer.cpp \
 	proof/proof_utils.cpp \
 	proof/proof_utils.h \
 	proof/sat_proof.h \
