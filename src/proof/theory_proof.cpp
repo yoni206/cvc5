@@ -1337,7 +1337,7 @@ void TheoryProof::assertAndPrint(std::ostream& out,
     if (ufProof) {
       theoryName = "uf";
     } else {
-      theoryName == "array";
+      theoryName = "array";
     }
 
     pf.debug_print(("pf::" + theoryName).c_str(), 0, pPrettyPrinter);
@@ -1359,7 +1359,7 @@ void TheoryProof::assertAndPrint(std::ostream& out,
 
       // Look for the negative clause, with which we will form a contradiction.
       if(!pf.d_children[i]->d_node.isNull() && pf.d_children[i]->d_node.getKind() == kind::NOT) {
-        Assert(neg < 0);
+        Assert(*neg < 0);
         (*neg) = i;
         ++i;
       }
