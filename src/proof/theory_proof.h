@@ -232,7 +232,7 @@ public:
 
 
    //Copied from uf_proof.cpp and array_proof.cpp
-   inline static bool match(TNode n1, TNode n2, std::string theoryName);
+   inline static bool match(TNode n1, TNode n2, theory::TheoryId);
 
    //Copied from uf_proof.cpp and array_proof.cpp
    inline static Node eqNode(TNode n1, TNode n2) {
@@ -241,36 +241,31 @@ public:
 
   /**
    * Helper function for ProofUF::toStreamRecLFSC and ProofArray::toStreamRecLFSC
-   * TODO temporary name!!!
    */
 
 
    void assertAndPrint(std::ostream& out,
 						  const theory::eq::EqProof& pf,
-						  unsigned tb,
 						  const ProofLetMap& map,
-						  const std::string theoryName,
-						  int& neg,
+						  const theory::TheoryId theoryId,
+						  int* neg,
 						  std::shared_ptr<theory::eq::EqProof> subTrans, 
 						  theory::eq::EqProof::PrettyPrinter* pPrettyPrinter = nullptr);
 
   /**
    * Helper function for ProofUF::toStreamRecLFSC and ProofArray::toStreamRecLFSC
-   * TODO temporary name!!!
    */
-	void transPrint(std::string theoryName,
-					const theory::eq::EqProof& pf,
-					bool evenLengthSequence,
-					bool sequenceOver,
-					int i,
-					unsigned int tb,
-					const ProofLetMap& map,
-					Node& n1,
-					Node* p_n2,
-					Node& nodeAfterEqualitySequence,
-					std::stringstream* p_ss, 
-					std::stringstream* p_ss1,
-					std::stringstream* p_ss2);
+	void transitivityPrinterHelper(theory::TheoryId theoryId,
+                        bool evenLengthSequence,
+                        bool sequenceOver,
+                        int i,
+                        const theory::eq::EqProof& pf,
+                        const ProofLetMap& map,
+                        const Node& n2,
+                        const std::string ss1String,
+                        std::stringstream* ss,
+                        Node& n1,
+                        Node& nodeAfterEqualitySequence);
 
 
   /**

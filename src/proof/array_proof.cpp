@@ -101,14 +101,17 @@ Node ProofArray::toStreamRecLFSC(std::ostream& out,
                                  unsigned tb,
                                  const ProofLetMap& map) const
 {
+  Debug("pf::array") << std::endl
+                << std::endl
+                << "toStreamRecLFSC called. tb = " << tb
+                << " . proof:" << std::endl;
   ArrayProofPrinter proofPrinter(d_reasonRow, d_reasonRow1, d_reasonExt);
   if(tb == 0) {
-	int negVal = -1;
-	int& neg = negVal;
+	int neg= -1;
 	std::shared_ptr<theory::eq::EqProof> subTrans =
 			std::make_shared<theory::eq::EqProof>();
 
-	tp->assertAndPrint(out, pf, tb, map, "array", neg, subTrans, &proofPrinter);
+	tp->assertAndPrint(out, pf, map, theory::THEORY_ARRAY, &neg, subTrans, &proofPrinter);
 
 
     Node n1;
@@ -225,16 +228,16 @@ Node ProofArray::toStreamRecLFSC(std::ostream& out,
     Debug("mgd") << "           " << n2 << "\n";
 
     int side = 0;
-    if(TheoryProof::match(pf2->d_node, n1[0], "array")) {
+    if(TheoryProof::match(pf2->d_node, n1[0], theory::THEORY_ARRAY)) {
       Debug("mgd") << "SIDE IS 0\n";
       side = 0;
     } else {
       Debug("mgd") << "SIDE IS 1\n";
-      if(!TheoryProof::match(pf2->d_node, n1[1], "array")) {
+      if(!TheoryProof::match(pf2->d_node, n1[1], theory::THEORY_ARRAY)) {
         Debug("mgd") << "IN BAD CASE, our first subproof is\n";
         pf2->d_children[0]->debug_print("mgd", 0, &proofPrinter);
       }
-      Assert(TheoryProof::match(pf2->d_node, n1[1], "array"));
+      Assert(TheoryProof::match(pf2->d_node, n1[1], theory::THEORY_ARRAY));
       side = 1;
     }
 
@@ -449,13 +452,9 @@ Node ProofArray::toStreamRecLFSC(std::ostream& out,
 
 
 
-int negVal = -1;
-	int& neg = negVal;
 
 
-    Node n1Val = toStreamRecLFSC(ss, tp, *(pf.d_children[0]), tb + 1, map);
-	Node& n1 = n1Val;
-	//TODO make n2 a reference too.
+    Node n1 = toStreamRecLFSC(ss, tp, *(pf.d_children[0]), tb + 1, map);
 	Node n2; 
     Debug("mgd") << "\ndoing trans proof, got n1 " << n1 << "\n";
     if(tb == 1) {
@@ -465,8 +464,7 @@ int negVal = -1;
     bool identicalEqualities = false;
     bool evenLengthSequence;
     std::stringstream dontCare;
-	Node nodeAfterEqualitySequenceVal =  toStreamRecLFSC(dontCare, tp, *(pf.d_children[0]), tb + 1, map );
-    Node& nodeAfterEqualitySequence = nodeAfterEqualitySequenceVal;
+	Node nodeAfterEqualitySequence =  toStreamRecLFSC(dontCare, tp, *(pf.d_children[0]), tb + 1, map );
 
     std::map<size_t, Node> childToStream;
 
@@ -535,7 +533,11 @@ int negVal = -1;
                ++j;
              }
 
-	  tp->transPrint("array", pf, evenLengthSequence, sequenceOver,i, tb, map, n1, &n2, nodeAfterEqualitySequence, &ss, &ss1, &ss2);
+	  tp->transitivityPrinterHelper(theory::THEORY_ARRAY, evenLengthSequence, sequenceOver, i, pf, map, n2,
+	                 ss1.str(),
+	                 &ss,
+	                 n1,
+	                 nodeAfterEqualitySequence);
 		   }
 else {
              ss.str(ss1.str());

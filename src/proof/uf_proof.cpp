@@ -58,6 +58,10 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
                               unsigned tb,
                               const ProofLetMap& map)
 {
+  Debug("pf::uf") << std::endl
+                << std::endl
+                << "toStreamRecLFSC called. tb = " << tb
+                << " . proof:" << std::endl;
    if (tb == 0) {
     // Special case: false was an input, so the proof is just "false".
     if (pf.d_id == theory::eq::MERGED_THROUGH_EQUALITY &&
@@ -68,12 +72,11 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
       return Node();
     }
 	
-	int negVal = -1;	
-	int& neg = negVal;
+	int neg = -1;
 	std::shared_ptr<theory::eq::EqProof> subTrans =
 			std::make_shared<theory::eq::EqProof>();
 
-    tp->assertAndPrint(out, pf, tb, map, "uf", neg, subTrans);
+    tp->assertAndPrint(out, pf, map, theory::THEORY_UF, &neg, subTrans);
 
 
 
@@ -178,7 +181,7 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
     Debug("pf::uf") << "           " << n1 << "\n";
     Debug("pf::uf") << "           " << n2 << "\n";
     int side = 0;
-    if(TheoryProof::match(pf2->d_node, n1[0], "uf")) {
+    if(TheoryProof::match(pf2->d_node, n1[0], theory::THEORY_UF)) {
       //if(tb == 1) {
       Debug("pf::uf") << "SIDE IS 0\n";
       //}
@@ -187,11 +190,11 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
       //if(tb == 1) {
       Debug("pf::uf") << "SIDE IS 1\n";
       //}
-      if(!TheoryProof::match(pf2->d_node, n1[1], "uf")) {
+      if(!TheoryProof::match(pf2->d_node, n1[1], theory::THEORY_UF)) {
         Debug("pf::uf") << "IN BAD CASE, our first subproof is\n";
         pf2->d_children[0]->debug_print("pf::uf");
       }
-      Assert(TheoryProof::match(pf2->d_node, n1[1], "uf"));
+      Assert(TheoryProof::match(pf2->d_node, n1[1], theory::THEORY_UF));
       side = 1;
     }
     if(n1[side].getKind() == kind::APPLY_UF || 
@@ -324,10 +327,8 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
 
     pf.d_children[0]->d_node = simplifyBooleanNode(pf.d_children[0]->d_node);
 
-    Node n1Val = toStreamRecLFSC(ss, tp, *(pf.d_children[0]), tb + 1, map);
-	Node& n1 = n1Val;
+    Node n1 = toStreamRecLFSC(ss, tp, *(pf.d_children[0]), tb + 1, map);
     Debug("pf::uf") << "\ndoing trans proof, got n1 " << n1 << "\n";
-   	//TODO make n2 a reference too.
 	Node n2; 
     if(tb == 1) {
       Debug("pf::uf") << "\ntrans proof[0], got n1 " << n1 << "\n";
@@ -336,8 +337,7 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
 	bool identicalEqualities = false;
     bool evenLengthSequence;
     std::stringstream dontCare;
-	Node nodeAfterEqualitySequenceVal =  toStreamRecLFSC(dontCare, tp, *(pf.d_children[0]), tb + 1, map );
-    Node& nodeAfterEqualitySequence = nodeAfterEqualitySequenceVal;
+	Node nodeAfterEqualitySequence =  toStreamRecLFSC(dontCare, tp, *(pf.d_children[0]), tb + 1, map );
 
 
     std::map<size_t, Node> childToStream;
@@ -401,7 +401,7 @@ Node ProofUF::toStreamRecLFSC(std::ostream& out,
              }
   
 			
-	  tp->transPrint("uf", pf, evenLengthSequence, sequenceOver, i, tb, map, n1, &n2, nodeAfterEqualitySequence, &ss, &ss1, &ss2);
+	  tp->transitivityPrinterHelper(theory::THEORY_UF, evenLengthSequence, sequenceOver, i, pf, map, n2, ss1.str(), &ss, n1, nodeAfterEqualitySequence);
 
           } else {
             ss.str(ss1.str());
