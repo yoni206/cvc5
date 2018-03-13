@@ -1,0 +1,25 @@
+(check
+(% s1 sort
+(% t (term s1)
+(: (term s1)
+(stam s1 t)))))
+
+
+
+(check
+(% s1 sort
+(% x (term s1)
+(% y (term s1)
+(% z (term s1)
+(% p1 (th_holds (not (= s1 (stam s1 y) (stam s1 y)))) 
+(% p2 (th_holds (forall s1 z (= s1 z z)))  
+(: (holds cln)
+(inst s1 z 
+	(= s1 z z)
+	(stam s1 y)
+	(= s1 (stam s1 y) (stam s1 y))
+	p2
+	(\ A (clausify_false (contra (= s1 (stam s1 y) (stam s1 y)) A p1))))
+))))))))
+
+
