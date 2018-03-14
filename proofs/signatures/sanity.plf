@@ -22,18 +22,34 @@
 ;	(\ A (clausify_false (contra (= s1 (stam s1 y) (stam s1 y)) A p1))))
 ;))))))))
 
+;(check
+;(% z (term (BitVec 2))
+;(% v bv
+;(% p1 (th_holds (not (= _ (a_bv 2 v) (a_bv 2 v)))) 
+;(% p2 (th_holds (forall _ z (= _ z z)))  
+;(: (holds cln)
+;(inst _ z 
+;	(= _ z z)
+;	(a_bv 2 v)
+;	(= _ (a_bv 2 v) (a_bv 2 v))
+;	p2
+;	(\ A (clausify_false (contra (= _ (a_bv 2 v) (a_bv 2 v)) A p1))))
+;))))))
+
 (check
-(% z (term (BitVec 2))
-(% v bv
-(% p1 (th_holds (not (= _ (a_bv 2 v) (a_bv 2 v)))) 
-(% p2 (th_holds (forall _ z (= _ z z)))  
-(: (holds cln)
-(inst _ z 
-	(= _ z z)
-	(a_bv 2 v)
-	(= _ (a_bv 2 v) (a_bv 2 v))
-	p2
-	(\ A (clausify_false (contra (= _ (a_bv 2 v) (a_bv 2 v)) A p1))))
-))))))
+(% t (term Int)
+(: (th_holds (= _ t t))
+(@ ti t
+(refl _ ti)))))
 
+(check
+(% s (term Int)
+(: (th_holds (= _ s s))
+(@ ti s
+(refl _ ti)))))
 
+(check
+(% s (term Int)
+(@ si s
+(: (th_holds (= _ si s))
+(refl _ si)))))
