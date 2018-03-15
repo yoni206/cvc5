@@ -1,0 +1,7 @@
+(check
+(% s sort
+(% t (term s)
+(% p (th_holds (forall s t (= _ t t)))
+(% pp (holds (cln))
+(: (holds cln)
+(inst s t (= _ t t) t (= _ t t) p (\ A pp))))))))) 
