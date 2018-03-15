@@ -1,0 +1,8 @@
+(check
+(% s sort
+(% t (term s)
+(% f formula
+(% p (th_holds (not (forall s t f)))
+(% pp (holds cln)
+(: (holds cln)
+(skolem s t f p (\ k (\ fi (\ p1 (\ r pp))))))))))))
