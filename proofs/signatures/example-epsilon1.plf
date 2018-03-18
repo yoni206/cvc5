@@ -1,3 +1,4 @@
+;super simple
 (check
 (% s1 sort
 (% s2 sort
@@ -17,6 +18,7 @@
 
 
 
+;fails because of a problem in th_quant.plf
 ;(check
 ;(% s1 sort
 ;(% s2 sort

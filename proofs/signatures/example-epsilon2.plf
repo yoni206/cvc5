@@ -1,0 +1,31 @@
+;proof of cln from the false assumption that a!=b when a is obtained from b by doing b[i]=a[i]
+(check
+(% s1 sort
+(% s2 sort
+(% a (term (Array s1 s2))
+(% i (term s1)
+(% x (term s1)
+(% A1 (th_holds (not (= (Array s1 s2) a (apply _ _ (apply _ _ (apply _ _ (write s1 s2) a) i) (apply _ _ (apply _ _ (read s1 s2) a) i)))))
+; TODO get rid of p
+(% p (th_holds (= s2 (apply _ _ (apply _ _ (read s1 s2) a) (epsilon s1 x (not (= s2 (apply _ _ (apply _ _ (read s1 s2) a) x) (apply _ _ (apply _ _ (read s1 s2) (apply _ _ (apply _ _ (apply _ _ (write s1 s2) a) i) (apply _ _ (apply _ _ (read s1 s2) a) i))) x))))) (apply _ _ (apply _ _ (read s1 s2) (apply _ _ (apply _ _ (apply _ _ (write s1 s2) a) i) (apply _ _ (apply _ _ (read s1 s2) a) i))) (epsilon s1 x (not (= s2 (apply _ _ (apply _ _ (read s1 s2) a) x) (apply _ _ (apply _ _ (read s1 s2) (apply _ _ (apply _ _ (apply _ _ (write s1 s2) a) i) (apply _ _ (apply _ _ (read s1 s2) a) i))) x)))))))
+(: (holds cln)
+(decl_atom (= (Array s1 s2) a (apply _ _ (apply _ _ (apply _ _ (write s1 s2) a) i) (apply _ _ (apply _ _ (read s1 s2) a) i))) (\v1 (\ a1
+(satlem _ cln						;input
+(ast v1 _ cln a1 (\u1
+(clausify_false
+(contra _ u1 A1))))
+(\ u2							;u2 is a proof of (neg v1)			
+(satlem _ cln						;theory lemma
+(asf v1 _ _ a1 (\ u3			
+(clausify_false 
+(contra _
+;actual proof
+p ; this was a proof of the equality for epsilon
+(exteps s1 s2 a (apply _ _ (apply _ _ (apply _ _ (write s1 s2) a) i) (apply _ _ (apply _ _ (read s1 s2) a) i)) x A1) ; this was a proof of the inequality for epsilon 
+;end of actual proof
+)
+))) (\u4		;u4 is a proof of (v1)	
+
+(satlem_simplify _ cln cln
+(R _ _ u4 u2 v1)
+(\ x x))))))))))))))))))

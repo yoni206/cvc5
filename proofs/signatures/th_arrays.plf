@@ -33,10 +33,15 @@
 			  (! t (term s)
 				(term s))))
 
+(declare stam-arr (! s sort
+				  (term (arrow s s))))
+
 (declare epsilon (! s sort
 				 (! t (term s)
 				 (! f formula 
 					(term s)))))
+
+
 
 
 (declare exteps (! s1 sort
@@ -49,6 +54,8 @@
 				(@ rt2 (apply _ _ (read s1 s2) t2)
 				(th_holds 
 					(not (= _ (apply _ _ rt1 (epsilon s1 x (not (= _ (apply _ _ rt1 x) (apply _ _ rt2 x))))) (apply _ _ rt2 (epsilon s1 x (not (= _ (apply _ _ rt1 x) (apply _ _ rt2 x))))))))))))))))))
+
+
 	
 (declare ext2 (! s1 sort
 			  (! s2 sort
@@ -99,3 +106,15 @@
                    (! u2 (th_holds (or (= _ t1 t2) (not (= _ (apply _ _ (apply _ _ (read s1 s2) t1) k) (apply _ _ (apply _ _ (read s1 s2) t2) k)))))
                      (holds cln)))
                (holds cln)))))))
+
+
+;as similar as possible to the original "ext", but with epsilon
+(declare ext-eps-cln (! s1 sort
+				(! s2 sort 
+				(! t1 (term (Array s1 s2))
+				(! t2 (term (Array s1 s2))
+				(! x (term s1)
+				(! u1 (! u2 (th_holds (or (= _ t1 t2) (not (= _ (apply _ _ (apply _ _ (read s1 s2) t1) (epsilon s1 x (not (= _ (apply _ _ (apply _ _ (read s1 s2) t1) x) (apply _ _ (apply _ _ (read s1 s2) t2) x))))) (apply _ _ (apply _ _ (read s1 s2) t2) (epsilon s1 x (not (= _ (apply _ _ (apply _ _ (read s1 s2) t1) x) (apply _ _ (apply _ _ (read s1 s2) t2) x))))))))) (holds cln))
+					(holds cln))))))))
+
+
