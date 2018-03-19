@@ -1,5 +1,4 @@
 ;regress.../arrays/arrays4.smt2
-unsat
 (check
  ;; Declarations
 (% Element sort
@@ -8,6 +7,7 @@ unsat
 (% i1 (term Index)
 (% a2 (term (Array Index Element))
 (% i2 (term Index)
+(% x (term Index)
 (% A2 (th_holds true)
 (% A1 (th_holds (not (= (Array Index Element) a1 a2)))
 (% A0 (th_holds (= (Array Index Element) (apply _ _ (apply _ _ (apply _ _ (write Index Element) (apply _ _ (apply _ _ (apply _ _ (write Index Element) a1) i1) (apply _ _ (apply _ _ (read Index Element) a2) i1) ) ) i2) (apply _ _ (apply _ _ (read Index Element) (apply _ _ (apply _ _ (apply _ _ (write Index Element) a2) i1) (apply _ _ (apply _ _ (read Index Element) a1) i1) ) ) i2) )  (apply _ _ (apply _ _ (apply _ _ (write Index Element) (apply _ _ (apply _ _ (apply _ _ (write Index Element) a2) i1) (apply _ _ (apply _ _ (read Index Element) a1) i1) ) ) i2) (apply _ _ (apply _ _ (read Index Element) (apply _ _ (apply _ _ (apply _ _ (write Index Element) a1) i1) (apply _ _ (apply _ _ (read Index Element) a2) i1) ) ) i2) ) ))
@@ -19,7 +19,7 @@ unsat
 ;; BV const letification
 
 
-(ext _ _ a1 a2 (\ array_ext_index_1 (\ .sl1
+(ext-eps-cln _ _ a1 a2 x (\ .sl1
 
  ;; Printing the global let map
 (@ let1 a1
@@ -37,7 +37,7 @@ unsat
 (@ let13 (= (Array Index Element) let10 let12)
 (@ let14 (= (Array Index Element) let1 let3)
 (@ let15 (= Index let2 let6)
-(@ let16 array_ext_index_1
+(@ let16 (epsilon Index x ((not (= _ (apply _ _ (apply _ _ (read Index Element) a1) x) (apply _ _ (apply _ _ (read Index Element) a2) x)))))
 (@ let17 (apply _ _ (apply _ _ (read Index Element) let1) let16) 
 (@ let18 (apply _ _ (apply _ _ (read Index Element) let3) let16) 
 (@ let19 (= Element let17 let18)
@@ -85,47 +85,45 @@ unsat
  ;; Bit-blasting learned clauses 
 
 (satlem _ _ (asf _ _ _ .a7 (\ .l14 (asf _ _ _ .a6 (\ .l12  ;; Array Theory Lemma 
-;;(= (select a2 array_ext_index_1) (select (store a2 i1 (select a1 i1)) array_ext_index_1)) (= i1 array_ext_index_1) 
+;;(= (select a2 let16) (select (store a2 i1 (select a1 i1)) let16)) (= i1 let16) 
 (clausify_false (contra _ (symm _ _ _ (row _ _ let2 let16 let3 let7 .l12)) .l14))
 ))))( \ .lemc8
 (satlem _ _ (ast _ _ _ .a11 (\ .l23 (ast _ _ _ .a10 (\ .l21 (ast _ _ _ .a6 (\ .l13 (asf _ _ _ .a5 (\ .l10 (ast _ _ _ .a2 (\ .l5  ;; Array Theory Lemma 
-;;(let ((_let_0 (store a2 i1 (select a1 i1)))) (not (= (select _let_0 array_ext_index_1) (select (store _let_0 i2 (select (store a1 i1 (select a2 i1)) i2)) array_ext_index_1)))) (let ((_let_0 (store a1 i1 (select a2 i1)))) (not (= (select _let_0 array_ext_index_1) (select (store _let_0 i2 (select (store a2 i1 (select a1 i1)) i2)) array_ext_index_1)))) (not (= i1 array_ext_index_1)) (= (select a1 array_ext_index_1) (select a2 array_ext_index_1)) (let ((_let_0 (store a2 i1 (select a1 i1)))) (let ((_let_1 (store a1 i1 (select a2 i1)))) (not (= (store _let_1 i2 (select _let_0 i2)) (store _let_0 i2 (select _let_1 i2)))))) 
+;;(let ((_let_0 (store a2 i1 (select a1 i1)))) (not (= (select _let_0 let16) (select (store _let_0 i2 (select (store a1 i1 (select a2 i1)) i2)) let16)))) (let ((_let_0 (store a1 i1 (select a2 i1)))) (not (= (select _let_0 let16) (select (store _let_0 i2 (select (store a2 i1 (select a1 i1)) i2)) let16)))) (not (= i1 let16)) (= (select a1 let16) (select a2 let16)) (let ((_let_0 (store a2 i1 (select a1 i1)))) (let ((_let_1 (store a1 i1 (select a2 i1)))) (not (= (store _let_1 i2 (select _let_0 i2)) (store _let_0 i2 (select _let_1 i2)))))) 
 (clausify_false (contra _ (trans _ _ _ _ (trans _ _ _ _ (symm _ _ _ (trans _ _ _ _ (trans _ _ _ _ (trans _ _ _ _ (trans _ _ _ _ (trans _ _ _ _ .l21 (cong _ _ _ _ _ _ (trans _ _ _ _ (cong _ _ _ _ _ _ (refl _ (read Index Element) ) (refl _ let10)) (symm _ _ _ (cong _ _ _ _ _ _ (refl _ (read Index Element) ) (symm _ _ _ .l5)))) (refl _ let16))) (symm _ _ _ .l23)) (symm _ _ _ (cong _ _ _ _ _ _ (cong _ _ _ _ _ _ (refl _ (read Index Element) ) (refl _ let8)) .l13))) (row1 _ _ let3 let2 let7)) (symm _ _ _ (cong _ _ _ _ _ _ (cong _ _ _ _ _ _ (refl _ (read Index Element) ) (refl _ let1)) (symm _ _ _ .l13))))) .l21) (trans _ _ _ _ (trans _ _ _ _ (symm _ _ _ (trans _ _ _ _ (cong _ _ _ _ _ _ (cong _ _ _ _ _ _ (refl _ (read Index Element) ) (refl _ let5)) .l13) .l21)) (row1 _ _ let1 let2 let4)) (symm _ _ _ (cong _ _ _ _ _ _ (cong _ _ _ _ _ _ (refl _ (read Index Element) ) (refl _ let3)) (symm _ _ _ .l13))))) .l10))
 ))))))))))( \ .lemc15
 (satlem _ _ (asf _ _ _ .a8 (\ .l16 (asf _ _ _ .a6 (\ .l12  ;; Array Theory Lemma 
-;;(= (select a1 array_ext_index_1) (select (store a1 i1 (select a2 i1)) array_ext_index_1)) (= i1 array_ext_index_1) 
+;;(= (select a1 let16) (select (store a1 i1 (select a2 i1)) let16)) (= i1 let16) 
 (clausify_false (contra _ (symm _ _ _ (row _ _ let2 let16 let1 let4 .l12)) .l16))
 ))))( \ .lemc9
 (satlem _ _ (ast _ _ _ .a11 (\ .l23 (ast _ _ _ .a10 (\ .l21 (ast _ _ _ .a8 (\ .l17 (ast _ _ _ .a7 (\ .l15 (asf _ _ _ .a5 (\ .l10 (ast _ _ _ .a2 (\ .l5  ;; Array Theory Lemma 
-;;(let ((_let_0 (store a2 i1 (select a1 i1)))) (not (= (select _let_0 array_ext_index_1) (select (store _let_0 i2 (select (store a1 i1 (select a2 i1)) i2)) array_ext_index_1)))) (let ((_let_0 (store a1 i1 (select a2 i1)))) (not (= (select _let_0 array_ext_index_1) (select (store _let_0 i2 (select (store a2 i1 (select a1 i1)) i2)) array_ext_index_1)))) (not (= (select a1 array_ext_index_1) (select (store a1 i1 (select a2 i1)) array_ext_index_1))) (not (= (select a2 array_ext_index_1) (select (store a2 i1 (select a1 i1)) array_ext_index_1))) (= (select a1 array_ext_index_1) (select a2 array_ext_index_1)) (let ((_let_0 (store a2 i1 (select a1 i1)))) (let ((_let_1 (store a1 i1 (select a2 i1)))) (not (= (store _let_1 i2 (select _let_0 i2)) (store _let_0 i2 (select _let_1 i2)))))) 
+;;(let ((_let_0 (store a2 i1 (select a1 i1)))) (not (= (select _let_0 let16) (select (store _let_0 i2 (select (store a1 i1 (select a2 i1)) i2)) let16)))) (let ((_let_0 (store a1 i1 (select a2 i1)))) (not (= (select _let_0 let16) (select (store _let_0 i2 (select (store a2 i1 (select a1 i1)) i2)) let16)))) (not (= (select a1 let16) (select (store a1 i1 (select a2 i1)) let16))) (not (= (select a2 let16) (select (store a2 i1 (select a1 i1)) let16))) (= (select a1 let16) (select a2 let16)) (let ((_let_0 (store a2 i1 (select a1 i1)))) (let ((_let_1 (store a1 i1 (select a2 i1)))) (not (= (store _let_1 i2 (select _let_0 i2)) (store _let_0 i2 (select _let_1 i2)))))) 
 (clausify_false (contra _ (trans _ _ _ _ (trans _ _ _ _ .l17 .l21) (trans _ _ _ _ (trans _ _ _ _ (cong _ _ _ _ _ _ (trans _ _ _ _ (cong _ _ _ _ _ _ (refl _ (read Index Element) ) (refl _ let10)) (symm _ _ _ (cong _ _ _ _ _ _ (refl _ (read Index Element) ) (symm _ _ _ .l5)))) (refl _ let16)) (symm _ _ _ .l23)) (symm _ _ _ .l15))) .l10))
 ))))))))))))( \ .lemc19
 (satlem _ _ (ast _ _ _ .a9 (\ .l19 (ast _ _ _ .a8 (\ .l17 (ast _ _ _ .a7 (\ .l15 (asf _ _ _ .a5 (\ .l10 (ast _ _ _ .a2 (\ .l5  ;; Array Theory Lemma 
-;;(not (= i2 array_ext_index_1)) (not (= (select a1 array_ext_index_1) (select (store a1 i1 (select a2 i1)) array_ext_index_1))) (not (= (select a2 array_ext_index_1) (select (store a2 i1 (select a1 i1)) array_ext_index_1))) (= (select a1 array_ext_index_1) (select a2 array_ext_index_1)) (let ((_let_0 (store a2 i1 (select a1 i1)))) (let ((_let_1 (store a1 i1 (select a2 i1)))) (not (= (store _let_1 i2 (select _let_0 i2)) (store _let_0 i2 (select _let_1 i2)))))) 
+;;(not (= i2 let16)) (not (= (select a1 let16) (select (store a1 i1 (select a2 i1)) let16))) (not (= (select a2 let16) (select (store a2 i1 (select a1 i1)) let16))) (= (select a1 let16) (select a2 let16)) (let ((_let_0 (store a2 i1 (select a1 i1)))) (let ((_let_1 (store a1 i1 (select a2 i1)))) (not (= (store _let_1 i2 (select _let_0 i2)) (store _let_0 i2 (select _let_1 i2)))))) 
 (clausify_false (contra _ (trans _ _ _ _ (trans _ _ _ _ (symm _ _ _ (trans _ _ _ _ (trans _ _ _ _ (trans _ _ _ _ (trans _ _ _ _ (trans _ _ _ _ (trans _ _ _ _ .l15 (symm _ _ _ (cong _ _ _ _ _ _ (trans _ _ _ _ (cong _ _ _ _ _ _ (refl _ (read Index Element) ) (refl _ let8)) (symm _ _ _ (cong _ _ _ _ _ _ (refl _ (read Index Element) ) (refl _ let8)))) .l19))) (symm _ _ _ (row1 _ _ let5 let6 let9))) (symm _ _ _ (cong _ _ _ _ _ _ (cong _ _ _ _ _ _ (refl _ (read Index Element) ) (symm _ _ _ .l5)) (refl _ let6)))) (row1 _ _ let8 let6 let11)) (symm _ _ _ (cong _ _ _ _ _ _ (trans _ _ _ _ (cong _ _ _ _ _ _ (refl _ (read Index Element) ) (refl _ let5)) (symm _ _ _ (cong _ _ _ _ _ _ (refl _ (read Index Element) ) (refl _ let5)))) (symm _ _ _ .l19)))) (symm _ _ _ .l17))) .l15) (symm _ _ _ .l15)) .l10))
 ))))))))))( \ .lemc23
 (satlem _ _ (asf _ _ _ .a6 (\ .l12 (ast _ _ _ .a3 (\ .l7 (asf _ _ _ .a5 (\ .l10 (ast _ _ _ .a2 (\ .l5  ;; Array Theory Lemma 
-;;(= i1 array_ext_index_1) (not (= i1 i2)) (= (select a1 array_ext_index_1) (select a2 array_ext_index_1)) (let ((_let_0 (store a2 i1 (select a1 i1)))) (let ((_let_1 (store a1 i1 (select a2 i1)))) (not (= (store _let_1 i2 (select _let_0 i2)) (store _let_0 i2 (select _let_1 i2)))))) 
+;;(= i1 let16) (not (= i1 i2)) (= (select a1 let16) (select a2 let16)) (let ((_let_0 (store a2 i1 (select a1 i1)))) (let ((_let_1 (store a1 i1 (select a2 i1)))) (not (= (store _let_1 i2 (select _let_0 i2)) (store _let_0 i2 (select _let_1 i2)))))) 
 (clausify_false (contra _ (symm _ _ _ (trans _ _ _ _ (trans _ _ _ _ (trans _ _ _ _ (symm _ _ _ (trans _ _ _ _ (row _ _ let6 let16 let8 let11 (negtrans2 _ _ _ _ (symm _ _ _ .l7) .l12)) (row _ _ let2 let16 let3 let7 .l12))) (cong _ _ _ _ _ _ (trans _ _ _ _ (symm _ _ _ (cong _ _ _ _ _ _ (refl _ (read Index Element) ) .l5)) (cong _ _ _ _ _ _ (refl _ (read Index Element) ) (refl _ let10))) (refl _ let16))) (row _ _ let6 let16 let5 let9 (negtrans2 _ _ _ _ (symm _ _ _ .l7) .l12))) (row _ _ let2 let16 let1 let4 .l12))) .l10))
 ))))))))( \ .lemc12
 (satlem _ _ (ast _ _ _ .a5 (\ .l11 (asf _ _ _ .a4 (\ .l8  ;; Array Theory Lemma 
-;;(not (= (select a1 array_ext_index_1) (select a2 array_ext_index_1))) (= a1 a2) 
+;;(not (= (select a1 let16) (select a2 let16))) (= a1 a2) 
 (clausify_false (contra _ .l11 (or_elim_1 _ _ .l8 .sl1)))
 ))))( \ .lemc6
 (satlem _ _ (asf _ _ _ .a11 (\ .l22 (asf _ _ _ .a9 (\ .l18  ;; Array Theory Lemma 
-;;(let ((_let_0 (store a2 i1 (select a1 i1)))) (= (select _let_0 array_ext_index_1) (select (store _let_0 i2 (select (store a1 i1 (select a2 i1)) i2)) array_ext_index_1))) (= i2 array_ext_index_1) 
+;;(let ((_let_0 (store a2 i1 (select a1 i1)))) (= (select _let_0 let16) (select (store _let_0 i2 (select (store a1 i1 (select a2 i1)) i2)) let16))) (= i2 let16) 
 (clausify_false (contra _ (symm _ _ _ (row _ _ let6 let16 let8 let11 .l18)) .l22))
 ))))( \ .lemc11
 (satlem _ _ (asf _ _ _ .a10 (\ .l20 (asf _ _ _ .a9 (\ .l18  ;; Array Theory Lemma 
-;;(let ((_let_0 (store a1 i1 (select a2 i1)))) (= (select _let_0 array_ext_index_1) (select (store _let_0 i2 (select (store a2 i1 (select a1 i1)) i2)) array_ext_index_1))) (= i2 array_ext_index_1) 
+;;(let ((_let_0 (store a1 i1 (select a2 i1)))) (= (select _let_0 let16) (select (store _let_0 i2 (select (store a2 i1 (select a1 i1)) i2)) let16))) (= i2 let16) 
 (clausify_false (contra _ (symm _ _ _ (row _ _ let6 let16 let5 let9 .l18)) .l20))
 ))))( \ .lemc10
 (satlem _ _ (ast _ _ _ .a9 (\ .l19 (ast _ _ _ .a6 (\ .l13 (asf _ _ _ .a3 (\ .l6  ;; UF Theory Lemma 
-;;(not (= i2 array_ext_index_1)) (not (= i1 array_ext_index_1)) (= i1 i2) 
 (clausify_false (contra _ (trans _ _ _ _ (trans _ _ _ _ (trans _ _ _ _ .l13 (symm _ _ _ .l19)) .l19) (symm _ _ _ .l19)) .l6))
 ))))))( \ .lemc16
 (satlem _ _ (ast _ _ _ .a6 (\ .l13 (ast _ _ _ .a3 (\ .l7 (asf _ _ _ .a5 (\ .l10 (ast _ _ _ .a2 (\ .l5  ;; Array Theory Lemma 
-;;(not (= i1 array_ext_index_1)) (not (= i1 i2)) (= (select a1 array_ext_index_1) (select a2 array_ext_index_1)) (let ((_let_0 (store a2 i1 (select a1 i1)))) (let ((_let_1 (store a1 i1 (select a2 i1)))) (not (= (store _let_1 i2 (select _let_0 i2)) (store _let_0 i2 (select _let_1 i2)))))) 
 (clausify_false (contra _ (symm _ _ _ (trans _ _ _ _ (trans _ _ _ _ (trans _ _ _ _ (trans _ _ _ _ (symm _ _ _ (trans _ _ _ _ (cong _ _ _ _ _ _ (cong _ _ _ _ _ _ (refl _ (read Index Element) ) .l5) (refl _ let6)) (trans _ _ _ _ (row1 _ _ let8 let6 let11) (trans _ _ _ _ (cong _ _ _ _ _ _ (cong _ _ _ _ _ _ (refl _ (read Index Element) ) (refl _ let5)) (symm _ _ _ .l7)) (trans _ _ _ _ (row1 _ _ let1 let2 let4) (cong _ _ _ _ _ _ (cong _ _ _ _ _ _ (refl _ (read Index Element) ) (refl _ let3)) .l13)))))) (row1 _ _ let5 let6 let9)) (symm _ _ _ (cong _ _ _ _ _ _ (cong _ _ _ _ _ _ (refl _ (read Index Element) ) (refl _ let8)) .l7))) (row1 _ _ let3 let2 let7)) (symm _ _ _ (cong _ _ _ _ _ _ (cong _ _ _ _ _ _ (refl _ (read Index Element) ) (refl _ let1)) (symm _ _ _ .l13))))) .l10))
 ))))))))( \ .lemc7
 (satlem_simplify _ _ _ (R _ _ .lemc6 .pb5 .v4) (\ .cl13
