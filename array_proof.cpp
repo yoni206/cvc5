@@ -1213,6 +1213,8 @@ void LFSCArrayProof::printDeferredDeclarations(std::ostream& os, std::ostream& p
     os << " (\\ ";
     os << skolemLiteral.c_str();
     os << "\n";
+    
+    Debug("pf:array") << "LFSCArrayProof::printDeferredDeclarations: sanitize(*it) = " << ProofManager::sanitize(*it) << "\n" << "skolemLioteral.c_str() = " << skolemLiteral.c_str();
 
     paren << ")))";
   }
