@@ -1348,6 +1348,7 @@ void TheoryArrays::check(Effort e) {
                             false);
 
               // Register this skolem for the proof replay phase
+              Debug("pf::array") << "fact = " << fact.toString() << endl;
               PROOF(ProofManager::getSkolemizationManager()->registerSkolem(fact, k));
             } else {
               if (!ProofManager::getSkolemizationManager()->hasSkolem(fact)) {

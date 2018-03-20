@@ -1415,7 +1415,7 @@ void LFSCArrayProof::printDeferredDeclarations(std::ostream& os, std::ostream& p
 
     d_skolemToLiteral[*it] = skolemLiteral;
 
-    Debug("pf::array") << "LFSCArrayProof::printDeferredDeclarations: new skolem literal is: " << skolemLiteral << std::endl;
+    Debug("pf::array") << "LFSCArrayProof::printDeferredDeclarations:aaaaaaaaaaaaaaaaaaaaaa new skolem literal is: " << skolemLiteral << std::endl;
 
     Assert(equality.getKind() == kind::NOT);
     Assert(equality[0].getKind() == kind::EQUAL);
@@ -1433,8 +1433,9 @@ void LFSCArrayProof::printDeferredDeclarations(std::ostream& os, std::ostream& p
     os << " (\\ ";
     os << skolemLiteral.c_str();
     os << "\n";
+    
+	Debug("pf::array") << "LFSCArrayProof::printDeferredDeclarations:aaaaaaaaaaaaaaaaaaaaaa skolemLiteral = " << skolemLiteral << " sanitize: " << ProofManager::sanitize(*it) << std::endl;
 
-    Debug("pf:array") << "LFSCArrayProof::printDeferredDeclarations: sanitize(*it) = " << ProofManager::sanitize(*it) << "\n" << "skolemLioteral.c_str() = " << skolemLiteral.c_str();
     paren << ")))";
   }
 }
