@@ -433,6 +433,7 @@ class TheoryArrays : public Theory {
   context::CDList<Node> d_arrayMerges;
   std::vector<CTNodeList*> d_readBucketAllocations;
 
+  Node getArraySkolem(TNode inequality, TypeNode& indexType, bool makeEqual);
   Node getSkolem(TNode ref, const std::string& name, const TypeNode& type, const std::string& comment, bool makeEqual = true);
   Node mkAnd(std::vector<TNode>& conjunctions, bool invert = false, unsigned startIndex = 0);
   void setNonLinear(TNode a);

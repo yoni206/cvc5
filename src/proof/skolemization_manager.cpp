@@ -19,6 +19,16 @@
 
 namespace CVC4 {
 
+    
+//Node SkolemizationManager::generateSkolem(Node disequality) {
+//    Node skolem = nm->mkNode(kind::EXT_EPS_TERM, disequality[0], disequality[1]);
+//}
+//    
+//void SkolemizationManager::registerSkolem(Node disequality) {
+//  Node skolem = generateSkolem(disequality);
+//  registerSkolem(disequality, skolem); 
+//}
+    
 void SkolemizationManager::registerSkolem(Node disequality, Node skolem) {
   Debug("pf::pm") << "SkolemizationManager: registerSkolem: disequality = " << disequality << ", skolem = " << skolem << std::endl;
 

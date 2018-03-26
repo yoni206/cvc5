@@ -31,6 +31,10 @@ operator SELECT 2 "array select; first parameter is an array term, second is the
 # store a i e  is  a[i] <= e
 operator STORE 3 "array store; first parameter is an array term, second is the store index, third is the term to store at the index"
 
+# ext-eps-term t1 t2 is an epsilon term e such that t1[e]!=t2[e]
+operator EXT_EPS_TERM 2 "array epsilon term; the parameters are the unequal arrays"
+
+
 # storeall t e  is  \all i in indexType(t) <= e
 constant STORE_ALL \
     ::CVC4::ArrayStoreAll \

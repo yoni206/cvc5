@@ -1244,8 +1244,52 @@ void TheoryArrays::presolve()
 /////////////////////////////////////////////////////////////////////////////
 
 
+Node TheoryArrays::getArraySkolem(TNode inequality, TypeNode& indexType, bool makeEqual) {
+  Debug("pf::array") << "TheoryArrays::getArraySkolem" << std::endl;
+  Node skolem;
+  Debug("pf::array") << 1 << std::endl;
+  std::unordered_map<Node, Node, NodeHashFunction>::iterator it = d_skolemCache.find(inequality);
+  if (it == d_skolemCache.end()) {
+      Debug("pf::array") << 2 << std::endl;
+    NodeManager* nm = NodeManager::currentNM();
+    Debug("pf::array") << 2.1 << std::endl;
+    skolem = nm->mkArrayEpsilonTerm(inequality, indexType);
+    Debug("pf::array") << 2.2 << std::endl;
+    d_skolemCache[inequality] = skolem;
+    Debug("pf::array") << 2.3 << std::endl;
+  }
+  else {
+      Debug("pf::array") << 3 << std::endl;
+    skolem = (*it).second;
+    if (d_equalityEngine.hasTerm(inequality) &&
+        d_equalityEngine.hasTerm(skolem) &&
+        d_equalityEngine.areEqual(inequality, skolem)) {
+      makeEqual = false;
+    }
+  }
+  Debug("pf::array") << 4 << std::endl;
+
+  Debug("pf::array") << "Pregistering a Skolem" << std::endl;
+  preRegisterTermInternal(skolem);
+  Debug("pf::array") << "Pregistering a Skolem DONE" << std::endl;
+
+  if (makeEqual) {
+    Node d = skolem.eqNode(inequality);
+    Debug("arrays-model-based") << "Asserting skolem equality " << d << endl;
+    d_equalityEngine.assertEquality(d, true, d_true);
+    Assert(!d_conflict);
+    d_skolemAssertions.push_back(d);
+    d_skolemIndex = d_skolemIndex + 1;
+  }
+
+  Debug("pf::array") << "getSkolem DONE" << std::endl;
+  return skolem;
+    
+}
+
 Node TheoryArrays::getSkolem(TNode ref, const string& name, const TypeNode& type, const string& comment, bool makeEqual)
 {
+  Debug("pf::array") << "TheoryArrays::getSkolem" << std::endl;
   Node skolem;
   std::unordered_map<Node, Node, NodeHashFunction>::iterator it = d_skolemCache.find(ref);
   if (it == d_skolemCache.end()) {
@@ -1341,11 +1385,12 @@ void TheoryArrays::check(Effort e) {
               Debug("pf::array") << "Check: kind::NOT: array theory making a skolem" << std::endl;
 
               // If not in replay mode, generate a fresh skolem variable
-              k = getSkolem(fact,
-                            "array_ext_index",
-                            indexType,
-                            "an extensional lemma index variable from the theory of arrays",
-                            false);
+//              k = getSkolem(fact,
+//                            "array_ext_index",
+//                            indexType,
+//                            "an extensional lemma index variable from the theory of arrays",
+//                            false);
+              k = getArraySkolem(fact, indexType, false);
 
               // Register this skolem for the proof replay phase
               Debug("pf::array") << "fact = " << fact.toString() << endl;

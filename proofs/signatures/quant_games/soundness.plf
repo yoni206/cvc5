@@ -1,0 +1,11 @@
+(check
+(% s sort 
+(% x (term s)
+(% a (term s)
+(% b (term s)
+(% f (term (arrow s (arrow s s)))
+(% p (th_holds (forall s x (= s (apply _ _ (apply _ _ f a) b) (apply _ _ (apply _ _ f a) b))))
+(% q (holds cln)
+(: (holds cln)
+(inst s x  (= s (apply _ _ (apply _ _ f a) b) (apply _ _ (apply _ _ f a) b)) b (= s (apply _ _ (apply _ _ f b) b) (apply _ _ (apply _ _ f b) b)) p (\ p1 q)))))))))))
+

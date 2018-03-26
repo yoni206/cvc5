@@ -33,6 +33,9 @@ namespace CVC4 {
 
 class SkolemizationManager {
 public:
+  
+      
+//  void registerSkolem(Node disequality);
   void registerSkolem(Node disequality, Node skolem);
   bool hasSkolem(Node disequality);
   Node getSkolem(Node disequality);
@@ -46,6 +49,7 @@ public:
 private:
   std::unordered_map<Node, Node, NodeHashFunction> d_disequalityToSkolem;
   std::unordered_map<Node, Node, NodeHashFunction> d_skolemToDisequality;
+//  Node generateSkolem(Node disequality);
 };
 
 }/* CVC4 namespace */

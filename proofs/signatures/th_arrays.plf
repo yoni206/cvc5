@@ -41,11 +41,7 @@
 ;				 (! f formula 
 ;					(term s)))))
 
-(declare ext-eps-term (! s1 sort 
-                     (! s2 sort 
-                     (! t1 (term (Array s1 s2))
-                     (! t2 (term (Array s1 s2))
-                        (term s1))))))
+
 
 
 ;(declare exteps (! s1 sort
@@ -112,11 +108,17 @@
                (holds cln)))))))
 
 
-(declare ext-eps-rule (! s1 sort
+
+(declare ext_eps_term (! s1 sort 
+                      (! s2 sort 
+                        (term (arrow (Array s1 s2) (arrow (Array s1 s2) s1))))))
+
+
+(declare ext_eps_rule (! s1 sort
                       (! s2 sort
                       (! t1 (term (Array s1 s2))
                       (! t2 (term (Array s1 s2))
-                      (! u1 (! u2 (th_holds (or (= _ t1 t2) (not (= _ (apply _ _ (apply _ _ (read s1 s2) t1) (ext-eps-term s1 s2 t1 t2)) (apply _ _ (apply _ _ (read s1 s2) t2) (ext-eps-term s1 s2 t1 t2)))))) (holds cln)) (holds cln)))))))
+                      (! u1 (! u2 (th_holds (or (= _ t1 t2) (not (= _ (apply _ _ (apply _ _ (read s1 s2) t1) (apply _ _ (apply _ _ (ext_eps_term s1 s2) t1) t2)) (apply _ _ (apply _ _ (read s1 s2) t2)   (apply _ _ (apply _ _ (ext_eps_term s1 s2) t1) t2)   ))))) (holds cln)) (holds cln)))))))
 
 
 ;as similar as possible to the original "ext", but with epsilon

@@ -489,7 +489,7 @@ inline NodeValue* NodeValue::getChild(int i) const {
   if(getMetaKind() == kind::metakind::PARAMETERIZED) {
     ++i;
   }
-
+  Debug("pf::array") << "i = " << i << " d_nchildren = " << d_nchildren; 
   Assert(i >= 0 && unsigned(i) < d_nchildren);
   return d_children[i];
 }

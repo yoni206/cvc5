@@ -1246,7 +1246,7 @@ void LFSCArrayProof::printOwnedTerm(Expr term, std::ostream& os, const ProofLetM
     return;
   }
 
-  Assert ((term.getKind() == kind::SELECT) || (term.getKind() == kind::PARTIAL_SELECT_0) || (term.getKind() == kind::PARTIAL_SELECT_1) || (term.getKind() == kind::STORE));
+  Assert ((term.getKind() == kind::SELECT) || (term.getKind() == kind::PARTIAL_SELECT_0) || (term.getKind() == kind::PARTIAL_SELECT_1) || (term.getKind() == kind::STORE) || (term.getKind() == kind::EX));
 
   switch (term.getKind()) {
   case kind::SELECT: {
@@ -1304,6 +1304,20 @@ void LFSCArrayProof::printOwnedTerm(Expr term, std::ostream& os, const ProofLetM
     printTerm(term[2], os, map);
     os << ") ";
     return;
+    
+  case kind::EXT_EPS_TERM:
+      os << "(apply _ _ (apply _ _ (ext-eps-term ";
+      printSort(ArrayType(term[0].getType()).getIndexType(), os);
+      os << " ";
+      printSort(ArrayType(term[0].getType()).getConstituentType(), os);
+      os << ") ";
+      printTerm(term[0], os, map);
+      os << ") ";
+      printTerm(term[1], os, map);
+      os << ") ";
+      return;
+
+        
 
   default:
     Unreachable();
@@ -1424,19 +1438,21 @@ void LFSCArrayProof::printDeferredDeclarations(std::ostream& os, std::ostream& p
     Node array_two = equality[0][1];
 
     ProofLetMap map;
-    os << "(ext _ _ ";
+    //os << "(ext _ _ ";
+    os << "(ext-eps-rule _ _";
     printTerm(array_one.toExpr(), os, map);
     os << " ";
     printTerm(array_two.toExpr(), os, map);
-    os << " (\\ ";
-    os << ProofManager::sanitize(*it);
+    //os << " (\\ ";
+    //os << ProofManager::sanitize(*it);
     os << " (\\ ";
     os << skolemLiteral.c_str();
     os << "\n";
     
 	Debug("pf::array") << "LFSCArrayProof::printDeferredDeclarations:aaaaaaaaaaaaaaaaaaaaaa skolemLiteral = " << skolemLiteral << " sanitize: " << ProofManager::sanitize(*it) << std::endl;
 
-    paren << ")))";
+    //paren << ")))";
+    paren << "))";
   }
 }
 

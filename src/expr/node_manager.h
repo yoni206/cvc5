@@ -529,6 +529,9 @@ public:
   Node mkSkolem(const std::string& prefix, const TypeNode& type,
                 const std::string& comment = "", int flags = SKOLEM_DEFAULT);
 
+  
+  Node mkArrayEpsilonTerm(TNode& inequality, TypeNode& indexType);
+  
   /** Create a instantiation constant with the given type. */
   Node mkInstConstant(const TypeNode& type);
   

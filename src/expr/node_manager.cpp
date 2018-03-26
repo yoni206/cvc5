@@ -465,6 +465,12 @@ TypeNode NodeManager::getType(TNode n, bool check)
   return typeNode;
 }
 
+Node NodeManager::mkArrayEpsilonTerm(TNode& inequality, TypeNode& indexType) {
+    Node skolem = mkNode(kind::EXT_EPS_TERM, inequality[0][0], inequality[0][1]);
+    setAttribute(skolem, TypeAttr(), indexType);
+    return skolem;
+}
+
 Node NodeManager::mkSkolem(const std::string& prefix, const TypeNode& type, const std::string& comment, int flags) {
   Node n = NodeBuilder<0>(this, kind::SKOLEM);
   setAttribute(n, TypeAttr(), type);
