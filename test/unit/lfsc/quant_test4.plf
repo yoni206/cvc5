@@ -1,0 +1,11 @@
+;should fail on side condition!
+(check
+(% s sort
+(% f (term (arrow s (arrow s s)))
+(% a (term s)
+(% b (term s)
+(% x (term s)
+(% p (th_holds (forall s x (= _ (apply _ _ (apply _ _ f b) b) (apply _ _ (apply _ _ f b) b))))
+(% pp (holds (cln))
+(: (holds cln)
+(inst s x (= _ (apply _ _ (apply _ _ f b) b) (apply _ _ (apply _ _ f b) b)) a (= _ (apply _ _ (apply _ _ f a) b) (apply _ _ (apply _ _ f a) b))   p (\ A pp))))))))))) 
