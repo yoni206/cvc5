@@ -157,7 +157,7 @@ class AssertArgumentException : public AssertionException {
     va_start(args, fmt);
     construct("Illegal argument detected",
               (std::string("`") + argDesc + "' is a bad argument").c_str(),
-              function, file, line, fmt, args);
+              function, file, line, fmt, args); 
     va_end(args);
   }
 

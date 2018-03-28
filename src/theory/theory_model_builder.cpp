@@ -1032,6 +1032,7 @@ void TheoryEngineModelBuilder::assignHoFunction(TheoryModel* m, Node f)
             largs.begin(), largs.end(), apply_args.begin(), apply_args.end());
         hnv = Rewriter::rewrite(hnv);
       }
+      Debug("pf::array") << std::endl << "assignHoFunction " << std::endl;
       Assert(!TypeNode::leastCommonTypeNode(hnv.getType(), curr.getType())
                   .isNull());
       curr = NodeManager::currentNM()->mkNode(kind::ITE, hni, hnv, curr);

@@ -260,7 +260,7 @@ TypeNode TypeNode::commonTypeNode(TypeNode t0, TypeNode t1, bool isLeast) {
   Assert( NodeManager::currentNM() != NULL,
           "There is no current CVC4::NodeManager associated to this thread.\n"
           "Perhaps a public-facing function is missing a NodeManagerScope ?" );
-
+  Debug("pf::array") << std::endl << "TypeNode::commonTypeNode " << "t0 = " << t0 << " t1 = " << t1 << endl;
   Assert(!t0.isNull());
   Assert(!t1.isNull());
 

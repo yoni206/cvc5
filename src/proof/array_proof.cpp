@@ -1159,9 +1159,9 @@ Node ProofArray::toStreamRecLFSC(std::ostream& out,
     std::shared_ptr<theory::eq::EqProof> child_proof = pf.d_children[0];
     Assert(child_proof->d_node.getKind() == kind::NOT);
     Assert(child_proof->d_node[0].getKind() == kind::EQUAL);
-
+    Debug("mgd") << "toStreamRecLFSC " << 1 << std::endl; 
     Debug("mgd") << "EXT lemma: " << pf.d_node << std::endl;
-
+    Debug("mgd") << "toStreamRecLFSC " << 2 << std::endl;
     TNode t1, t2, t3;
     t1 = child_proof->d_node[0][0];
     t2 = child_proof->d_node[0][1];
@@ -1193,9 +1193,9 @@ ArrayProof::ArrayProof(theory::arrays::TheoryArrays* arrays, TheoryProofEngine* 
 
 void ArrayProof::registerTerm(Expr term) {
   // already registered
+  Debug("pf::array") << std::endl << "ArrayProof::registerTerm " << "term = " << term.toString() << "bla01" << std::endl;
   if (d_declarations.find(term) != d_declarations.end())
     return;
-
   Type type = term.getType();
   if (type.isSort()) {
     // declare uninterpreted sorts
@@ -1210,7 +1210,11 @@ void ArrayProof::registerTerm(Expr term) {
   if (term.isVariable()) {
     d_declarations.insert(term);
   }
-
+  
+  if (term.getKind() == kind::EXT_EPS_TERM) {
+      d_declarations.insert(term);
+  }        
+  
   if (term.getKind() == kind::SELECT && term.getType().isBoolean()) {
     // Ensure cnf literals
     Node asNode(term);
@@ -1246,7 +1250,7 @@ void LFSCArrayProof::printOwnedTerm(Expr term, std::ostream& os, const ProofLetM
     return;
   }
 
-  Assert ((term.getKind() == kind::SELECT) || (term.getKind() == kind::PARTIAL_SELECT_0) || (term.getKind() == kind::PARTIAL_SELECT_1) || (term.getKind() == kind::STORE) || (term.getKind() == kind::EX));
+  Assert ((term.getKind() == kind::SELECT) || (term.getKind() == kind::PARTIAL_SELECT_0) || (term.getKind() == kind::PARTIAL_SELECT_1) || (term.getKind() == kind::STORE) || (term.getKind() == kind::EXT_EPS_TERM));
 
   switch (term.getKind()) {
   case kind::SELECT: {
@@ -1306,7 +1310,7 @@ void LFSCArrayProof::printOwnedTerm(Expr term, std::ostream& os, const ProofLetM
     return;
     
   case kind::EXT_EPS_TERM:
-      os << "(apply _ _ (apply _ _ (ext-eps-term ";
+      os << "(apply _ _ (apply _ _ (ext_eps_term ";
       printSort(ArrayType(term[0].getType()).getIndexType(), os);
       os << " ";
       printSort(ArrayType(term[0].getType()).getConstituentType(), os);
@@ -1370,9 +1374,10 @@ void LFSCArrayProof::printTermDeclarations(std::ostream& os, std::ostream& paren
   Debug("pf::array") << "Arrays declaring terms..." << std::endl;
 
   for (ExprSet::const_iterator it = d_declarations.begin(); it != d_declarations.end(); ++it) {
-    Expr term = *it;
+      Expr term = *it;
+      //Debug("pf::array") << "LFSCArrayProof::printTermDeclarations " << "loop " << "term = " << term << std::endl;
 
-    Assert(term.getType().isArray() || term.isVariable());
+    Assert(term.getType().isArray() || term.isVariable() || term.getKind() == kind::EXT_EPS_TERM);
 
     Debug("pf::array") << "LFSCArrayProof::printDeclarations: term is: " << term
                        << ". It's type is: " << term.getType()
@@ -1395,6 +1400,8 @@ void LFSCArrayProof::printTermDeclarations(std::ostream& os, std::ostream& paren
 
       os << "))\n";
       paren << ")";
+    } else if (term.getKind() == kind::EXT_EPS_TERM) {
+        d_skolemDeclarations.insert(*it);
     } else {
       Assert(term.isVariable());
       if (ProofManager::getSkolemizationManager()->isSkolem(*it)) {
@@ -1416,7 +1423,9 @@ void LFSCArrayProof::printDeferredDeclarations(std::ostream& os, std::ostream& p
   Debug("pf::array") << "Array: print deferred declarations called" << std::endl;
 
   unsigned count = 1;
+  Debug("pf::array") << "printDeferredDeclarations" << 1 << std::endl;
   for (ExprSet::const_iterator it = d_skolemDeclarations.begin(); it != d_skolemDeclarations.end(); ++it) {
+    Debug("pf::array") << "printDeferredDeclarations" << 2 << std::endl;
     Expr term = *it;
     Node equality = ProofManager::getSkolemizationManager()->getDisequality(*it);
 
@@ -1439,7 +1448,7 @@ void LFSCArrayProof::printDeferredDeclarations(std::ostream& os, std::ostream& p
 
     ProofLetMap map;
     //os << "(ext _ _ ";
-    os << "(ext-eps-rule _ _";
+    os << "(ext_eps_rule _ _";
     printTerm(array_one.toExpr(), os, map);
     os << " ";
     printTerm(array_two.toExpr(), os, map);
@@ -1449,7 +1458,7 @@ void LFSCArrayProof::printDeferredDeclarations(std::ostream& os, std::ostream& p
     os << skolemLiteral.c_str();
     os << "\n";
     
-	Debug("pf::array") << "LFSCArrayProof::printDeferredDeclarations:aaaaaaaaaaaaaaaaaaaaaa skolemLiteral = " << skolemLiteral << " sanitize: " << ProofManager::sanitize(*it) << std::endl;
+	Debug("pf::array") << "LFSCArrayProof::printDeferredDeclarations:aaaaaaaaaaaaaaaaaaaaaa skolemLiteral = " << skolemLiteral << std::endl;
 
     //paren << ")))";
     paren << "))";

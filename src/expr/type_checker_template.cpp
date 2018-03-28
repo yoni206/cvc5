@@ -34,9 +34,9 @@ TypeNode TypeChecker::computeType(NodeManager* nodeManager, TNode n, bool check)
   // Infer the type
   switch(n.getKind()) {
   case kind::VARIABLE:
-  case kind::EXT_EPS_TERM:
-    typeNode = nodeManager->getAttribute(n, TypeAttr());
-    break;
+//  case kind::EXT_EPS_TERM:
+//    typeNode = nodeManager->getAttribute(n, TypeAttr());
+//    break;
   case kind::SKOLEM:
     typeNode = nodeManager->getAttribute(n, TypeAttr());
     break;

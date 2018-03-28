@@ -26,6 +26,23 @@ namespace CVC4 {
 namespace theory {
 namespace arrays {
 
+    
+struct ArrayEpsilonTypeRule {
+  inline static TypeNode computeType(NodeManager* nodeManager, TNode n, bool check)
+  {
+    Assert(n.getKind() == kind::EXT_EPS_TERM);
+    TypeNode array1Type = n[0].getType(check);
+    TypeNode array2Type = n[1].getType(check);
+    if( check ) {
+      if (!array1Type.isArray() || !array2Type.isArray()) {
+          throw TypeCheckingExceptionPrivate(n, "array epsilon term not applied on arrays");
+      }
+    }
+    return array1Type.getArrayConstituentType();
+  }
+};/* struct ArraySelectTypeRule */
+    
+    
 struct ArraySelectTypeRule {
   inline static TypeNode computeType(NodeManager* nodeManager, TNode n, bool check)
   {
@@ -37,12 +54,15 @@ struct ArraySelectTypeRule {
       }
       TypeNode indexType = n[1].getType(check);
       if(!indexType.isSubtypeOf(arrayType.getArrayIndexType())){ 
+        Debug("pf::array") << std::endl <<  "computeType " << "n = " << n << " n[0] = " << n[0] << "n[1] = " << n[1] << std::endl;
         throw TypeCheckingExceptionPrivate(n, "array select not indexed with correct type for array");
-      }
+   }
     }
     return arrayType.getArrayConstituentType();
   }
 };/* struct ArraySelectTypeRule */
+
+
 
 struct ArrayStoreTypeRule {
   inline static TypeNode computeType(NodeManager* nodeManager, TNode n, bool check)
