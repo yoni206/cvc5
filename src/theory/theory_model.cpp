@@ -99,7 +99,10 @@ Node TheoryModel::getValue(TNode n, bool useDontCares) const {
   Debug("model-getvalue-debug") << "[model-getvalue] getValue : substitute " << n << " to " << nn << std::endl;
   //get value in model
   nn = getModelValue(nn, false, useDontCares);
-  if (nn.isNull()) return nn;
+  if (nn.isNull()) {
+      Debug("model-getvalue-debug") << std::endl << "panda nn " << nn << std::endl;
+      return nn;
+  }
   if(options::condenseFunctionValues() || nn.getKind() != kind::LAMBDA) {
     //normalize
     nn = Rewriter::rewrite(nn);

@@ -38,7 +38,10 @@ struct ArrayEpsilonTypeRule {
           throw TypeCheckingExceptionPrivate(n, "array epsilon term not applied on arrays");
       }
     }
-    return array1Type.getArrayConstituentType();
+    TypeNode result = array1Type.getArrayIndexType();
+    Debug("pf::array") << std::endl << "panda ArrayEpsilonTypeRule computeType " << result << std::endl;
+    //return array1Type.getArrayConstituentType();
+    return result;
   }
 };/* struct ArraySelectTypeRule */
     
@@ -54,7 +57,18 @@ struct ArraySelectTypeRule {
       }
       TypeNode indexType = n[1].getType(check);
       if(!indexType.isSubtypeOf(arrayType.getArrayIndexType())){ 
-        Debug("pf::array") << std::endl <<  "computeType " << "n = " << n << " n[0] = " << n[0] << "n[1] = " << n[1] << std::endl;
+        Debug("pf::array") << std::endl <<  "panda n " <<  n.getKind() << std::endl;
+        Debug("pf::array") << std::endl << "panda n " <<  n.getOperator() << std::endl;
+        Debug("pf::array") << std::endl << "panda n " <<  n.getType(false) << std::endl;
+        
+        Debug("pf::array") << std::endl << "panda n[0] " <<  n[0].getKind() << std::endl;
+        Debug("pf::array") << std::endl << "panda n[0] " <<  n[0].getOperator() << std::endl;
+        Debug("pf::array") << std::endl << "panda n[0] " <<  n[0].getType(false) << std::endl;
+        
+        Debug("pf::array") << std::endl << "panda n[1] " <<  n[1].getKind() << std::endl;
+        Debug("pf::array") << std::endl << "panda n[1] " <<  n[1].getOperator() << std::endl;
+        Debug("pf::array") << std::endl << "panda n[1] " <<  n[1].getType(false) << std::endl;
+        
         throw TypeCheckingExceptionPrivate(n, "array select not indexed with correct type for array");
    }
     }
