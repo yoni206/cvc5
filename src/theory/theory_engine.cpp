@@ -1984,6 +1984,12 @@ void TheoryEngine::ppBvToBool(const std::vector<Node>& assertions, std::vector<N
   d_bvToBoolPreprocessor.liftBvToBool(assertions, new_assertions);
 }
 
+Node TheoryEngine::ppBvToBool(const TNode& node) {
+    Node result;
+    d_bvToBoolPreprocessor.liftBvToBool(node, result);
+    return result;
+}
+
 void TheoryEngine::ppBoolToBv(const std::vector<Node>& assertions, std::vector<Node>& new_assertions) {
   d_bvToBoolPreprocessor.lowerBoolToBv(assertions, new_assertions);
 }

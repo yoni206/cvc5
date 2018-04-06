@@ -69,6 +69,7 @@
 #include "options/theory_options.h"
 #include "options/uf_options.h"
 #include "preprocessing/passes/int_to_bv.h"
+#include "preprocessing/passes/bv_to_bool.h"
 #include "preprocessing/preprocessing_pass.h"
 #include "preprocessing/preprocessing_pass_context.h"
 #include "preprocessing/preprocessing_pass_registry.h"
@@ -2549,6 +2550,8 @@ void SmtEnginePrivate::finishInit() {
   // actually assembling preprocessing pipelines).
   std::unique_ptr<IntToBV> intToBV(new IntToBV(d_preprocessingPassContext.get()));
   d_preprocessingPassRegistry.registerPass("int-to-bv", std::move(intToBV));
+  std::unique_ptr<BVToBool> bvToBool(new BVToBool(d_preprocessingPassContext.get()));
+  d_preprocessingPassRegistry.registerPass("bv-to-bool", std::move(bvToBool));
 }
 
 Node SmtEnginePrivate::expandDefinitions(TNode n, unordered_map<Node, Node, NodeHashFunction>& cache, bool expandOnly)
@@ -3231,16 +3234,6 @@ void SmtEnginePrivate::bvAbstraction() {
   }
 }
 
-
-void SmtEnginePrivate::bvToBool() {
-  Trace("bv-to-bool") << "SmtEnginePrivate::bvToBool()" << endl;
-  spendResource(options::preprocessStep());
-  std::vector<Node> new_assertions;
-  d_smt.d_theoryEngine->ppBvToBool(d_assertions.ref(), new_assertions);
-  for (unsigned i = 0; i < d_assertions.size(); ++ i) {
-    d_assertions.replace(i, Rewriter::rewrite(new_assertions[i]));
-  }
-}
 
 void SmtEnginePrivate::boolToBv() {
   Trace("bool-to-bv") << "SmtEnginePrivate::boolToBv()" << endl;
@@ -4167,7 +4160,7 @@ void SmtEnginePrivate::processAssertions() {
   if(options::bitvectorToBool()) {
     dumpAssertions("pre-bv-to-bool", d_assertions);
     Chat() << "...doing bvToBool..." << endl;
-    bvToBool();
+    d_preprocessingPassRegistry.getPass("bv-to-bool")->apply(&d_assertions);
     dumpAssertions("post-bv-to-bool", d_assertions);
     Trace("smt") << "POST bvToBool" << endl;
   }

@@ -240,6 +240,12 @@ void BvToBoolPreprocessor::liftBvToBool(const std::vector<Node>& assertions, std
   }
 }
 
+void BvToBoolPreprocessor::liftBvToBool(const Node assertion, Node& new_assertion) {
+    new_assertion = liftNode(assertion);
+    Trace("bv-to-bool") << "  " << assertion <<" => " << new_assertion <<"\n"; 
+}
+
+
 BvToBoolPreprocessor::Statistics::Statistics()
   : d_numTermsLifted("theory::bv::BvToBool::NumTermsLifted", 0)
   , d_numAtomsLifted("theory::bv::BvToBool::NumAtomsLifted", 0)

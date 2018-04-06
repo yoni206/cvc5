@@ -64,6 +64,8 @@ libcvc4_la_SOURCES = \
 	decision/justification_heuristic.h \
 	preprocessing/passes/int_to_bv.cpp \
 	preprocessing/passes/int_to_bv.h \
+	preprocessing/passes/bv_to_bool.cpp \
+	preprocessing/passes/bv_to_bool.h \
 	preprocessing/preprocessing_pass.cpp \
 	preprocessing/preprocessing_pass.h \
 	preprocessing/preprocessing_pass_context.cpp \
