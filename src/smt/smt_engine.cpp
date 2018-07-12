@@ -68,6 +68,7 @@
 #include "options/strings_options.h"
 #include "options/theory_options.h"
 #include "options/uf_options.h"
+#include "preprocessing/passes/ackermann.h"
 #include "preprocessing/passes/apply_substs.h"
 #include "preprocessing/passes/bool_to_bv.h"
 #include "preprocessing/passes/bv_abstraction.h"
@@ -2697,6 +2698,8 @@ void SmtEnginePrivate::finishInit()
       new PreprocessingPassContext(&d_smt, d_resourceManager));
   // TODO: register passes here (this will likely change when we add support for
   // actually assembling preprocessing pipelines).
+  std::unique_ptr<Ackermann> ackermann(
+      new Ackermann(d_preprocessingPassContext.get()));
   std::unique_ptr<ApplySubsts> applySubsts(
       new ApplySubsts(d_preprocessingPassContext.get()));
   std::unique_ptr<BoolToBV> boolToBv(
@@ -2725,6 +2728,8 @@ void SmtEnginePrivate::finishInit()
       new SymBreakerPass(d_preprocessingPassContext.get()));
   std::unique_ptr<SynthRewRulesPass> srrProc(
       new SynthRewRulesPass(d_preprocessingPassContext.get()));
+  d_preprocessingPassRegistry.registerPass("ackermann",
+                                           std::move(ackermann));
   d_preprocessingPassRegistry.registerPass("apply-substs",
                                            std::move(applySubsts));
   d_preprocessingPassRegistry.registerPass("bool-to-bv", std::move(boolToBv));
@@ -4045,6 +4050,8 @@ void SmtEnginePrivate::processAssertions() {
     // nothing to do
     return;
   }
+
+  d_preprocessingPassRegistry.getPass("ackermann")->apply(&d_assertions);
 
   if (options::bvGaussElim())
   {
