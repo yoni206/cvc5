@@ -48,6 +48,7 @@ void TheoryBVRewriter::shutdown() {
 }
 
 RewriteResponse TheoryBVRewriter::preRewrite(TNode node) {
+  return RewriteResponse(REWRITE_DONE, node);
   RewriteResponse res = d_rewriteTable[node.getKind()](node, true);
   if(res.node != node) {
     Debug("bitvector-rewrite") << "TheoryBV::preRewrite    " << node << std::endl;
@@ -57,6 +58,7 @@ RewriteResponse TheoryBVRewriter::preRewrite(TNode node) {
 }
 
 RewriteResponse TheoryBVRewriter::postRewrite(TNode node) {
+  return RewriteResponse(REWRITE_DONE, node);
   RewriteResponse res = d_rewriteTable[node.getKind()](node, false);
   if(res.node!= node) {
     Debug("bitvector-rewrite") << "TheoryBV::postRewrite    " << node << std::endl;
