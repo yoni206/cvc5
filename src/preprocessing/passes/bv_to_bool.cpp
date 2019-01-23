@@ -96,12 +96,13 @@ bool BVToBool::hasBoolCache(TNode term) const
 bool BVToBool::isConvertibleBvAtom(TNode node)
 {
   Kind kind = node.getKind();
-  return (kind == kind::EQUAL && node[0].getType().isBitVector()
+  bool b = (kind == kind::EQUAL && node[0].getType().isBitVector()
           && node[0].getType().getBitVectorSize() == 1
           && node[1].getType().isBitVector()
           && node[1].getType().getBitVectorSize() == 1
           && node[0].getKind() != kind::BITVECTOR_EXTRACT
           && node[1].getKind() != kind::BITVECTOR_EXTRACT);
+  return b;
 }
 
 bool BVToBool::isConvertibleBvTerm(TNode node)

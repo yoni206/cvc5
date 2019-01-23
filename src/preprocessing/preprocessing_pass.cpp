@@ -28,7 +28,12 @@ PreprocessingPassResult PreprocessingPass::apply(
   Trace("preprocessing") << "PRE " << d_name << std::endl;
   Chat() << d_name << "..." << std::endl;
   dumpAssertions(("pre-" + d_name).c_str(), *assertionsToPreprocess);
-  PreprocessingPassResult result = applyInternal(assertionsToPreprocess);
+  PreprocessingPassResult result;
+  if (d_name == "bv-to-bool" || d_name == "apply-substs") {
+    result = applyInternal(assertionsToPreprocess);
+  } else {
+    result = PreprocessingPassResult::NO_CONFLICT;
+  }
   dumpAssertions(("post-" + d_name).c_str(), *assertionsToPreprocess);
   Trace("preprocessing") << "POST " << d_name << std::endl;
   return result;
