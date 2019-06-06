@@ -895,6 +895,15 @@ header = "options/quantifiers_options.h"
   help       = "compute abductions using sygus"
 
 [[option]]
+  name       = "sygusInterpol"
+  category   = "regular"
+  long       = "sygus-interpol"
+  type       = "bool"
+  default    = "false"
+  read_only  = false
+  help       = "compute interpolations using sygus"
+
+[[option]]
   name       = "ceGuidedInst"
   category   = "regular"
   long       = "cegqi"
