@@ -90,6 +90,8 @@ libcvc4_add_sources(
   preprocessing/passes/static_learning.h
   preprocessing/passes/sygus_abduct.cpp
   preprocessing/passes/sygus_abduct.h
+  preprocessing/passes/sygus_interpol.cpp
+  preprocessing/passes/sygus_interpol.h
   preprocessing/passes/sygus_inference.cpp
   preprocessing/passes/sygus_inference.h
   preprocessing/passes/symmetry_breaker.cpp

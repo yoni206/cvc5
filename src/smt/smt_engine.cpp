@@ -1270,7 +1270,7 @@ void SmtEngine::setDefaults() {
   if (!d_isInternalSubsolver)
   {
     if (options::sygusInference() || options::sygusRewSynthInput()
-        || options::sygusAbduct())
+        || options::sygusAbduct() || options::sygusInterpol())
     {
       d_logic = d_logic.getUnlockedCopy();
       // sygus requires arithmetic, datatypes and quantifiers
@@ -1965,7 +1965,7 @@ void SmtEngine::setDefaults() {
         options::sygusExtRew.set(false);
       }
     }
-    if (options::sygusAbduct())
+    if (options::sygusAbduct() || options::sygusInterpol())
     {
       // if doing abduction, we should filter strong solutions
       if (!options::sygusFilterSolMode.wasSetByUser())
@@ -1973,8 +1973,9 @@ void SmtEngine::setDefaults() {
         options::sygusFilterSolMode.set(quantifiers::SYGUS_FILTER_SOL_STRONG);
       }
     }
+
     if (options::sygusRewSynth() || options::sygusRewVerify()
-        || options::sygusQueryGen() || options::sygusAbduct())
+        || options::sygusQueryGen() || options::sygusAbduct() || options::sygusInterpol())
     {
       // rewrite rule synthesis implies that sygus stream must be true
       options::sygusStream.set(true);
@@ -2302,7 +2303,7 @@ void SmtEngine::setDefaults() {
           "--sygus-expr-miner-check-timeout=N requires "
           "--sygus-expr-miner-check-use-export");
     }
-    if (options::sygusRewSynthInput() || options::sygusAbduct())
+    if (options::sygusRewSynthInput() || options::sygusAbduct() || options::sygusInterpol())
     {
       std::stringstream ss;
       ss << (options::sygusRewSynthInput() ? "--sygus-rr-synth-input"
@@ -3358,6 +3359,10 @@ void SmtEnginePrivate::processAssertions() {
     else if (options::sygusAbduct())
     {
       d_passes["sygus-abduct"]->apply(&d_assertions);
+    }
+    else if (options::sygusInterpol())
+    {
+      d_passes["sygus-interpol"]->apply(&d_assertions);
     }
     else if (options::sygusRewSynthInput())
     {
