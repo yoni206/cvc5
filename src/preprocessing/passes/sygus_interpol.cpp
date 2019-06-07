@@ -126,6 +126,7 @@ PreprocessingPassResult SygusInterpol::applyInternal(
 
   Trace("sygus-interpol-debug") << "Make conjecture..." << std::endl;
   Node Fc = nm->mkNode(AND, negatedConjectureList);
+  Fc = Fc.substitute(syms.begin(), syms.end(), vars.begin(), vars.end());
   Node negFc = nm->mkNode(NOT, Fc);
   Node secondImplication = nm->mkNode(IMPLIES, interpolApp, negFc);
 
@@ -134,11 +135,20 @@ PreprocessingPassResult SygusInterpol::applyInternal(
 
   Node fbvl = nm->mkNode(BOUND_VAR_LIST, interpol);
 
+    // sygus attribute
+  Node sygusVar = nm->mkSkolem("sygus", nm->booleanType());
+  theory::SygusAttribute ca;
+  sygusVar.setAttribute(ca, true);
+  Node instAttr = nm->mkNode(INST_ATTRIBUTE, sygusVar);
+  std::vector<Node> iplc;
+  iplc.push_back(instAttr);
+  Node instAttrList = nm->mkNode(INST_PATTERN_LIST, iplc);
+  
   // forall A. exists x. ~( A( x ) => ~input( x ) )
   Node res = constraint.negate();
   Node bvl = nm->mkNode(BOUND_VAR_LIST, vars);
   res = nm->mkNode(EXISTS, bvl, res);
-  res = nm->mkNode(FORALL, fbvl, res);
+  res = nm->mkNode(FORALL, fbvl, res, instAttrList);
   Trace("sygus-interpol-debug") << "...finish" << std::endl;
 
   res = theory::Rewriter::rewrite(res);
