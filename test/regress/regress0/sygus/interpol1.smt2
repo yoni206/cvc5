@@ -26,3 +26,4 @@
 ;The conjuecture is: 2 <= x+y
 (define-fun C () Bool (<= 2 (+ x y)))
 (check-sat-assuming ((not C)))
+(get-info :reason-unknown)
