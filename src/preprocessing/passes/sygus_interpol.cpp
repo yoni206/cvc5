@@ -22,6 +22,7 @@
 #include "theory/quantifiers/quantifiers_attributes.h"
 #include "theory/quantifiers/quantifiers_rewriter.h"
 #include "theory/quantifiers/term_util.h"
+#include "theory/quantifiers/sygus/sygus_grammar_cons.h"
 #include "theory/rewriter.h"
 
 using namespace std;
@@ -41,8 +42,17 @@ PreprocessingPassResult SygusInterpol::applyInternal(
   Trace("sygus-interpol") << "Run sygus interpol..." << std::endl;
 
   Trace("sygus-interpol-debug") << "Collect symbols..." << std::endl;
+  //symbols that occur in the axioms
   std::unordered_set<Node, NodeHashFunction> symsetAxioms;
+  //symbols that occur in the conjecture
   std::unordered_set<Node, NodeHashFunction> symsetConjecture;
+  //symbols that occur either in the axioms or in the conjecture
+  std::unordered_set<Node, NodeHashFunction> symsetAll;
+  //symbols that occur both in the axioms and the conjecture
+  std::unordered_set<Node, NodeHashFunction> symsetShared;
+  //symbols that occur in exactly one of the axioms or the conjecture
+  std::unordered_set<Node, NodeHashFunction> symsetNotShared;
+  //all assertions (axioms and conjecture)
   std::vector<Node>& asserts = assertionsToPreprocess->ref();
   // do we have any assumptions, e.g. via check-sat-assuming?
   bool usingAssumptions = (assertionsToPreprocess->getNumAssumptions() > 0);
@@ -56,31 +66,48 @@ PreprocessingPassResult SygusInterpol::applyInternal(
   std::vector<Node> negatedConjectureList;
   for (size_t i = 0, size = asserts.size(); i < size; i++)
   {
-    // if we are not an assumption, add it to the set of axioms
+    // if we are not an assumption, add it to the set of axioms and its symbols to the set of axiom symbols
     if (usingAssumptions && i < assertionsToPreprocess->getAssumptionsStart())
     {
       expr::getSymbols(asserts[i], symsetAxioms);
       axioms.push_back(asserts[i]);
+    // otherwise, add it to the set of conjectures and its symbols to the set of conjecture symbols
     } else {
       expr::getSymbols(asserts[i], symsetConjecture);
       negatedConjectureList.push_back(asserts[i]);
     }
+    //Either way, add the symbols to the set of all symbols
+    expr::getSymbols(asserts[i], symsetAll);
   }
-  std::unordered_set<Node, NodeHashFunction> symsetShared;
+  //compute the set of shared symbols and the set of not shared symbols
   for (const auto& elem: symsetConjecture) {
     if (symsetAxioms.find(elem) != symsetAxioms.end()) {
       symsetShared.insert(elem);
+    } else {
+      symsetNotShared.insert(elem);
     }
   } 
+  for (const auto& elem: symsetAxioms) {
+    if (symsetAxioms.find(elem) == symsetAxioms.end()) {
+      symsetNotShared.insert(elem);
+    }
+  } 
+
   Trace("sygus-interpol-debug")
       << "...finish, got " << symsetShared.size() << " shared symbols." << std::endl;
 
   Trace("sygus-interpol-debug") << "Setup symbols..." << std::endl;
+  //containers for variables that occur as parameters to the synthesized function
   std::vector<Node> syms;
   std::vector<Node> vars;
+  std::vector<Node> sharedVars;
   std::vector<Node> varlist;
+  std::vector<Node> varlistShared;
   std::vector<TypeNode> varlistTypes;
-  for (const Node& s : symsetShared)
+  std::vector<TypeNode> varlistTypesShared;
+  //containers for variables that may occur in the body of the synthesized function
+  std::unordered_set<Node, NodeHashFunction> nonSharedVarSet;
+  for (const Node& s : symsetAll)
   {
     TypeNode tn = s.getType();
     if (tn.isFirstClass())
@@ -93,32 +120,64 @@ PreprocessingPassResult SygusInterpol::applyInternal(
       Node vlv = nm->mkBoundVar(ss.str(), tn);
       varlist.push_back(vlv);
       varlistTypes.push_back(tn);
+      if (symsetShared.find(s) == symsetShared.end()) {
+         nonSharedVarSet.insert(vlv);
+      } else {
+        varlistShared.push_back(vlv);
+        varlistTypesShared.push_back(tn);
+        sharedVars.push_back(var);
+      }
     }
   }
+
   Trace("sygus-interpol-debug") << "...finish" << std::endl;
 
   Trace("sygus-interpol-debug") << "Make interpolation predicate..." << std::endl;
   // make the interpolation predicate to synthesize
   TypeNode interpolType = varlistTypes.empty() ? nm->booleanType()
-                                          : nm->mkPredicateType(varlistTypes);
+                                          : nm->mkPredicateType(varlistTypesShared);
   Node interpol = nm->mkBoundVar("A", interpolType);
   Trace("sygus-interpol-debug") << "...finish" << std::endl;
+
+  // set the sygus bound variable list
+  Node abvl = nm->mkNode(BOUND_VAR_LIST, varlist);
+  Node abvlShared = nm->mkNode(BOUND_VAR_LIST, varlistShared);
+  
+  Trace("sygus-abduct-debug")
+        << "Make sygus grammar attribute..." << std::endl;
+  std::map<TypeNode, std::vector<Node> > extra_cons;
+  std::map<TypeNode, std::vector<Node> > exclude_cons;
+  std::unordered_set<Node, NodeHashFunction> terms_irrelevant;
+  TypeNode abdGTypeS = CVC4::theory::quantifiers::CegGrammarConstructor::mkSygusDefaultType(
+    nm->booleanType(),
+    abvlShared,
+    "interpolation_grammar",
+    extra_cons,
+    exclude_cons,
+    nonSharedVarSet
+      );
+  Node sym = nm->mkBoundVar("sfproxy_abduct", abdGTypeS);
+  std::vector<Expr> attrValue;
+  attrValue.push_back(sym.toExpr());
+  d_preprocContext->getSmt()->setUserAttribute(
+        "sygus-synth-grammar", interpol.toExpr(), attrValue, "");
+  Trace("sygus-abduct-debug") << "Finished setting up grammar." << std::endl;
+  
+
 
   Trace("sygus-inteprol-debug") << "Make interpol predicate app..." << std::endl;
   std::vector<Node> achildren;
   achildren.push_back(interpol);
-  achildren.insert(achildren.end(), vars.begin(), vars.end());
-  Node interpolApp = vars.empty() ? interpol : nm->mkNode(APPLY_UF, achildren);
+  achildren.insert(achildren.end(), sharedVars.begin(), sharedVars.end());
+  Node interpolApp = sharedVars.empty() ? interpol : nm->mkNode(APPLY_UF, achildren);
   Trace("sygus-interpol-debug") << "...finish" << std::endl;
 
   Trace("sygus-interpol-debug") << "Set attributes..." << std::endl;
-  // set the sygus bound variable list
-  Node abvl = nm->mkNode(BOUND_VAR_LIST, varlist);
   interpol.setAttribute(theory::SygusSynthFunVarListAttribute(), abvl);
   Trace("sygus-interpol-debug") << "...finish" << std::endl;
 
   Trace("sygus-interpol-debug") << "Make conjecture body..." << std::endl;
-  Node Fa = asserts.size() == 1 ? asserts[0] : nm->mkNode(AND, asserts);
+  Node Fa = axioms.size() == 1 ? axioms[0] : nm->mkNode(AND, axioms);
   Fa = Fa.substitute(syms.begin(), syms.end(), vars.begin(), vars.end());
   // Fa ( x ) => A ( x )
   Node firstImplication = nm->mkNode(IMPLIES, Fa, interpolApp);
