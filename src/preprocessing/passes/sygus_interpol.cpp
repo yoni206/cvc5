@@ -82,8 +82,10 @@ PreprocessingPassResult SygusInterpol::applyInternal(
   //compute the set of shared symbols and the set of not shared symbols
   for (const auto& elem: symsetConjecture) {
     if (symsetAxioms.find(elem) != symsetAxioms.end()) {
+      Trace("sygus-interpol-debug") << "symbol " << elem.toString() << " is shared" << std::endl;
       symsetShared.insert(elem);
     } else {
+      Trace("sygus-interpol-debug") << "symbol " << elem.toString() << " is not shared" << std::endl;
       symsetNotShared.insert(elem);
     }
   } 
@@ -118,14 +120,17 @@ PreprocessingPassResult SygusInterpol::applyInternal(
       syms.push_back(s);
       vars.push_back(var);
       Node vlv = nm->mkBoundVar(ss.str(), tn);
+      Trace("sygus-interpol-debug") << "s = " << s.toString() << " vlv = " << vlv.toString() << std::endl;
       varlist.push_back(vlv);
       varlistTypes.push_back(tn);
       if (symsetShared.find(s) == symsetShared.end()) {
+         Trace("sygus-interpol-debug") << "symbol " << s.toString() << " of type  " << tn.toString() <<  " added to non shared" << std::endl;
          nonSharedVarSet.insert(vlv);
       } else {
-        varlistShared.push_back(vlv);
-        varlistTypesShared.push_back(tn);
-        sharedVars.push_back(var);
+         varlistShared.push_back(vlv);
+         varlistTypesShared.push_back(tn);
+         sharedVars.push_back(var);
+         Trace("sygus-interpol-debug") << "symbol " << s.toString() << " of type  " << tn.toString() <<  " added to shared" << std::endl;
       }
     }
   }
@@ -143,25 +148,26 @@ PreprocessingPassResult SygusInterpol::applyInternal(
   Node abvl = nm->mkNode(BOUND_VAR_LIST, varlist);
   Node abvlShared = nm->mkNode(BOUND_VAR_LIST, varlistShared);
   
-  Trace("sygus-abduct-debug")
+  Trace("sygus-interpol-debug")
         << "Make sygus grammar attribute..." << std::endl;
   std::map<TypeNode, std::vector<Node> > extra_cons;
   std::map<TypeNode, std::vector<Node> > exclude_cons;
   std::unordered_set<Node, NodeHashFunction> terms_irrelevant;
-  TypeNode abdGTypeS = CVC4::theory::quantifiers::CegGrammarConstructor::mkSygusDefaultType(
+  TypeNode interpolGTypeS = CVC4::theory::quantifiers::CegGrammarConstructor::mkSygusDefaultType(
     nm->booleanType(),
     abvlShared,
     "interpolation_grammar",
     extra_cons,
     exclude_cons,
-    nonSharedVarSet
+    terms_irrelevant,
+    d_preprocContext->getSmt()->getLogicInfo().isLinear()
       );
-  Node sym = nm->mkBoundVar("sfproxy_abduct", abdGTypeS);
+  Node sym = nm->mkBoundVar("sfproxy_interpol", interpolGTypeS);
   std::vector<Expr> attrValue;
   attrValue.push_back(sym.toExpr());
   d_preprocContext->getSmt()->setUserAttribute(
         "sygus-synth-grammar", interpol.toExpr(), attrValue, "");
-  Trace("sygus-abduct-debug") << "Finished setting up grammar." << std::endl;
+  Trace("sygus-interpol-debug") << "Finished setting up grammar." << std::endl;
   
 
 
@@ -173,7 +179,7 @@ PreprocessingPassResult SygusInterpol::applyInternal(
   Trace("sygus-interpol-debug") << "...finish" << std::endl;
 
   Trace("sygus-interpol-debug") << "Set attributes..." << std::endl;
-  interpol.setAttribute(theory::SygusSynthFunVarListAttribute(), abvl);
+  interpol.setAttribute(theory::SygusSynthFunVarListAttribute(), abvlShared);
   Trace("sygus-interpol-debug") << "...finish" << std::endl;
 
   Trace("sygus-interpol-debug") << "Make conjecture body..." << std::endl;
