@@ -423,7 +423,8 @@ void CegGrammarConstructor::mkSygusDefaultGrammar(
     std::map<TypeNode, std::vector<Node>>& exc_cons,
     std::unordered_set<Node, NodeHashFunction>& term_irrelevant,
     std::vector<CVC4::Datatype>& datatypes,
-    std::set<Type>& unres)
+    std::set<Type>& unres,
+    bool linear)
 {
   NodeManager* nm = NodeManager::currentNM();
   Trace("sygus-grammar-def") << "Construct default grammar for " << fun << " "
@@ -551,41 +552,65 @@ void CegGrammarConstructor::mkSygusDefaultGrammar(
 
     if (types[i].isReal())
     {
-      for (unsigned j = 0; j < 2; j++)
+      Trace("sygus-grammar-def")
+          << "  ...create auxiliary Positive Integers grammar\n";
+      /* Creating type for positive integers */
+      std::stringstream ss;
+      ss << fun << "_PosInt";
+      std::string pos_int_name = ss.str();
+      // make unresolved type
+      Type unres_pos_int_t = mkUnresolvedType(pos_int_name, unres).toType();
+      // make data type
+      datatypes.push_back(Datatype(pos_int_name));
+      /* add placeholders */
+      std::vector<Expr> ops_pos_int;
+      std::vector<std::string> cnames_pos_int;
+      std::vector<std::vector<Type>> cargs_pos_int;
+      /* Add operator 1 */
+      Trace("sygus-grammar-def") << "\t...add for 1 to Pos_Int\n";
+      ops_pos_int.push_back(nm->mkConst(Rational(1)).toExpr());
+      ss.str("");
+      ss << "1";
+      cnames_pos_int.push_back(ss.str());
+      cargs_pos_int.push_back(std::vector<Type>());
+      datatypes.back().setSygus(types[i].toType(), bvl.toExpr(), true, true);
+      for (unsigned j = 0, size_j = ops_pos_int.size(); j < size_j; ++j)
       {
-        Kind k = j == 0 ? PLUS : MINUS;
-        Trace("sygus-grammar-def") << "...add for " << k << std::endl;
-        ops[i].push_back(nm->operatorOf(k).toExpr());
-        cnames[i].push_back(kindToString(k));
-        cargs[i].push_back(std::vector<Type>());
-        cargs[i].back().push_back(unres_t);
-        cargs[i].back().push_back(unres_t);
-        pcs[i].push_back(nullptr);
-        weights[i].push_back(-1);
+        datatypes.back().addSygusConstructor(
+            ops_pos_int[j], cnames_pos_int[j], cargs_pos_int[j]);
+      }
+      for (unsigned j = 0; j < 4; j++)
+      {
+        Kind k;
+        if (j < 3) {
+          k = (j == 0) ? PLUS : (k == 1) ? MINUS : MULT;
+          if (k == MULT && !linear) {
+            break;
+          } else {
+            Trace("sygus-grammar-def") << "...add for " << k << std::endl;
+            ops[i].push_back(nm->operatorOf(k).toExpr());
+            cnames[i].push_back(kindToString(k));
+            cargs[i].push_back(std::vector<Type>());
+            cargs[i].back().push_back(unres_t);
+            cargs[i].back().push_back(unres_t);
+            pcs[i].push_back(nullptr);
+            weights[i].push_back(-1);
+          } 
+        } else {
+          if (!linear) {
+            k = INTS_DIVISION;
+            ops[i].push_back(nm->operatorOf(k).toExpr());
+            cnames[i].push_back(kindToString(k));
+            cargs[i].push_back(std::vector<Type>());
+            cargs[i].back().push_back(unres_t);
+            cargs[i].back().push_back(unres_pos_int_t);
+            pcs[i].push_back(nullptr);
+            weights[i].push_back(-1);
+          }
+        }
       }
       if (!types[i].isInteger())
       {
-        Trace("sygus-grammar-def")
-            << "  ...create auxiliary Positive Integers grammar\n";
-        /* Creating type for positive integers */
-        std::stringstream ss;
-        ss << fun << "_PosInt";
-        std::string pos_int_name = ss.str();
-        // make unresolved type
-        Type unres_pos_int_t = mkUnresolvedType(pos_int_name, unres).toType();
-        // make data type
-        datatypes.push_back(Datatype(pos_int_name));
-        /* add placeholders */
-        std::vector<Expr> ops_pos_int;
-        std::vector<std::string> cnames_pos_int;
-        std::vector<std::vector<Type>> cargs_pos_int;
-        /* Add operator 1 */
-        Trace("sygus-grammar-def") << "\t...add for 1 to Pos_Int\n";
-        ops_pos_int.push_back(nm->mkConst(Rational(1)).toExpr());
-        ss.str("");
-        ss << "1";
-        cnames_pos_int.push_back(ss.str());
-        cargs_pos_int.push_back(std::vector<Type>());
         /* Add operator PLUS */
         Kind k = PLUS;
         Trace("sygus-grammar-def") << "\t...add for PLUS to Pos_Int\n";
@@ -594,12 +619,6 @@ void CegGrammarConstructor::mkSygusDefaultGrammar(
         cargs_pos_int.push_back(std::vector<Type>());
         cargs_pos_int.back().push_back(unres_pos_int_t);
         cargs_pos_int.back().push_back(unres_pos_int_t);
-        datatypes.back().setSygus(types[i].toType(), bvl.toExpr(), true, true);
-        for (unsigned j = 0, size_j = ops_pos_int.size(); j < size_j; ++j)
-        {
-          datatypes.back().addSygusConstructor(
-              ops_pos_int[j], cnames_pos_int[j], cargs_pos_int[j]);
-        }
         Trace("sygus-grammar-def")
             << "  ...built datatype " << datatypes.back() << " ";
         /* Adding division at root */
@@ -931,7 +950,8 @@ TypeNode CegGrammarConstructor::mkSygusDefaultType(
     const std::string& fun,
     std::map<TypeNode, std::vector<Node>>& extra_cons,
     std::map<TypeNode, std::vector<Node>>& exclude_cons,
-    std::unordered_set<Node, NodeHashFunction>& term_irrelevant)
+    std::unordered_set<Node, NodeHashFunction>& term_irrelevant,
+    bool linear)
 {
   Trace("sygus-grammar-def") << "*** Make sygus default type " << range << ", make datatypes..." << std::endl;
   for( std::map< TypeNode, std::vector< Node > >::iterator it = extra_cons.begin(); it != extra_cons.end(); ++it ){
@@ -946,7 +966,8 @@ TypeNode CegGrammarConstructor::mkSygusDefaultType(
                         exclude_cons,
                         term_irrelevant,
                         datatypes,
-                        unres);
+                        unres,
+                        linear);
   Trace("sygus-grammar-def")  << "...made " << datatypes.size() << " datatypes, now make mutual datatype types..." << std::endl;
   Assert( !datatypes.empty() );
   std::vector<DatatypeType> types =

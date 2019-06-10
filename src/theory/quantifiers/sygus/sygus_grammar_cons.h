@@ -76,7 +76,8 @@ public:
      const std::string& fun,
      std::map<TypeNode, std::vector<Node> >& extra_cons,
      std::map<TypeNode, std::vector<Node> >& exclude_cons,
-     std::unordered_set<Node, NodeHashFunction>& term_irrelevant);
+     std::unordered_set<Node, NodeHashFunction>& term_irrelevant,
+     bool linear=true);
  /** make the default sygus datatype type corresponding to builtin type range */
  static TypeNode mkSygusDefaultType(TypeNode range,
                                     Node bvl,
@@ -159,7 +160,8 @@ public:
       std::map<TypeNode, std::vector<Node> >& exclude_cons,
       std::unordered_set<Node, NodeHashFunction>& term_irrelevant,
       std::vector<CVC4::Datatype>& datatypes,
-      std::set<Type>& unres);
+      std::set<Type>& unres,
+      bool linear = true);
   // helper function for mkSygusTemplateType
   static TypeNode mkSygusTemplateTypeRec( Node templ, Node templ_arg, TypeNode templ_arg_sygus_type, Node bvl, 
                                           const std::string& fun, unsigned& tcount );
