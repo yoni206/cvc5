@@ -2406,6 +2406,13 @@ class CVC4_PUBLIC Solver
    * @return the value of the given term
    */
   Term getValue(Term term) const;
+
+  /**
+   * Get the value of the synthesized sygus function
+   * @return the value of the synthesized sygus function
+   */
+  Term getSynth() const;
+
   /**
    * Get the values of the given terms.
    * SMT-LIB: ( get-value ( <term>+ ) )

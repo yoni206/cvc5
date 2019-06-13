@@ -3309,6 +3309,14 @@ Term Solver::getValue(Term term) const
   return d_smtEngine->getValue(*term.d_expr);
 }
 
+Term Solver::getSynth() const {
+  std::map<Expr, Expr> sol_map;
+  d_smtEngine->getSynthSolutions(sol_map);
+  Assert(sol_map.size() == 1);
+  std::map<Expr,Expr>::iterator it=sol_map.begin();
+  return Term(it->second);
+}
+
 /**
  *  ( get-value ( <term>+ ) )
  */
