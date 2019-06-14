@@ -878,6 +878,7 @@ SmtEngine::SmtEngine(ExprManager* em)
       d_modelCommands(NULL),
       d_dumpCommands(),
       d_defineCommands(),
+      d_interpolationVars(),
       d_logic(),
       d_originalOptions(),
       d_isInternalSubsolver(false),
@@ -1965,7 +1966,7 @@ void SmtEngine::setDefaults() {
         options::sygusExtRew.set(false);
       }
     }
-    if (options::sygusAbduct() || options::sygusInterpol())
+    if (options::sygusAbduct())
     {
       // if doing abduction, we should filter strong solutions
       if (!options::sygusFilterSolMode.wasSetByUser())
@@ -1975,7 +1976,7 @@ void SmtEngine::setDefaults() {
     }
 
     if (options::sygusRewSynth() || options::sygusRewVerify()
-        || options::sygusQueryGen() || options::sygusAbduct() || options::sygusInterpol())
+        || options::sygusQueryGen() || options::sygusAbduct()) 
     {
       // rewrite rule synthesis implies that sygus stream must be true
       options::sygusStream.set(true);
@@ -4742,6 +4743,36 @@ void SmtEngine::checkModel(bool hardFailure) {
   Notice() << "SmtEngine::checkModel(): all assertions checked out OK !" << endl;
 }
 
+Expr SmtEngine::getInterpolant() {
+  NodeManager* nm = NodeManager::currentNM();
+  map<Node, Node> sol_map;
+  /* Get solutions and build auxiliary vectors for substituting */
+  d_theoryEngine->getSynthSolutions(sol_map);
+  std::vector<Node> function_vars, function_sols;
+  for (const auto& pair : sol_map)
+  {
+    function_vars.push_back(pair.first);
+    function_sols.push_back(pair.second);
+  }
+  Assert(function_vars.size() == 1);
+  Assert(function_sols.size() == 1);
+  Node lambda = function_sols[0];
+  Node varlist = lambda[0];
+  Node templatedSolution = lambda[1];
+  vector<Node> args;
+  for (Node v : d_interpolationVars) {
+    args.push_back(v);
+  }
+  vector<Node> vars;
+  for (Node v : varlist) {
+    vars.push_back(v);
+  }
+  Assert(args.size() == vars.size());
+  std::unordered_map<TNode, TNode, TNodeHashFunction> cache;
+  Node instance = templatedSolution.substitute(vars.begin(), vars.end(), args.begin(), args.end(), cache);
+  return instance.toExpr();
+}
+
 void SmtEngine::checkSynthSolution()
 {
   NodeManager* nm = NodeManager::currentNM();
@@ -4758,8 +4789,8 @@ void SmtEngine::checkSynthSolution()
   std::vector<Node> function_vars, function_sols;
   for (const auto& pair : sol_map)
   {
-    Trace("check-synth-sol") << pair.first << " --> " << pair.second << "\n";
-    function_vars.push_back(pair.first);
+      Trace("check-synth-sol") << pair.first << " --> " << pair.second << "\n";
+      function_vars.push_back(pair.first);
     function_sols.push_back(pair.second);
   }
   Trace("check-synth-sol") << "Starting new SMT Engine\n";
@@ -4848,6 +4879,7 @@ void SmtEngine::checkSynthSolution()
     }
     solChecker.resetAssertions();
   }
+  getInterpolant().toString();
 }
 
 // TODO(#1108): Simplify the error reporting of this method.
@@ -5331,6 +5363,10 @@ void SmtEngine::setOption(const std::string& key, const CVC4::SExpr& value)
   string optionarg = value.getValue();
   Options& nodeManagerOptions = NodeManager::currentNM()->getOptions();
   nodeManagerOptions.setOption(key, optionarg);
+}
+
+void SmtEngine::setInterpolationVars(std::vector<Node>& interpolationVars) {
+  d_interpolationVars = interpolationVars;
 }
 
 void SmtEngine::setIsInternalSubsolver() { d_isInternalSubsolver = true; }
