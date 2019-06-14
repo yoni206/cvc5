@@ -200,6 +200,12 @@ class CVC4_PUBLIC SmtEngine {
   std::vector<Command*> d_defineCommands;
 
   /**
+   * List of shared variables that are an input to the interpolantion 
+   *
+   */
+   std::vector<Node> d_interpolationVars;
+
+  /**
    * The logic we're in.
    */
   LogicInfo d_logic;
@@ -519,6 +525,10 @@ class CVC4_PUBLIC SmtEngine {
    */
   void setIsInternalSubsolver();
 
+  /**Set the variable list for the interpolation result
+   */
+  void setInterpolationVars(std::vector<Node>& interpolationVars);
+
   /** sets the input name */
   void setFilename(std::string filename);
   /** return the input name (if any) */
@@ -529,6 +539,11 @@ class CVC4_PUBLIC SmtEngine {
    * support and produce-models is on.
    */
   Model* getModel();
+
+  /**
+   * get interpolation solution
+   */
+  Expr getInterpolant();
 
   /**
    * When using separation logic, obtain the expression for the heap.

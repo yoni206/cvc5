@@ -147,6 +147,7 @@ PreprocessingPassResult SygusInterpol::applyInternal(
   // set the sygus bound variable list
   Node abvl = nm->mkNode(BOUND_VAR_LIST, varlist);
   Node abvlShared = nm->mkNode(BOUND_VAR_LIST, varlistShared);
+  d_preprocContext->getSmt()->setInterpolationVars(varlistShared);
   
   Trace("sygus-interpol-debug")
         << "Make sygus grammar attribute..." << std::endl;
