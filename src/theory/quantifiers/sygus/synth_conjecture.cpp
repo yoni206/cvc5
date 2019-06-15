@@ -1198,10 +1198,11 @@ void SynthConjecture::getSynthSolutions(std::map<Node, Node>& sol_map)
 bool SynthConjecture::getSynthSolutionsInternal(std::vector<Node>& sols,
                                                 std::vector<int>& statuses)
 {
+  Trace("cegqi-debug") << "  getSynthSolutionsInternal " << std::endl;
   for (unsigned i = 0, size = d_embed_quant[0].getNumChildren(); i < size; i++)
   {
     Node prog = d_embed_quant[0][i];
-    Trace("cegqi-debug") << "  get solution for " << prog << std::endl;
+    Trace("cegqi-debug") << "  get solution for " << prog.toString() << std::endl;
     TypeNode tn = prog.getType();
     Assert(tn.isDatatype());
     // get the solution
