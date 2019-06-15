@@ -56,6 +56,7 @@ PreprocessingPassResult SygusInterpol::applyInternal(
   std::vector<Node>& asserts = assertionsToPreprocess->ref();
   // do we have any assumptions, e.g. via check-sat-assuming?
   bool usingAssumptions = (assertionsToPreprocess->getNumAssumptions() > 0);
+  Assert(usingAssumptions);
   // The following is our set of "axioms". We construct this set only when the
   // usingAssumptions (above) is true. In this case, our input formula is
   // partitioned into Fa ^ Fc as described in the header of this class, where:
@@ -67,14 +68,16 @@ PreprocessingPassResult SygusInterpol::applyInternal(
   for (size_t i = 0, size = asserts.size(); i < size; i++)
   {
     // if we are not an assumption, add it to the set of axioms and its symbols to the set of axiom symbols
-    if (usingAssumptions && i < assertionsToPreprocess->getAssumptionsStart())
+    if (i < assertionsToPreprocess->getAssumptionsStart())
     {
       expr::getSymbols(asserts[i], symsetAxioms);
       axioms.push_back(asserts[i]);
+      Trace("sygus-interpol-debug") << "assertion " << asserts[i].toString() << " is an assumption" << std::endl;
     // otherwise, add it to the set of conjectures and its symbols to the set of conjecture symbols
     } else {
       expr::getSymbols(asserts[i], symsetConjecture);
       negatedConjectureList.push_back(asserts[i]);
+      Trace("sygus-interpol-debug") << "assertion " << asserts[i].toString() << " is a negated conjecture" << std::endl;
     }
     //Either way, add the symbols to the set of all symbols
     expr::getSymbols(asserts[i], symsetAll);
@@ -139,7 +142,7 @@ PreprocessingPassResult SygusInterpol::applyInternal(
 
   Trace("sygus-interpol-debug") << "Make interpolation predicate..." << std::endl;
   // make the interpolation predicate to synthesize
-  TypeNode interpolType = varlistTypes.empty() ? nm->booleanType()
+  TypeNode interpolType = varlistTypesShared.empty() ? nm->booleanType()
                                           : nm->mkPredicateType(varlistTypesShared);
   Node interpol = nm->mkBoundVar("A", interpolType);
   Trace("sygus-interpol-debug") << "...finish" << std::endl;

@@ -3765,7 +3765,9 @@ Result SmtEngine::checkSatisfiability(const vector<Expr>& assumptions,
     {
       checkSynthSolution();
     }
-
+    if (!d_isInternalSubsolver) {
+      //std::cout << "panda " << getInterpolant().toString() << std::endl;
+    }
     return r;
   } catch (UnsafeInterruptException& e) {
     AlwaysAssert(d_private->getResourceManager()->out());
@@ -4717,10 +4719,13 @@ void SmtEngine::checkModel(bool hardFailure) {
 }
 
 Expr SmtEngine::getInterpolant() {
+  Trace("get-interpolant") << "start getInterpolant" << std::endl;
+  checkSynthSolution();
   NodeManager* nm = NodeManager::currentNM();
   map<Node, Node> sol_map;
   /* Get solutions and build auxiliary vectors for substituting */
   d_theoryEngine->getSynthSolutions(sol_map);
+  Assert(!sol_map.empty());
   std::vector<Node> function_vars, function_sols;
   for (const auto& pair : sol_map)
   {
@@ -4852,7 +4857,6 @@ void SmtEngine::checkSynthSolution()
     }
     solChecker.resetAssertions();
   }
-  getInterpolant().toString();
 }
 
 // TODO(#1108): Simplify the error reporting of this method.
