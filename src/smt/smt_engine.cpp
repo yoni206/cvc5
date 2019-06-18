@@ -4208,11 +4208,12 @@ Expr SmtEngine::getValue(const Expr& ex) const
   return resultNode.toExpr();
 }
 
-vector<Node> SmtEngine::getValues(const vector<Node>& nodes) {
-  vector<Node> result;
-  for (Node n : nodes) {
-    Node value = Node::fromExpr(getValue(n.toExpr()));
-    result.push_back(value);
+vector<Expr> SmtEngine::getValues(const vector<Expr>& exprs) {
+  vector<Expr> result;
+  vector<Node> nodes;
+  for (Expr e : exprs) {
+    nodes.push_back(Node::fromExpr(e));
+    result.push_back(getValue(e));
   }
 
   if (options::blockModelsMode() != BLOCK_MODELS_NONE)
