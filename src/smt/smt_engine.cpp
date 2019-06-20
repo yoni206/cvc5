@@ -1260,7 +1260,7 @@ void SmtEngine::setDefaults() {
   if (!d_isInternalSubsolver)
   {
     if (options::sygusInference() || options::sygusRewSynthInput()
-        || options::sygusAbduct() || options::sygusInterpol())
+        || options::sygusAbduct() || (options::sygusInterpol() != quantifiers::SYGUS_INTERPOL_NONE))
     {
       d_logic = d_logic.getUnlockedCopy();
       // sygus requires arithmetic, datatypes and quantifiers
@@ -2293,7 +2293,7 @@ void SmtEngine::setDefaults() {
           "--sygus-expr-miner-check-timeout=N requires "
           "--sygus-expr-miner-check-use-export");
     }
-    if (options::sygusRewSynthInput() || options::sygusAbduct() || options::sygusInterpol())
+    if (options::sygusRewSynthInput() || options::sygusAbduct() || (options::sygusInterpol() != quantifiers::SYGUS_INTERPOL_NONE))
     {
       std::stringstream ss;
       ss << (options::sygusRewSynthInput() ? "--sygus-rr-synth-input"
@@ -3331,7 +3331,7 @@ void SmtEnginePrivate::processAssertions() {
     {
       d_passes["sygus-abduct"]->apply(&d_assertions);
     }
-    else if (options::sygusInterpol())
+    else if (options::sygusInterpol() != quantifiers::SYGUS_INTERPOL_NONE)
     {
       d_passes["sygus-interpol"]->apply(&d_assertions);
     }
@@ -3765,7 +3765,8 @@ Result SmtEngine::checkSatisfiability(const vector<Expr>& assumptions,
     {
       checkSynthSolution();
     }
-    if (!d_isInternalSubsolver) {
+    if (!d_isInternalSubsolver && (options::sygusInterpol() != quantifiers::SYGUS_INTERPOL_NONE)) {
+      Trace("get-interpolant") << "interpolant: " << getInterpolant().toString();
       //std::cout << "panda " << getInterpolant().toString() << std::endl;
     }
     return r;

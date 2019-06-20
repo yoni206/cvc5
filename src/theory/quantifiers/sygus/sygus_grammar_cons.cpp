@@ -25,6 +25,7 @@
 #include "theory/quantifiers/sygus/synth_conjecture.h"
 #include "theory/quantifiers/sygus/term_database_sygus.h"
 #include "theory/quantifiers/term_util.h"
+#include "smt/smt_engine_scope.h"
 
 using namespace CVC4::kind;
 
@@ -424,11 +425,12 @@ void CegGrammarConstructor::mkSygusDefaultGrammar(
     std::unordered_set<Node, NodeHashFunction>& term_irrelevant,
     std::vector<CVC4::Datatype>& datatypes,
     std::set<Type>& unres,
-    bool linear)
+    const std::map<TypeNode, std::vector<Node>>& inc_cons)
 {
   NodeManager* nm = NodeManager::currentNM();
   Trace("sygus-grammar-def") << "Construct default grammar for " << fun << " "
                              << range << std::endl;
+  bool linear = smt::currentSmtEngine()->getLogicInfo().isLinear();
   // collect the variables
   std::vector<Node> sygus_vars;
   if (!bvl.isNull())
@@ -648,19 +650,20 @@ void CegGrammarConstructor::mkSygusDefaultGrammar(
         weights[i].push_back(-1);
       }
       // binary apps
-      std::vector<Kind> bin_kinds = {BITVECTOR_AND,
-                                     BITVECTOR_OR,
-                                     BITVECTOR_XOR,
+      std::vector<Kind> bin_kinds = {//BITVECTOR_AND,
+                                     //BITVECTOR_OR,
+                                    // ITVECTOR_XOR,
                                      BITVECTOR_PLUS,
-                                     BITVECTOR_SUB,
-                                     BITVECTOR_MULT,
+                                    // BITVECTOR_SUB,
+                                     //BITVECTOR_MULT,
                                      BITVECTOR_UDIV_TOTAL,
-                                     BITVECTOR_UREM_TOTAL,
-                                     BITVECTOR_SDIV,
-                                     BITVECTOR_SREM,
-                                     BITVECTOR_SHL,
-                                     BITVECTOR_LSHR,
-                                     BITVECTOR_ASHR};
+                                     //BITVECTOR_UREM_TOTAL,
+                                     //BITVECTOR_SDIV,
+                                     //BITVECTOR_SREM,
+                                    // BITVECTOR_SHL,
+                                     //BITVECTOR_LSHR,
+                                     //BITVECTOR_ASHR
+                                    };
       for (const Kind k : bin_kinds)
       {
         Trace("sygus-grammar-def") << "...add for " << k << std::endl;
@@ -781,16 +784,23 @@ void CegGrammarConstructor::mkSygusDefaultGrammar(
     datatypes[i].setSygus( types[i].toType(), bvl.toExpr(), true, true );
     std::map<TypeNode, std::vector<Node>>::iterator itexc =
         exc_cons.find(types[i]);
+    std::map<TypeNode, std::vector<Node>>::const_iterator itinc =
+        inc_cons.find(types[i]);
     for (unsigned j = 0, size = ops[i].size(); j < size; ++j)
     {
-      // add the constructor if it is not excluded
+      // add the constructor if it is not excluded, 
+      // and it is in inc_cons, in case it is not empty
       Node opn = Node::fromExpr(ops[i][j]);
       if (itexc == exc_cons.end()
           || std::find(itexc->second.begin(), itexc->second.end(), opn)
                  == itexc->second.end())
       {
-        datatypes[i].addSygusConstructor(
+        if ((itinc == inc_cons.end())
+            || (std::find(itinc->second.begin(), itinc->second.end(), opn) 
+                 != itinc->second.end())) {
+          datatypes[i].addSygusConstructor(
             ops[i][j], cnames[i][j], cargs[i][j], pcs[i][j], weights[i][j]);
+        }
       }
     }
     Trace("sygus-grammar-def") << "...built datatype " << datatypes[i] << " ";
@@ -958,7 +968,7 @@ TypeNode CegGrammarConstructor::mkSygusDefaultType(
     std::map<TypeNode, std::vector<Node>>& extra_cons,
     std::map<TypeNode, std::vector<Node>>& exclude_cons,
     std::unordered_set<Node, NodeHashFunction>& term_irrelevant,
-    bool linear)
+     const std::map<TypeNode, std::vector<Node>>& include_cons)
 {
   Trace("sygus-grammar-def") << "*** Make sygus default type " << range << ", make datatypes..." << std::endl;
   for( std::map< TypeNode, std::vector< Node > >::iterator it = extra_cons.begin(); it != extra_cons.end(); ++it ){
@@ -973,8 +983,7 @@ TypeNode CegGrammarConstructor::mkSygusDefaultType(
                         exclude_cons,
                         term_irrelevant,
                         datatypes,
-                        unres,
-                        linear);
+                        unres);
   Trace("sygus-grammar-def")  << "...made " << datatypes.size() << " datatypes, now make mutual datatype types..." << std::endl;
   Assert( !datatypes.empty() );
   std::vector<DatatypeType> types =

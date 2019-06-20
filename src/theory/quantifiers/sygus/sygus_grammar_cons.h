@@ -69,6 +69,7 @@ public:
  *   exclude_cons is used to exclude operators from the grammar,
  *   term_irrelevant is a set of terms that should not be included in the
  *      grammar.
+ *   include_cons is a set of operators that will be included if they are in the default grammar as well (and only them)
  */
  static TypeNode mkSygusDefaultType(
      TypeNode range,
@@ -77,7 +78,7 @@ public:
      std::map<TypeNode, std::vector<Node> >& extra_cons,
      std::map<TypeNode, std::vector<Node> >& exclude_cons,
      std::unordered_set<Node, NodeHashFunction>& term_irrelevant,
-     bool linear=true);
+     const std::map<TypeNode, std::vector<Node>>& include_cons = std::map<TypeNode, std::vector<Node>>());
  /** make the default sygus datatype type corresponding to builtin type range */
  static TypeNode mkSygusDefaultType(TypeNode range,
                                     Node bvl,
@@ -161,7 +162,8 @@ public:
       std::unordered_set<Node, NodeHashFunction>& term_irrelevant,
       std::vector<CVC4::Datatype>& datatypes,
       std::set<Type>& unres,
-      bool linear = true);
+      const std::map<TypeNode, std::vector<Node>>& include_cons = std::map<TypeNode, std::vector<Node>>());
+
   // helper function for mkSygusTemplateType
   static TypeNode mkSygusTemplateTypeRec( Node templ, Node templ_arg, TypeNode templ_arg_sygus_type, Node bvl, 
                                           const std::string& fun, unsigned& tcount );

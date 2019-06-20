@@ -108,6 +108,8 @@ public:
       std::string option, std::string optarg);
   theory::quantifiers::CbqiBvIneqMode stringToCbqiBvIneqMode(
       std::string option, std::string optarg);
+  theory::quantifiers::SygusInterpolMode stringToSygusInterpolMode(
+      std::string option, std::string optarg);
   theory::quantifiers::CegqiSingleInvMode stringToCegqiSingleInvMode(
       std::string option, std::string optarg);
   theory::quantifiers::CegqiSingleInvRconsMode stringToCegqiSingleInvRconsMode(
@@ -262,6 +264,7 @@ public:
   static const std::string s_cbqiBvIneqModeHelp;
   static const std::string s_cegqiSingleInvHelp;
   static const std::string s_cegqiSingleInvRconsHelp;
+  static const std::string s_sygusInterpolModeHelp;
   static const std::string s_cegisSampleHelp;
   static const std::string s_sygusFilterSolHelp;
   static const std::string s_sygusInvTemplHelp;
