@@ -24,16 +24,22 @@
 #include "theory/quantifiers/term_util.h"
 #include "theory/quantifiers/sygus/sygus_grammar_cons.h"
 #include "theory/rewriter.h"
+#include "options/quantifiers_options.h"
+#include "options/quantifiers_modes.h"
 
 using namespace std;
 using namespace CVC4::kind;
+using namespace CVC4::theory::quantifiers;
 
 namespace CVC4 {
 namespace preprocessing {
 namespace passes {
 
 SygusInterpol::SygusInterpol(PreprocessingPassContext* preprocContext)
-    : PreprocessingPass(preprocContext, "sygus-interpol"){};
+    : PreprocessingPass(preprocContext, "sygus-interpol")
+{
+  d_mode = options::sygusInterpol();
+}
 
 PreprocessingPassResult SygusInterpol::applyInternal(
     AssertionPipeline* assertionsToPreprocess)
@@ -156,6 +162,7 @@ PreprocessingPassResult SygusInterpol::applyInternal(
         << "Make sygus grammar attribute..." << std::endl;
   std::map<TypeNode, std::vector<Node> > extra_cons;
   std::map<TypeNode, std::vector<Node> > exclude_cons;
+  std::map<TypeNode, std::vector<Node> > include_cons = getIncludeCons(axioms, negatedConjectureList);
   std::unordered_set<Node, NodeHashFunction> terms_irrelevant;
   TypeNode interpolGTypeS = CVC4::theory::quantifiers::CegGrammarConstructor::mkSygusDefaultType(
     nm->booleanType(),
@@ -164,7 +171,7 @@ PreprocessingPassResult SygusInterpol::applyInternal(
     extra_cons,
     exclude_cons,
     terms_irrelevant,
-    d_preprocContext->getSmt()->getLogicInfo().isLinear()
+    include_cons
       );
   Node sym = nm->mkBoundVar("sfproxy_interpol", interpolGTypeS);
   std::vector<Expr> attrValue;
@@ -233,6 +240,54 @@ PreprocessingPassResult SygusInterpol::applyInternal(
   }
 
   return PreprocessingPassResult::NO_CONFLICT;
+}
+
+std::map<TypeNode, std::vector<Node> > SygusInterpol::getIncludeCons(vector<Node> assumptions, vector<Node> conclusions) {
+  NodeManager* nm = NodeManager::currentNM();
+  Assert(d_mode != SYGUS_INTERPOL_NONE);
+  std::map<TypeNode, std::vector<Node> > include_cons = std::map<TypeNode, std::vector<Node> >();
+  if (d_mode == SYGUS_INTERPOL_ASSUMPTIONS) {
+    Node tmpAssumptions = nm->mkNode(kind::AND, assumptions);
+    expr::getOperatorsMap(tmpAssumptions, include_cons );
+  } 
+  else if (d_mode == SYGUS_INTERPOL_CONCLUSION) {
+    Node tmpConclusions = nm->mkNode(kind::AND, conclusions);
+    expr::getOperatorsMap(tmpConclusions, include_cons );
+
+  }
+  else if (d_mode == SYGUS_INTERPOL_SHARED) {
+    std::map<TypeNode, std::vector<Node> > include_cons_assumptions = std::map<TypeNode, std::vector<Node> >();
+    Node tmpAssumptions = nm->mkNode(kind::AND, assumptions);
+    expr::getOperatorsMap(tmpAssumptions, include_cons_assumptions );
+
+    std::map<TypeNode, std::vector<Node> > include_cons_conclusions = std::map<TypeNode, std::vector<Node> >();
+    Node tmpConclusions = nm->mkNode(kind::AND, conclusions);
+    expr::getOperatorsMap(tmpConclusions, include_cons_conclusions );
+
+    for (std::map< TypeNode, std::vector< Node > >::iterator itec = include_cons_assumptions.begin(); itec != include_cons_assumptions.end(); itec++) {
+      TypeNode tn = itec->first;  
+      vector<Node> assumptionsOps = itec.second;
+      if (include_cons_conclusions.find(tn) != include_cons_conclusions.end()) {
+        for (Node n : assumptionsOps) {
+          std::vector<Node> concOps = include_cons_conclusions.find(tn)->second;
+          if (concOps.find(n) != operators.end()) {
+            if (include_cons.find(tn) == include_cons.end()) {
+              include_cons[tn] = vector<Node>();
+            }
+            include_cons[tn].push_back(n);
+          }
+        }
+      }
+    }
+  }
+  else if (d_mode == SYGUS_INTERPOL_ALL) {
+    Node tmpAssumptions = nm->mkNode(kind::AND, assumptions);
+    Node tmpConclusions = nm->mkNode(kind::AND, conclusions);
+    Node tmpAll = nm->mkNode(kind::AND, tmpAssumptions, tmpConclusions);
+    expr::getOperatorsMap(tmpAll, include_cons );
+  }
+  return include_cons;
+
 }
 
 }  // namespace passes

@@ -486,6 +486,33 @@ all \n\
 \n\
 ";
 
+const std::string OptionsHandler::s_sygusInterpolModeHelp = 
+  "\
+Modes for choosing the grammar for sygus-based interpolation.\n\
+The shared variables between the assumptions and the conclusion will always be included.\n\
+This option controls the operators that will be used.\n\
+\n\
+none (default) \n\
++ Don't compute interpolants. \n\
+default \n\
++ Use the default grammar of the theory involved. \n\
+\n\
+assumptions \n\
++ Use only operators that occur in the assumptions. \n\
+\n\
+conclusion \n\
++ Use only operators that occur in the conclusion. \n\
+\n\
+shared \n\
+\n\
++ Use only operators that occur both in the conclusion and the assumptions. \n\
+\n\
+all \n\
+\n\
++ Use only operators that occur either in the conclusion or the assumptions. \n\
+\n\
+";  
+
 const std::string OptionsHandler::s_cegisSampleHelp =
     "\
 Modes for sampling with counterexample-guided inductive synthesis (CEGIS),\
@@ -881,6 +908,8 @@ theory::quantifiers::CbqiBvIneqMode OptionsHandler::stringToCbqiBvIneqMode(
   }
 }
 
+
+
 theory::quantifiers::CegqiSingleInvMode
 OptionsHandler::stringToCegqiSingleInvMode(std::string option,
                                            std::string optarg)
@@ -957,6 +986,39 @@ theory::quantifiers::CegisSampleMode OptionsHandler::stringToCegisSampleMode(
     throw OptionException(std::string("unknown option for --cegis-sample: `")
                           + optarg
                           + "'.  Try --cegis-sample help.");
+  }
+}
+
+theory::quantifiers::SygusInterpolMode
+OptionsHandler::stringToSygusInterpolMode(std::string option,
+                                          std::string optarg)
+{
+  if (optarg == "none") {
+    return theory::quantifiers::SYGUS_INTERPOL_NONE;
+  }
+  else if (optarg == "default") {
+    return theory::quantifiers::SYGUS_INTERPOL_DEFAULT;
+  }
+  else if (optarg == "assumptions") {
+    return theory::quantifiers::SYGUS_INTERPOL_ASSUMPTIONS;
+  } 
+  else if (optarg == "conclusion") {
+    return theory::quantifiers::SYGUS_INTERPOL_CONCLUSION;
+  } 
+  else if (optarg == "shared") {
+    return theory::quantifiers::SYGUS_INTERPOL_SHARED;
+  }
+  else if (optarg == "all") {
+    return theory::quantifiers::SYGUS_INTERPOL_ALL;
+  }
+  else if (optarg == "help") {
+    puts(s_sygusInterpolModeHelp.c_str());
+    exit(1);
+  }
+  else {
+    throw OptionException(
+        std::string("unknown option for --sygus-interpol: `") + optarg
+        + "'.  Try --sygus-interpol=help.");
   }
 }
 

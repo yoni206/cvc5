@@ -199,6 +199,21 @@ enum CbqiBvIneqMode
   CBQI_BV_INEQ_KEEP,
 };
 
+enum SygusInterpolMode {
+  /** don't compute interpolants */
+  SYGUS_INTERPOL_NONE,
+  /** use the default grammar for the theory */
+  SYGUS_INTERPOL_DEFAULT,
+  /** use only operators that occur in the assumptions */
+  SYGUS_INTERPOL_ASSUMPTIONS,
+  /** use only operators that occur in the conclusion */
+  SYGUS_INTERPOL_CONCLUSION,
+  /** use only operators that occur both in the conclusion and the assumptions */
+  SYGUS_INTERPOL_SHARED,
+  /**use only operators that occur either in the conclusion or the assumptions */
+  SYGUS_INTERPOL_ALL
+};
+
 enum CegqiSingleInvMode {
   /** do not use single invocation techniques */
   CEGQI_SI_MODE_NONE,

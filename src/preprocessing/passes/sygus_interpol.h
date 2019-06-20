@@ -19,6 +19,7 @@
 
 #include "preprocessing/preprocessing_pass.h"
 #include "preprocessing/preprocessing_pass_context.h"
+#include "options/quantifiers_modes.h"
 
 namespace CVC4 {
 namespace preprocessing {
@@ -51,6 +52,10 @@ class SygusInterpol : public PreprocessingPass
    */
   PreprocessingPassResult applyInternal(
       AssertionPipeline* assertionsToPreprocess) override;
+  
+  std::map<TypeNode, std::vector<Node> > getIncludeCons(vector<Node> assumptions, vector<Node> conclusions);
+
+  theory::quantifiers::SygusInterpolMode d_mode;
 };
 
 }  // namespace passes

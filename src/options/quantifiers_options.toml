@@ -897,10 +897,11 @@ header = "options/quantifiers_options.h"
 [[option]]
   name       = "sygusInterpol"
   category   = "regular"
-  long       = "sygus-interpol"
-  type       = "bool"
-  default    = "false"
-  read_only  = false
+  long       = "sygus-interpol=MODE"
+  type       = "CVC4::theory::quantifiers::SygusInterpolMode"
+  default    = "theory::quantifiers::SYGUS_INTERPOL_DEFAULT"
+  handler    = "stringToSygusInterpolMode"
+  includes   = ["options/smt_modes.h"]
   help       = "compute interpolations using sygus"
 
 [[option]]
