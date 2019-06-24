@@ -245,36 +245,41 @@ PreprocessingPassResult SygusInterpol::applyInternal(
 std::map<TypeNode, std::vector<Node> > SygusInterpol::getIncludeCons(vector<Node> assumptions, vector<Node> conclusions) {
   NodeManager* nm = NodeManager::currentNM();
   Assert(d_mode != SYGUS_INTERPOL_NONE);
-  std::map<TypeNode, std::vector<Node> > include_cons = std::map<TypeNode, std::vector<Node> >();
+  std::map<TypeNode, std::vector<Node> > result = std::map<TypeNode, std::vector<Node> >();
   if (d_mode == SYGUS_INTERPOL_ASSUMPTIONS) {
     Node tmpAssumptions = nm->mkNode(kind::AND, assumptions);
-    expr::getOperatorsMap(tmpAssumptions, include_cons );
+    expr::getOperatorsMap(tmpAssumptions, result );
   } 
   else if (d_mode == SYGUS_INTERPOL_CONCLUSION) {
     Node tmpConclusions = nm->mkNode(kind::AND, conclusions);
-    expr::getOperatorsMap(tmpConclusions, include_cons );
+    expr::getOperatorsMap(tmpConclusions, result );
 
   }
   else if (d_mode == SYGUS_INTERPOL_SHARED) {
+    //Get operators from assumptions
     std::map<TypeNode, std::vector<Node> > include_cons_assumptions = std::map<TypeNode, std::vector<Node> >();
     Node tmpAssumptions = nm->mkNode(kind::AND, assumptions);
     expr::getOperatorsMap(tmpAssumptions, include_cons_assumptions );
 
+    //Get operators from conclusions
     std::map<TypeNode, std::vector<Node> > include_cons_conclusions = std::map<TypeNode, std::vector<Node> >();
     Node tmpConclusions = nm->mkNode(kind::AND, conclusions);
     expr::getOperatorsMap(tmpConclusions, include_cons_conclusions );
 
+    //Compute intersection
     for (std::map< TypeNode, std::vector< Node > >::iterator itec = include_cons_assumptions.begin(); itec != include_cons_assumptions.end(); itec++) {
       TypeNode tn = itec->first;  
-      vector<Node> assumptionsOps = itec.second;
-      if (include_cons_conclusions.find(tn) != include_cons_conclusions.end()) {
+      vector<Node> assumptionsOps = itec->second;
+      std::map< TypeNode, std::vector< Node > >::iterator concIter = include_cons_conclusions.find(tn);
+      if (concIter != include_cons_conclusions.end()) {
+        std::vector<Node> conclusionsOps = concIter->second;
+        std::unordered_set<Node, NodeHashFunction> conclusionsOpsSet = std::unordered_set<Node, NodeHashFunction>(conclusionsOps.begin(), conclusionsOps.end());
         for (Node n : assumptionsOps) {
-          std::vector<Node> concOps = include_cons_conclusions.find(tn)->second;
-          if (concOps.find(n) != operators.end()) {
-            if (include_cons.find(tn) == include_cons.end()) {
-              include_cons[tn] = vector<Node>();
+          if (conclusionsOpsSet.find(n) != conclusionsOpsSet.end()) {
+            if (result.find(tn) == result.end()) {
+              result[tn] = vector<Node>();
             }
-            include_cons[tn].push_back(n);
+            result[tn].push_back(n);
           }
         }
       }
@@ -284,9 +289,9 @@ std::map<TypeNode, std::vector<Node> > SygusInterpol::getIncludeCons(vector<Node
     Node tmpAssumptions = nm->mkNode(kind::AND, assumptions);
     Node tmpConclusions = nm->mkNode(kind::AND, conclusions);
     Node tmpAll = nm->mkNode(kind::AND, tmpAssumptions, tmpConclusions);
-    expr::getOperatorsMap(tmpAll, include_cons );
+    expr::getOperatorsMap(tmpAll, result );
   }
-  return include_cons;
+  return result;
 
 }
 

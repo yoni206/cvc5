@@ -306,7 +306,8 @@ void getSymbols(TNode n,
 
 
 
-void getOperatorsMap(TNode n, std::map<TypeNode, std::vector<Node>>& ops)
+void getOperatorsMap(TNode n,
+               std::map<TypeNode, std::vector<Node>>& ops)
 {
   std::unordered_set<TNode, TNodeHashFunction> visited;
   getOperatorsMap(n, ops, visited);

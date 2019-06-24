@@ -650,19 +650,19 @@ void CegGrammarConstructor::mkSygusDefaultGrammar(
         weights[i].push_back(-1);
       }
       // binary apps
-      std::vector<Kind> bin_kinds = {//BITVECTOR_AND,
-                                     //BITVECTOR_OR,
-                                    // ITVECTOR_XOR,
+      std::vector<Kind> bin_kinds = {BITVECTOR_AND,
+                                     BITVECTOR_OR,
+                                     BITVECTOR_XOR,
                                      BITVECTOR_PLUS,
-                                    // BITVECTOR_SUB,
-                                     //BITVECTOR_MULT,
+                                     BITVECTOR_SUB,
+                                     BITVECTOR_MULT,
                                      BITVECTOR_UDIV_TOTAL,
-                                     //BITVECTOR_UREM_TOTAL,
-                                     //BITVECTOR_SDIV,
-                                     //BITVECTOR_SREM,
-                                    // BITVECTOR_SHL,
-                                     //BITVECTOR_LSHR,
-                                     //BITVECTOR_ASHR
+                                     BITVECTOR_UREM_TOTAL,
+                                     BITVECTOR_SDIV,
+                                     BITVECTOR_SREM,
+                                     BITVECTOR_SHL,
+                                     BITVECTOR_LSHR,
+                                     BITVECTOR_ASHR
                                     };
       for (const Kind k : bin_kinds)
       {
@@ -791,13 +791,17 @@ void CegGrammarConstructor::mkSygusDefaultGrammar(
       // add the constructor if it is not excluded, 
       // and it is in inc_cons, in case it is not empty
       Node opn = Node::fromExpr(ops[i][j]);
+      Trace("sygus-grammar-def") << "...considering " << opn.toString() << " of kind " << opn.getKind() << " and of type " << opn.getType() << " and of kind of type " << opn.getType().getKind() << " of metakind " << opn.getMetaKind() << std::endl;
       if (itexc == exc_cons.end()
           || std::find(itexc->second.begin(), itexc->second.end(), opn)
                  == itexc->second.end())
       {
-        if ((itinc == inc_cons.end())
+        Trace("sygus-grammar-def") << "......not excluded " << std::endl; 
+        if ((opn.isVar()) || (opn.getType().getKind() != kind::TYPE_CONSTANT)
+           ||  (itinc == inc_cons.end())
             || (std::find(itinc->second.begin(), itinc->second.end(), opn) 
                  != itinc->second.end())) {
+          Trace("sygus-grammar-def") << "......included " << std::endl; 
           datatypes[i].addSygusConstructor(
             ops[i][j], cnames[i][j], cargs[i][j], pcs[i][j], weights[i][j]);
         }
@@ -983,7 +987,8 @@ TypeNode CegGrammarConstructor::mkSygusDefaultType(
                         exclude_cons,
                         term_irrelevant,
                         datatypes,
-                        unres);
+                        unres, 
+                        include_cons);
   Trace("sygus-grammar-def")  << "...made " << datatypes.size() << " datatypes, now make mutual datatype types..." << std::endl;
   Assert( !datatypes.empty() );
   std::vector<DatatypeType> types =
