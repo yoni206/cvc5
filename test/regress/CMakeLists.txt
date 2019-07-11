@@ -251,6 +251,7 @@ set(regress_0_tests
   regress0/bv/divtest_2_5.smt2
   regress0/bv/divtest_2_6.smt2
   regress0/bv/eager-inc-cryptominisat.smt2
+  regress0/bv/eager-force-logic.smt2
   regress0/bv/fuzz01.smt
   regress0/bv/fuzz02.delta01.smt
   regress0/bv/fuzz02.smt
@@ -543,6 +544,7 @@ set(regress_0_tests
   regress0/parser/bv_arity_smt2.6.smt2
   regress0/parser/constraint.smt2
   regress0/parser/declarefun-emptyset-uf.smt2
+  regress0/parser/force_logic_set_logic.smt2
   regress0/parser/shadow_fun_symbol_all.smt2
   regress0/parser/shadow_fun_symbol_nirat.smt2
   regress0/parser/strings20.smt2
@@ -586,6 +588,7 @@ set(regress_0_tests
   regress0/printer/bv_consts_bin.smt2
   regress0/printer/bv_consts_dec.smt2
   regress0/printer/empty_symbol_name.smt2
+  regress0/printer/let_shadowing.smt2
   regress0/printer/tuples_and_records.cvc
   regress0/push-pop/boolean/fuzz_12.smt2
   regress0/push-pop/boolean/fuzz_13.smt2
@@ -1349,6 +1352,7 @@ set(regress_1_tests
   regress1/quantifiers/intersection-example-onelane.proof-node22337.smt2
   regress1/quantifiers/is-even.smt2
   regress1/quantifiers/isaplanner-goal20.smt2
+  regress1/quantifiers/issue2970-string-var-elim.smt2
   regress1/quantifiers/javafe.ast.StmtVec.009.smt2
   regress1/quantifiers/lra-vts-inf.smt2
   regress1/quantifiers/mix-coeff.smt2
@@ -1572,10 +1576,12 @@ set(regress_1_tests
   regress1/strings/re-agg-total1.smt2
   regress1/strings/re-agg-total2.smt2
   regress1/strings/re-elim-exact.smt2
+  regress1/strings/re-neg-concat-reduct.smt2
   regress1/strings/re-unsound-080718.smt2
   regress1/strings/regexp001.smt2
   regress1/strings/regexp002.smt2
   regress1/strings/regexp003.smt2
+  regress1/strings/regexp-strat-fix.smt2
   regress1/strings/reloop.smt2
   regress1/strings/repl-empty-sem.smt2
   regress1/strings/repl-soundness-sem.smt2
