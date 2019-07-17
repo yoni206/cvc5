@@ -162,7 +162,20 @@ PreprocessingPassResult SygusInterpol::applyInternal(
         << "Make sygus grammar attribute..." << std::endl;
   std::map<TypeNode, std::vector<Node> > extra_cons;
   std::map<TypeNode, std::vector<Node> > exclude_cons;
-  std::map<TypeNode, std::vector<Node> > include_cons = getIncludeCons(axioms, negatedConjectureList);
+  std::map<TypeNode, std::unordered_set<Node, NodeHashFunction> > include_cons = getIncludeCons(axioms, negatedConjectureList);
+  //transform to vectors instead of sets
+  std::map<TypeNode, std::vector<Node>> include_cons_vecs;
+  for (std::pair<TypeNode, std::unordered_set<Node, NodeHashFunction>> p : include_cons) {
+    if (include_cons_vecs.find(p.first) == include_cons_vecs.end()) {
+      include_cons_vecs[p.first] = vector<Node>();
+    }
+    for (std::unordered_set<Node, NodeHashFunction>::iterator it = p.second.begin();
+        it != p.second.end();
+        it++) {
+      include_cons_vecs[p.first].push_back(*it);
+    }
+  }
+
   std::unordered_set<Node, NodeHashFunction> terms_irrelevant;
   TypeNode interpolGTypeS = CVC4::theory::quantifiers::CegGrammarConstructor::mkSygusDefaultType(
     nm->booleanType(),
@@ -171,7 +184,7 @@ PreprocessingPassResult SygusInterpol::applyInternal(
     extra_cons,
     exclude_cons,
     terms_irrelevant,
-    include_cons
+    include_cons_vecs
       );
   Node sym = nm->mkBoundVar("sfproxy_interpol", interpolGTypeS);
   std::vector<Expr> attrValue;
@@ -242,13 +255,13 @@ PreprocessingPassResult SygusInterpol::applyInternal(
   return PreprocessingPassResult::NO_CONFLICT;
 }
 
-std::map<TypeNode, std::vector<Node> > SygusInterpol::getIncludeCons(vector<Node> assumptions, vector<Node> conclusions) {
+std::map<TypeNode, std::unordered_set<Node, NodeHashFunction> > SygusInterpol::getIncludeCons(vector<Node> assumptions, vector<Node> conclusions) {
   NodeManager* nm = NodeManager::currentNM();
   Assert(d_mode != SYGUS_INTERPOL_NONE);
-  std::map<TypeNode, std::vector<Node> > result = std::map<TypeNode, std::vector<Node> >();
+  std::map<TypeNode, std::unordered_set<Node, NodeHashFunction> > result = std::map<TypeNode, std::unordered_set<Node, NodeHashFunction> >();
   if (d_mode == SYGUS_INTERPOL_ASSUMPTIONS) {
     Node tmpAssumptions = nm->mkNode(kind::AND, assumptions);
-    expr::getOperatorsMap(tmpAssumptions, result );
+    expr::getOperatorsMap(tmpAssumptions, result);
   } 
   else if (d_mode == SYGUS_INTERPOL_CONCLUSION) {
     Node tmpConclusions = nm->mkNode(kind::AND, conclusions);
@@ -257,29 +270,29 @@ std::map<TypeNode, std::vector<Node> > SygusInterpol::getIncludeCons(vector<Node
   }
   else if (d_mode == SYGUS_INTERPOL_SHARED) {
     //Get operators from assumptions
-    std::map<TypeNode, std::vector<Node> > include_cons_assumptions = std::map<TypeNode, std::vector<Node> >();
+    std::map<TypeNode, std::unordered_set<Node, NodeHashFunction> > include_cons_assumptions = std::map<TypeNode, std::unordered_set<Node, NodeHashFunction> >();
     Node tmpAssumptions = nm->mkNode(kind::AND, assumptions);
     expr::getOperatorsMap(tmpAssumptions, include_cons_assumptions );
 
     //Get operators from conclusions
-    std::map<TypeNode, std::vector<Node> > include_cons_conclusions = std::map<TypeNode, std::vector<Node> >();
+    std::map<TypeNode, std::unordered_set<Node, NodeHashFunction> > include_cons_conclusions = std::map<TypeNode, std::unordered_set<Node, NodeHashFunction> >();
     Node tmpConclusions = nm->mkNode(kind::AND, conclusions);
     expr::getOperatorsMap(tmpConclusions, include_cons_conclusions );
 
     //Compute intersection
-    for (std::map< TypeNode, std::vector< Node > >::iterator itec = include_cons_assumptions.begin(); itec != include_cons_assumptions.end(); itec++) {
+    for (std::map< TypeNode, std::unordered_set< Node, NodeHashFunction > >::iterator itec = include_cons_assumptions.begin(); itec != include_cons_assumptions.end(); itec++) {
       TypeNode tn = itec->first;  
-      vector<Node> assumptionsOps = itec->second;
-      std::map< TypeNode, std::vector< Node > >::iterator concIter = include_cons_conclusions.find(tn);
+      std::unordered_set<Node, NodeHashFunction> assumptionsOps = itec->second;
+      std::map< TypeNode, std::unordered_set< Node, NodeHashFunction > >::iterator concIter = include_cons_conclusions.find(tn);
       if (concIter != include_cons_conclusions.end()) {
-        std::vector<Node> conclusionsOps = concIter->second;
+        std::unordered_set<Node, NodeHashFunction> conclusionsOps = concIter->second;
         std::unordered_set<Node, NodeHashFunction> conclusionsOpsSet = std::unordered_set<Node, NodeHashFunction>(conclusionsOps.begin(), conclusionsOps.end());
         for (Node n : assumptionsOps) {
           if (conclusionsOpsSet.find(n) != conclusionsOpsSet.end()) {
             if (result.find(tn) == result.end()) {
-              result[tn] = vector<Node>();
+              result[tn] = std::unordered_set<Node, NodeHashFunction>();
             }
-            result[tn].push_back(n);
+            result[tn].insert(n);
           }
         }
       }

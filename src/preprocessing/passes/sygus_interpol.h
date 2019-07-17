@@ -53,7 +53,7 @@ class SygusInterpol : public PreprocessingPass
   PreprocessingPassResult applyInternal(
       AssertionPipeline* assertionsToPreprocess) override;
   
-  std::map<TypeNode, std::vector<Node> > getIncludeCons(vector<Node> assumptions, vector<Node> conclusions);
+  std::map<TypeNode, std::unordered_set<Node, NodeHashFunction> > getIncludeCons(vector<Node> assumptions, vector<Node> conclusions);
 
   theory::quantifiers::SygusInterpolMode d_mode;
 };
