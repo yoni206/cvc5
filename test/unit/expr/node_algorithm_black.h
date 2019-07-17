@@ -29,12 +29,13 @@ using namespace CVC4;
 using namespace CVC4::expr;
 using namespace CVC4::kind;
 
-class NodeAlgorithmBlack : public CxxTest::TestSuite {
-
-private:
+class NodeAlgorithmBlack : public CxxTest::TestSuite
+{
+ private:
   NodeManager* d_nodeManager;
   NodeManagerScope* d_scope;
   TypeNode* d_intTypeNode;
+  TypeNode* d_boolTypeNode;
 
  public:
   void setUp() override
@@ -42,17 +43,20 @@ private:
     d_nodeManager = new NodeManager(NULL);
     d_scope = new NodeManagerScope(d_nodeManager);
     d_intTypeNode = new TypeNode(d_nodeManager->integerType());
+    d_boolTypeNode = new TypeNode(d_nodeManager->booleanType());
   }
 
   void tearDown() override
   {
     delete d_intTypeNode;
+    delete d_boolTypeNode;
     delete d_scope;
     delete d_nodeManager;
   }
 
-  void testGetSymbols1() {
-    Node x = d_nodeManager->mkSkolem("x",d_nodeManager->booleanType());
+  void testGetSymbols1()
+  {
+    Node x = d_nodeManager->mkSkolem("x", d_nodeManager->booleanType());
     Node n = d_nodeManager->mkNode(NOT, x);
     std::unordered_set<Node, NodeHashFunction> syms;
     getSymbols(n, syms);
@@ -60,9 +64,10 @@ private:
     TS_ASSERT(syms.find(x) != syms.end());
   }
 
-  void testGetSymbols2() {
-    Node x = d_nodeManager->mkSkolem("x",d_nodeManager->integerType());
-    Node y = d_nodeManager->mkSkolem("y",d_nodeManager->integerType());
+  void testGetSymbols2()
+  {
+    Node x = d_nodeManager->mkSkolem("x", d_nodeManager->integerType());
+    Node y = d_nodeManager->mkSkolem("y", d_nodeManager->integerType());
     Node left = d_nodeManager->mkNode(EQUAL, x, y);
     Node var = d_nodeManager->mkBoundVar(*d_intTypeNode);
     std::vector<Node> vars;
@@ -80,4 +85,33 @@ private:
     TS_ASSERT(syms.find(var) == syms.end());
   }
 
+  void testGetOperatorsMap()
+  {
+    //map to store result
+    std::map<TypeNode, std::unordered_set<Node, NodeHashFunction> > result = std::map<TypeNode, std::unordered_set<Node, NodeHashFunction> >();
+
+    //create test formula
+    Node x = d_nodeManager->mkSkolem("x", d_nodeManager->integerType());
+    Node plus = d_nodeManager->mkNode(PLUS, x, x);
+    Node mul = d_nodeManager->mkNode(MULT, x, x);
+    Node eq = d_nodeManager->mkNode(EQUAL, plus, mul);
+
+    //call function
+    expr::getOperatorsMap(eq, result );
+
+    //Verify result
+    //We should have only integer and boolean as types
+    TS_ASSERT(result.size() == 2);
+    TS_ASSERT(result.find(*d_intTypeNode) != result.end());
+    TS_ASSERT(result.find(*d_boolTypeNode) != result.end());
+
+    //in integers, we should only have plus and mult as operators
+    TS_ASSERT(result[*d_intTypeNode].size() == 2);
+    TS_ASSERT(result[*d_intTypeNode].find(d_nodeManager->operatorOf(PLUS)) != result[*d_intTypeNode].end());
+    TS_ASSERT(result[*d_intTypeNode].find(d_nodeManager->operatorOf(MULT)) != result[*d_intTypeNode].end());
+    
+    //in booleans, we should only have "=" as an operator.
+    TS_ASSERT(result[*d_boolTypeNode].size() == 1);
+    TS_ASSERT(result[*d_boolTypeNode].find(d_nodeManager->operatorOf(EQUAL)) != result[*d_boolTypeNode].end());
+  }
 };
