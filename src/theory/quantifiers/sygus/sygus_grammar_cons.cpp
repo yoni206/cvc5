@@ -430,7 +430,6 @@ void CegGrammarConstructor::mkSygusDefaultGrammar(
   NodeManager* nm = NodeManager::currentNM();
   Trace("sygus-grammar-def") << "Construct default grammar for " << fun << " "
                              << range << std::endl;
-  bool linear = smt::currentSmtEngine()->getLogicInfo().isLinear();
   // collect the variables
   std::vector<Node> sygus_vars;
   if (!bvl.isNull())
@@ -554,29 +553,18 @@ void CegGrammarConstructor::mkSygusDefaultGrammar(
 
     if (types[i].isReal())
     {
-      //Add PLUS, MINUS, MULT
-      for (unsigned j = 0; j < 3; j++)
+      //Add PLUS, MINUS
+      Kind kinds[2] = {PLUS, MINUS};
+      for (const Kind k : kinds)
       {
-        Kind k;
-        /**
-         * j == 0 -- PLUS
-         * j == 1 -- MINUS
-         * j == 2 -- MULT
-         */
-        k = (j == 0) ? PLUS : (k == 1) ? MINUS : MULT;
-        //Add MULT and DIV only for non-linear logics
-        if (k == MULT && linear) {
-          break;
-        } else {
-          Trace("sygus-grammar-def") << "...add for " << k << std::endl;
-          ops[i].push_back(nm->operatorOf(k).toExpr());
-          cnames[i].push_back(kindToString(k));
-          cargs[i].push_back(std::vector<Type>());
-          cargs[i].back().push_back(unres_t);
-          cargs[i].back().push_back(unres_t);
-          pcs[i].push_back(nullptr);
-          weights[i].push_back(-1);
-        } 
+        Trace("sygus-grammar-def") << "...add for " << k << std::endl;
+        ops[i].push_back(nm->operatorOf(k).toExpr());
+        cnames[i].push_back(kindToString(k));
+        cargs[i].push_back(std::vector<Type>());
+        cargs[i].back().push_back(unres_t);
+        cargs[i].back().push_back(unres_t);
+        pcs[i].push_back(nullptr);
+        weights[i].push_back(-1);
       }
       
       if (!types[i].isInteger())
