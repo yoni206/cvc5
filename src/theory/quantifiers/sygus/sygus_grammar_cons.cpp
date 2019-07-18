@@ -554,34 +554,6 @@ void CegGrammarConstructor::mkSygusDefaultGrammar(
 
     if (types[i].isReal())
     {
-      Trace("sygus-grammar-def")
-          << "  ...create auxiliary Positive Integers grammar\n";
-      /* Creating type for positive integers */
-      std::stringstream ss;
-      ss << fun << "_PosInt";
-      std::string pos_int_name = ss.str();
-      // make unresolved type
-      Type unres_pos_int_t = mkUnresolvedType(pos_int_name, unres).toType();
-      // make data type
-      datatypes.push_back(Datatype(pos_int_name));
-      /* add placeholders */
-      std::vector<Expr> ops_pos_int;
-      std::vector<std::string> cnames_pos_int;
-      std::vector<std::vector<Type>> cargs_pos_int;
-      /* Add operator 1 */
-      Trace("sygus-grammar-def") << "\t...add for 1 to Pos_Int\n";
-      ops_pos_int.push_back(nm->mkConst(Rational(1)).toExpr());
-      ss.str("");
-      ss << "1";
-      cnames_pos_int.push_back(ss.str());
-      cargs_pos_int.push_back(std::vector<Type>());
-      datatypes.back().setSygus(types[i].toType(), bvl.toExpr(), true, true);
-      for (unsigned j = 0, size_j = ops_pos_int.size(); j < size_j; ++j)
-      {
-        datatypes.back().addSygusConstructor(
-            ops_pos_int[j], cnames_pos_int[j], cargs_pos_int[j]);
-      }
-      
       //Add PLUS, MINUS, MULT
       for (unsigned j = 0; j < 3; j++)
       {
@@ -592,6 +564,7 @@ void CegGrammarConstructor::mkSygusDefaultGrammar(
          * j == 2 -- MULT
          */
         k = (j == 0) ? PLUS : (k == 1) ? MINUS : MULT;
+        //Add MULT and DIV only for non-linear logics
         if (k == MULT && linear) {
           break;
         } else {
@@ -605,20 +578,30 @@ void CegGrammarConstructor::mkSygusDefaultGrammar(
           weights[i].push_back(-1);
         } 
       }
-      //Add DIV
-      if (!linear) {
-        k = INTS_DIVISION;
-        ops[i].push_back(nm->operatorOf(k).toExpr());
-        cnames[i].push_back(kindToString(k));
-        cargs[i].push_back(std::vector<Type>());
-        cargs[i].back().push_back(unres_t);
-        cargs[i].back().push_back(unres_pos_int_t);
-        pcs[i].push_back(nullptr);
-        weights[i].push_back(-1);
-      }
-      //Integer-specific additions
+      
       if (!types[i].isInteger())
       {
+        Trace("sygus-grammar-def")
+            << "  ...create auxiliary Positive Integers grammar\n";
+        /* Creating type for positive integers */
+        std::stringstream ss;
+        ss << fun << "_PosInt";
+        std::string pos_int_name = ss.str();
+        // make unresolved type
+        Type unres_pos_int_t = mkUnresolvedType(pos_int_name, unres).toType();
+        // make data type
+        datatypes.push_back(Datatype(pos_int_name));
+        /* add placeholders */
+        std::vector<Expr> ops_pos_int;
+        std::vector<std::string> cnames_pos_int;
+        std::vector<std::vector<Type>> cargs_pos_int;
+        /* Add operator 1 */
+        Trace("sygus-grammar-def") << "\t...add for 1 to Pos_Int\n";
+        ops_pos_int.push_back(nm->mkConst(Rational(1)).toExpr());
+        ss.str("");
+        ss << "1";
+        cnames_pos_int.push_back(ss.str());
+        cargs_pos_int.push_back(std::vector<Type>());
         /* Add operator PLUS */
         Kind k = PLUS;
         Trace("sygus-grammar-def") << "\t...add for PLUS to Pos_Int\n";
@@ -627,6 +610,12 @@ void CegGrammarConstructor::mkSygusDefaultGrammar(
         cargs_pos_int.push_back(std::vector<Type>());
         cargs_pos_int.back().push_back(unres_pos_int_t);
         cargs_pos_int.back().push_back(unres_pos_int_t);
+        datatypes.back().setSygus(types[i].toType(), bvl.toExpr(), true, true);
+        for (unsigned j = 0, size_j = ops_pos_int.size(); j < size_j; ++j)
+        {
+          datatypes.back().addSygusConstructor(
+              ops_pos_int[j], cnames_pos_int[j], cargs_pos_int[j]);
+        }
         Trace("sygus-grammar-def")
             << "  ...built datatype " << datatypes.back() << " ";
         /* Adding division at root */
