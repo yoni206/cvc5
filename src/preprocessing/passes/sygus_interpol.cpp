@@ -62,7 +62,7 @@ PreprocessingPassResult SygusInterpol::applyInternal(
   std::vector<Node>& asserts = assertionsToPreprocess->ref();
   // do we have any assumptions, e.g. via check-sat-assuming?
   bool usingAssumptions = (assertionsToPreprocess->getNumAssumptions() > 0);
-  Assert(usingAssumptions);
+  AlwaysAssert(usingAssumptions);
   // The following is our set of "axioms". We construct this set only when the
   // usingAssumptions (above) is true. In this case, our input formula is
   // partitioned into Fa ^ Fc as described in the header of this class, where:
@@ -160,21 +160,9 @@ PreprocessingPassResult SygusInterpol::applyInternal(
   
   Trace("sygus-interpol-debug")
         << "Make sygus grammar attribute..." << std::endl;
-  std::map<TypeNode, std::vector<Node> > extra_cons;
-  std::map<TypeNode, std::vector<Node> > exclude_cons;
+  std::map<TypeNode, std::unordered_set<Node, NodeHashFunction> > extra_cons;
+  std::map<TypeNode, std::unordered_set<Node, NodeHashFunction> > exclude_cons;
   std::map<TypeNode, std::unordered_set<Node, NodeHashFunction> > include_cons = getIncludeCons(axioms, negatedConjectureList);
-  //transform to vectors instead of sets
-  std::map<TypeNode, std::vector<Node>> include_cons_vecs;
-  for (std::pair<TypeNode, std::unordered_set<Node, NodeHashFunction>> p : include_cons) {
-    if (include_cons_vecs.find(p.first) == include_cons_vecs.end()) {
-      include_cons_vecs[p.first] = vector<Node>();
-    }
-    for (std::unordered_set<Node, NodeHashFunction>::iterator it = p.second.begin();
-        it != p.second.end();
-        it++) {
-      include_cons_vecs[p.first].push_back(*it);
-    }
-  }
 
   std::unordered_set<Node, NodeHashFunction> terms_irrelevant;
   TypeNode interpolGTypeS = CVC4::theory::quantifiers::CegGrammarConstructor::mkSygusDefaultType(
@@ -184,7 +172,7 @@ PreprocessingPassResult SygusInterpol::applyInternal(
     extra_cons,
     exclude_cons,
     terms_irrelevant,
-    include_cons_vecs
+    include_cons
       );
   Node sym = nm->mkBoundVar("sfproxy_interpol", interpolGTypeS);
   std::vector<Expr> attrValue;

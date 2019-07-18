@@ -75,17 +75,17 @@ public:
      TypeNode range,
      Node bvl,
      const std::string& fun,
-     std::map<TypeNode, std::vector<Node> >& extra_cons,
-     std::map<TypeNode, std::vector<Node> >& exclude_cons,
+     std::map<TypeNode, std::unordered_set<Node, NodeHashFunction> >& extra_cons,
+     std::map<TypeNode, std::unordered_set<Node, NodeHashFunction> >& exclude_cons,
      std::unordered_set<Node, NodeHashFunction>& term_irrelevant,
-     const std::map<TypeNode, std::vector<Node>>& include_cons = std::map<TypeNode, std::vector<Node>>());
+     const std::map<TypeNode, std::unordered_set<Node, NodeHashFunction>>& include_cons = std::map<TypeNode, std::unordered_set<Node, NodeHashFunction>>());
  /** make the default sygus datatype type corresponding to builtin type range */
  static TypeNode mkSygusDefaultType(TypeNode range,
                                     Node bvl,
                                     const std::string& fun)
  {
-   std::map<TypeNode, std::vector<Node> > extra_cons;
-   std::map<TypeNode, std::vector<Node> > exclude_cons;
+   std::map<TypeNode, std::unordered_set<Node, NodeHashFunction> > extra_cons;
+   std::map<TypeNode, std::unordered_set<Node, NodeHashFunction> > exclude_cons;
    std::unordered_set<Node, NodeHashFunction> term_irrelevant;
    return mkSygusDefaultType(
        range, bvl, fun, extra_cons, exclude_cons, term_irrelevant);
@@ -141,7 +141,7 @@ public:
   /** is the syntax restricted? */
   bool d_is_syntax_restricted;
   /** collect terms */
-  void collectTerms( Node n, std::map< TypeNode, std::vector< Node > >& consts );
+  void collectTerms( Node n, std::map< TypeNode, std::unordered_set<Node, NodeHashFunction> >& consts );
   //---------------- grammar construction
   // helper for mkSygusDefaultGrammar (makes unresolved type for mutually recursive datatype construction)
   static TypeNode mkUnresolvedType(const std::string& name, std::set<Type>& unres);
@@ -157,12 +157,12 @@ public:
       TypeNode range,
       Node bvl,
       const std::string& fun,
-      std::map<TypeNode, std::vector<Node> >& extra_cons,
-      std::map<TypeNode, std::vector<Node> >& exclude_cons,
+      std::map<TypeNode, std::unordered_set<Node, NodeHashFunction> >& extra_cons,
+      std::map<TypeNode, std::unordered_set<Node, NodeHashFunction> >& exclude_cons,
       std::unordered_set<Node, NodeHashFunction>& term_irrelevant,
       std::vector<CVC4::Datatype>& datatypes,
       std::set<Type>& unres,
-      const std::map<TypeNode, std::vector<Node>>& include_cons = std::map<TypeNode, std::vector<Node>>());
+      const std::map<TypeNode, std::unordered_set<Node, NodeHashFunction>>& include_cons = std::map<TypeNode, std::unordered_set<Node, NodeHashFunction>>());
 
   // helper function for mkSygusTemplateType
   static TypeNode mkSygusTemplateTypeRec( Node templ, Node templ_arg, TypeNode templ_arg_sygus_type, Node bvl, 

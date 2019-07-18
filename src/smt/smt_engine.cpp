@@ -4723,7 +4723,6 @@ Expr SmtEngine::getInterpolant() {
   Trace("get-interpolant") << "start getInterpolant" << std::endl;
   SmtScope smts(this);
   checkSynthSolution();
-  NodeManager* nm = NodeManager::currentNM();
   map<Node, Node> sol_map;
   /* Get solutions and build auxiliary vectors for substituting */
   d_theoryEngine->getSynthSolutions(sol_map);
