@@ -1,5 +1,5 @@
-COMMAND: --sygus-interpol=default
-EXPECT: unsat
+;COMMAND: --sygus-interpol=default
+;EXPECT: unsat
 (set-logic QF_BV)
 (declare-fun self.CLK__AT2 () (_ BitVec 1))
 (declare-fun H__state_id1__H__AT2 () (_ BitVec 1))
