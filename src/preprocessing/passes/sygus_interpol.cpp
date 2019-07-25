@@ -171,8 +171,8 @@ PreprocessingPassResult SygusInterpol::applyInternal(
     "interpolation_grammar",
     extra_cons,
     exclude_cons,
-    terms_irrelevant,
-    include_cons
+    include_cons,
+    terms_irrelevant
       );
   Node sym = nm->mkBoundVar("sfproxy_interpol", interpolGTypeS);
   std::vector<Expr> attrValue;
