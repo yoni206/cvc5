@@ -1,3 +1,6 @@
+;COMMAND: --sygus-interpol=default 
+;EXPECT: unsat
+
 (set-logic QF_UFLIA)
 
 ; Let A1,...,An be formulas (called assumptions)
@@ -26,4 +29,3 @@
 ;The conjuecture is: 2 <= x+y
 (define-fun C () Bool (<= 2 (+ x y)))
 (check-sat-assuming ((not C)))
-(get-info :reason-unknown)
