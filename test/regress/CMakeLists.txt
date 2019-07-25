@@ -1802,6 +1802,7 @@ set(regress_2_tests
   regress2/sygus/icfp_easy_mt_ite.sy
   regress2/sygus/interpol1.smt2
   regress2/sygus/interpol2.smt2
+  regress2/sygus/interpol_makai1.smt2
   regress2/sygus/inv_gen_n_c11.sy
   regress2/sygus/lustre-real.sy
   regress2/sygus/max2-univ.sy
