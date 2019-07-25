@@ -287,8 +287,20 @@ std::map<TypeNode, std::unordered_set<Node, NodeHashFunction> > SygusInterpol::g
     }
   }
   else if (d_mode == SYGUS_INTERPOL_ALL) {
-    Node tmpAssumptions = nm->mkNode(kind::AND, assumptions);
-    Node tmpConclusions = nm->mkNode(kind::AND, conclusions);
+    Node tmpAssumptions;
+    Node tmpConclusions;
+    if (assumptions.size() == 1) {
+      tmpAssumptions = assumptions[0];
+    } else {
+      Assert(assumptions.size() > 1);
+      tmpAssumptions = nm->mkNode(kind::AND, assumptions);
+    }
+    if (conclusions.size() == 1) {
+      tmpConclusions = conclusions[0];
+    } else {
+      Assert(conclusions.size() > 1);
+      tmpConclusions = nm->mkNode(kind::AND, conclusions);
+    }
     Node tmpAll = nm->mkNode(kind::AND, tmpAssumptions, tmpConclusions);
     expr::getOperatorsMap(tmpAll, result );
   }
