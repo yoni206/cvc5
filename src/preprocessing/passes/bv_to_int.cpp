@@ -775,6 +775,7 @@ BVToInt::BVToInt(PreprocessingPassContext* preprocContext)
     : PreprocessingPass(preprocContext, "bv-to-int"),
       d_binarizeCache(preprocContext->getUserContext()),
       d_eliminationCache(preprocContext->getUserContext()),
+      d_rebuildCache(preprocContext->getUserContext()),
       d_bvToIntCache(preprocContext->getUserContext()),
       d_rangeAssertions(preprocContext->getUserContext())
 {
@@ -804,7 +805,7 @@ void BVToInt::addFinalizeRangeAssertions(
     AssertionPipeline* assertionsToPreprocess)
 {
   vector<Node> vec_range;
-  vec_range.assign(d_rangeAssertions.begin(), d_rangeAssertions.end());
+  vec_range.assign(d_rangeAssertions.key_begin(), d_rangeAssertions.key_end());
   if (vec_range.size() == 1)
   {
     assertionsToPreprocess->push_back(vec_range[0]);
