@@ -670,7 +670,7 @@ header = "options/smt_options.h"
   long       = "solve-bv-as-int=N"
   type       = "uint32_t"
   default    = "0"
-  read_only  = true
+  read_only  = false
   help       = "attempt to solve BV formulas by translation to integer arithmetic (experimental)"
 
 [[option]]
