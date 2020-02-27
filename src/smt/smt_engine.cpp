@@ -1216,11 +1216,6 @@ void SmtEngine::setDefaults() {
     d_logic = LogicInfo("QF_BV");
   }
 
-  //HACK
-  if (d_logic == LogicInfo("QF_BV")) {
-    options::solveBVAsInt.set(1);
-  }
-
   if (options::solveBVAsInt() > 0)
   {
     if (d_logic.isTheoryEnabled(THEORY_BV))

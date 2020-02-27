@@ -135,7 +135,7 @@ class BVToInt : public PreprocessingPass
                          Node y,
                          uint64_t bvsize,
                          uint64_t granularity,
-                         bool (*f)(bool, bool));
+                         kind::Kind_t k);
 
   /**
    * A helper function for createBitwiseNode
