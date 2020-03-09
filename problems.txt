@@ -1,0 +1,16 @@
+/home/yoniz/git/CVC4/test/regress/regress1/arith/mod.03.smt2
+sat
+unknown
+
+/home/yoniz/git/CVC4/test/regress/regress0/arith/div.02.smt2
+sat
+unknown
+
+/home/yoniz/git/CVC4/test/regress/regress1/uflia/microwave21.ec.minimized.smt2
+unsat
+error
+
+/home/yoniz/git/CVC4/test/regress/regress1/nl/div-mod-partial.smt2
+sat
+unknown
+
