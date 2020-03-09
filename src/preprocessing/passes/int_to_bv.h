@@ -41,7 +41,7 @@ class IntToBV : public PreprocessingPass
       AssertionPipeline* assertionsToPreprocess) override;
   Node intToBVElimDivMod(TNode n, NodeMap& cache);
   Node intToBV(TNode n, NodeMap& cache);
-  void saveDivModEliminationAssertion(Node current, Node skolem);
+  void saveDivModEliminationAssertion(kind::Kind_t k, Node m, Node n, Node skolem);
   unordered_set<Node, NodeHashFunction> d_divModAssertions;
 };
 

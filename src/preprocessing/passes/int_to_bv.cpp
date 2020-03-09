@@ -139,8 +139,6 @@ Node IntToBV::intToBV(TNode n, NodeMap& cache)
   NodeMap binaryCache;
   NodeMap divModElimCache;
   Node n_no_div_mod = intToBVElimDivMod(n, divModElimCache);
-  Node n_binary = intToBVMakeBinary(n_no_div_mod, binaryCache);
-  Node n_new;
   vector<Node> vec_divmod;
   vec_divmod.assign(d_divModAssertions.begin(), d_divModAssertions.end());
   if (vec_divmod.size() >= 1) {
@@ -150,11 +148,10 @@ Node IntToBV::intToBV(TNode n, NodeMap& cache)
     } else {
       divmod = vec_divmod[0];
     }
-    n_new = nm->mkNode(kind::AND, n_binary, divmod);
-  } else {
-    n_new = n;
+    n_no_div_mod = nm->mkNode(kind::AND, n_no_div_mod, divmod);
   }
-  toVisit.push_back(TNode(n_new));
+  Node n_binary = intToBVMakeBinary(n_no_div_mod, binaryCache);
+  toVisit.push_back(TNode(n_binary));
 
   while (!toVisit.empty())
   {
@@ -262,6 +259,7 @@ Node IntToBV::intToBV(TNode n, NodeMap& cache)
           case kind::GT: newKind = kind::BITVECTOR_SGT; break;
           case kind::GEQ: newKind = kind::BITVECTOR_SGE; break;
           case kind::EQUAL:
+          case kind::DISTINCT:
           case kind::ITE: break;
           default:
             if (Theory::theoryOf(current) == THEORY_BOOL)
@@ -379,11 +377,11 @@ Node IntToBV::intToBV(TNode n, NodeMap& cache)
       }
     }
   }
-  return cache[n_new];
+  return cache[n_binary];
 }
 
 
-void IntToBV::saveDivModEliminationAssertion(Node current, Node skolem) {
+void IntToBV::saveDivModEliminationAssertion(kind::Kind_t k, Node m, Node n, Node skolem) {
   /** from SMT-LIB:
   * (for all ((m Int) (n Int))
   *    (=> (distinct n 0)
@@ -392,10 +390,7 @@ void IntToBV::saveDivModEliminationAssertion(Node current, Node skolem) {
   *               (<= 0 r (- (abs n) 1))))))
   */
   NodeManager* nm = NodeManager::currentNM();
-  kind::Kind_t k = current.getKind();
   Assert(k == kind::INTS_DIVISION_TOTAL || k == kind::INTS_MODULUS_TOTAL);
-  Node m = current[0];
-  Node n = current[1];
   Node q;
   Node r;
   if (k == kind::INTS_DIVISION_TOTAL) {
@@ -452,13 +447,13 @@ Node IntToBV::intToBVElimDivMod(TNode n, NodeMap& cache)
             nm->integerType(), 
             "Variable introduced in intToBV preprocessing pass to represent a mod term");
         cache[current] = divSkolem;
-        saveDivModEliminationAssertion(current, divSkolem);
+        saveDivModEliminationAssertion(k, cache[current[0]], cache[current[1]], divSkolem);
       } else if (k == kind::INTS_MODULUS_TOTAL) {
         Node modSkolem = nm->mkSkolem("__intToBV_var_mod", 
             nm->integerType(), 
             "Variable introduced in intToBV preprocessing pass to represent a mod term");
         cache[current] = modSkolem;
-        saveDivModEliminationAssertion(current, modSkolem);
+        saveDivModEliminationAssertion(k, cache[current[0]], cache[current[1]], modSkolem);
       } else {
         NodeBuilder<> builder(k);
         if (k == kind::APPLY_UF) {
@@ -512,9 +507,11 @@ PreprocessingPassResult IntToBV::applyInternal(
   unordered_map<Node, Node, NodeHashFunction> cache;
   for (unsigned i = 0; i < assertionsToPreprocess->size(); ++i)
   {
-    Trace("int-to-bv-debug") << "processing: " << (*assertionsToPreprocess)[i];
+    Trace("int-to-bv-debug") << "processing: " << (*assertionsToPreprocess)[i] << endl;
+    Node result = intToBV((*assertionsToPreprocess)[i], cache);
+    Trace("int-to-bv-debug") << "result: " << result << endl;
     assertionsToPreprocess->replace(
-        i, intToBV((*assertionsToPreprocess)[i], cache));
+        i, result);
   }
   return PreprocessingPassResult::NO_CONFLICT;
 }
