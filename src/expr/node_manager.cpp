@@ -330,8 +330,9 @@ void NodeManager::reclaimZombies() {
         TNode n;
         n.d_nv = nv;
         nv->d_rc = 1; // so that TNode doesn't assert-fail
-        for(vector<NodeManagerListener*>::iterator i = d_listeners.begin(); i != d_listeners.end(); ++i) {
-          (*i)->nmNotifyDeleteNode(n);
+        for (NodeManagerListener* listener : d_listeners)
+        {
+          listener->nmNotifyDeleteNode(n);
         }
         // this would mean that one of the listeners stowed away
         // a reference to this node!
@@ -572,6 +573,42 @@ TypeNode NodeManager::RecTypeCache::getRecordType( NodeManager * nm, const Recor
   }else{
     return d_children[TypeNode::fromType( rec[index].second )][rec[index].first].getRecordType( nm, rec, index+1 );
   }
+}
+
+TypeNode NodeManager::mkFunctionType(const std::vector<TypeNode>& sorts)
+{
+  Assert(sorts.size() >= 2);
+  CheckArgument(!sorts[sorts.size() - 1].isFunction(),
+                sorts[sorts.size() - 1],
+                "must flatten function types");
+  return mkTypeNode(kind::FUNCTION_TYPE, sorts);
+}
+
+TypeNode NodeManager::mkPredicateType(const std::vector<TypeNode>& sorts)
+{
+  Assert(sorts.size() >= 1);
+  std::vector<TypeNode> sortNodes;
+  sortNodes.insert(sortNodes.end(), sorts.begin(), sorts.end());
+  sortNodes.push_back(booleanType());
+  return mkFunctionType(sortNodes);
+}
+
+TypeNode NodeManager::mkFunctionType(const TypeNode& domain,
+                                     const TypeNode& range)
+{
+  std::vector<TypeNode> sorts;
+  sorts.push_back(domain);
+  sorts.push_back(range);
+  return mkFunctionType(sorts);
+}
+
+TypeNode NodeManager::mkFunctionType(const std::vector<TypeNode>& argTypes,
+                                     const TypeNode& range)
+{
+  Assert(argTypes.size() >= 1);
+  std::vector<TypeNode> sorts(argTypes);
+  sorts.push_back(range);
+  return mkFunctionType(sorts);
 }
 
 TypeNode NodeManager::mkTupleType(const std::vector<TypeNode>& types) {

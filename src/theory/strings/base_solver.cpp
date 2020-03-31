@@ -16,7 +16,6 @@
 #include "theory/strings/base_solver.h"
 
 #include "options/strings_options.h"
-#include "theory/strings/theory_strings_rewriter.h"
 #include "theory/strings/theory_strings_utils.h"
 
 using namespace std;
@@ -155,19 +154,19 @@ void BaseSolver::checkInit()
                   std::vector<Node> exp;
                   // explain empty components
                   bool foundNEmpty = false;
-                  for (const Node& nc : n)
+                  for (const Node& nnc : n)
                   {
-                    if (d_state.areEqual(nc, d_emptyString))
+                    if (d_state.areEqual(nnc, d_emptyString))
                     {
-                      if (nc != d_emptyString)
+                      if (nnc != d_emptyString)
                       {
-                        exp.push_back(nc.eqNode(d_emptyString));
+                        exp.push_back(nnc.eqNode(d_emptyString));
                       }
                     }
                     else
                     {
                       Assert(!foundNEmpty);
-                      ns = nc;
+                      ns = nnc;
                       foundNEmpty = true;
                     }
                   }
@@ -254,7 +253,7 @@ void BaseSolver::checkConstantEquivalenceClasses(TermIndex* ti,
   if (!n.isNull())
   {
     // construct the constant
-    Node c = utils::mkNConcat(vecc);
+    Node c = utils::mkNConcat(vecc, n.getType());
     if (!d_state.areEqual(n, c))
     {
       if (Trace.isOn("strings-debug"))

@@ -75,14 +75,12 @@ public:
 };
 
 PropEngine::PropEngine(TheoryEngine* te,
-                       DecisionEngine* de,
                        Context* satContext,
-                       Context* userContext,
+                       UserContext* userContext,
                        std::ostream* replayLog,
                        ExprStream* replayStream)
     : d_inCheckSat(false),
       d_theoryEngine(te),
-      d_decisionEngine(de),
       d_context(satContext),
       d_theoryProxy(NULL),
       d_satSolver(NULL),
@@ -94,6 +92,9 @@ PropEngine::PropEngine(TheoryEngine* te,
 
   Debug("prop") << "Constructing the PropEngine" << endl;
 
+  d_decisionEngine.reset(new DecisionEngine(satContext, userContext));
+  d_decisionEngine->init();  // enable appropriate strategies
+
   d_satSolver = SatSolverFactory::createDPLLMinisat(smtStatisticsRegistry());
 
   d_registrar = new theory::TheoryRegistrar(d_theoryEngine);
@@ -102,7 +103,7 @@ PropEngine::PropEngine(TheoryEngine* te,
 
   d_theoryProxy = new TheoryProxy(this,
                                   d_theoryEngine,
-                                  d_decisionEngine,
+                                  d_decisionEngine.get(),
                                   d_context,
                                   d_cnfStream,
                                   replayLog,
@@ -114,10 +115,17 @@ PropEngine::PropEngine(TheoryEngine* te,
   PROOF (
          ProofManager::currentPM()->initCnfProof(d_cnfStream, userContext);
          );
+
+  NodeManager* nm = NodeManager::currentNM();
+  d_cnfStream->convertAndAssert(nm->mkConst(true), false, false, RULE_GIVEN);
+  d_cnfStream->convertAndAssert(
+      nm->mkConst(false).notNode(), false, false, RULE_GIVEN);
 }
 
 PropEngine::~PropEngine() {
   Debug("prop") << "Destructing the PropEngine" << endl;
+  d_decisionEngine->shutdown();
+  d_decisionEngine.reset(nullptr);
   delete d_cnfStream;
   delete d_registrar;
   delete d_satSolver;
@@ -140,6 +148,12 @@ void PropEngine::assertLemma(TNode node, bool negated,
 
   // Assert as (possibly) removable
   d_cnfStream->convertAndAssert(node, removable, negated, rule, from);
+}
+
+void PropEngine::addAssertionsToDecisionEngine(
+    const preprocessing::AssertionPipeline& assertions)
+{
+  d_decisionEngine->addAssertions(assertions);
 }
 
 void PropEngine::requirePhase(TNode n, bool phase) {

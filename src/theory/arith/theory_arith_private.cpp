@@ -1301,18 +1301,21 @@ Node TheoryArithPrivate::ppRewriteTerms(TNode n) {
 Node TheoryArithPrivate::ppRewrite(TNode atom) {
   Debug("arith::preprocess") << "arith::preprocess() : " << atom << endl;
 
-  if (atom.getKind() == kind::EQUAL  && options::arithRewriteEq()) {
-    Node leq = NodeBuilder<2>(kind::LEQ) << atom[0] << atom[1];
-    Node geq = NodeBuilder<2>(kind::GEQ) << atom[0] << atom[1];
-    leq = ppRewriteTerms(leq);
-    geq = ppRewriteTerms(geq);
-    Node rewritten = Rewriter::rewrite(leq.andNode(geq));
-    Debug("arith::preprocess") << "arith::preprocess() : returning "
-                               << rewritten << endl;
-    return rewritten;
-  } else {
-    return ppRewriteTerms(atom);
+  if (options::arithRewriteEq())
+  {
+    if (atom.getKind() == kind::EQUAL && atom[0].getType().isReal())
+    {
+      Node leq = NodeBuilder<2>(kind::LEQ) << atom[0] << atom[1];
+      Node geq = NodeBuilder<2>(kind::GEQ) << atom[0] << atom[1];
+      leq = ppRewriteTerms(leq);
+      geq = ppRewriteTerms(geq);
+      Node rewritten = Rewriter::rewrite(leq.andNode(geq));
+      Debug("arith::preprocess")
+          << "arith::preprocess() : returning " << rewritten << endl;
+      return rewritten;
+    }
   }
+  return ppRewriteTerms(atom);
 }
 
 Theory::PPAssertStatus TheoryArithPrivate::ppAssert(TNode in, SubstitutionMap& outSubstitutions) {
@@ -1329,7 +1332,6 @@ Theory::PPAssertStatus TheoryArithPrivate::ppAssert(TNode in, SubstitutionMap& o
     Comparison cmp = Comparison::parseNormalForm(in);
 
     Polynomial left = cmp.getLeft();
-    Polynomial right = cmp.getRight();
 
     Monomial m = left.getHead();
     if (m.getVarList().singleton()){
@@ -2021,7 +2023,7 @@ bool TheoryArithPrivate::assertionCases(ConstraintP constraint){
           Debug("arith::intbound") << "literal, before: " << constraint->getLiteral() << std::endl;
           Debug("arith::intbound") << "constraint, after: " << floorConstraint << std::endl;
         }
-        floorConstraint->impliedByIntHole(constraint, inConflict);
+        floorConstraint->impliedByIntTighten(constraint, inConflict);
         floorConstraint->tryToPropagate();
         if(inConflict){
           raiseConflict(floorConstraint);
@@ -2041,7 +2043,7 @@ bool TheoryArithPrivate::assertionCases(ConstraintP constraint){
           Debug("arith::intbound") << "literal, before: " << constraint->getLiteral() << std::endl;
           Debug("arith::intbound") << "constraint, after: " << ceilingConstraint << std::endl;
         }
-        ceilingConstraint->impliedByIntHole(constraint, inConflict);
+        ceilingConstraint->impliedByIntTighten(constraint, inConflict);
         ceilingConstraint->tryToPropagate();
         if(inConflict){
           raiseConflict(ceilingConstraint);
@@ -2173,11 +2175,11 @@ void TheoryArithPrivate::outputConflicts(){
         //
         // Anyways, we reverse the children in `conflict` here.
         NodeBuilder<> conflictInFarkasCoefficientOrder(kind::AND);
-        for (size_t i = 0, nchildren = conflict.getNumChildren(); i < nchildren;
-             ++i)
+        for (size_t j = 0, nchildren = conflict.getNumChildren(); j < nchildren;
+             ++j)
         {
           conflictInFarkasCoefficientOrder
-              << conflict[conflict.getNumChildren() - i - 1];
+              << conflict[conflict.getNumChildren() - j - 1];
         }
 
         if (Debug.isOn("arith::pf::tree")) {
@@ -2186,8 +2188,11 @@ void TheoryArithPrivate::outputConflicts(){
         }
 
         Assert(conflict.getNumChildren() == pf.d_farkasCoefficients->size());
-        d_containing.d_proofRecorder->saveFarkasCoefficients(
-            conflictInFarkasCoefficientOrder, pf.d_farkasCoefficients);
+        if (confConstraint->hasSimpleFarkasProof())
+        {
+          d_containing.d_proofRecorder->saveFarkasCoefficients(
+              conflictInFarkasCoefficientOrder, pf.d_farkasCoefficients);
+        }
       })
       if(Debug.isOn("arith::normalize::external")){
         conflict = flattenAndSort(conflict);
@@ -3103,7 +3108,7 @@ void TheoryArithPrivate::solveInteger(Theory::Effort effortLevel){
   if(!safeToCallApprox()) { return; }
 
   Assert(safeToCallApprox());
-  TimerStat::CodeTimer codeTimer(d_statistics.d_solveIntTimer);
+  TimerStat::CodeTimer codeTimer0(d_statistics.d_solveIntTimer);
 
   ++(d_statistics.d_solveIntCalls);
   d_statistics.d_inSolveInteger.setData(1);
@@ -3145,7 +3150,7 @@ void TheoryArithPrivate::solveInteger(Theory::Effort effortLevel){
     if( relaxRes == LinFeasible ){
       MipResult mipRes = MipUnknown;
       {
-        TimerStat::CodeTimer codeTimer(d_statistics.d_mipTimer);
+        TimerStat::CodeTimer codeTimer1(d_statistics.d_mipTimer);
         mipRes = approx->solveMIP(false);
       }
 
@@ -3183,7 +3188,7 @@ void TheoryArithPrivate::solveInteger(Theory::Effort effortLevel){
         /* All integer branches closed */
         approx->setPivotLimit(2*mipLimit);
         {
-          TimerStat::CodeTimer codeTimer(d_statistics.d_mipTimer);
+          TimerStat::CodeTimer codeTimer2(d_statistics.d_mipTimer);
           mipRes = approx->solveMIP(true);
         }
 
@@ -3215,7 +3220,7 @@ void TheoryArithPrivate::solveInteger(Theory::Effort effortLevel){
         approx->setPivotLimit(2*mipLimit);
         approx->setBranchingDepth(2);
         {
-          TimerStat::CodeTimer codeTimer(d_statistics.d_mipTimer);
+          TimerStat::CodeTimer codeTimer3(d_statistics.d_mipTimer);
           mipRes = approx->solveMIP(true);
         }
         replayLemmas(approx);
@@ -3316,7 +3321,7 @@ bool TheoryArithPrivate::solveRelaxationOrPanic(Theory::Effort effortLevel){
 }
 
 bool TheoryArithPrivate::solveRealRelaxation(Theory::Effort effortLevel){
-  TimerStat::CodeTimer codeTimer(d_statistics.d_solveRealRelaxTimer);
+  TimerStat::CodeTimer codeTimer0(d_statistics.d_solveRealRelaxTimer);
   Assert(d_qflraStatus != Result::SAT);
 
   d_partialModel.stopQueueingBoundCounts();
@@ -3370,7 +3375,7 @@ bool TheoryArithPrivate::solveRealRelaxation(Theory::Effort effortLevel){
     ApproximateSimplex::Solution relaxSolution;
     LinResult relaxRes = LinUnknown;
     {
-      TimerStat::CodeTimer codeTimer(d_statistics.d_lpTimer);
+      TimerStat::CodeTimer codeTimer1(d_statistics.d_lpTimer);
       relaxRes = approxSolver->solveRelaxation();
     }
       Debug("solveRealRelaxation") << "solve relaxation? " << endl;
@@ -3770,7 +3775,7 @@ void TheoryArithPrivate::check(Theory::Effort effortLevel){
           || options::arithPropagationMode()
                  == options::ArithPropagationMode::BOTH_PROP))
   {
-    TimerStat::CodeTimer codeTimer(d_statistics.d_newPropTime);
+    TimerStat::CodeTimer codeTimer0(d_statistics.d_newPropTime);
     Assert(d_qflraStatus != Result::UNSAT);
 
     while(!d_currentPropagationList.empty()  && !anyConflict()){
@@ -3823,7 +3828,7 @@ void TheoryArithPrivate::check(Theory::Effort effortLevel){
   }
   else
   {
-    TimerStat::CodeTimer codeTimer(d_statistics.d_newPropTime);
+    TimerStat::CodeTimer codeTimer1(d_statistics.d_newPropTime);
     d_currentPropagationList.clear();
   }
   Assert(d_currentPropagationList.empty());
@@ -3938,15 +3943,38 @@ Node TheoryArithPrivate::branchIntegerVariable(ArithVar x) const {
   TNode var = d_partialModel.asNode(x);
   Integer floor_d = d.floor();
 
-  //Node eq = Rewriter::rewrite(NodeManager::currentNM()->mkNode(kind::EQUAL, var, mkRationalNode(floor_d+1)));
-  //Node diseq = eq.notNode();
+  Node lem;
+  NodeManager* nm = NodeManager::currentNM();
+  if (options::brabTest())
+  {
+    Trace("integers") << "branch-round-and-bound enabled" << endl;
+    Integer ceil_d = d.ceiling();
+    Rational f = r - floor_d;
+    // Multiply by -1 to get abs value.
+    Rational c = (r - ceil_d) * (-1); 
+    Integer nearest = (c > f) ? floor_d : ceil_d;
 
-  Node ub = Rewriter::rewrite(NodeManager::currentNM()->mkNode(kind::LEQ, var, mkRationalNode(floor_d)));
-  Node lb = ub.notNode();
+    // Prioritize trying a simple rounding of the real solution first,
+    // it that fails, fall back on original branch and bound strategy.
+    Node ub = Rewriter::rewrite(
+        nm->mkNode(kind::LEQ, var, mkRationalNode(nearest - 1)));
+    Node lb = Rewriter::rewrite(
+        nm->mkNode(kind::GEQ, var, mkRationalNode(nearest + 1)));
+    lem = nm->mkNode(kind::OR, ub, lb);
+    Node eq = Rewriter::rewrite(
+        nm->mkNode(kind::EQUAL, var, mkRationalNode(nearest)));
+    Node literal = d_containing.getValuation().ensureLiteral(eq);
+    d_containing.getOutputChannel().requirePhase(literal, true);
+    lem = nm->mkNode(kind::OR, literal, lem);
+  }
+  else
+  {
+    Node ub =
+        Rewriter::rewrite(nm->mkNode(kind::LEQ, var, mkRationalNode(floor_d)));
+    Node lb = ub.notNode();
+    lem = nm->mkNode(kind::OR, ub, lb);
+  }
 
-
-  //Node lem = NodeManager::currentNM()->mkNode(kind::OR, eq, diseq);
-  Node lem = NodeManager::currentNM()->mkNode(kind::OR, ub, lb);
   Trace("integers") << "integers: branch & bound: " << lem << endl;
   if(isSatLiteral(lem[0])) {
     Debug("integers") << "    " << lem[0] << " == " << getSatValue(lem[0]) << endl;
@@ -4949,8 +4977,13 @@ bool TheoryArithPrivate::rowImplicationCanBeApplied(RowIndex ridx, bool rowUp, C
         Assert(coeffs != RationalVectorPSentinel);
         Assert(conflictInFarkasCoefficientOrder.getNumChildren()
                == coeffs->size());
-        d_containing.d_proofRecorder->saveFarkasCoefficients(
-            conflictInFarkasCoefficientOrder, coeffs);
+        if (std::all_of(explain.begin(), explain.end(), [](ConstraintCP c) {
+              return c->isAssumption() || c->hasIntTightenProof();
+            }))
+        {
+          d_containing.d_proofRecorder->saveFarkasCoefficients(
+              conflictInFarkasCoefficientOrder, coeffs);
+        }
       })
       outputLemma(clause);
     }else{
@@ -5810,11 +5843,11 @@ std::pair<Node, DeltaRational> TheoryArithPrivate::entailmentCheckSimplex(int sg
       const Tableau::Entry& entry = *ri;
       ArithVar v = entry.getColVar();
       if(v != optVar){
-        int sgn = entry.getCoefficient().sgn();
-        Assert(sgn != 0);
-        bool candidate = (sgn > 0)
-          ? (d_partialModel.cmpAssignmentUpperBound(v) != 0)
-          : (d_partialModel.cmpAssignmentLowerBound(v) != 0);
+        int sgn1 = entry.getCoefficient().sgn();
+        Assert(sgn1 != 0);
+        bool candidate = (sgn1 > 0)
+                             ? (d_partialModel.cmpAssignmentUpperBound(v) != 0)
+                             : (d_partialModel.cmpAssignmentLowerBound(v) != 0);
         if(candidate && (entering == ARITHVAR_SENTINEL || entering > v)){
           entering = v;
           enteringEntry = &entry;
