@@ -16,6 +16,7 @@
  **/
 
 #include "preprocessing/passes/bv_to_int.h"
+#include "preprocessing/passes/bw_functions.h"
 
 #include <cmath>
 #include <string>
@@ -51,11 +52,7 @@ bool oneBitOr(bool a, bool b) { return (a || b); }
 
 bool oneBitXor(bool a, bool b) { return a != b; }
 
-bool oneBitXnor(bool a, bool b) { return a == b; }
 
-bool oneBitNand(bool a, bool b) { return !(a && b); }
-
-bool oneBitNor(bool a, bool b) { return !(a || b); }
 
 } //end empty namespace
 
@@ -207,6 +204,9 @@ Node BVToInt::eliminationPass(Node n)
                                     RewriteRule<SgtEliminate>,
                                     RewriteRule<SgeEliminate>,
                                     RewriteRule<ShlByConst>,
+                                    RewriteRule<XnorEliminate>,
+                                    RewriteRule<NandEliminate>,
+                                    RewriteRule<NorEliminate>,
                                     RewriteRule<LshrByConst> >::apply(current);
         // save in the cache
         d_eliminationCache[current] = currentEliminated;
@@ -272,6 +272,7 @@ Node BVToInt::bvToInt(Node n)
   vector<Node> toVisit;
   toVisit.push_back(n);
   uint64_t granularity = options::solveBVAsInt();
+  bool optimize_ites = options::optimizeBVAsInt();
 
   while (!toVisit.empty())
   {
@@ -494,7 +495,7 @@ Node BVToInt::bvToInt(Node n)
                                                translated_children[1],
                                                bvsize,
                                                granularity,
-                                               &oneBitAnd);
+                                               kind::BITVECTOR_AND, optimize_ites);
               d_bvToIntCache[current] = newNode;
               break;
             }
@@ -506,7 +507,7 @@ Node BVToInt::bvToInt(Node n)
                                                translated_children[1],
                                                bvsize,
                                                granularity,
-                                               &oneBitOr);
+                                               kind::BITVECTOR_OR, optimize_ites);
               d_bvToIntCache[current] = newNode;
               break;
             }
@@ -518,43 +519,7 @@ Node BVToInt::bvToInt(Node n)
                                                translated_children[1],
                                                bvsize,
                                                granularity,
-                                               &oneBitXor);
-              d_bvToIntCache[current] = newNode;
-              break;
-            }
-            case kind::BITVECTOR_XNOR:
-            {
-              // Construct an ite, based on granularity.
-              uint64_t bvsize = current[0].getType().getBitVectorSize();
-              Node newNode = createBitwiseNode(translated_children[0],
-                                               translated_children[1],
-                                               bvsize,
-                                               granularity,
-                                               &oneBitXnor);
-              d_bvToIntCache[current] = newNode;
-              break;
-            }
-            case kind::BITVECTOR_NAND:
-            {
-              // Construct an ite, based on granularity.
-              uint64_t bvsize = current[0].getType().getBitVectorSize();
-              Node newNode = createBitwiseNode(translated_children[0],
-                                               translated_children[1],
-                                               bvsize,
-                                               granularity,
-                                               &oneBitNand);
-              d_bvToIntCache[current] = newNode;
-              break;
-            }
-            case kind::BITVECTOR_NOR:
-            {
-              // Construct an ite, based on granularity.
-              uint64_t bvsize = current[0].getType().getBitVectorSize();
-              Node newNode = createBitwiseNode(translated_children[0],
-                                               translated_children[1],
-                                               bvsize,
-                                               granularity,
-                                               &oneBitNor);
+                                               kind::BITVECTOR_XOR, optimize_ites);
               d_bvToIntCache[current] = newNode;
               break;
             }
@@ -907,6 +872,56 @@ Node BVToInt::createShiftNode(vector<Node> children,
                               d_zero);
 }
 
+
+//std::map<std::pair<uint64_t, uint64_t>, uint64_t> BVToInt::getTableForOp(kind::Kind_t k, uint64_t granularity) {
+//  if (k == kind::BITVECTOR_AND && !d_bvandTable.empty()) {
+//    return d_bvandTable;
+//  }
+//  if (k == kind::BITVECTOR_OR && !d_bvandTable.empty()) {
+//    return d_bvorTable;
+//  }
+//  if (k == kind::BITVECTOR_XOR && !d_bvandTable.empty()) {
+//    return d_bvxorTable;
+//  }
+//  
+//  //the table was not yet computed
+//  std::map<std::pair<uint64_t, uint64_t>, uint64_t> table;
+//  uint64_t max_value = ((uint64_t)pow(2, granularity));
+//  uint64_t (*fp)(uint64_t, uint64_t);
+//  if (k == kind::BITVECTOR_AND) {
+//    fp = o
+//  }
+//  for (uint64_t i = 0; i < max_value; i++)
+//  {
+//    for (uint64_t j = 0; j < max_value; j++)
+//    {
+//      uint64_t sum = 0;
+//      for (uint64_t n = 0; n < granularity; n++)
+//      {
+//        // b is the result of f on the current bit
+//        bool b = f((((i >> n) & 1) == 1), (((j >> n) & 1) == 1));
+//        // add the corresponding power of 2 only if the result is 1
+//        if (b)
+//        {
+//          sum += 1 << n;
+//        }
+//      }
+//      table[std::make_pair(i, j)] = sum;
+//    }
+//  }
+//   Assert(table.size() == max_value * max_value);
+//   if (k == kind::BITVECTOR_AND) {
+//     d_bvandTable = table;
+//   }  
+//   else if (k == kind::BITVECTOR_OR) {
+//     d_bvorTable = table;
+//   }
+//   else if (k == kind::BITVECTOR_XOR) {
+//     d_bvxorTable = table;
+//   }
+//   return table;
+//}
+
 Node BVToInt::createITEFromTable(
     Node x,
     Node y,
@@ -944,7 +959,8 @@ Node BVToInt::createBitwiseNode(Node x,
                                 Node y,
                                 uint64_t bvsize,
                                 uint64_t granularity,
-                                bool (*f)(bool, bool))
+                                kind::Kind_t k,
+                                bool optimize)
 {
   /**
    * Standardize granularity.
@@ -963,30 +979,6 @@ Node BVToInt::createBitwiseNode(Node x,
       granularity = granularity - 1;
     }
   }
-  // transform f into a table
-  // f is defined over 1 bit, while the table is defined over `granularity` bits
-  std::map<std::pair<uint64_t, uint64_t>, uint64_t> table;
-  uint64_t max_value = ((uint64_t)pow(2, granularity));
-  for (uint64_t i = 0; i < max_value; i++)
-  {
-    for (uint64_t j = 0; j < max_value; j++)
-    {
-      uint64_t sum = 0;
-      for (uint64_t n = 0; n < granularity; n++)
-      {
-        // b is the result of f on the current bit
-        bool b = f((((i >> n) & 1) == 1), (((j >> n) & 1) == 1));
-        // add the corresponding power of 2 only if the result is 1
-        if (b)
-        {
-          sum += 1 << n;
-        }
-      }
-      table[std::make_pair(i, j)] = sum;
-    }
-  }
-   Assert(table.size() == max_value * max_value);
-
   /*
    * Create the sum.
    * For granularity 1, the sum has bvsize elements.
@@ -1012,13 +1004,91 @@ Node BVToInt::createBitwiseNode(Node x,
         kind::INTS_MODULUS_TOTAL,
         d_nm->mkNode(kind::INTS_DIVISION_TOTAL, y, pow2(i * granularity)),
         pow2(granularity));
-    Node ite = createITEFromTable(xExtract, yExtract, granularity, table);
+    Node sumPart = createPart(xExtract, yExtract, granularity, k, optimize);
     sumNode =
         d_nm->mkNode(kind::PLUS,
                      sumNode,
-                     d_nm->mkNode(kind::MULT, pow2(i * granularity), ite));
+                     d_nm->mkNode(kind::MULT, pow2(i * granularity), sumPart));
   }
   return sumNode;
+}
+
+Node BVToInt::createPart(Node x, Node y, uint64_t granularity, kind::Kind_t k, bool optimize) {
+  if (optimize) {
+    switch (k)
+    {
+        case kind::BITVECTOR_AND:
+        {
+          switch (granularity)
+          {
+            case 1: return int_bvand_1_min(x, y);
+            case 2: return int_bvand_2_min(x, y);
+            case 3: return int_bvand_3_min(x, y);
+            case 4: return int_bvand_4_min(x, y);
+            default: Assert(false);
+          }
+        }
+        case kind::BITVECTOR_OR:
+        {
+          switch (granularity)
+          {
+            case 1: return int_bvor_1_min(x, y);
+            case 2: return int_bvor_2_min(x, y);
+            case 3: return int_bvor_3_min(x, y);
+            case 4: return int_bvor_4_min(x, y);
+            default: Unreachable();
+          }
+        }
+        case kind::BITVECTOR_XOR:
+        {
+          switch (granularity)
+          {
+            case 1: return int_bvxor_1_min(x, y);
+            case 2: return int_bvxor_2_min(x, y);
+            case 3: return int_bvxor_3_min(x, y);
+            case 4: return int_bvxor_4_min(x, y);
+            default: Unreachable();
+          }
+        }
+    }
+  } else {
+    switch (k)
+    {
+        case kind::BITVECTOR_AND:
+        {
+          switch (granularity)
+          {
+            case 1: return int_bvand_1_trivial(x, y);
+            case 2: return int_bvand_2_trivial(x, y);
+            case 3: return int_bvand_3_trivial(x, y);
+            case 4: return int_bvand_4_trivial(x, y);
+            default: Assert(false);
+          }
+        }
+        case kind::BITVECTOR_OR:
+        {
+          switch (granularity)
+          {
+            case 1: return int_bvor_1_trivial(x, y);
+            case 2: return int_bvor_2_trivial(x, y);
+            case 3: return int_bvor_3_trivial(x, y);
+            case 4: return int_bvor_4_trivial(x, y);
+            default: Unreachable();
+          }
+        }
+        case kind::BITVECTOR_XOR:
+        {
+          switch (granularity)
+          {
+            case 1: return int_bvxor_1_trivial(x, y);
+            case 2: return int_bvxor_2_trivial(x, y);
+            case 3: return int_bvxor_3_trivial(x, y);
+            case 4: return int_bvxor_4_trivial(x, y);
+            default: Unreachable();
+          }
+        }
+    }
+  }
 }
 
 Node BVToInt::createBVNotNode(Node n, uint64_t bvsize)

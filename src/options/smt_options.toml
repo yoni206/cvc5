@@ -666,6 +666,14 @@ header = "options/smt_options.h"
   help       = "attempt to solve BV formulas by translation to integer arithmetic (experimental)"
 
 [[option]]
+  name       = "optimizeBVAsInt"
+  category   = "undocumented"
+  long       = "optimize-bv-as-int"
+  type       = "bool"
+  default    = "false"
+  help       = "use sygus-generated functions for bitwise operators"
+
+[[option]]
   name       = "solveIntAsBV"
   category   = "undocumented"
   long       = "solve-int-as-bv=N"

@@ -132,7 +132,12 @@ class BVToInt : public PreprocessingPass
                          Node y,
                          uint64_t bvsize,
                          uint64_t granularity,
-                         bool (*f)(bool, bool));
+                         kind::Kind_t k,
+                         bool optimize);
+
+
+
+Node createPart(Node x, Node y, uint64_t granularity, kind::Kind_t k, bool optimize);
 
   /**
    * A helper function for createBitwiseNode
@@ -233,6 +238,9 @@ class BVToInt : public PreprocessingPass
 
   bool childrenTypesChanged(Node n);
 
+
+  std::map<std::pair<uint64_t, uint64_t>, uint64_t> getTableForOp(kind::Kind_t k, uint64_t granularity);
+
   /**
    * Add the range assertions collected in d_rangeAssertions
    * (using mkRangeConstraint) to the assertion pipeline.
@@ -249,6 +257,13 @@ class BVToInt : public PreprocessingPass
   NodeMap d_eliminationCache;
   NodeMap d_rebuildCache;
   NodeMap d_bvToIntCache;
+
+  /** 
+   * tables for the bitwise operators
+   */
+  std::map<std::pair<uint64_t, uint64_t>, uint64_t> d_bvandTable;
+  std::map<std::pair<uint64_t, uint64_t>, uint64_t> d_bvorTable;
+  std::map<std::pair<uint64_t, uint64_t>, uint64_t> d_bvxorTable;
 
   /**
    * Node manager that is used throughout the pass
