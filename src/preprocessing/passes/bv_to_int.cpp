@@ -181,11 +181,8 @@ Node BVToInt::eliminationPass(Node n)
         (d_eliminationCache.find(current) != d_eliminationCache.end());
     bool inRebuildCache =
         (d_rebuildCache.find(current) != d_rebuildCache.end());
-    if (!inRebuildCache)
+    if (!inEliminationCache)
     {
-      // current is not the elimination of any previously-visited node
-      if (!inEliminationCache)
-      {
         // current hasn't been eliminated yet.
         // eliminate operators from it
         Node currentEliminated =
@@ -218,9 +215,8 @@ Node BVToInt::eliminationPass(Node n)
         // Add the children to the stack for future processing.
         toVisit.insert(
             toVisit.end(), currentEliminated.begin(), currentEliminated.end());
-      }
     }
-    else
+    if (inRebuildCache)
     {
       // current was already added to the rebuild cache.
       if (d_rebuildCache[current].isNull())
