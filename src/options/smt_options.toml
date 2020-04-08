@@ -668,10 +668,20 @@ header = "options/smt_options.h"
 [[option]]
   name       = "optimizeBVAsInt"
   category   = "undocumented"
-  long       = "optimize-bv-as-int"
-  type       = "bool"
-  default    = "false"
-  help       = "use sygus-generated functions for bitwise operators"
+  long       = "optimize-bv-as-int=MODE"
+  type       = "OptimizeBVAsIntMode"
+  default    = "NONE"
+  help       = "mode for optimizing ites for bit-wise operators in --solve-bv-as-int"
+  help_mode  = "Optimization modes."
+[[option.mode.NONE]]
+  name = "none"
+  help = "Do not optimize."
+[[option.mode.NIA]]
+  name = "nia"
+  help = "Optimize with NIA functions."
+[[option.mode.LIA]]
+  name = "lia"
+  help = "Optimize with LIA functions."
 
 [[option]]
   name       = "solveIntAsBV"

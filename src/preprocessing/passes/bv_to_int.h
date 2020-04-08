@@ -132,12 +132,18 @@ class BVToInt : public PreprocessingPass
                          Node y,
                          uint64_t bvsize,
                          uint64_t granularity,
-                         kind::Kind_t k,
-                         bool optimize);
+                         kind::Kind_t k);
 
 
 
-Node createPart(Node x, Node y, uint64_t granularity, kind::Kind_t k, bool optimize);
+Node createPart(Node x, Node y, uint64_t granularity, kind::Kind_t k);
+
+
+
+void addDefaultValue(std::map<std::pair<int64_t, int64_t>, int64_t>& table, int64_t max_value);
+
+
+
 
   /**
    * A helper function for createBitwiseNode
@@ -155,7 +161,7 @@ Node createPart(Node x, Node y, uint64_t granularity, kind::Kind_t k, bool optim
       Node x,
       Node y,
       uint64_t granularity,
-      std::map<std::pair<uint64_t, uint64_t>, uint64_t> table);
+      std::map<std::pair<int64_t, int64_t>, int64_t> table);
 
   /**
    * A generic function that creates a logical shift node (either left or
@@ -239,7 +245,7 @@ Node createPart(Node x, Node y, uint64_t granularity, kind::Kind_t k, bool optim
   bool childrenTypesChanged(Node n);
 
 
-  std::map<std::pair<uint64_t, uint64_t>, uint64_t> getTableForOp(kind::Kind_t k, uint64_t granularity);
+  std::map<std::pair<int64_t, int64_t>, int64_t> getTableForOp(kind::Kind_t k, uint64_t granularity);
 
   /**
    * Add the range assertions collected in d_rangeAssertions
@@ -261,9 +267,9 @@ Node createPart(Node x, Node y, uint64_t granularity, kind::Kind_t k, bool optim
   /** 
    * tables for the bitwise operators
    */
-  std::map<std::pair<uint64_t, uint64_t>, uint64_t> d_bvandTable;
-  std::map<std::pair<uint64_t, uint64_t>, uint64_t> d_bvorTable;
-  std::map<std::pair<uint64_t, uint64_t>, uint64_t> d_bvxorTable;
+  std::map<std::pair<int64_t, int64_t>, int64_t> d_bvandTable;
+  std::map<std::pair<int64_t, int64_t>, int64_t> d_bvorTable;
+  std::map<std::pair<int64_t, int64_t>, int64_t> d_bvxorTable;
 
   /**
    * Node manager that is used throughout the pass
