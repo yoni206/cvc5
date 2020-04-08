@@ -682,6 +682,9 @@ header = "options/smt_options.h"
 [[option.mode.LIA]]
   name = "lia"
   help = "Optimize with LIA functions."
+[[option.mode.BV]]
+  name = "bv"
+  help = "Optimize with LIA functions, that is, translate back to BV."
 
 [[option]]
   name       = "solveIntAsBV"

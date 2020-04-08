@@ -986,55 +986,64 @@ Node BVToInt::createBitwiseNode(Node x,
                                 uint64_t granularity,
                                 kind::Kind_t k)
 {
-  /**
-   * Standardize granularity.
-   * If it is greater than bvsize, it is set to bvsize.
-   * Otherwise, it is set to the closest (going down)  divider of bvsize.
-   */
-  Assert(granularity > 0);
-  if (granularity > bvsize)
-  {
-    granularity = bvsize;
-  }
-  else
-  {
-    while (bvsize % granularity != 0)
+  if (options::optimizeBVAsInt() == options::OptimizeBVAsIntMode::BV) {
+    Node intToBVOp = d_nm->mkConst<IntToBitVector>(IntToBitVector(bvsize));
+    Node bvx = d_nm->mkNode(intToBVOp, x);
+    Node bvy = d_nm->mkNode(intToBVOp, y);
+    Node bvand = d_nm->mkNode(k, bvx, bvy);
+    Node result = d_nm->mkNode(kind::BITVECTOR_TO_NAT, bvand);
+    return result;
+  } else {
+    /**
+     * Standardize granularity.
+     * If it is greater than bvsize, it is set to bvsize.
+     * Otherwise, it is set to the closest (going down)  divider of bvsize.
+     */
+    Assert(granularity > 0);
+    if (granularity > bvsize)
     {
-      granularity = granularity - 1;
+      granularity = bvsize;
     }
+    else
+    {
+      while (bvsize % granularity != 0)
+      {
+        granularity = granularity - 1;
+      }
+    }
+    /*
+     * Create the sum.
+     * For granularity 1, the sum has bvsize elements.
+     * In contrast, if bvsize = granularity, sum has one element.
+     * Each element in the sum is an ite that corresponds to the generated table,
+     * multiplied by the appropriate power of two.
+     * More details are in bv_to_int.h .
+     */
+    uint64_t sumSize = bvsize / granularity;
+    Node sumNode = d_zero;
+    /**
+     * extract definition in integers is:
+     * (define-fun intextract ((k Int) (i Int) (j Int) (a Int)) Int
+     * (mod (div a (two_to_the j)) (two_to_the (+ (- i j) 1))))
+     */
+    for (uint64_t i = 0; i < sumSize; i++)
+    {
+      Node xExtract = d_nm->mkNode(
+          kind::INTS_MODULUS_TOTAL,
+          d_nm->mkNode(kind::INTS_DIVISION_TOTAL, x, pow2(i * granularity)),
+          pow2(granularity));
+      Node yExtract = d_nm->mkNode(
+          kind::INTS_MODULUS_TOTAL,
+          d_nm->mkNode(kind::INTS_DIVISION_TOTAL, y, pow2(i * granularity)),
+          pow2(granularity));
+      Node sumPart = createPart(xExtract, yExtract, granularity, k);
+      sumNode =
+          d_nm->mkNode(kind::PLUS,
+                       sumNode,
+                       d_nm->mkNode(kind::MULT, pow2(i * granularity), sumPart));
+    }
+    return sumNode;
   }
-  /*
-   * Create the sum.
-   * For granularity 1, the sum has bvsize elements.
-   * In contrast, if bvsize = granularity, sum has one element.
-   * Each element in the sum is an ite that corresponds to the generated table,
-   * multiplied by the appropriate power of two.
-   * More details are in bv_to_int.h .
-   */
-  uint64_t sumSize = bvsize / granularity;
-  Node sumNode = d_zero;
-  /**
-   * extract definition in integers is:
-   * (define-fun intextract ((k Int) (i Int) (j Int) (a Int)) Int
-   * (mod (div a (two_to_the j)) (two_to_the (+ (- i j) 1))))
-   */
-  for (uint64_t i = 0; i < sumSize; i++)
-  {
-    Node xExtract = d_nm->mkNode(
-        kind::INTS_MODULUS_TOTAL,
-        d_nm->mkNode(kind::INTS_DIVISION_TOTAL, x, pow2(i * granularity)),
-        pow2(granularity));
-    Node yExtract = d_nm->mkNode(
-        kind::INTS_MODULUS_TOTAL,
-        d_nm->mkNode(kind::INTS_DIVISION_TOTAL, y, pow2(i * granularity)),
-        pow2(granularity));
-    Node sumPart = createPart(xExtract, yExtract, granularity, k);
-    sumNode =
-        d_nm->mkNode(kind::PLUS,
-                     sumNode,
-                     d_nm->mkNode(kind::MULT, pow2(i * granularity), sumPart));
-  }
-  return sumNode;
 }
 
 Node BVToInt::createPart(Node x, Node y, uint64_t granularity, kind::Kind_t k) {
