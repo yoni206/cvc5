@@ -267,9 +267,9 @@ void addDefaultValue(std::map<std::pair<int64_t, int64_t>, int64_t>& table, int6
   /** 
    * tables for the bitwise operators
    */
-  std::map<std::pair<int64_t, int64_t>, int64_t> d_bvandTable;
-  std::map<std::pair<int64_t, int64_t>, int64_t> d_bvorTable;
-  std::map<std::pair<int64_t, int64_t>, int64_t> d_bvxorTable;
+  std::map<uint64_t, std::map<std::pair<int64_t, int64_t>, int64_t>> d_bvandTable;
+  std::map<uint64_t, std::map<std::pair<int64_t, int64_t>, int64_t>> d_bvorTable;
+  std::map<uint64_t, std::map<std::pair<int64_t, int64_t>, int64_t>> d_bvxorTable;
 
   /**
    * Node manager that is used throughout the pass

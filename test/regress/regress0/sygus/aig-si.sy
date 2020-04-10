@@ -5,9 +5,9 @@
 (define-fun parity ((a Bool) (b Bool) (c Bool) (d Bool)) Bool
   (xor (not (xor a b)) (not (xor c d))))
 
-(synth-fun AIG ((a Bool) (b Bool) (c Bool) (d Bool)) Bool
+(synth-fun AIG ((aa Bool) (bb Bool) (cc Bool) (dd Bool)) Bool
            ((Start Bool))
-           ((Start Bool ((and Start Start) (not Start) a b c d))))
+           ((Start Bool ((and Start Start) (not Start) aa bb cc dd))))
 
 (declare-var a Bool)
 (declare-var b Bool)

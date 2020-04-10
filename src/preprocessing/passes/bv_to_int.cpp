@@ -869,18 +869,19 @@ Node BVToInt::createShiftNode(vector<Node> children,
 
 
 std::map<std::pair<int64_t, int64_t>, int64_t> BVToInt::getTableForOp(kind::Kind_t k, uint64_t granularity) {
-  if (k == kind::BITVECTOR_AND && !d_bvandTable.empty()) {
-    return d_bvandTable;
+  if (k == kind::BITVECTOR_AND && d_bvandTable.find(granularity) != d_bvandTable.end()) {
+    return d_bvandTable[granularity];
   }
-  if (k == kind::BITVECTOR_OR && !d_bvorTable.empty()) {
-    return d_bvorTable;
+  if (k == kind::BITVECTOR_OR && d_bvorTable.find(granularity) != d_bvorTable.end()) {
+    return d_bvorTable[granularity];
   }
-  if (k == kind::BITVECTOR_XOR && !d_bvxorTable.empty()) {
-    return d_bvxorTable;
+  if (k == kind::BITVECTOR_XOR && d_bvandTable.find(granularity) != d_bvxorTable.end()) {
+    return d_bvxorTable[granularity];
   }
   //the table was not yet computed
+  
   std::map<std::pair<int64_t, int64_t>, int64_t> table;
-  int64_t max_value = ((int64_t)pow(2, granularity));
+  int64_t num_of_values = ((int64_t)pow(2, granularity));
   bool (*fp)(bool, bool);
   if (k == kind::BITVECTOR_AND) {
     fp = oneBitAnd;
@@ -891,9 +892,9 @@ std::map<std::pair<int64_t, int64_t>, int64_t> BVToInt::getTableForOp(kind::Kind
   } else {
     Assert(false);
   }
-  for (int64_t i = 0; i < max_value; i++)
+  for (int64_t i = 0; i < num_of_values; i++)
   {
-    for (int64_t j = 0; j < max_value; j++)
+    for (int64_t j = 0; j < num_of_values; j++)
     {
       int64_t sum = 0;
       for (uint64_t n = 0; n < granularity; n++)
@@ -909,24 +910,24 @@ std::map<std::pair<int64_t, int64_t>, int64_t> BVToInt::getTableForOp(kind::Kind
       table[std::make_pair(i, j)] = sum;
     }
   }
-   addDefaultValue(table, max_value);
-   Assert(table.size() == 1+ ((uint64_t)(max_value * max_value)));
+   addDefaultValue(table, num_of_values);
+   Assert(table.size() == 1+ ((uint64_t)(num_of_values * num_of_values)));
    if (k == kind::BITVECTOR_AND) {
-     d_bvandTable = table;
+     d_bvandTable[granularity] = table;
    }  
    else if (k == kind::BITVECTOR_OR) {
-     d_bvorTable = table;
+     d_bvorTable[granularity] = table;
    }
    else if (k == kind::BITVECTOR_XOR) {
-     d_bvxorTable = table;
+     d_bvxorTable[granularity] = table;
    }
    return table;
 }
 
 
-void BVToInt::addDefaultValue(std::map<std::pair<int64_t, int64_t>, int64_t>& table, int64_t max_value) {
+void BVToInt::addDefaultValue(std::map<std::pair<int64_t, int64_t>, int64_t>& table, int64_t num_of_values) {
   std::map<int64_t, int64_t> counters;
-  for (int64_t i = 0; i <= max_value;i++) {
+  for (int64_t i = 0; i <= num_of_values;i++) {
 
     counters[i] = 0;
   }
@@ -936,7 +937,7 @@ void BVToInt::addDefaultValue(std::map<std::pair<int64_t, int64_t>, int64_t>& ta
   }
   int64_t most_common_result = -1;
   int64_t max_num_of_occ = -1;
-  for (int64_t i=0; i <= max_value; i++) {
+  for (int64_t i=0; i <= num_of_values; i++) {
     if (counters[i] > max_num_of_occ) {
       max_num_of_occ = counters[i];
       most_common_result = i;
@@ -953,15 +954,15 @@ Node BVToInt::createITEFromTable(
     std::map<std::pair<int64_t, int64_t>, int64_t> table)
 {
   Assert(granularity <= 8);
-  int64_t max_value = ((int64_t)pow(2, granularity));
+  int64_t num_of_values = ((int64_t)pow(2, granularity)) ;
   // The table represents a function from pairs of integers to integers, where
-  // all integers are between 0 (inclusive) and max_value (exclusive).
-  Assert(table.size() == 1+ ((uint64_t)(max_value * max_value)));
+  // all integers are between 0 (inclusive) and num_of_values (exclusive).
+  Assert(table.size() == 1+ ((uint64_t)(num_of_values * num_of_values)));
   //start with the default, most common value
   Node ite = d_nm->mkConst<Rational>(table[std::make_pair(-1, -1)]);
-  for (int64_t i = 0; i < max_value; i++)
+  for (int64_t i = 0; i < num_of_values; i++)
   {
-    for (int64_t j = 0; j < max_value; j++)
+    for (int64_t j = 0; j < num_of_values; j++)
     {
       if (table[std::make_pair(i,j)] == table[std::make_pair(-1,-1)])
       {
