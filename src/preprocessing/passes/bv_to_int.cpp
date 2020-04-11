@@ -875,7 +875,7 @@ std::map<std::pair<int64_t, int64_t>, int64_t> BVToInt::getTableForOp(kind::Kind
   if (k == kind::BITVECTOR_OR && d_bvorTable.find(granularity) != d_bvorTable.end()) {
     return d_bvorTable[granularity];
   }
-  if (k == kind::BITVECTOR_XOR && d_bvandTable.find(granularity) != d_bvxorTable.end()) {
+  if (k == kind::BITVECTOR_XOR && d_bvxorTable.find(granularity) != d_bvxorTable.end()) {
     return d_bvxorTable[granularity];
   }
   //the table was not yet computed
