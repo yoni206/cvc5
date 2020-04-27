@@ -93,7 +93,17 @@ class IAndSolver
    * convert integer value to bitvector value of bitwidth k,
    * equivalent to Rewriter::rewrite( ((_ intToBv k) n) ).
    */
-  Node convertToBvK(unsigned k, Node n);
+  Node convertToBvK(unsigned k, Node n) const;
+  /** 2^k */
+  Node twoToK(unsigned k) const;
+  /** 2^k-1 */
+  Node twoToKMinusOne(unsigned k) const;
+  /** make iand */
+  Node mkIAnd(unsigned k, Node x, Node y) const;
+  /** make ior */
+  Node mkIOr(unsigned k, Node x, Node y) const;
+  /** make inot */
+  Node mkINot(unsigned k, Node i) const;
   /**
    * Value-based refinement lemma for i of the form ((_ iand k) x y). Returns:
    *   x = M(x) ^ y = M(y) =>
