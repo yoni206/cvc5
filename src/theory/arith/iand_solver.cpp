@@ -62,6 +62,7 @@ void IAndSolver::initLastCall(const std::vector<Node>& assertions,
 
 std::vector<Node> IAndSolver::checkInitialRefine()
 {
+  Trace("iand-check") << "IAndSolver::checkInitialRefine" << std::endl;
   std::vector<Node> lems;
   NodeManager * nm = NodeManager::currentNM();
   for (const std::pair<const unsigned, std::vector<Node> >& is : d_iands)
@@ -86,6 +87,7 @@ std::vector<Node> IAndSolver::checkInitialRefine()
       
       Assert (conj.size()>1);
       Node lem = nm->mkNode(AND,conj);
+      Trace("iand-lemma") << "IAndSolver::checkInitialRefine: " << i << " : " <<  lem << std::endl;
       lems.push_back(lem);
     }
   }
@@ -94,6 +96,8 @@ std::vector<Node> IAndSolver::checkInitialRefine()
 
 std::vector<Node> IAndSolver::checkFullRefine()
 {
+  Trace("iand-check") << "IAndSolver::checkFullRefine";
+  Trace("iand-check") << "IAND terms: "  << std::endl;
   std::vector<Node> lems;
   NodeManager * nm = NodeManager::currentNM();
   for (const std::pair<const unsigned, std::vector<Node> >& is : d_iands)
@@ -103,9 +107,18 @@ std::vector<Node> IAndSolver::checkFullRefine()
       Node x = i[0];
       Node y = i[1];
       
-      Node valX = d_model.computeAbstractModelValue(x);
-      Node valY = d_model.computeAbstractModelValue(y);
-      Node valAndXY = d_model.computeAbstractModelValue(i);      
+      Node valX = d_model.computeConcreteModelValue(x);
+      Node valY = d_model.computeConcreteModelValue(y);
+      Node valAndXY = d_model.computeAbstractModelValue(i);
+      Node valAndXYC = d_model.computeConcreteModelValue(i);
+      
+      if (Trace.isOn("iand-check"))
+      {
+        Trace("iand-check") << "* " << i << ", value = " << valAndXY << std::endl;
+        Trace("iand-check") << "  actual (" << valX << ", " << valY << ") = " << valAndXYC << std::endl;
+        
+      }
+      
       
       // additional axioms go here
       
