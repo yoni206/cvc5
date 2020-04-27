@@ -51,7 +51,7 @@ void IAndSolver::initLastCall(const std::vector<Node>& assertions,
     Kind ak = a.getKind();
     if (ak == IAND)
     {
-      size_t bsize = t.getOperator().getConst<IntAnd>().d_size;
+      size_t bsize = a.getOperator().getConst<IntAnd>().d_size;
       d_iands[bsize].push_back(a);
     }
   }

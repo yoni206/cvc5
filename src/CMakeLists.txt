@@ -292,6 +292,8 @@ libcvc4_add_sources(
   theory/arith/error_set.h
   theory/arith/fc_simplex.cpp
   theory/arith/fc_simplex.h
+  theory/arith/iand_solver.cpp
+  theory/arith/iand_solver.h
   theory/arith/infer_bounds.cpp
   theory/arith/infer_bounds.h
   theory/arith/linear_equality.cpp

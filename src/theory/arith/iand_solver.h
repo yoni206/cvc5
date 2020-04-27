@@ -69,7 +69,7 @@ class IAndSolver
   Node d_two;
   Node d_true;
   Node d_false;
-  /** all IAND terms */
+  /** all IAND terms, for each bit-width */
   std::map< unsigned, std::vector< Node > > d_iands;
 }; /* class IAndSolver */
 
