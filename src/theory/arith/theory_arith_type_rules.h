@@ -19,6 +19,8 @@
 #ifndef CVC4__THEORY__ARITH__THEORY_ARITH_TYPE_RULES_H
 #define CVC4__THEORY__ARITH__THEORY_ARITH_TYPE_RULES_H
 
+#include "util/iand.h"
+
 namespace CVC4 {
 namespace theory {
 namespace arith {
@@ -123,7 +125,7 @@ class IAndTypeRule
     {
       TypeNode arg1 = n[0].getType(check);
       TypeNode arg2 = n[1].getType(check);
-      if (!arg1.getType().isInteger() || !arg2.getType().isInteger())
+      if (!arg1.isInteger() || !arg2.isInteger())
       {
         throw TypeCheckingExceptionPrivate(n, "expecting integer terms");
       }
