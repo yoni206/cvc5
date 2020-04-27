@@ -67,6 +67,8 @@ std::vector<Node> IAndSolver::checkInitialRefine()
   NodeManager* nm = NodeManager::currentNM();
   for (const std::pair<const unsigned, std::vector<Node> >& is : d_iands)
   {
+    // the reference bitwidth
+    unsigned k = is.first;
     for (const Node& i : is.second)
     {
       if (d_initRefine.find(i) != d_initRefine.end())
@@ -78,12 +80,17 @@ std::vector<Node> IAndSolver::checkInitialRefine()
       Node op = i.getOperator();
       // initial refinement lemmas
       std::vector<Node> conj;
+      // 0 <= iand(x,y) < 2^k
+      conj.push_back(nm->mkNode(LEQ,d_zero,i));
+      conj.push_back(nm->mkNode(LT,i,nm->mkNode(POW,nm->mkConst(Rational(k))));
       // iand(x,y)=iand(y,x)
       conj.push_back(i.eqNode(nm->mkNode(IAND, op, i[1], i[0])));
       // iand(x,y)<=x
       conj.push_back(nm->mkNode(LEQ, i, i[0]));
       // iand(x,y)<=y
       conj.push_back(nm->mkNode(LEQ, i, i[1]));
+      // x=y => iand(x,y)=x
+      conj.push_back(nm->mkNode(IMPLIES,i[0].eqNode(i[1]), i.eqNode(i[0])));
 
       Assert(conj.size() > 1);
       Node lem = nm->mkNode(AND, conj);

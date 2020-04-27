@@ -590,7 +590,7 @@ void Smt2Printer::toStream(std::ostream& out,
     out << smtKindString(k, d_variant) << " ";
     break;
   case kind::IAND:
-    out << "(_ iand " << n.getOperator().getConst<IntAnd>().d_size << ")";
+    out << "(_ iand " << n.getOperator().getConst<IntAnd>().d_size << ") ";
     stillNeedToPrintParams = false;
     break;
 

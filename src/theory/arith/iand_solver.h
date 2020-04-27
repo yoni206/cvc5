@@ -60,6 +60,7 @@ class IAndSolver
    * iand(x,y) = iand(y,x)
    * iand(x,y) <= x
    * iand(x,y) <= y
+   * x=y => iand(x,y)=x
    *
    * This should be a heuristic incomplete check that only introduces a
    * small number of new terms in the lemmas it returns.

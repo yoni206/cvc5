@@ -381,8 +381,8 @@ RewriteResponse ArithRewriter::postRewriteIAnd(TNode t)
     NodeManager* nm = NodeManager::currentNM();
     size_t bsize = t.getOperator().getConst<IntAnd>().d_size;
     Node iToBvop = nm->mkConst(IntToBitVector(bsize));
-    Node arg1 = nm->mkNode(kind::INT_TO_BITVECTOR, t[0]);
-    Node arg2 = nm->mkNode(kind::INT_TO_BITVECTOR, t[1]);
+    Node arg1 = nm->mkNode(kind::INT_TO_BITVECTOR, iToBvop, t[0]);
+    Node arg2 = nm->mkNode(kind::INT_TO_BITVECTOR, iToBvop, t[1]);
     Node bvand = nm->mkNode(kind::BITVECTOR_AND, arg1, arg2);
     Node ret = nm->mkNode(kind::BITVECTOR_TO_NAT, bvand);
     return RewriteResponse(REWRITE_AGAIN_FULL, ret);
