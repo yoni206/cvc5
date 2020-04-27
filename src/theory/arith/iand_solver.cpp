@@ -51,11 +51,13 @@ void IAndSolver::initLastCall(const std::vector<Node>& assertions,
   for (const Node& a : xts)
   {
     Kind ak = a.getKind();
-    if (ak == IAND)
+    if (ak != IAND)
     {
-      size_t bsize = a.getOperator().getConst<IntAnd>().d_size;
-      d_iands[bsize].push_back(a);
+      // don't care about other terms
+      continue;
     }
+    size_t bsize = a.getOperator().getConst<IntAnd>().d_size;
+    d_iands[bsize].push_back(a);
   }
 
   Trace("iand") << "We have " << d_iands.size() << " IAND terms." << std::endl;
@@ -81,12 +83,13 @@ std::vector<Node> IAndSolver::checkInitialRefine()
       Node op = i.getOperator();
       // initial refinement lemmas
       std::vector<Node> conj;
+      // iand(x,y)=iand(y,x) is guaranteed by rewriting
+      Assert (i[0]<=i[1]);
+      //conj.push_back(i.eqNode(nm->mkNode(IAND, op, i[1], i[0])));
       // 0 <= iand(x,y) < 2^k
       conj.push_back(nm->mkNode(LEQ, d_zero, i));
       conj.push_back(
           nm->mkNode(LT, i, nm->mkNode(POW, d_two, nm->mkConst(Rational(k)))));
-      // iand(x,y)=iand(y,x)
-      conj.push_back(i.eqNode(nm->mkNode(IAND, op, i[1], i[0])));
       // iand(x,y)<=x
       conj.push_back(nm->mkNode(LEQ, i, i[0]));
       // iand(x,y)<=y
@@ -94,8 +97,7 @@ std::vector<Node> IAndSolver::checkInitialRefine()
       // x=y => iand(x,y)=x
       conj.push_back(nm->mkNode(IMPLIES, i[0].eqNode(i[1]), i.eqNode(i[0])));
 
-      Assert(conj.size() > 1);
-      Node lem = nm->mkNode(AND, conj);
+      Node lem = conj.size()==1 ? conj[0] : nm->mkNode(AND, conj);
       Trace("iand-lemma") << "IAndSolver::Lemma: " << lem << " ; INIT_REFINE"
                           << std::endl;
       lems.push_back(lem);
