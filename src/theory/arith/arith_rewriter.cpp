@@ -164,8 +164,7 @@ RewriteResponse ArithRewriter::postRewriteTerm(TNode t){
     case kind::PLUS:
       return postRewritePlus(t);
     case kind::MULT:
-    case kind::NONLINEAR_MULT:
-      return postRewriteMult(t);
+    case kind::NONLINEAR_MULT: return postRewriteMult(t);
     case kind::IAND: return postRewriteIAnd(t);
     case kind::EXPONENTIAL:
     case kind::SINE:
