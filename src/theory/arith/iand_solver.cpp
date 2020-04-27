@@ -27,7 +27,8 @@ namespace arith {
 
 IAndSolver::IAndSolver(TheoryArith& containing, NlModel& model)
     : d_containing(containing),
-      d_model(model)
+      d_model(model),
+      d_initRefine(containing.getUserContext())
 {
   NodeManager* nm = NodeManager::currentNM();
   d_true = nm->mkConst(true);
@@ -57,6 +58,61 @@ void IAndSolver::initLastCall(const std::vector<Node>& assertions,
   }
 
   Trace("iand") << "We have " << d_iands.size() << " IAND terms." << std::endl;
+}
+
+std::vector<Node> IAndSolver::checkInitialRefine()
+{
+  std::vector<Node> lems;
+  NodeManager * nm = NodeManager::currentNM();
+  for (const std::pair<const unsigned, std::vector<Node> >& is : d_iands)
+  {
+    for (const Node& i : is.second)
+    {
+      if (d_initRefine.find(i)!=d_initRefine.end())
+      {
+        // already sent initial axioms for i in this user context
+        continue;
+      }
+      d_initRefine.insert(i);
+      Node op = i.getOperator();
+      // initial refinement lemmas
+      std::vector<Node> conj;
+      // iand(x,y)=iand(y,x)
+      conj.push_back(i.eqNode(nm->mkNode(IAND,op,i[1],i[0])));
+      // iand(x,y)<=x
+      conj.push_back(nm->mkNode(LEQ,i, i[0]));
+      // iand(x,y)<=y
+      conj.push_back(nm->mkNode(LEQ,i, i[1]));
+      
+      Assert (conj.size()>1);
+      Node lem = nm->mkNode(AND,conj);
+      lems.push_back(lem);
+    }
+  }
+  return lems;
+}
+
+std::vector<Node> IAndSolver::checkFullRefine()
+{
+  std::vector<Node> lems;
+  NodeManager * nm = NodeManager::currentNM();
+  for (const std::pair<const unsigned, std::vector<Node> >& is : d_iands)
+  {
+    for (const Node& i : is.second)
+    {
+      Node x = i[0];
+      Node y = i[1];
+      
+      Node valX = d_model.computeAbstractModelValue(x);
+      Node valY = d_model.computeAbstractModelValue(y);
+      Node valAndXY = d_model.computeAbstractModelValue(i);      
+      
+      // additional axioms go here
+      
+    }
+  }
+  
+  return lems;
 }
 
 }  // namespace arith

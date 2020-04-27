@@ -426,6 +426,16 @@ int NonlinearExtension::checkLastCall(const std::vector<Node>& assertions,
     return lems.size();
   }
 
+  //-----------------------------------initial lemmas for transcendental functions
+  lemmas = d_iandSlv.checkInitialRefine();
+  filterLemmas(lemmas, lems);
+  if (!lems.empty())
+  {
+    Trace("nl-ext") << "  ...finished with " << lems.size() << " new lemmas."
+                    << std::endl;
+    return lems.size();
+  }
+
   //-----------------------------------lemmas based on sign (comparison to zero)
   lemmas = d_nlSlv.checkMonomialSign();
   filterLemmas(lemmas, lems);
@@ -530,6 +540,9 @@ int NonlinearExtension::checkLastCall(const std::vector<Node>& assertions,
     lemmas = d_trSlv.checkTranscendentalTangentPlanes(lemSE);
     filterLemmas(lemmas, wlems);
   }
+  // run the full refinement in the IAND solver
+  lemmas = d_iandSlv.checkFullRefine();
+  filterLemmas(lemmas, wlems);
   Trace("nl-ext") << "  ...finished with " << wlems.size() << " waiting lemmas."
                   << std::endl;
 
