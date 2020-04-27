@@ -16,16 +16,8 @@
 #define CVC4__THEORY__ARITH__IAND_SOLVER_H
 
 #include <map>
-#include <unordered_map>
-#include <utility>
 #include <vector>
 
-#include "context/cdhashset.h"
-#include "context/cdinsert_hashmap.h"
-#include "context/cdlist.h"
-#include "context/cdqueue.h"
-#include "context/context.h"
-#include "expr/kind.h"
 #include "expr/node.h"
 #include "theory/arith/theory_arith.h"
 #include "theory/arith/nl_model.h"
