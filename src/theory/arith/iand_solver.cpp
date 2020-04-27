@@ -159,8 +159,9 @@ std::vector<Node> IAndSolver::checkFullRefine()
         continue;
       }
 
-      // additional lemma schemas go here
+      // ************* additional lemma schemas go here
 
+      // this is the most naive model-based schema based on model values
       Node lem = valueBasedLemma(i);
       Trace("iand-lemma") << "IAndSolver::Lemma: " << lem << " ; VALUE_REFINE"
                           << std::endl;
