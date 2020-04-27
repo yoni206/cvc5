@@ -25,6 +25,7 @@
 #include "theory/arith/arith_utilities.h"
 #include "theory/arith/normal_form.h"
 #include "theory/theory.h"
+#include "util/iand.h"
 
 namespace CVC4 {
 namespace theory {
@@ -372,11 +373,12 @@ RewriteResponse ArithRewriter::postRewriteMult(TNode t){
 
 RewriteResponse ArithRewriter::postRewriteIAnd(TNode t)
 {
+  Assert (t.getKind()==kind::IAND);
   // if constant, we eliminate
   if (t[0].isConst() && t[1].isConst())
   {
     NodeManager* nm = NodeManager::currentNM();
-    size_t bsize = n.getOperator().getConst<IntAnd>().d_size;
+    size_t bsize = t.getOperator().getConst<IntAnd>().d_size;
     Node iToBvop = nm->mkConst(IntToBitVector(bsize));
     Node arg1 = nm->mkNode(kind::INT_TO_BITVECTOR, t[0]);
     Node arg2 = nm->mkNode(kind::INT_TO_BITVECTOR, t[1]);

@@ -30,6 +30,7 @@
 #include "theory/arith/nl_solver.h"
 #include "theory/arith/theory_arith.h"
 #include "theory/arith/transcendental_solver.h"
+#include "theory/arith/iand_solver.h"
 #include "theory/uf/equality_engine.h"
 
 namespace CVC4 {
@@ -310,6 +311,12 @@ class NonlinearExtension {
    * constraints involving nonlinear mulitplication.
    */
   NlSolver d_nlSlv;
+  /** The integer and solver
+   *
+   * This is the subsolver responsible for running the procedure for
+   * constraints involving integer and.
+   */
+  IAndSolver d_iandSlv;
   /**
    * The lemmas we computed during collectModelInfo. We store two vectors of
    * lemmas to be sent out on the output channel of TheoryArith. The first

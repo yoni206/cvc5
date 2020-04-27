@@ -38,6 +38,7 @@ NonlinearExtension::NonlinearExtension(TheoryArith& containing,
       d_model(containing.getSatContext()),
       d_trSlv(d_model),
       d_nlSlv(containing, d_model),
+      d_iandSlv(containing, d_model),
       d_builtModel(containing.getSatContext(), false)
 {
   d_true = NodeManager::currentNM()->mkConst(true);
