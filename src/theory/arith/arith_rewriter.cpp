@@ -102,7 +102,7 @@ RewriteResponse ArithRewriter::preRewriteTerm(TNode t){
       return preRewritePlus(t);
     case kind::MULT:
     case kind::NONLINEAR_MULT:
-      return preRewriteMult(t);  
+      return preRewriteMult(t);
     case kind::EXPONENTIAL:
     case kind::SINE:
     case kind::COSINE:
@@ -167,6 +167,8 @@ RewriteResponse ArithRewriter::postRewriteTerm(TNode t){
     case kind::MULT:
     case kind::NONLINEAR_MULT:
       return postRewriteMult(t);    
+    case kind::IAND:
+      return postRewriteIAnd(t);
     case kind::EXPONENTIAL:
     case kind::SINE:
     case kind::COSINE:
@@ -371,6 +373,22 @@ RewriteResponse ArithRewriter::postRewriteMult(TNode t){
   return RewriteResponse(REWRITE_DONE, res.getNode());
 }
 
+RewriteResponse ArithRewriter::postRewriteIAnd(TNode t)
+{
+  // if constant, we eliminate
+  if (t[0].isConst() && t[1].isConst())
+  {
+    NodeManager * nm = NodeManager::currentNM();
+    size_t bsize = n.getOperator().getConst<IntAnd>().d_size;
+    Node iToBvop = nm->mkConst(IntToBitVector(bsize));
+    Node arg1 = nm->mkNode(kind::INT_TO_BITVECTOR, t[0]);
+    Node arg2 = nm->mkNode(kind::INT_TO_BITVECTOR, t[1]);
+    Node bvand = nm->mkNode(kind::BITVECTOR_AND, arg1, arg2);
+    Node ret = nm->mkNode(kind::BITVECTOR_TO_NAT, bvand);
+    return RewriteResponse(REWRITE_AGAIN_FULL, ret);
+  }
+  return RewriteResponse(REWRITE_DONE,t);
+}
 
 RewriteResponse ArithRewriter::preRewriteTranscendental(TNode t) {
   return RewriteResponse(REWRITE_DONE, t);

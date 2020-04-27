@@ -53,6 +53,8 @@ class ArithRewriter : public TheoryRewriter
   static RewriteResponse preRewriteMult(TNode t);
   static RewriteResponse postRewriteMult(TNode t);
   
+  static RewriteResponse postRewriteIAnd(TNode t);
+  
   static RewriteResponse preRewriteTranscendental(TNode t);
   static RewriteResponse postRewriteTranscendental(TNode t);
 

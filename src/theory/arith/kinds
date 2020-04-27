@@ -141,7 +141,7 @@ constant IAND_OP \
 	"operator for integer AND; payload is an instance of the CVC4::IntAnd class"
 parameterized IAND IAND_OP 2 "integer version of AND operator; first parameter is an IAND_OP, second and third are integer terms"
 
-typerule IAND_OP ::CVC4::theory::bv::IAndOpTypeRule
+typerule IAND_OP ::CVC4::theory::arith::IAndOpTypeRule
 typerule IAND ::CVC4::theory::arith::IAndTypeRule
 
 endtheory
