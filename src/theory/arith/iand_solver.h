@@ -57,7 +57,6 @@ class IAndSolver
    * Examples where iand is shorthand for (_ iand k):
    *
    * 0 <= iand(x,y) < 2^k
-   * iand(x,y) = iand(y,x)
    * iand(x,y) <= x
    * iand(x,y) <= y
    * x=y => iand(x,y)=x

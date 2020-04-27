@@ -393,6 +393,12 @@ RewriteResponse ArithRewriter::postRewriteIAnd(TNode t)
     Node ret = nm->mkNode(kind::IAND,t.getOperator(),t[1],t[0]);
     return RewriteResponse(REWRITE_AGAIN, ret);
   }
+  else if (t[0]==t[1])
+  {
+    // ((_ iand k) x x) ---> x
+    return RewriteResponse(REWRITE_DONE, t[0]);
+  }
+  // simplifications involving constants
   for (unsigned i=0; i<2; i++)
   {
     if (!t[i].isConst())
@@ -404,7 +410,9 @@ RewriteResponse ArithRewriter::postRewriteIAnd(TNode t)
       // ((_ iand k) 0 y) ---> 0
       return RewriteResponse(REWRITE_DONE, t[i]);
     }
-    // constants out of bounds can be normalized to [0..2^k-1]
+    // TODO ((_ iand k) 2^k-1 y) ---> y
+    
+    // constants c out of bounds can be normalized to (mod c 2^k)
   }
   return RewriteResponse(REWRITE_DONE, t);
 }
