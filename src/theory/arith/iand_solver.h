@@ -95,6 +95,12 @@ class IAndSolver
    * equivalent to Rewriter::rewrite( ((_ intToBv k) n) ).
    */
   Node convertToBvK(unsigned k, Node n);
+  /**
+   * Value-based refinement lemma for i of the form ((_ iand k) x y). Returns:
+   *   x = M(x) ^ y = M(y) => 
+   *     ((_ iand k) x y) = Rewriter::rewrite(((_ iand k) M(x) M(y)))
+   */
+  Node valueBasedLemma(Node i);
 }; /* class IAndSolver */
 
 }  // namespace arith

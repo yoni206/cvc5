@@ -95,8 +95,8 @@ std::vector<Node> IAndSolver::checkInitialRefine()
 
       Assert(conj.size() > 1);
       Node lem = nm->mkNode(AND, conj);
-      Trace("iand-lemma") << "IAndSolver::checkInitialRefine: " << i << " : "
-                          << lem << std::endl;
+      Trace("iand-lemma") << "IAndSolver::Lemma: "
+                          << lem << " ; INIT_REFINE" << std::endl;
       lems.push_back(lem);
     }
   }
@@ -115,16 +115,16 @@ std::vector<Node> IAndSolver::checkFullRefine()
     unsigned k = is.first;
     for (const Node& i : is.second)
     {
-      Node x = i[0];
-      Node y = i[1];
-
-      Node valX = d_model.computeConcreteModelValue(x);
-      Node valY = d_model.computeConcreteModelValue(y);
       Node valAndXY = d_model.computeAbstractModelValue(i);
       Node valAndXYC = d_model.computeConcreteModelValue(i);
-
       if (Trace.isOn("iand-check"))
       {
+        Node x = i[0];
+        Node y = i[1];
+
+        Node valX = d_model.computeConcreteModelValue(x);
+        Node valY = d_model.computeConcreteModelValue(y);
+          
         Trace("iand-check")
             << "* " << i << ", value = " << valAndXY << std::endl;
         Trace("iand-check") << "  actual (" << valX << ", " << valY
@@ -136,12 +136,22 @@ std::vector<Node> IAndSolver::checkFullRefine()
         Node bvalAndXYC = convertToBvK(k, valAndXYC);
 
         Trace("iand-check")
-            << "  bvalue = " << bvalAndXY << std::endl;
-        Trace("iand-check") << "  actual (" << bvalX << ", " << bvalY
+            << "  bv-value = " << bvalAndXY << std::endl;
+        Trace("iand-check") << "  bv-actual (" << bvalX << ", " << bvalY
                             << ") = " << bvalAndXYC << std::endl;
       }
+      if (valAndXY==valAndXYC)
+      {
+        Trace("iand-check") << "...already correct" << std::endl;
+        continue;
+      }
 
-      // additional axioms go here
+      // additional lemma schemas go here
+      
+      Node lem = valueBasedLemma(i);
+      Trace("iand-lemma") << "IAndSolver::Lemma: "
+                          << lem << " ; VALUE_REFINE" << std::endl;
+      lems.push_back(lem);
     }
   }
 
@@ -155,6 +165,24 @@ Node IAndSolver::convertToBvK(unsigned k, Node n)
   Node iToBvop = nm->mkConst(IntToBitVector(k));
   Node bn = nm->mkNode(kind::INT_TO_BITVECTOR, iToBvop, n);
   return Rewriter::rewrite(bn);
+}
+
+Node IAndSolver::valueBasedLemma(Node i)
+{
+  Assert (i.getKind()==IAND);
+  Node x = i[0];
+  Node y = i[1];
+
+  Node valX = d_model.computeConcreteModelValue(x);
+  Node valY = d_model.computeConcreteModelValue(y);
+  
+  NodeManager * nm = NodeManager::currentNM();
+  Node valC = nm->mkNode(IAND, i.getOperator(), valX, valY);
+  valC = Rewriter::rewrite(valC);
+  
+  Node lem = nm->mkNode(IMPLIES, nm->mkNode(AND, x.eqNode(valX), y.eqNode(valY)), i.eqNode(valC));
+  return lem;
+  
 }
 
 }  // namespace arith
