@@ -19,8 +19,6 @@
 #ifndef CVC4__THEORY__ARITH__THEORY_ARITH_TYPE_RULES_H
 #define CVC4__THEORY__ARITH__THEORY_ARITH_TYPE_RULES_H
 
-#include "util/iand.h"
-
 namespace CVC4 {
 namespace theory {
 namespace arith {
@@ -100,13 +98,11 @@ class IAndOpTypeRule
     {
       InternalError() << "IAND_OP typerule invoked for IAND_OP kind";
     }
-    size_t bvSize = n.getConst<IAnd>();
     TypeNode iType = nodeManager->integerType();
     std::vector<TypeNode> argTypes;
     argTypes.push_back(iType);
     argTypes.push_back(iType);
     return nodeManager->mkFunctionType(argTypes, iType);
-    );
   }
 }; /* class IAndOpTypeRule */
 
