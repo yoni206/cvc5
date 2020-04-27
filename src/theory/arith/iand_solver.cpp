@@ -82,7 +82,7 @@ std::vector<Node> IAndSolver::checkInitialRefine()
       std::vector<Node> conj;
       // 0 <= iand(x,y) < 2^k
       conj.push_back(nm->mkNode(LEQ,d_zero,i));
-      conj.push_back(nm->mkNode(LT,i,nm->mkNode(POW,nm->mkConst(Rational(k))));
+      conj.push_back(nm->mkNode(LT,i,nm->mkNode(POW,nm->mkConst(Rational(k)))));
       // iand(x,y)=iand(y,x)
       conj.push_back(i.eqNode(nm->mkNode(IAND, op, i[1], i[0])));
       // iand(x,y)<=x
