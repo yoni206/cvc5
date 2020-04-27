@@ -387,9 +387,9 @@ RewriteResponse ArithRewriter::postRewriteIAnd(TNode t)
     Node ret = nm->mkNode(kind::BITVECTOR_TO_NAT, bvand);
     return RewriteResponse(REWRITE_AGAIN_FULL, ret);
   }
-  else if (t[0]>=t[1])
+  else if (t[0]>t[1])
   {
-    // ((_ iand k) x y) ---> ((_ iand k) y x) if x >= y
+    // ((_ iand k) x y) ---> ((_ iand k) y x) if x > y by node ordering
     Node ret = nm->mkNode(kind::IAND,t.getOperator(),t[1],t[0]);
     return RewriteResponse(REWRITE_AGAIN, ret);
   }
