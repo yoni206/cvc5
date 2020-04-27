@@ -36,8 +36,7 @@ struct CVC4_PUBLIC IntAnd
  ** Output stream
  * ----------------------------------------------------------------------- */
 
-inline std::ostream& operator<<(std::ostream& os,
-                                const IntAnd& ia) CVC4_PUBLIC;
+inline std::ostream& operator<<(std::ostream& os, const IntAnd& ia) CVC4_PUBLIC;
 inline std::ostream& operator<<(std::ostream& os, const IntAnd& ia)
 {
   return os << "[" << ia.d_size << "]";

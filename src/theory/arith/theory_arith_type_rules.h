@@ -96,15 +96,14 @@ class IAndOpTypeRule
   {
     if (n.getKind() != kind::IAND_OP)
     {
-    InternalError()
-        << "IAND_OP typerule invoked for IAND_OP kind";
+      InternalError() << "IAND_OP typerule invoked for IAND_OP kind";
     }
     size_t bvSize = n.getConst<IAnd>();
     TypeNode iType = nodeManager->integerType();
     std::vector<TypeNode> argTypes;
     argTypes.push_back(iType);
     argTypes.push_back(iType);
-    return nodeManager->mkFunctionType(argTypes,iType);
+    return nodeManager->mkFunctionType(argTypes, iType);
     );
   }
 }; /* class IAndOpTypeRule */
@@ -118,8 +117,7 @@ class IAndTypeRule
   {
     if (n.getKind() != kind::IAND)
     {
-      InternalError()
-        << "IAND typerule invoked for IAND kind";
+      InternalError() << "IAND typerule invoked for IAND kind";
     }
     if (check)
     {
@@ -131,10 +129,8 @@ class IAndTypeRule
       }
     }
     return nodeManager->integerType();
-
   }
 }; /* class BitVectorConversionTypeRule */
-
 
 }/* CVC4::theory::arith namespace */
 }/* CVC4::theory namespace */
