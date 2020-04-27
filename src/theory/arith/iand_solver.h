@@ -90,14 +90,14 @@ class IAndSolver
   NodeSet d_initRefine;
   /** all IAND terms, for each bit-width */
   std::map<unsigned, std::vector<Node> > d_iands;
-  /** 
+  /**
    * convert integer value to bitvector value of bitwidth k,
    * equivalent to Rewriter::rewrite( ((_ intToBv k) n) ).
    */
   Node convertToBvK(unsigned k, Node n);
   /**
    * Value-based refinement lemma for i of the form ((_ iand k) x y). Returns:
-   *   x = M(x) ^ y = M(y) => 
+   *   x = M(x) ^ y = M(y) =>
    *     ((_ iand k) x y) = Rewriter::rewrite(((_ iand k) M(x) M(y)))
    */
   Node valueBasedLemma(Node i);

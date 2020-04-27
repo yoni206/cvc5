@@ -82,8 +82,9 @@ std::vector<Node> IAndSolver::checkInitialRefine()
       // initial refinement lemmas
       std::vector<Node> conj;
       // 0 <= iand(x,y) < 2^k
-      conj.push_back(nm->mkNode(LEQ,d_zero,i));
-      conj.push_back(nm->mkNode(LT,i,nm->mkNode(POW,d_two,nm->mkConst(Rational(k)))));
+      conj.push_back(nm->mkNode(LEQ, d_zero, i));
+      conj.push_back(
+          nm->mkNode(LT, i, nm->mkNode(POW, d_two, nm->mkConst(Rational(k)))));
       // iand(x,y)=iand(y,x)
       conj.push_back(i.eqNode(nm->mkNode(IAND, op, i[1], i[0])));
       // iand(x,y)<=x
@@ -91,12 +92,12 @@ std::vector<Node> IAndSolver::checkInitialRefine()
       // iand(x,y)<=y
       conj.push_back(nm->mkNode(LEQ, i, i[1]));
       // x=y => iand(x,y)=x
-      conj.push_back(nm->mkNode(IMPLIES,i[0].eqNode(i[1]), i.eqNode(i[0])));
+      conj.push_back(nm->mkNode(IMPLIES, i[0].eqNode(i[1]), i.eqNode(i[0])));
 
       Assert(conj.size() > 1);
       Node lem = nm->mkNode(AND, conj);
-      Trace("iand-lemma") << "IAndSolver::Lemma: "
-                          << lem << " ; INIT_REFINE" << std::endl;
+      Trace("iand-lemma") << "IAndSolver::Lemma: " << lem << " ; INIT_REFINE"
+                          << std::endl;
       lems.push_back(lem);
     }
   }
@@ -124,7 +125,7 @@ std::vector<Node> IAndSolver::checkFullRefine()
 
         Node valX = d_model.computeConcreteModelValue(x);
         Node valY = d_model.computeConcreteModelValue(y);
-          
+
         Trace("iand-check")
             << "* " << i << ", value = " << valAndXY << std::endl;
         Trace("iand-check") << "  actual (" << valX << ", " << valY
@@ -135,22 +136,21 @@ std::vector<Node> IAndSolver::checkFullRefine()
         Node bvalAndXY = convertToBvK(k, valAndXY);
         Node bvalAndXYC = convertToBvK(k, valAndXYC);
 
-        Trace("iand-check")
-            << "  bv-value = " << bvalAndXY << std::endl;
+        Trace("iand-check") << "  bv-value = " << bvalAndXY << std::endl;
         Trace("iand-check") << "  bv-actual (" << bvalX << ", " << bvalY
                             << ") = " << bvalAndXYC << std::endl;
       }
-      if (valAndXY==valAndXYC)
+      if (valAndXY == valAndXYC)
       {
         Trace("iand-check") << "...already correct" << std::endl;
         continue;
       }
 
       // additional lemma schemas go here
-      
+
       Node lem = valueBasedLemma(i);
-      Trace("iand-lemma") << "IAndSolver::Lemma: "
-                          << lem << " ; VALUE_REFINE" << std::endl;
+      Trace("iand-lemma") << "IAndSolver::Lemma: " << lem << " ; VALUE_REFINE"
+                          << std::endl;
       lems.push_back(lem);
     }
   }
@@ -160,8 +160,8 @@ std::vector<Node> IAndSolver::checkFullRefine()
 
 Node IAndSolver::convertToBvK(unsigned k, Node n)
 {
-  Assert (n.isConst() && n.getType().isInteger());
-  NodeManager * nm = NodeManager::currentNM();
+  Assert(n.isConst() && n.getType().isInteger());
+  NodeManager* nm = NodeManager::currentNM();
   Node iToBvop = nm->mkConst(IntToBitVector(k));
   Node bn = nm->mkNode(kind::INT_TO_BITVECTOR, iToBvop, n);
   return Rewriter::rewrite(bn);
@@ -169,20 +169,20 @@ Node IAndSolver::convertToBvK(unsigned k, Node n)
 
 Node IAndSolver::valueBasedLemma(Node i)
 {
-  Assert (i.getKind()==IAND);
+  Assert(i.getKind() == IAND);
   Node x = i[0];
   Node y = i[1];
 
   Node valX = d_model.computeConcreteModelValue(x);
   Node valY = d_model.computeConcreteModelValue(y);
-  
-  NodeManager * nm = NodeManager::currentNM();
+
+  NodeManager* nm = NodeManager::currentNM();
   Node valC = nm->mkNode(IAND, i.getOperator(), valX, valY);
   valC = Rewriter::rewrite(valC);
-  
-  Node lem = nm->mkNode(IMPLIES, nm->mkNode(AND, x.eqNode(valX), y.eqNode(valY)), i.eqNode(valC));
+
+  Node lem = nm->mkNode(
+      IMPLIES, nm->mkNode(AND, x.eqNode(valX), y.eqNode(valY)), i.eqNode(valC));
   return lem;
-  
 }
 
 }  // namespace arith
