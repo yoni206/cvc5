@@ -373,7 +373,7 @@ RewriteResponse ArithRewriter::postRewriteMult(TNode t){
 
 RewriteResponse ArithRewriter::postRewriteIAnd(TNode t)
 {
-  Assert (t.getKind()==kind::IAND);
+  Assert(t.getKind() == kind::IAND);
   // if constant, we eliminate
   if (t[0].isConst() && t[1].isConst())
   {

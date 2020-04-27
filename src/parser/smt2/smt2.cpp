@@ -632,8 +632,7 @@ Command* Smt2::setLogic(std::string name, bool fromCommand)
     if (!strictModeEnabled())
     {
       // integer version of AND
-      addIndexedOperator(
-          api::IAND, api::IAND, "iand");
+      addIndexedOperator(api::IAND, api::IAND, "iand");
     }
   }
 

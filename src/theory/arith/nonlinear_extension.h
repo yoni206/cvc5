@@ -25,12 +25,12 @@
 #include "context/cdlist.h"
 #include "expr/kind.h"
 #include "expr/node.h"
+#include "theory/arith/iand_solver.h"
 #include "theory/arith/nl_lemma_utils.h"
 #include "theory/arith/nl_model.h"
 #include "theory/arith/nl_solver.h"
 #include "theory/arith/theory_arith.h"
 #include "theory/arith/transcendental_solver.h"
-#include "theory/arith/iand_solver.h"
 #include "theory/uf/equality_engine.h"
 
 namespace CVC4 {

@@ -41,8 +41,8 @@ IAndSolver::IAndSolver(TheoryArith& containing, NlModel& model)
 IAndSolver::~IAndSolver() {}
 
 void IAndSolver::initLastCall(const std::vector<Node>& assertions,
-                            const std::vector<Node>& false_asserts,
-                            const std::vector<Node>& xts)
+                              const std::vector<Node>& false_asserts,
+                              const std::vector<Node>& xts)
 {
   d_iands.clear();
 
@@ -64,12 +64,12 @@ std::vector<Node> IAndSolver::checkInitialRefine()
 {
   Trace("iand-check") << "IAndSolver::checkInitialRefine" << std::endl;
   std::vector<Node> lems;
-  NodeManager * nm = NodeManager::currentNM();
+  NodeManager* nm = NodeManager::currentNM();
   for (const std::pair<const unsigned, std::vector<Node> >& is : d_iands)
   {
     for (const Node& i : is.second)
     {
-      if (d_initRefine.find(i)!=d_initRefine.end())
+      if (d_initRefine.find(i) != d_initRefine.end())
       {
         // already sent initial axioms for i in this user context
         continue;
@@ -79,15 +79,16 @@ std::vector<Node> IAndSolver::checkInitialRefine()
       // initial refinement lemmas
       std::vector<Node> conj;
       // iand(x,y)=iand(y,x)
-      conj.push_back(i.eqNode(nm->mkNode(IAND,op,i[1],i[0])));
+      conj.push_back(i.eqNode(nm->mkNode(IAND, op, i[1], i[0])));
       // iand(x,y)<=x
-      conj.push_back(nm->mkNode(LEQ,i, i[0]));
+      conj.push_back(nm->mkNode(LEQ, i, i[0]));
       // iand(x,y)<=y
-      conj.push_back(nm->mkNode(LEQ,i, i[1]));
-      
-      Assert (conj.size()>1);
-      Node lem = nm->mkNode(AND,conj);
-      Trace("iand-lemma") << "IAndSolver::checkInitialRefine: " << i << " : " <<  lem << std::endl;
+      conj.push_back(nm->mkNode(LEQ, i, i[1]));
+
+      Assert(conj.size() > 1);
+      Node lem = nm->mkNode(AND, conj);
+      Trace("iand-lemma") << "IAndSolver::checkInitialRefine: " << i << " : "
+                          << lem << std::endl;
       lems.push_back(lem);
     }
   }
@@ -97,34 +98,33 @@ std::vector<Node> IAndSolver::checkInitialRefine()
 std::vector<Node> IAndSolver::checkFullRefine()
 {
   Trace("iand-check") << "IAndSolver::checkFullRefine";
-  Trace("iand-check") << "IAND terms: "  << std::endl;
+  Trace("iand-check") << "IAND terms: " << std::endl;
   std::vector<Node> lems;
-  NodeManager * nm = NodeManager::currentNM();
+  NodeManager* nm = NodeManager::currentNM();
   for (const std::pair<const unsigned, std::vector<Node> >& is : d_iands)
   {
     for (const Node& i : is.second)
     {
       Node x = i[0];
       Node y = i[1];
-      
+
       Node valX = d_model.computeConcreteModelValue(x);
       Node valY = d_model.computeConcreteModelValue(y);
       Node valAndXY = d_model.computeAbstractModelValue(i);
       Node valAndXYC = d_model.computeConcreteModelValue(i);
-      
+
       if (Trace.isOn("iand-check"))
       {
-        Trace("iand-check") << "* " << i << ", value = " << valAndXY << std::endl;
-        Trace("iand-check") << "  actual (" << valX << ", " << valY << ") = " << valAndXYC << std::endl;
-        
+        Trace("iand-check")
+            << "* " << i << ", value = " << valAndXY << std::endl;
+        Trace("iand-check") << "  actual (" << valX << ", " << valY
+                            << ") = " << valAndXYC << std::endl;
       }
-      
-      
+
       // additional axioms go here
-      
     }
   }
-  
+
   return lems;
 }
 

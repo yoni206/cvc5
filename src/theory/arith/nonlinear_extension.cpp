@@ -426,7 +426,8 @@ int NonlinearExtension::checkLastCall(const std::vector<Node>& assertions,
     return lems.size();
   }
 
-  //-----------------------------------initial lemmas for transcendental functions
+  //-----------------------------------initial lemmas for transcendental
+  //functions
   lemmas = d_iandSlv.checkInitialRefine();
   filterLemmas(lemmas, lems);
   if (!lems.empty())
