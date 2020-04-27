@@ -387,31 +387,31 @@ RewriteResponse ArithRewriter::postRewriteIAnd(TNode t)
     Node ret = nm->mkNode(kind::BITVECTOR_TO_NAT, bvand);
     return RewriteResponse(REWRITE_AGAIN_FULL, ret);
   }
-  else if (t[0]>t[1])
+  else if (t[0] > t[1])
   {
     // ((_ iand k) x y) ---> ((_ iand k) y x) if x > y by node ordering
-    Node ret = nm->mkNode(kind::IAND,t.getOperator(),t[1],t[0]);
+    Node ret = nm->mkNode(kind::IAND, t.getOperator(), t[1], t[0]);
     return RewriteResponse(REWRITE_AGAIN, ret);
   }
-  else if (t[0]==t[1])
+  else if (t[0] == t[1])
   {
     // ((_ iand k) x x) ---> x
     return RewriteResponse(REWRITE_DONE, t[0]);
   }
   // simplifications involving constants
-  for (unsigned i=0; i<2; i++)
+  for (unsigned i = 0; i < 2; i++)
   {
     if (!t[i].isConst())
     {
       continue;
     }
-    if (t[i].getConst<Rational>().sgn()==0)
+    if (t[i].getConst<Rational>().sgn() == 0)
     {
       // ((_ iand k) 0 y) ---> 0
       return RewriteResponse(REWRITE_DONE, t[i]);
     }
     // TODO ((_ iand k) 2^k-1 y) ---> y
-    
+
     // constants c out of bounds can be normalized to (mod c 2^k)
   }
   return RewriteResponse(REWRITE_DONE, t);

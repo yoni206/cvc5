@@ -84,12 +84,11 @@ std::vector<Node> IAndSolver::checkInitialRefine()
       // initial refinement lemmas
       std::vector<Node> conj;
       // iand(x,y)=iand(y,x) is guaranteed by rewriting
-      Assert (i[0]<=i[1]);
-      //conj.push_back(i.eqNode(nm->mkNode(IAND, op, i[1], i[0])));
+      Assert(i[0] <= i[1]);
+      // conj.push_back(i.eqNode(nm->mkNode(IAND, op, i[1], i[0])));
       // 0 <= iand(x,y) < 2^k
       conj.push_back(nm->mkNode(LEQ, d_zero, i));
-      conj.push_back(
-          nm->mkNode(LT, i, twoToK(k)));
+      conj.push_back(nm->mkNode(LT, i, twoToK(k)));
       // iand(x,y)<=x
       conj.push_back(nm->mkNode(LEQ, i, i[0]));
       // iand(x,y)<=y
@@ -97,18 +96,19 @@ std::vector<Node> IAndSolver::checkInitialRefine()
       // x=y => iand(x,y)=x
       conj.push_back(nm->mkNode(IMPLIES, i[0].eqNode(i[1]), i.eqNode(i[0])));
       //(= (+ (iand x y) (ior x y)) (+ x y))
-      //Node ior = mkIOr(k,i[0],i[1]);
-      //conj.push_back(i.eqNode(nm->mkNode(MINUS, nm->mkNode(PLUS, i[0], i[1]), ior)));
+      // Node ior = mkIOr(k,i[0],i[1]);
+      // conj.push_back(i.eqNode(nm->mkNode(MINUS, nm->mkNode(PLUS, i[0], i[1]),
+      // ior)));
       //(>= (ior x y) x)
-      //conj.push_back(nm->mkNode(GEQ, ior, i[0]));
+      // conj.push_back(nm->mkNode(GEQ, ior, i[0]));
       //(>= (ior x y) y)
-      //conj.push_back(nm->mkNode(GEQ, ior, i[1]));
+      // conj.push_back(nm->mkNode(GEQ, ior, i[1]));
       //(= (iand x (inot y)) (- x (iand x y)))
       // TODO
       //(= (- x y) (- (iand x (inot y)) (iand (inot x) y)))
       // TODO
-    
-      Node lem = conj.size()==1 ? conj[0] : nm->mkNode(AND, conj);
+
+      Node lem = conj.size() == 1 ? conj[0] : nm->mkNode(AND, conj);
       Trace("iand-lemma") << "IAndSolver::Lemma: " << lem << " ; INIT_REFINE"
                           << std::endl;
       lems.push_back(lem);
@@ -183,7 +183,7 @@ Node IAndSolver::convertToBvK(unsigned k, Node n) const
 Node IAndSolver::twoToK(unsigned k) const
 {
   // could be faster
-  NodeManager * nm = NodeManager::currentNM();
+  NodeManager* nm = NodeManager::currentNM();
   Node ret = nm->mkNode(POW, d_two, nm->mkConst(Rational(k)));
   ret = Rewriter::rewrite(ret);
   return ret;
@@ -192,7 +192,7 @@ Node IAndSolver::twoToK(unsigned k) const
 Node IAndSolver::twoToKMinusOne(unsigned k) const
 {
   // could be faster
-  NodeManager * nm = NodeManager::currentNM();
+  NodeManager* nm = NodeManager::currentNM();
   Node ret = nm->mkNode(MINUS, twoToK(k), d_one);
   ret = Rewriter::rewrite(ret);
   return ret;
@@ -200,26 +200,26 @@ Node IAndSolver::twoToKMinusOne(unsigned k) const
 
 Node IAndSolver::mkIAnd(unsigned k, Node x, Node y) const
 {
-  NodeManager * nm = NodeManager::currentNM();
+  NodeManager* nm = NodeManager::currentNM();
   Node iAndOp = nm->mkConst(IntAnd(k));
-  Node ret = nm->mkNode(IAND, iAndOp, x,y);
+  Node ret = nm->mkNode(IAND, iAndOp, x, y);
   ret = Rewriter::rewrite(ret);
   return ret;
 }
 
 Node IAndSolver::mkIOr(unsigned k, Node x, Node y) const
 {
-  Node ret = mkINot(k, mkIAnd(k, mkINot(k,x), mkINot(k,y)));
+  Node ret = mkINot(k, mkIAnd(k, mkINot(k, x), mkINot(k, y)));
   ret = Rewriter::rewrite(ret);
-  return ret;  
+  return ret;
 }
 
 Node IAndSolver::mkINot(unsigned k, Node x) const
 {
-  NodeManager * nm = NodeManager::currentNM();
+  NodeManager* nm = NodeManager::currentNM();
   Node ret = nm->mkNode(MINUS, twoToKMinusOne(k), x);
   ret = Rewriter::rewrite(ret);
-  return ret;    
+  return ret;
 }
 
 Node IAndSolver::valueBasedLemma(Node i)
