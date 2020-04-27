@@ -393,6 +393,19 @@ RewriteResponse ArithRewriter::postRewriteIAnd(TNode t)
     Node ret = nm->mkNode(kind::IAND,t.getOperator(),t[1],t[0]);
     return RewriteResponse(REWRITE_AGAIN, ret);
   }
+  for (unsigned i=0; i<2; i++)
+  {
+    if (!t[i].isConst())
+    {
+      continue;
+    }
+    if (t[i].getConst<Rational>().sgn()==0)
+    {
+      // ((_ iand k) 0 y) ---> 0
+      return RewriteResponse(REWRITE_DONE, t[i]);
+    }
+    // constants out of bounds can be normalized to [0..2^k-1]
+  }
   return RewriteResponse(REWRITE_DONE, t);
 }
 
