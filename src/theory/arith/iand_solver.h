@@ -90,6 +90,11 @@ class IAndSolver
   NodeSet d_initRefine;
   /** all IAND terms, for each bit-width */
   std::map<unsigned, std::vector<Node> > d_iands;
+  /** 
+   * convert integer value to bitvector value of bitwidth k,
+   * equivalent to Rewriter::rewrite( ((_ intToBv k) n) ).
+   */
+  Node convertToBvK(unsigned k, Node n);
 }; /* class IAndSolver */
 
 }  // namespace arith

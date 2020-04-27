@@ -111,6 +111,8 @@ std::vector<Node> IAndSolver::checkFullRefine()
   NodeManager* nm = NodeManager::currentNM();
   for (const std::pair<const unsigned, std::vector<Node> >& is : d_iands)
   {
+    // the reference bitwidth
+    unsigned k = is.first;
     for (const Node& i : is.second)
     {
       Node x = i[0];
@@ -127,6 +129,16 @@ std::vector<Node> IAndSolver::checkFullRefine()
             << "* " << i << ", value = " << valAndXY << std::endl;
         Trace("iand-check") << "  actual (" << valX << ", " << valY
                             << ") = " << valAndXYC << std::endl;
+        // print the bit-vector versions
+        Node bvalX = convertToBvK(k, valX);
+        Node bvalY = convertToBvK(k, valY);
+        Node bvalAndXY = convertToBvK(k, valAndXY);
+        Node bvalAndXYC = convertToBvK(k, valAndXYC);
+
+        Trace("iand-check")
+            << "  bvalue = " << bvalAndXY << std::endl;
+        Trace("iand-check") << "  actual (" << bvalX << ", " << bvalY
+                            << ") = " << bvalAndXYC << std::endl;
       }
 
       // additional axioms go here
@@ -134,6 +146,15 @@ std::vector<Node> IAndSolver::checkFullRefine()
   }
 
   return lems;
+}
+
+Node IAndSolver::convertToBvK(unsigned k, Node n)
+{
+  Assert (n.isConst() && n.getType().isInteger());
+  NodeManager * nm = NodeManager::currentNM();
+  Node iToBvop = nm->mkConst(IntToBitVector(k));
+  Node bn = nm->mkNode(kind::INT_TO_BITVECTOR, iToBvop, n);
+  return Rewriter::rewrite(bn);
 }
 
 }  // namespace arith
