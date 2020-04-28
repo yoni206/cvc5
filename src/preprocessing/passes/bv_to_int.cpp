@@ -196,6 +196,12 @@ Node BVToInt::eliminationPass(Node n)
                                     RewriteRule<SdivEliminate>,
                                     RewriteRule<SremEliminate>,
                                     RewriteRule<SmodEliminate>,
+                                    RewriteRule<XnorEliminate>,
+                                    RewriteRule<NandEliminate>,
+                                    RewriteRule<NorEliminate>,
+                                    RewriteRule<XorEliminate>,
+                                    RewriteRule<OrEliminate>,
+                                    RewriteRule<SubEliminate>,
                                     RewriteRule<RepeatEliminate>,
                                     RewriteRule<ZeroExtendEliminate>,
                                     RewriteRule<SignExtendEliminate>,
@@ -487,75 +493,20 @@ Node BVToInt::bvToInt(Node n)
             }
             case kind::BITVECTOR_AND:
             {
-              // Construct an ite, based on granularity.
               uint64_t bvsize = current[0].getType().getBitVectorSize();
-              Assert(translated_children.size() == 2);
-              Node newNode = createBitwiseNode(translated_children[0],
-                                               translated_children[1],
-                                               bvsize,
-                                               granularity,
-                                               &oneBitAnd);
-              d_bvToIntCache[current] = newNode;
-              break;
-            }
-            case kind::BITVECTOR_OR:
-            {
-              // Construct an ite, based on granularity.
-              uint64_t bvsize = current[0].getType().getBitVectorSize();
-              Node newNode = createBitwiseNode(translated_children[0],
-                                               translated_children[1],
-                                               bvsize,
-                                               granularity,
-                                               &oneBitOr);
-              d_bvToIntCache[current] = newNode;
-              break;
-            }
-            case kind::BITVECTOR_XOR:
-            {
-              // Construct an ite, based on granularity.
-              uint64_t bvsize = current[0].getType().getBitVectorSize();
-              Node newNode = createBitwiseNode(translated_children[0],
-                                               translated_children[1],
-                                               bvsize,
-                                               granularity,
-                                               &oneBitXor);
-              d_bvToIntCache[current] = newNode;
-              break;
-            }
-            case kind::BITVECTOR_XNOR:
-            {
-              // Construct an ite, based on granularity.
-              uint64_t bvsize = current[0].getType().getBitVectorSize();
-              Node newNode = createBitwiseNode(translated_children[0],
-                                               translated_children[1],
-                                               bvsize,
-                                               granularity,
-                                               &oneBitXnor);
-              d_bvToIntCache[current] = newNode;
-              break;
-            }
-            case kind::BITVECTOR_NAND:
-            {
-              // Construct an ite, based on granularity.
-              uint64_t bvsize = current[0].getType().getBitVectorSize();
-              Node newNode = createBitwiseNode(translated_children[0],
-                                               translated_children[1],
-                                               bvsize,
-                                               granularity,
-                                               &oneBitNand);
-              d_bvToIntCache[current] = newNode;
-              break;
-            }
-            case kind::BITVECTOR_NOR:
-            {
-              // Construct an ite, based on granularity.
-              uint64_t bvsize = current[0].getType().getBitVectorSize();
-              Node newNode = createBitwiseNode(translated_children[0],
-                                               translated_children[1],
-                                               bvsize,
-                                               granularity,
-                                               &oneBitNor);
-              d_bvToIntCache[current] = newNode;
+              if (options::bvToIntIand()) {
+                Node iAndOp = d_nm->mkConst(IntAnd(bvsize));
+                d_bvToIntCache[current] = d_nm->mkNode(kind::IAND, iAndOp, translated_children[0], translated_children[1]);
+              } else {
+                // Construct an ite, based on granularity.
+                Assert(translated_children.size() == 2);
+                Node newNode = createBitwiseNode(translated_children[0],
+                                                 translated_children[1],
+                                                 bvsize,
+                                                 granularity,
+                                                 &oneBitAnd);
+                d_bvToIntCache[current] = newNode;
+              }
               break;
             }
             case kind::BITVECTOR_SHL:

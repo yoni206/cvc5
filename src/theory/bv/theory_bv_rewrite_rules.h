@@ -120,6 +120,8 @@ enum RewriteRuleId
   AndZero,
   AndOne,
   AndOrXorConcatPullUp,
+  OrEliminate,
+  XorEliminate,
   OrZero,
   OrOne,
   XorDuplicate,
@@ -202,6 +204,8 @@ inline std::ostream& operator << (std::ostream& out, RewriteRuleId ruleId) {
   case ConcatExtractMerge:  out << "ConcatExtractMerge";  return out;
   case ConcatConstantMerge: out << "ConcatConstantMerge"; return out;
   case AndOrXorConcatPullUp:out << "AndOrXorConcatPullUp";return out;
+  case OrEliminate:out << "OrEliminate";return out;
+  case XorEliminate:out << "XorEliminate";return out;
   case ExtractExtract:      out << "ExtractExtract";      return out;
   case ExtractWhole:        out << "ExtractWhole";        return out;
   case ExtractConcat:       out << "ExtractConcat";       return out;
@@ -585,6 +589,8 @@ struct AllRewriteRules {
   RewriteRule<BvIteMergeThenElse>             rule137;
   RewriteRule<BvIteMergeElseElse>             rule138;
   RewriteRule<AndOrXorConcatPullUp>           rule139;
+  RewriteRule<OrEliminate>                    rule140;
+  RewriteRule<XorEliminate>                   rule141;
 };
 
 template<> inline
@@ -648,7 +654,12 @@ template <
   typename R17 = RewriteRule<EmptyRule>,
   typename R18 = RewriteRule<EmptyRule>,
   typename R19 = RewriteRule<EmptyRule>,
-  typename R20 = RewriteRule<EmptyRule>
+  typename R20 = RewriteRule<EmptyRule>, 
+  typename R21 = RewriteRule<EmptyRule>,
+  typename R22 = RewriteRule<EmptyRule>,
+  typename R23 = RewriteRule<EmptyRule>,
+  typename R24 = RewriteRule<EmptyRule>,
+  typename R25 = RewriteRule<EmptyRule>
   >
 struct LinearRewriteStrategy {
   static Node apply(TNode node) {
@@ -673,6 +684,11 @@ struct LinearRewriteStrategy {
     if (R18::applies(current)) current = R18::template run<false>(current);
     if (R19::applies(current)) current = R19::template run<false>(current);
     if (R20::applies(current)) current = R20::template run<false>(current);
+    if (R21::applies(current)) current = R21::template run<false>(current);
+    if (R22::applies(current)) current = R22::template run<false>(current);
+    if (R23::applies(current)) current = R23::template run<false>(current);
+    if (R24::applies(current)) current = R24::template run<false>(current);
+    if (R25::applies(current)) current = R25::template run<false>(current);
     return current;
   }
 };
@@ -697,7 +713,12 @@ template <
   typename R17 = RewriteRule<EmptyRule>,
   typename R18 = RewriteRule<EmptyRule>,
   typename R19 = RewriteRule<EmptyRule>,
-  typename R20 = RewriteRule<EmptyRule>
+  typename R20 = RewriteRule<EmptyRule>, 
+  typename R21 = RewriteRule<EmptyRule>,
+  typename R22 = RewriteRule<EmptyRule>,
+  typename R23 = RewriteRule<EmptyRule>,
+  typename R24 = RewriteRule<EmptyRule>,
+  typename R25 = RewriteRule<EmptyRule>
   >
 struct FixpointRewriteStrategy {
   static Node apply(TNode node) {
@@ -725,6 +746,11 @@ struct FixpointRewriteStrategy {
       if (R18::applies(current)) current = R18::template run<false>(current);
       if (R19::applies(current)) current = R19::template run<false>(current);
       if (R20::applies(current)) current = R20::template run<false>(current);
+      if (R21::applies(current)) current = R21::template run<false>(current);
+      if (R22::applies(current)) current = R22::template run<false>(current);
+      if (R23::applies(current)) current = R23::template run<false>(current);
+      if (R24::applies(current)) current = R24::template run<false>(current);
+      if (R25::applies(current)) current = R25::template run<false>(current);
     } while (previous != current);
     
     return current;

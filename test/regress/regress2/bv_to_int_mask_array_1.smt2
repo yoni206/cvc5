@@ -1,4 +1,5 @@
 ; COMMAND-LINE: --solve-bv-as-int=1 --no-check-models  --no-check-unsat-cores --no-check-proofs 
+; COMMAND-LINE: --solve-bv-as-int=1 --bv-to-int-iand --no-check-models  --no-check-unsat-cores --no-check-proofs 
 ; EXPECT: unsat
 (set-logic ALL)
 (declare-fun A () (Array Int Int))
