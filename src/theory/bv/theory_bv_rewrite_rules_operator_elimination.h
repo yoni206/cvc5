@@ -27,6 +27,49 @@ namespace CVC4 {
 namespace theory {
 namespace bv {
 
+
+
+template <>
+inline bool RewriteRule<OrEliminate>::applies(TNode node)
+{
+  return (node.getKind() == kind::BITVECTOR_OR);
+}
+
+template <>
+inline Node RewriteRule<OrEliminate>::apply(TNode node)
+{
+  //hacker's delight section 2-2 eq h
+  Debug("bv-rewrite") << "RewriteRule<OrEliminate>(" << node << ")"
+                      << std::endl;
+  TNode a = node[0];
+  TNode b = node[1];
+  Node bvadd = NodeManager::currentNM()->mkNode(kind::BITVECTOR_PLUS, a, b);
+  Node bvand = NodeManager::currentNM()->mkNode(kind::BITVECTOR_AND, a, b);
+  Node result = NodeManager::currentNM()->mkNode(kind::BITVECTOR_SUB, bvadd, bvand);
+  return result;
+}
+
+
+template <>
+inline bool RewriteRule<XorEliminate>::applies(TNode node)
+{
+  return (node.getKind() == kind::BITVECTOR_XOR);
+}
+
+template <>
+inline Node RewriteRule<XorEliminate>::apply(TNode node)
+{
+  //hacker's delight section 2-2 eq n
+  Debug("bv-rewrite") << "RewriteRule<XorEliminate>(" << node << ")"
+                      << std::endl;
+  TNode a = node[0];
+  TNode b = node[1];
+  Node bvor = NodeManager::currentNM()->mkNode(kind::BITVECTOR_OR, a, b);
+  Node bvand = NodeManager::currentNM()->mkNode(kind::BITVECTOR_AND, a, b);
+  Node result = NodeManager::currentNM()->mkNode(kind::BITVECTOR_SUB, bvor, bvand);
+  return result;
+}
+
 template <>
 inline bool RewriteRule<UgtEliminate>::applies(TNode node)
 {
