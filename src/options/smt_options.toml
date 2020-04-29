@@ -636,6 +636,15 @@ header = "options/smt_options.h"
   help       = "translate bvand to its integer variant (experimental)"
 
 [[option]]
+  name       = "bvToIntIandWithSum"
+  category   = "undocumented"
+  long       = "bv-to-int-iand-with-sum"
+  type       = "bool"
+  default    = "false"
+  read_only  = true
+  help       = "Expand iand to a sum"
+
+[[option]]
   name       = "solveIntAsBV"
   category   = "undocumented"
   long       = "solve-int-as-bv=N"
