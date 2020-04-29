@@ -230,6 +230,16 @@ Node IAndSolver::mkINot(unsigned k, Node x) const
   return ret;
 }
 
+Node IAndSolver::iextract(unsigned i, unsigned j, Node n) const
+{
+  NodeManager* nm = NodeManager::currentNM();
+  //  ((_ extract i j) n) is n / 2^j mod 2^{i-j+1}
+  Node n2j = nm->mkNode(INTS_DIVISION, n, twoToK(j));
+  Node ret = nm->mkNode(INTS_MODULUS, n2j, twoToK(i - j + 1));
+  ret = Rewriter::rewrite(ret);
+  return ret;
+}
+
 Node IAndSolver::valueBasedLemma(Node i)
 {
   Assert(i.getKind() == IAND);

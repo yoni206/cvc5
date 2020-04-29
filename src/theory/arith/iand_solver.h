@@ -105,6 +105,10 @@ class IAndSolver
   Node mkIOr(unsigned k, Node x, Node y) const;
   /** make inot */
   Node mkINot(unsigned k, Node i) const;
+  /** extract from integer
+   *  ((_ extract i j) n) is n / 2^j mod 2^{i-j+1}
+   */
+  Node iextract(unsigned i, unsigned j, Node n) const;
   /**
    * Value-based refinement lemma for i of the form ((_ iand k) x y). Returns:
    *   x = M(x) ^ y = M(y) =>
