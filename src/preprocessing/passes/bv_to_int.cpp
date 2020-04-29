@@ -37,7 +37,7 @@ using namespace CVC4::theory::bv;
 
 namespace {
 
-Rational intpow2(uint64_t b)
+static Rational intpow2(uint64_t b)
 {
   return Rational(Integer(2).pow(b), Integer(1));
 }
@@ -77,7 +77,8 @@ Node BVToInt::maxInt(uint64_t k)
 Node BVToInt::pow2(uint64_t k)
 {
   Assert(k >= 0);
-  return d_nm->mkConst<Rational>(intpow2(k));
+  NodeManager* nm = NodeManager::currentNM();
+  return nm->mkConst<Rational>(intpow2(k));
 }
 
 Node BVToInt::modpow2(Node n, uint64_t exponent)
@@ -869,7 +870,8 @@ Node BVToInt::createITEFromTable(
   // The table represents a function from pairs of integers to integers, where
   // all integers are between 0 (inclusive) and max_value (exclusive).
   Assert(table.size() == max_value * max_value);
-  Node ite = d_nm->mkConst<Rational>(table[std::make_pair(0, 0)]);
+  NodeManager* nm = NodeManager::currentNM();
+  Node ite = nm->mkConst<Rational>(table[std::make_pair(0, 0)]);
   for (uint64_t i = 0; i < max_value; i++)
   {
     for (uint64_t j = 0; j < max_value; j++)
@@ -878,13 +880,13 @@ Node BVToInt::createITEFromTable(
       {
         continue;
       }
-      ite = d_nm->mkNode(
+      ite = nm->mkNode(
           kind::ITE,
-          d_nm->mkNode(
+          nm->mkNode(
               kind::AND,
-              d_nm->mkNode(kind::EQUAL, x, d_nm->mkConst<Rational>(i)),
-              d_nm->mkNode(kind::EQUAL, y, d_nm->mkConst<Rational>(j))),
-          d_nm->mkConst<Rational>(table[std::make_pair(i, j)]),
+              nm->mkNode(kind::EQUAL, x, nm->mkConst<Rational>(i)),
+              nm->mkNode(kind::EQUAL, y, nm->mkConst<Rational>(j))),
+          nm->mkConst<Rational>(table[std::make_pair(i, j)]),
           ite);
     }
   }
@@ -947,7 +949,8 @@ Node BVToInt::createBitwiseNode(Node x,
    * More details are in bv_to_int.h .
    */
   uint64_t sumSize = bvsize / granularity;
-  Node sumNode = d_zero;
+  NodeManager* nm = NodeManager::currentNM();
+  Node sumNode = nm->mkConst<Rational>(0);
   /**
    * extract definition in integers is:
    * (define-fun intextract ((k Int) (i Int) (j Int) (a Int)) Int
@@ -955,19 +958,19 @@ Node BVToInt::createBitwiseNode(Node x,
    */
   for (uint64_t i = 0; i < sumSize; i++)
   {
-    Node xExtract = d_nm->mkNode(
+    Node xExtract = nm->mkNode(
         kind::INTS_MODULUS_TOTAL,
-        d_nm->mkNode(kind::INTS_DIVISION_TOTAL, x, pow2(i * granularity)),
+        nm->mkNode(kind::INTS_DIVISION_TOTAL, x, pow2(i * granularity)),
         pow2(granularity));
-    Node yExtract = d_nm->mkNode(
+    Node yExtract = nm->mkNode(
         kind::INTS_MODULUS_TOTAL,
-        d_nm->mkNode(kind::INTS_DIVISION_TOTAL, y, pow2(i * granularity)),
+        nm->mkNode(kind::INTS_DIVISION_TOTAL, y, pow2(i * granularity)),
         pow2(granularity));
     Node ite = createITEFromTable(xExtract, yExtract, granularity, table);
     sumNode =
-        d_nm->mkNode(kind::PLUS,
+        nm->mkNode(kind::PLUS,
                      sumNode,
-                     d_nm->mkNode(kind::MULT, pow2(i * granularity), ite));
+                     nm->mkNode(kind::MULT, pow2(i * granularity), ite));
   }
   return sumNode;
 }

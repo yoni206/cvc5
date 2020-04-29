@@ -89,6 +89,7 @@ class IAndSolver
   NodeSet d_initRefine;
   /** all IAND terms, for each bit-width */
   std::map<unsigned, std::vector<Node> > d_iands;
+
   /**
    * convert integer value to bitvector value of bitwidth k,
    * equivalent to Rewriter::rewrite( ((_ intToBv k) n) ).
@@ -110,6 +111,13 @@ class IAndSolver
    *     ((_ iand k) x y) = Rewriter::rewrite(((_ iand k) M(x) M(y)))
    */
   Node valueBasedLemma(Node i);
+  /**
+   * Sum-based refinement lemma for i of the form ((_ iand k) x y). Returns:
+   * i = 2^0*min(x[0],y[0])+...2^{k-1}*min(x[k-1],y[k-1])
+   * where x[i] is x div i mod 2
+   * and min is defined with an ite.
+   */
+  Node sumBasedLemma(Node i);
 }; /* class IAndSolver */
 
 }  // namespace arith

@@ -76,9 +76,6 @@ class BVToInt : public PreprocessingPass
  public:
   BVToInt(PreprocessingPassContext* preprocContext);
 
- protected:
-  PreprocessingPassResult applyInternal(
-      AssertionPipeline* assertionsToPreprocess) override;
 
   /**
    * A generic function that creates a node that represents a bitwise
@@ -128,7 +125,7 @@ class BVToInt : public PreprocessingPass
    *        to the original bitwise operation.
    * @return A node that represents the operation, as described above.
    */
-  Node createBitwiseNode(Node x,
+  static Node createBitwiseNode(Node x,
                          Node y,
                          uint64_t bvsize,
                          uint64_t granularity,
@@ -146,12 +143,15 @@ class BVToInt : public PreprocessingPass
    *        integers between 0 (inclusive) and 2^{bitwidth} (exclusive).
    * @return An ite term that represents this table.
    */
-  Node createITEFromTable(
+  static Node createITEFromTable(
       Node x,
       Node y,
       uint64_t granularity,
       std::map<std::pair<uint64_t, uint64_t>, uint64_t> table);
 
+ protected:
+  PreprocessingPassResult applyInternal(
+      AssertionPipeline* assertionsToPreprocess) override;
   /**
    * A generic function that creates a logical shift node (either left or
    * right). a << b gets translated to a * 2^b mod 2^k, where k is the bit
@@ -214,7 +214,7 @@ class BVToInt : public PreprocessingPass
    * @param k A non-negative integer
    * @return A node that represents the constant 2^k
    */
-  Node pow2(uint64_t k);
+  static Node pow2(uint64_t k);
 
   /**
    * @param k A positive integer k

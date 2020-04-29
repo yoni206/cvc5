@@ -15,6 +15,8 @@
 #include "theory/arith/iand_solver.h"
 
 #include "options/arith_options.h"
+#include "options/smt_options.h"
+#include "preprocessing/passes/bv_to_int.h"
 #include "theory/arith/arith_msum.h"
 #include "theory/arith/arith_utilities.h"
 #include "util/iand.h"
@@ -122,7 +124,6 @@ std::vector<Node> IAndSolver::checkFullRefine()
   Trace("iand-check") << "IAndSolver::checkFullRefine";
   Trace("iand-check") << "IAND terms: " << std::endl;
   std::vector<Node> lems;
-  NodeManager* nm = NodeManager::currentNM();
   for (const std::pair<const unsigned, std::vector<Node> >& is : d_iands)
   {
     // the reference bitwidth
@@ -160,12 +161,18 @@ std::vector<Node> IAndSolver::checkFullRefine()
       }
 
       // ************* additional lemma schemas go here
-
-      // this is the most naive model-based schema based on model values
-      Node lem = valueBasedLemma(i);
-      Trace("iand-lemma") << "IAndSolver::Lemma: " << lem << " ; VALUE_REFINE"
-                          << std::endl;
-      lems.push_back(lem);
+      if (options::bvToIntIandWithSum()) {
+        Node lem = sumBasedLemma(i);
+        Trace("iand-lemma") << "IAndSolver::Lemma: " << lem << " ; VALUE_REFINE"
+                            << std::endl;
+        lems.push_back(lem);
+      } else {
+        // this is the most naive model-based schema based on model values
+        Node lem = valueBasedLemma(i);
+        Trace("iand-lemma") << "IAndSolver::Lemma: " << lem << " ; VALUE_REFINE"
+                            << std::endl;
+        lems.push_back(lem);
+      }
     }
   }
 
@@ -238,6 +245,20 @@ Node IAndSolver::valueBasedLemma(Node i)
 
   Node lem = nm->mkNode(
       IMPLIES, nm->mkNode(AND, x.eqNode(valX), y.eqNode(valY)), i.eqNode(valC));
+  return lem;
+}
+
+bool oneBitAnd(bool a, bool b) { return (a && b); }
+
+Node IAndSolver::sumBasedLemma(Node i)
+{
+  Assert(i.getKind() == IAND);
+  Node x = i[0];
+  Node y = i[1];
+  size_t bvsize = i.getOperator().getConst<IntAnd>().d_size;
+  uint64_t granularity = options::solveBVAsInt();
+  NodeManager* nm = NodeManager::currentNM();
+  Node lem = nm->mkNode(EQUAL, i, CVC4::preprocessing::passes::BVToInt::createBitwiseNode(x, y, bvsize, granularity, &oneBitAnd));
   return lem;
 }
 
