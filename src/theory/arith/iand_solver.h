@@ -122,6 +122,12 @@ class IAndSolver
    * and min is defined with an ite.
    */
   Node sumBasedLemma(Node i);
+  /** Bitwise refinement lemma for i of the form ((_ iand k) x y). Returns:
+   *   x[j1] = y[j1] ^ ... ^ x[jn] = y[jn]
+   *   where j1, ..., jn with n < k are the bit indices where M(x) ^ M(y)
+   *   does not match M(((_ iand k) x y))
+   */
+  Node bitwiseLemma(Node i);
 }; /* class IAndSolver */
 
 }  // namespace arith

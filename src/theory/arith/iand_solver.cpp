@@ -272,6 +272,48 @@ Node IAndSolver::sumBasedLemma(Node i)
   return lem;
 }
 
+Node IAndSolver::bitwiseLemma(Node i)
+{
+  Assert(i.getKind() == IAND);
+  Node x = i[0];
+  Node y = i[1];
+
+  unsigned k = i.getOperator().getConst<IntAnd>().d_size;
+
+  Rational ratI = d_model.computeConcreteModelValue(i).getConst<Rational>();
+  Rational ratX = d_model.computeConcreteModelValue(x).getConst<Rational>();
+  Rational ratY = d_model.computeConcreteModelValue(y).getConst<Rational>();
+
+  Assert(ratI.isIntegral());
+  Assert(ratX.isIntegral());
+  Assert(ratY.isIntegral());
+
+  BitVector bvI = BitVector(k, ratI.getNumerator());
+  BitVector bvX = BitVector(k, ratX.getNumerator());
+  BitVector bvY = BitVector(k, ratY.getNumerator());
+
+  // compute the actual AND
+  BitVector andXY = bvX & bvY;
+
+  NodeManager* nm = NodeManager::currentNM();
+  Node lem = nm->mkConst<bool>(true);
+
+  // compare each bit to bvI
+  Node bitIAnd;
+  for (unsigned j = 0; j < k; j++)
+  {
+    if (bvI.extract(j, j) != andXY.extract(j, j))
+    {
+      // x[j] & y[j] :=> min(x[j], y[j]) :=> x[j] * y[j]
+      bitIAnd = nm->mkNode(MULT, iextract(j, j, x), iextract(j, j, x));
+      // enforce bitwise equality
+      lem = nm->mkNode(AND, lem, iextract(j, j, i).eqNode(bitIAnd));
+    }
+  }
+
+  return lem;
+}
+
 }  // namespace arith
 }  // namespace theory
 }  // namespace CVC4
