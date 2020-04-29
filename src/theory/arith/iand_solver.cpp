@@ -296,16 +296,20 @@ Node IAndSolver::bitwiseLemma(Node i)
   BitVector andXY = bvX & bvY;
 
   NodeManager* nm = NodeManager::currentNM();
-  Node lem = nm->mkConst<bool>(true);
+  Node lem = d_true;
 
   // compare each bit to bvI
+  Node cond;
   Node bitIAnd;
   for (unsigned j = 0; j < k; j++)
   {
     if (bvI.extract(j, j) != andXY.extract(j, j))
     {
-      // x[j] & y[j] :=> min(x[j], y[j]) :=> x[j] * y[j]
-      bitIAnd = nm->mkNode(MULT, iextract(j, j, x), iextract(j, j, x));
+      // x[j] & y[j] :=> ite(x[j] == 1 ^ y[j] == 1, 1, 0)
+      cond = nm->mkNode(AND,
+                        iextract(j, j, x).eqNode(d_one),
+                        iextract(j, j, y).eqNode(d_one));
+      bitIAnd = nm->mkNode(ITE, cond, d_one, d_zero);
       // enforce bitwise equality
       lem = nm->mkNode(AND, lem, iextract(j, j, i).eqNode(bitIAnd));
     }
