@@ -161,7 +161,7 @@ std::vector<Node> IAndSolver::checkFullRefine()
       }
 
       // ************* additional lemma schemas go here
-      if (options::bvToIntIandWithSum()) {
+      if (options::bvToIntIandMode() == options::IandMode::SUM) {
         Node lem = sumBasedLemma(i);
         Trace("iand-lemma") << "IAndSolver::Lemma: " << lem << " ; VALUE_REFINE"
                             << std::endl;
