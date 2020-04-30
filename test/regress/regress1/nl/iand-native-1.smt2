@@ -1,3 +1,8 @@
+; COMMAND-LINE: --iand-mode=sum --iand-granularity=1
+; COMMAND-LINE: --iand-mode=sum --iand-granularity=2
+; COMMAND-LINE: --iand-mode=bitwise 
+; COMMAND-LINE: --iand-mode=value
+; EXPECT: sat
 (set-logic QF_NIA)
 (set-info :status sat)
 (declare-fun x () Int)

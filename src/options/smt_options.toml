@@ -620,25 +620,40 @@ header = "options/smt_options.h"
 [[option]]
   name       = "solveBVAsInt"
   category   = "undocumented"
-  long       = "solve-bv-as-int=N"
-  type       = "uint32_t"
-  default    = "0"
+  long       = "solve-bv-as-int"
+  type       = "bool"
+  default    = "false"
   read_only  = true
   help       = "attempt to solve BV formulas by translation to integer arithmetic (experimental)"
 
 [[option]]
-  name       = "bvToIntIand"
+  name       = "solveBVAsIntMode"
   category   = "undocumented"
-  long       = "bv-to-int-iand"
-  type       = "bool"
-  default    = "false"
-  read_only  = true
-  help       = "translate bvand to its integer variant (experimental)"
+  long       = "solve-bv-as-int-mode=MODE"
+  type       = "SolveBVAsIntMode"
+  default    = "SUM"
+  help       = "mode for translating BVAnd to integer"
+  help_mode  = "solve-bv-as-int modes."
+[[option.mode.SUM]]
+  name = "sum"
+  help = "Generate a sum expression for each bvand instance, based on the value in --solbv-bv-as-int-granularity"
+[[option.mode.IAND]]
+  name = "iand"
+  help = "Translate bvand to the iand operator, ignoring --solve-bv-as-int-granularity. Granularity for iand is set separately by --iand-granularity option (experimental)"
 
 [[option]]
-  name       = "bvToIntIandMode"
+  name       = "solveBVAsIntGranularity"
   category   = "undocumented"
-  long       = "bv-to-int-iand-mode=mode"
+  long       = "solve-bv-as-int-granularity=N"
+  type       = "uint32_t"
+  default    = "1"
+  read_only  = true
+  help       = "granularity to use in --solve-bv-as-int mode (experimental)"
+
+[[option]]
+  name       = "iandMode"
+  category   = "undocumented"
+  long       = "iand-mode=mode"
   type       = "IandMode"
   default    = "VALUE"
   read_only  = true
@@ -652,7 +667,16 @@ header = "options/smt_options.h"
   help = "use sum to represent integer AND in refinement"
   [[option.mode.BITWISE]]
   name = "bitwise"
-  help = "use bitwise comparisons on binary representation of integer for refinement"
+  help = "use bitwise comparisons on binary representation of integer for refinement (experimental)"
+
+[[option]]
+  name       = "iandGranularity"
+  category   = "undocumented"
+  long       = "iand-granularity=N"
+  type       = "uint32_t"
+  default    = "1"
+  read_only  = true
+  help       = "granularity to use when producing lemmas for iand"
 
 [[option]]
   name       = "solveIntAsBV"
