@@ -636,13 +636,23 @@ header = "options/smt_options.h"
   help       = "translate bvand to its integer variant (experimental)"
 
 [[option]]
-  name       = "bvToIntIandWithSum"
+  name       = "bvToIntIandMode"
   category   = "undocumented"
-  long       = "bv-to-int-iand-with-sum"
-  type       = "bool"
-  default    = "false"
+  long       = "bv-to-int-iand-mode=mode"
+  type       = "IandMode"
+  default    = "VALUE"
   read_only  = true
-  help       = "Expand iand to a sum"
+  help       = "Set the refinement scheme for integer AND"
+  help_mode  = "Refinement modes for integer AND"
+  [[option.mode.VALUE]]
+  name = "value"
+  help = "value-based refinement"
+  [[option.mode.SUM]]
+  name = "sum"
+  help = "use sum to represent integer AND in refinement"
+  [[option.mode.BITWISE]]
+  name = "bitwise"
+  help = "use bitwise comparisons on binary representation of integer for refinement"
 
 [[option]]
   name       = "solveIntAsBV"

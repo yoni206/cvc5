@@ -161,10 +161,17 @@ std::vector<Node> IAndSolver::checkFullRefine()
       }
 
       // ************* additional lemma schemas go here
-      if (options::bvToIntIandWithSum()) {
+      if (options::bvToIntIandMode() == options::IandMode::SUM) {
         Node lem = sumBasedLemma(i);
-        Trace("iand-lemma") << "IAndSolver::Lemma: " << lem << " ; VALUE_REFINE"
-                            << std::endl;
+        Trace("iand-lemma")
+            << "IAndSolver::Lemma: " << lem << " ; SUM_REFINE" << std::endl;
+        lems.push_back(lem);
+      }
+      else if (options::bvToIntIandMode() == options::IandMode::BITWISE)
+      {
+        Node lem = bitwiseLemma(i);
+        Trace("iand-lemma")
+            << "IAndSolver::Lemma: " << lem << " ; BITWISE_REFINE" << std::endl;
         lems.push_back(lem);
       } else {
         // this is the most naive model-based schema based on model values
@@ -230,6 +237,16 @@ Node IAndSolver::mkINot(unsigned k, Node x) const
   return ret;
 }
 
+Node IAndSolver::iextract(unsigned i, unsigned j, Node n) const
+{
+  NodeManager* nm = NodeManager::currentNM();
+  //  ((_ extract i j) n) is n / 2^j mod 2^{i-j+1}
+  Node n2j = nm->mkNode(INTS_DIVISION_TOTAL, n, twoToK(j));
+  Node ret = nm->mkNode(INTS_MODULUS_TOTAL, n2j, twoToK(i - j + 1));
+  ret = Rewriter::rewrite(ret);
+  return ret;
+}
+
 Node IAndSolver::valueBasedLemma(Node i)
 {
   Assert(i.getKind() == IAND);
@@ -259,6 +276,46 @@ Node IAndSolver::sumBasedLemma(Node i)
   uint64_t granularity = options::solveBVAsInt();
   NodeManager* nm = NodeManager::currentNM();
   Node lem = nm->mkNode(EQUAL, i, CVC4::preprocessing::passes::BVToInt::createBitwiseNode(x, y, bvsize, granularity, &oneBitAnd));
+  return lem;
+}
+
+Node IAndSolver::bitwiseLemma(Node i)
+{
+  Assert(i.getKind() == IAND);
+  Node x = i[0];
+  Node y = i[1];
+
+  unsigned k = i.getOperator().getConst<IntAnd>().d_size;
+
+  Rational absI = d_model.computeAbstractModelValue(i).getConst<Rational>();
+  Rational concI = d_model.computeConcreteModelValue(i).getConst<Rational>();
+
+  Assert(absI.isIntegral());
+  Assert(concI.isIntegral());
+
+  BitVector bvAbsI = BitVector(k, absI.getNumerator());
+  BitVector bvConcI = BitVector(k, concI.getNumerator());
+
+  NodeManager* nm = NodeManager::currentNM();
+  Node lem = d_true;
+
+  // compare each bit to bvI
+  Node cond;
+  Node bitIAnd;
+  for (unsigned j = 0; j < k; j++)
+  {
+    if (bvAbsI.extract(j, j) != bvConcI.extract(j, j))
+    {
+      // x[j] & y[j] == ite(x[j] == 1 ^ y[j] == 1, 1, 0)
+      cond = nm->mkNode(AND,
+                        iextract(j, j, x).eqNode(d_one),
+                        iextract(j, j, y).eqNode(d_one));
+      bitIAnd = nm->mkNode(ITE, cond, d_one, d_zero);
+      // enforce bitwise equality
+      lem = nm->mkNode(AND, lem, iextract(j, j, i).eqNode(bitIAnd));
+    }
+  }
+
   return lem;
 }
 
