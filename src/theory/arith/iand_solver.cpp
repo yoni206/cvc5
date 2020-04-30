@@ -306,7 +306,7 @@ Node IAndSolver::bitwiseLemma(Node i)
   {
     if (bvAbsI.extract(j, j) != bvConcI.extract(j, j))
     {
-      // x[j] & y[j] :=> ite(x[j] == 1 ^ y[j] == 1, 1, 0)
+      // x[j] & y[j] == ite(x[j] == 1 ^ y[j] == 1, 1, 0)
       cond = nm->mkNode(AND,
                         iextract(j, j, x).eqNode(d_one),
                         iextract(j, j, y).eqNode(d_one));
