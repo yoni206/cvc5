@@ -149,7 +149,7 @@ void setDefaults(SmtEngine& smte, LogicInfo& logic)
     logic.lock();
   }
 
-  if (options::solveBVAsInt())
+  if (options::solveBVAsInt() != options::SolveBVAsIntMode::OFF)
   {
     // not compatible with incremental
     if (options::incrementalSolving())
@@ -406,7 +406,7 @@ void setDefaults(SmtEngine& smte, LogicInfo& logic)
       options::preSkolemQuant.set(false);
     }
 
-    if (options::solveBVAsInt())
+    if (options::solveBVAsInt() != options::SolveBVAsIntMode::OFF)
     {
       /**
        * Operations on 1 bits are better handled as Boolean operations

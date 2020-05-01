@@ -620,20 +620,14 @@ header = "options/smt_options.h"
 [[option]]
   name       = "solveBVAsInt"
   category   = "undocumented"
-  long       = "solve-bv-as-int"
-  type       = "bool"
-  default    = "false"
-  read_only  = true
-  help       = "attempt to solve BV formulas by translation to integer arithmetic (experimental)"
-
-[[option]]
-  name       = "solveBVAsIntMode"
-  category   = "undocumented"
-  long       = "solve-bv-as-int-mode=MODE"
+  long       = "solve-bv-as-int=MODE"
   type       = "SolveBVAsIntMode"
-  default    = "SUM"
+  default    = "OFF"
   help       = "mode for translating BVAnd to integer"
   help_mode  = "solve-bv-as-int modes."
+[[option.mode.OFF]]
+  name = "off"
+  help = "Do not translate bit-vectors to integers"
 [[option.mode.SUM]]
   name = "sum"
   help = "Generate a sum expression for each bvand instance, based on the value in --solbv-bv-as-int-granularity"

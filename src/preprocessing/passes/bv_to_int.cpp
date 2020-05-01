@@ -496,11 +496,11 @@ Node BVToInt::bvToInt(Node n)
             case kind::BITVECTOR_AND:
             {
               uint64_t bvsize = current[0].getType().getBitVectorSize();
-              if (options::solveBVAsIntMode() == options::SolveBVAsIntMode::IAND) {
+              if (options::solveBVAsInt() == options::SolveBVAsIntMode::IAND) {
                 Node iAndOp = d_nm->mkConst(IntAnd(bvsize));
                 d_bvToIntCache[current] = d_nm->mkNode(kind::IAND, iAndOp, translated_children[0], translated_children[1]);
               } else {
-                Assert(options::solveBVAsIntMode() == options::SolveBVAsIntMode::SUM);
+                Assert(options::solveBVAsInt() == options::SolveBVAsIntMode::SUM);
                 // Construct an ite, based on granularity.
                 Assert(translated_children.size() == 2);
                 Node newNode = createBitwiseNode(translated_children[0],
