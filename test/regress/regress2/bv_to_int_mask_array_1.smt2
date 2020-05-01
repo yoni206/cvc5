@@ -1,7 +1,7 @@
-; COMMAND-LINE: --solve-bv-as-int=1 --no-check-models  --no-check-unsat-cores --no-check-proofs
-; COMMAND-LINE: --solve-bv-as-int=1 --bv-to-int-iand --no-check-models  --no-check-unsat-cores --no-check-proofs
-; COMMAND-LINE: --solve-bv-as-int=1 --bv-to-int-iand --bv-to-int-iand-mode=sum --no-check-models  --no-check-unsat-cores --no-check-proofs
-; COMMAND-LINE: --solve-bv-as-int=1 --bv-to-int-iand --bv-to-int-iand-mode=bitwise --no-check-models  --no-check-unsat-cores --no-check-proofs
+; COMMAND-LINE:  --bvand-integer-granularity=1 --solve-bv-as-int=sum  --no-check-models  --no-check-unsat-cores --no-check-proofs
+; COMMAND-LINE:  --bvand-integer-granularity=1 --solve-bv-as-int=iand --no-check-models  --no-check-unsat-cores --no-check-proofs
+; COMMAND-LINE:  --bvand-integer-granularity=1 --solve-bv-as-int=iand --iand-mode=sum --no-check-models  --no-check-unsat-cores --no-check-proofs
+; COMMAND-LINE:  --bvand-integer-granularity=1 --solve-bv-as-int=iand --iand-mode=bitwise --no-check-models  --no-check-unsat-cores --no-check-proofs
 ; EXPECT: unsat
 (set-logic ALL)
 (declare-fun A () (Array Int Int))

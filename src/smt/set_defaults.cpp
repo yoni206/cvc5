@@ -149,7 +149,7 @@ void setDefaults(SmtEngine& smte, LogicInfo& logic)
     logic.lock();
   }
 
-  if (options::solveBVAsInt() > 0)
+  if (options::solveBVAsInt() != options::SolveBVAsIntMode::OFF)
   {
     // not compatible with incremental
     if (options::incrementalSolving())
@@ -163,7 +163,7 @@ void setDefaults(SmtEngine& smte, LogicInfo& logic)
       throw OptionException(
           "solving bitvectors as integers is incompatible with --bool-to-bv.");
     }
-    if (options::solveBVAsInt() > 8)
+    if (options::BVAndIntegerGranularity() > 8)
     {
       /**
        * The granularity sets the size of the ITE in each element
@@ -406,7 +406,7 @@ void setDefaults(SmtEngine& smte, LogicInfo& logic)
       options::preSkolemQuant.set(false);
     }
 
-    if (options::solveBVAsInt() > 0)
+    if (options::solveBVAsInt() != options::SolveBVAsIntMode::OFF)
     {
       /**
        * Operations on 1 bits are better handled as Boolean operations
