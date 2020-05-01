@@ -273,7 +273,7 @@ Node IAndSolver::sumBasedLemma(Node i)
   Node x = i[0];
   Node y = i[1];
   size_t bvsize = i.getOperator().getConst<IntAnd>().d_size;
-  uint64_t granularity = options::iandGranularity();
+  uint64_t granularity = options::BVAndIntegerGranularity();
   NodeManager* nm = NodeManager::currentNM();
   Node lem = nm->mkNode(EQUAL, i, CVC4::preprocessing::passes::BVToInt::createBitwiseNode(x, y, bvsize, granularity, &oneBitAnd));
   return lem;

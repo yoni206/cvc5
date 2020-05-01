@@ -278,7 +278,7 @@ Node BVToInt::bvToInt(Node n)
   n = makeBinary(n);
   vector<Node> toVisit;
   toVisit.push_back(n);
-  uint64_t granularity = options::solveBVAsIntGranularity();
+  uint64_t granularity = options::BVAndIntegerGranularity();
   Assert(0 <= granularity && granularity <= 8);
 
   while (!toVisit.empty())

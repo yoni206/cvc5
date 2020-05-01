@@ -163,7 +163,7 @@ void setDefaults(SmtEngine& smte, LogicInfo& logic)
       throw OptionException(
           "solving bitvectors as integers is incompatible with --bool-to-bv.");
     }
-    if (options::solveBVAsIntGranularity() > 8)
+    if (options::BVAndIntegerGranularity() > 8)
     {
       /**
        * The granularity sets the size of the ITE in each element
