@@ -352,7 +352,6 @@ void setDefaults(SmtEngine& smte, LogicInfo& logic)
 
   if (options::solveBVAsInt() != options::SolveBVAsIntMode::OFF)
   {
-    std::cout << "going to set bitvectortobool" << std::endl;
     /**
      * Operations on 1 bits are better handled as Boolean operations
      * than as integer operations.
@@ -360,7 +359,6 @@ void setDefaults(SmtEngine& smte, LogicInfo& logic)
      * the translation to integers.
      */
     options::bitvectorToBool.set(true);
-    std::cout << "after setting bitvectortobool" << std::endl;
   }
   // Disable options incompatible with unsat cores and proofs or output an
   // error if enabled explicitly
