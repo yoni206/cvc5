@@ -314,10 +314,15 @@ Node BVToInt::bvToInt(Node n)
                                            "Variable introduced in bvToInt "
                                            "pass instead of original variable "
                                                + current.toString());
-
+              uint64_t bvsize =  current.getType().getBitVectorSize();
               d_bvToIntCache[current] = newVar;
               d_rangeAssertions.insert(mkRangeConstraint(
-                  newVar, current.getType().getBitVectorSize()));
+                  newVar, bvsize));
+              std::vector<Expr> args;
+              Node intToBVOp = d_nm->mkConst<IntToBitVector>(IntToBitVector(bvsize));
+              Node newNode = d_nm->mkNode(intToBVOp, newVar);
+              smt::currentSmtEngine()->defineFunction(
+                  current.toExpr(), args, newNode.toExpr());
             }
             else
             {
@@ -702,6 +707,7 @@ Node BVToInt::bvToInt(Node n)
                 // Insert the function symbol itself to the cache
                 d_bvToIntCache[bvUF] = intUF;
               }
+              cout << "panda intUF " << intUF.getKind() << endl;
               if (childrenTypesChanged(current) && options::ufHo()) {
               /**
                * higher order logic allows comparing between functions
@@ -736,23 +742,32 @@ Node BVToInt::bvToInt(Node n)
             }
             default:
             {
-              if (childrenTypesChanged(current)) {
-                /**
-                 * This is "failing on demand":
-                 * We throw an exception if we encounter a case
-                 * that we do not know how to translate,
-                 * only if we actually need to construct a new
-                 * node for such a case.
-                 */
-                  throw TypeCheckingException(
-                      current.toExpr(),
-                      string("Cannot translate to Int: ") + current.toString());
+              //The children whose types have changed from
+              //bv to int should be transformed back to bv.
+              //This is done in adjusted_children.
+              vector<Node> adjusted_children;
+              for (Node child : current) {
+                Node translated_child = d_bvToIntCache[child];
+                TypeNode originalType = child.getType();
+                TypeNode newType = translated_child.getType();
+                if ( newType.isSubtypeOf(originalType)) {
+                  adjusted_children.push_back(translated_child);
+                } else {
+                  //type has changed
+                  Assert(originalType.isBitVector());
+                  Assert(newType.isInteger());
+                  uint64_t bvsize = originalType.getBitVectorSize();
+                  Node intToBVOp = d_nm->mkConst<IntToBitVector>(IntToBitVector(bvsize));
+                  Node adjusted_child = d_nm->mkNode(intToBVOp, translated_child);
+                  adjusted_children.push_back(adjusted_child);
+                }
               }
-              else {
-                d_bvToIntCache[current] =
-                    d_nm->mkNode(oldKind, translated_children);
+              Node translation = d_nm->mkNode(oldKind, adjusted_children);
+              if (translation.getType().isBitVector()) {
+                translation = d_nm->mkNode(kind::BITVECTOR_TO_NAT, translation);
               }
-              break;
+
+              d_bvToIntCache[current] = translation;
             }
           }
         }
