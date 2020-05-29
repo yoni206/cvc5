@@ -109,7 +109,7 @@ Node BVToInt::makeBinary(Node n)
       d_binarizeCache[current] = Node();
       toVisit.insert(toVisit.end(), current.begin(), current.end());
     }
-    else if (d_binarizeCache[current].isNull())
+    else if (d_binarizeCache[current].get().isNull())
     {
       /*
        * We already visited the sub-dag rooted at the current node,
@@ -145,7 +145,7 @@ Node BVToInt::makeBinary(Node n)
         }
         for (Node child : current)
         {
-          builder << d_binarizeCache[child];
+          builder << d_binarizeCache[child].get();
         }
         d_binarizeCache[current] = builder.constructNode();
       }
@@ -227,7 +227,7 @@ Node BVToInt::eliminationPass(Node n)
     if (inRebuildCache)
     {
       // current was already added to the rebuild cache.
-      if (d_rebuildCache[current].isNull())
+      if (d_rebuildCache[current].get().isNull())
       {
         // current wasn't rebuilt yet.
         uint64_t numChildren = current.getNumChildren();
@@ -251,8 +251,8 @@ Node BVToInt::eliminationPass(Node n)
             Assert(d_eliminationCache.find(child) != d_eliminationCache.end());
             Node eliminatedChild = d_eliminationCache[child];
             Assert(d_rebuildCache.find(eliminatedChild) != d_eliminationCache.end());
-            Assert(!d_rebuildCache[eliminatedChild].isNull());
-            builder << d_rebuildCache[eliminatedChild];
+            Assert(!d_rebuildCache[eliminatedChild].get().isNull());
+            builder << d_rebuildCache[eliminatedChild].get();
           }
           d_rebuildCache[current] = builder.constructNode();
         }
@@ -262,7 +262,7 @@ Node BVToInt::eliminationPass(Node n)
   Assert(d_eliminationCache.find(n) != d_eliminationCache.end());
   Node eliminated = d_eliminationCache[n];
   Assert(d_rebuildCache.find(eliminated) != d_rebuildCache.end());
-  Assert(!d_rebuildCache[eliminated].isNull());
+  Assert(!d_rebuildCache[eliminated].get().isNull());
   return d_rebuildCache[eliminated];
 }
 
@@ -291,7 +291,7 @@ Node BVToInt::bvToInt(Node n)
     else
     {
       // We already visited this node
-      if (!d_bvToIntCache[current].isNull())
+      if (!d_bvToIntCache[current].get().isNull())
       {
         // We are done computing the translation for current
         toVisit.pop_back();
@@ -601,7 +601,7 @@ Node BVToInt::bvToInt(Node n)
               Assert(d_bvToIntCache.find(a) != d_bvToIntCache.end());
               Assert(i >= j);
               Node div = d_nm->mkNode(
-                  kind::INTS_DIVISION_TOTAL, d_bvToIntCache[a], pow2(j));
+                  kind::INTS_DIVISION_TOTAL, d_bvToIntCache[a].get(), pow2(j));
               d_bvToIntCache[current] = modpow2(div, i - j + 1);
               break;
             }
@@ -680,7 +680,7 @@ Node BVToInt::bvToInt(Node n)
               TypeNode bvRange = tn.getRangeType();
               if (d_bvToIntCache.find(bvUF) != d_bvToIntCache.end())
               {
-                intUF = d_bvToIntCache[bvUF];
+                intUF = d_bvToIntCache[bvUF].get();
               }
               else
               {
@@ -706,29 +706,29 @@ Node BVToInt::bvToInt(Node n)
                                    "bv2int function");
                 // Insert the function symbol itself to the cache
                 d_bvToIntCache[bvUF] = intUF;
-                if (bvRange.isBitVector()) {
-                  Node intApplication;
-                  vector<Node> achildren;
-                  achildren.push_back(intUF);
-                  int i=0;
-                  vector<Expr> args;
-                  for (TypeNode d: bvDomain) {
-                    Node fresh_bound_var = d_nm->mkBoundVar(d);
-                    args.push_back(fresh_bound_var.toExpr());
-                    if (d.isBitVector()) {
-                      achildren.push_back(d_nm->mkNode(kind::BITVECTOR_TO_NAT, args[i]));
-                    } else {
-                      achildren.push_back(args[i]);
-                    }
-                    i++;
+                Node intApplication;
+                vector<Node> achildren;
+                achildren.push_back(intUF);
+                int i=0;
+                vector<Expr> args;
+                for (TypeNode d: bvDomain) {
+                  Node fresh_bound_var = d_nm->mkBoundVar(d);
+                  args.push_back(fresh_bound_var.toExpr());
+                  if (d.isBitVector()) {
+                    achildren.push_back(d_nm->mkNode(kind::BITVECTOR_TO_NAT, args[i]));
+                  } else {
+                    achildren.push_back(args[i]);
                   }
-                  intApplication = d_nm->mkNode(kind::APPLY_UF, achildren);
+                  i++;
+                }
+                intApplication = d_nm->mkNode(kind::APPLY_UF, achildren);
+                if (bvRange.isBitVector()) {
                   uint64_t bvsize = bvRange.getBitVectorSize();
                   Node intToBVOp = d_nm->mkConst<IntToBitVector>(IntToBitVector(bvsize));
-                  Node newNode = d_nm->mkNode(intToBVOp, intApplication);
-                  smt::currentSmtEngine()->defineFunction(
-                    bvUF.toExpr(), args, newNode.toExpr());
+                  intApplication = d_nm->mkNode(intToBVOp, intApplication);
                 }
+                smt::currentSmtEngine()->defineFunction(
+                  bvUF.toExpr(), args, intApplication.toExpr());
               }
               if (childrenTypesChanged(current) && options::ufHo()) {
               /**
@@ -807,14 +807,14 @@ Node BVToInt::bvToInt(Node n)
       }
     }
   }
-  return d_bvToIntCache[n];
+  return d_bvToIntCache[n].get();
 }
 
 bool BVToInt::childrenTypesChanged(Node n) {
   bool result = false;
   for (Node child : n) {
     TypeNode originalType = child.getType();
-    TypeNode newType = d_bvToIntCache[child].getType();
+    TypeNode newType = d_bvToIntCache[child].get().getType();
     if (! newType.isSubtypeOf(originalType)) {
       result = true;
       break;
@@ -825,10 +825,11 @@ bool BVToInt::childrenTypesChanged(Node n) {
 
 BVToInt::BVToInt(PreprocessingPassContext* preprocContext)
     : PreprocessingPass(preprocContext, "bv-to-int"),
-      d_binarizeCache(),
-      d_eliminationCache(),
-      d_bvToIntCache(),
-      d_rangeAssertions()
+      d_binarizeCache(preprocContext->getUserContext()),
+      d_eliminationCache(preprocContext->getUserContext()),
+      d_rebuildCache(preprocContext->getUserContext()),
+      d_bvToIntCache(preprocContext->getUserContext()),
+      d_rangeAssertions(preprocContext->getUserContext())
 {
   d_nm = NodeManager::currentNM();
   d_zero = d_nm->mkConst<Rational>(0);
@@ -838,7 +839,6 @@ BVToInt::BVToInt(PreprocessingPassContext* preprocContext)
 PreprocessingPassResult BVToInt::applyInternal(
     AssertionPipeline* assertionsToPreprocess)
 {
-  AlwaysAssert(!options::incrementalSolving());
   for (uint64_t i = 0; i < assertionsToPreprocess->size(); ++i)
   {
     Node bvNode = (*assertionsToPreprocess)[i];
@@ -857,7 +857,7 @@ void BVToInt::addFinalizeRangeAssertions(
     AssertionPipeline* assertionsToPreprocess)
 {
   vector<Node> vec_range;
-  vec_range.assign(d_rangeAssertions.begin(), d_rangeAssertions.end());
+  vec_range.assign(d_rangeAssertions.key_begin(), d_rangeAssertions.key_end());
   if (vec_range.size() == 1)
   {
     assertionsToPreprocess->push_back(vec_range[0]);
