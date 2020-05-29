@@ -139,7 +139,7 @@ Node BVToInt::makeBinary(Node n)
         // current has children, but we do not binarize it
         NodeBuilder<> builder(k);
         if (current.getKind() == kind::BITVECTOR_EXTRACT
-            || current.getKind() == kind::APPLY_UF)
+            || current.getKind() == kind::APPLY_UF || current.getKind() == kind::INT_TO_BITVECTOR)
         {
           builder << current.getOperator();
         }
@@ -242,7 +242,7 @@ Node BVToInt::eliminationPass(Node n)
           // are replaced with their eliminated counterparts.
           NodeBuilder<> builder(current.getKind());
           if (current.getKind() == kind::BITVECTOR_EXTRACT
-              || current.getKind() == kind::APPLY_UF)
+              || current.getKind() == kind::APPLY_UF || current.getKind() == kind::INT_TO_BITVECTOR)
           {
             builder << current.getOperator();
           }
@@ -706,8 +706,30 @@ Node BVToInt::bvToInt(Node n)
                                    "bv2int function");
                 // Insert the function symbol itself to the cache
                 d_bvToIntCache[bvUF] = intUF;
+                if (bvRange.isBitVector()) {
+                  Node intApplication;
+                  vector<Node> achildren;
+                  achildren.push_back(intUF);
+                  int i=0;
+                  vector<Expr> args;
+                  for (TypeNode d: bvDomain) {
+                    Node fresh_bound_var = d_nm->mkBoundVar(d);
+                    args.push_back(fresh_bound_var.toExpr());
+                    if (d.isBitVector()) {
+                      achildren.push_back(d_nm->mkNode(kind::BITVECTOR_TO_NAT, args[i]));
+                    } else {
+                      achildren.push_back(args[i]);
+                    }
+                    i++;
+                  }
+                  intApplication = d_nm->mkNode(kind::APPLY_UF, achildren);
+                  uint64_t bvsize = bvRange.getBitVectorSize();
+                  Node intToBVOp = d_nm->mkConst<IntToBitVector>(IntToBitVector(bvsize));
+                  Node newNode = d_nm->mkNode(intToBVOp, intApplication);
+                  smt::currentSmtEngine()->defineFunction(
+                    bvUF.toExpr(), args, newNode.toExpr());
+                }
               }
-              cout << "panda intUF " << intUF.getKind() << endl;
               if (childrenTypesChanged(current) && options::ufHo()) {
               /**
                * higher order logic allows comparing between functions
@@ -762,7 +784,17 @@ Node BVToInt::bvToInt(Node n)
                   adjusted_children.push_back(adjusted_child);
                 }
               }
-              Node translation = d_nm->mkNode(oldKind, adjusted_children);
+
+              NodeBuilder<> builder(oldKind);
+              if (oldKind == kind::BITVECTOR_EXTRACT
+                  || oldKind == kind::APPLY_UF || oldKind == kind::INT_TO_BITVECTOR)
+              {
+                builder << current.getOperator();
+              }
+              for (Node child : adjusted_children) {
+                builder << child;
+              }
+              Node translation = builder.constructNode();
               if (translation.getType().isBitVector()) {
                 translation = d_nm->mkNode(kind::BITVECTOR_TO_NAT, translation);
               }
