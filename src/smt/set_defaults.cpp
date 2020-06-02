@@ -151,7 +151,14 @@ void setDefaults(SmtEngine& smte, LogicInfo& logic)
 
   if (options::solveBVAsInt() != options::SolveBVAsIntMode::OFF)
   {
-    if (options::boolToBitvector() != options::BoolToBVMode::OFF)
+    // not compatible with incremental
+    if (options::incrementalSolving())
+    {
+      throw OptionException(
+          "solving bitvectors as integers is currently not supported "
+          "when solving incrementally.");
+    }
+    else if (options::boolToBitvector() != options::BoolToBVMode::OFF)
     {
       throw OptionException(
           "solving bitvectors as integers is incompatible with --bool-to-bv.");

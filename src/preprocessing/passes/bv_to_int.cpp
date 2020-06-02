@@ -858,6 +858,9 @@ void BVToInt::addFinalizeRangeAssertions(
   Node rangeAssertions;
   vector<Node> vec_range;
   vec_range.assign(d_rangeAssertions.key_begin(), d_rangeAssertions.key_end());
+  if (vec_range.size() == 0) {
+    return;
+  }
   if (vec_range.size() == 1)
   {
     rangeAssertions = vec_range[0];
@@ -869,6 +872,7 @@ void BVToInt::addFinalizeRangeAssertions(
   }
   Trace("bv-to-int-debug")
         << "range constraints: " << rangeAssertions.toString() << std::endl;
+
   Node newLastAssertion = d_nm->mkNode(kind::AND, lastAssertion, rangeAssertions);  
   newLastAssertion = Rewriter::rewrite(newLastAssertion);
   assertionsToPreprocess->replace(indexOfLastAssertion, newLastAssertion);
