@@ -856,22 +856,26 @@ PreprocessingPassResult BVToInt::applyInternal(
 void BVToInt::addFinalizeRangeAssertions(
     AssertionPipeline* assertionsToPreprocess)
 {
+  int indexOfLastAssertion = assertionsToPreprocess->size() - 1;
+  Node lastAssertion = (*assertionsToPreprocess)[indexOfLastAssertion];
+  Node rangeAssertions;
   vector<Node> vec_range;
   vec_range.assign(d_rangeAssertions.key_begin(), d_rangeAssertions.key_end());
   if (vec_range.size() == 1)
   {
-    assertionsToPreprocess->push_back(vec_range[0]);
-    Trace("bv-to-int-debug")
-        << "range constraints: " << vec_range[0].toString() << std::endl;
+    rangeAssertions = vec_range[0];
   }
   else if (vec_range.size() >= 2)
   {
-    Node rangeAssertions =
+    rangeAssertions =
         Rewriter::rewrite(d_nm->mkNode(kind::AND, vec_range));
-    assertionsToPreprocess->push_back(rangeAssertions);
-    Trace("bv-to-int-debug")
-        << "range constraints: " << rangeAssertions.toString() << std::endl;
   }
+  Trace("bv-to-int-debug")
+        << "range constraints: " << rangeAssertions.toString() << std::endl;
+  Node newLastAssertion = d_nm->mkNode(kind::AND, lastAssertion, rangeAssertions);  
+  newLastAssertion = Rewriter::rewrite(newLastAssertion);
+  assertionsToPreprocess->replace(indexOfLastAssertion, newLastAssertion);
+
 }
 
 Node BVToInt::createShiftNode(vector<Node> children,
