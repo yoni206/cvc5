@@ -138,8 +138,7 @@ Node BVToInt::makeBinary(Node n)
       {
         // current has children, but we do not binarize it
         NodeBuilder<> builder(k);
-        if (current.getKind() == kind::BITVECTOR_EXTRACT
-            || current.getKind() == kind::APPLY_UF || current.getKind() == kind::INT_TO_BITVECTOR)
+        if (current.getMetaKind() == kind::metakind::PARAMETERIZED)
         {
           builder << current.getOperator();
         }
@@ -241,8 +240,7 @@ Node BVToInt::eliminationPass(Node n)
           // The main operator is replaced, and the children
           // are replaced with their eliminated counterparts.
           NodeBuilder<> builder(current.getKind());
-          if (current.getKind() == kind::BITVECTOR_EXTRACT
-              || current.getKind() == kind::APPLY_UF || current.getKind() == kind::INT_TO_BITVECTOR)
+          if (current.getMetaKind() == kind::metakind::PARAMETERIZED)
           {
             builder << current.getOperator();
           }
@@ -786,8 +784,7 @@ Node BVToInt::bvToInt(Node n)
               }
 
               NodeBuilder<> builder(oldKind);
-              if (oldKind == kind::BITVECTOR_EXTRACT
-                  || oldKind == kind::APPLY_UF || oldKind == kind::INT_TO_BITVECTOR)
+              if (current.getMetaKind() == kind::metakind::PARAMETERIZED)
               {
                 builder << current.getOperator();
               }
