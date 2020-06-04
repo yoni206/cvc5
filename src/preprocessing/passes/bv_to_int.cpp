@@ -279,7 +279,6 @@ Node BVToInt::bvToInt(Node n)
   while (!toVisit.empty())
   {
     Node current = toVisit.back();
-    cout << "panda current: " << current << endl;
     uint64_t currentNumChildren = current.getNumChildren();
     if (d_bvToIntCache.find(current) == d_bvToIntCache.end())
     {
@@ -794,9 +793,7 @@ Node BVToInt::bvToInt(Node n)
               }
               Node ranges;
               Node matrix = d_bvToIntCache[current[1]];
-              cout << "panda matrix 1: " << matrix << endl;
               matrix = matrix.substitute(oldBoundVars.begin(), oldBoundVars.end(), newBoundVars.begin(), newBoundVars.end());
-              cout << "panda matrix 2: " << matrix << endl;
               if (rangeConstraints.size() > 0) {
                 if (rangeConstraints.size() ==1) {
                   ranges = rangeConstraints[0];
@@ -806,9 +803,7 @@ Node BVToInt::bvToInt(Node n)
                 matrix = d_nm->mkNode(kind::IMPLIES, ranges, matrix);
                 
               }
-              cout << "panda 1 newBoundVars[0]: " << newBoundVars[0] << endl;
               Node newBoundVarsList = d_nm->mkNode(kind::BOUND_VAR_LIST, newBoundVars);
-              cout << "panda 2 newBoundVars[0]: " << newBoundVars[0] << endl;
               Node result = d_nm->mkNode(kind::FORALL, newBoundVarsList, matrix);
               d_bvToIntCache[current] = result;
               break;
