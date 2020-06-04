@@ -279,6 +279,7 @@ Node BVToInt::bvToInt(Node n)
   while (!toVisit.empty())
   {
     Node current = toVisit.back();
+    cout << "panda current: " << current << endl;
     uint64_t currentNumChildren = current.getNumChildren();
     if (d_bvToIntCache.find(current) == d_bvToIntCache.end())
     {
@@ -307,20 +308,28 @@ Node BVToInt::bvToInt(Node n)
             {
               // For bit-vector variables, we create integer variables and add a
               // range constraint.
-              Node newVar = d_nm->mkSkolem("__bvToInt_var",
-                                           d_nm->integerType(),
-                                           "Variable introduced in bvToInt "
-                                           "pass instead of original variable "
-                                               + current.toString());
-              uint64_t bvsize =  current.getType().getBitVectorSize();
-              d_bvToIntCache[current] = newVar;
-              d_rangeAssertions.insert(mkRangeConstraint(
-                  newVar, bvsize));
-              std::vector<Expr> args;
-              Node intToBVOp = d_nm->mkConst<IntToBitVector>(IntToBitVector(bvsize));
-              Node newNode = d_nm->mkNode(intToBVOp, newVar);
-              smt::currentSmtEngine()->defineFunction(
-                  current.toExpr(), args, newNode.toExpr());
+              if (current.getKind() == kind::BOUND_VARIABLE) {
+                    std::stringstream ss;
+                    ss << current;
+                    Node nbv = d_nm->mkBoundVar(ss.str() + "_int", d_nm->integerType());
+                    d_bvToIntCache[current] = nbv;
+              } else {
+
+                Node newVar = d_nm->mkSkolem("__bvToInt_var",
+                                             d_nm->integerType(),
+                                             "Variable introduced in bvToInt "
+                                             "pass instead of original variable "
+                                                 + current.toString());
+                uint64_t bvsize =  current.getType().getBitVectorSize();
+                d_bvToIntCache[current] = newVar;
+                d_rangeAssertions.insert(mkRangeConstraint(
+                    newVar, bvsize));
+                std::vector<Expr> args;
+                Node intToBVOp = d_nm->mkConst<IntToBitVector>(IntToBitVector(bvsize));
+                Node newNode = d_nm->mkNode(intToBVOp, newVar);
+                smt::currentSmtEngine()->defineFunction(
+                    current.toExpr(), args, newNode.toExpr());
+              }
             }
             else
             {
@@ -759,6 +768,50 @@ Node BVToInt::bvToInt(Node n)
                 }
               }
                 break;
+            }
+            case kind::BOUND_VAR_LIST:
+            {
+              Node result = d_nm->mkNode(kind::BOUND_VAR_LIST, translated_children);
+              d_bvToIntCache[current] = result;
+              break;
+            }
+            case kind::FORALL:
+            {
+              Node boundVarList = current[0];
+              Assert(boundVarList.getKind() == kind::BOUND_VAR_LIST);
+              vector<Node> oldBoundVars;
+              vector<Node> newBoundVars;
+              vector<Node> rangeConstraints;
+              for (Node bv : current[0]) {
+                oldBoundVars.push_back(bv);
+                if (bv.getType().isBitVector()) {
+                  Node newBoundVar = d_bvToIntCache[bv];
+                  newBoundVars.push_back(newBoundVar);
+                  rangeConstraints.push_back(mkRangeConstraint(newBoundVar, bv.getType().getBitVectorSize()));
+                } else {
+                  newBoundVars.push_back(bv);
+                }
+              }
+              Node ranges;
+              Node matrix = d_bvToIntCache[current[1]];
+              cout << "panda matrix 1: " << matrix << endl;
+              matrix = matrix.substitute(oldBoundVars.begin(), oldBoundVars.end(), newBoundVars.begin(), newBoundVars.end());
+              cout << "panda matrix 2: " << matrix << endl;
+              if (rangeConstraints.size() > 0) {
+                if (rangeConstraints.size() ==1) {
+                  ranges = rangeConstraints[0];
+                } else {
+                  ranges = d_nm->mkNode(kind::AND, rangeConstraints);
+                }
+                matrix = d_nm->mkNode(kind::IMPLIES, ranges, matrix);
+                
+              }
+              cout << "panda 1 newBoundVars[0]: " << newBoundVars[0] << endl;
+              Node newBoundVarsList = d_nm->mkNode(kind::BOUND_VAR_LIST, newBoundVars);
+              cout << "panda 2 newBoundVars[0]: " << newBoundVars[0] << endl;
+              Node result = d_nm->mkNode(kind::FORALL, newBoundVarsList, matrix);
+              d_bvToIntCache[current] = result;
+              break;
             }
             default:
             {
