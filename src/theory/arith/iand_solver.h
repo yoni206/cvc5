@@ -20,7 +20,7 @@
 
 #include "context/cdhashset.h"
 #include "expr/node.h"
-#include "theory/arith/nl_model.h"
+#include "theory/arith/nl/nl_model.h"
 #include "theory/arith/theory_arith.h"
 
 namespace CVC4 {
@@ -35,7 +35,7 @@ class IAndSolver
   typedef context::CDHashSet<Node, NodeHashFunction> NodeSet;
 
  public:
-  IAndSolver(TheoryArith& containing, NlModel& model);
+  IAndSolver(TheoryArith& containing, nl::NlModel& model);
   ~IAndSolver();
 
   /** init last call
@@ -77,7 +77,7 @@ class IAndSolver
   // The theory of arithmetic containing this extension.
   TheoryArith& d_containing;
   /** Reference to the non-linear model object */
-  NlModel& d_model;
+  nl::NlModel& d_model;
   /** commonly used terms */
   Node d_zero;
   Node d_one;

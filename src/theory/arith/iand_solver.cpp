@@ -22,6 +22,7 @@
 #include "util/iand.h"
 
 using namespace CVC4::kind;
+using namespace CVC4::theory::arith::nl;
 
 namespace CVC4 {
 namespace theory {
