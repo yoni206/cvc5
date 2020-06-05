@@ -66,10 +66,10 @@ void IAndSolver::initLastCall(const std::vector<Node>& assertions,
   Trace("iand") << "We have " << d_iands.size() << " IAND terms." << std::endl;
 }
 
-std::vector<Node> IAndSolver::checkInitialRefine()
+std::vector<NlLemma> IAndSolver::checkInitialRefine()
 {
   Trace("iand-check") << "IAndSolver::checkInitialRefine" << std::endl;
-  std::vector<Node> lems;
+  std::vector<NlLemma> lems;
   NodeManager* nm = NodeManager::currentNM();
   for (const std::pair<const unsigned, std::vector<Node> >& is : d_iands)
   {
@@ -120,11 +120,11 @@ std::vector<Node> IAndSolver::checkInitialRefine()
   return lems;
 }
 
-std::vector<Node> IAndSolver::checkFullRefine()
+std::vector<NlLemma> IAndSolver::checkFullRefine()
 {
   Trace("iand-check") << "IAndSolver::checkFullRefine";
   Trace("iand-check") << "IAND terms: " << std::endl;
-  std::vector<Node> lems;
+  std::vector<NlLemma> lems;
   for (const std::pair<const unsigned, std::vector<Node> >& is : d_iands)
   {
     // the reference bitwidth
@@ -173,7 +173,9 @@ std::vector<Node> IAndSolver::checkFullRefine()
         Node lem = bitwiseLemma(i);
         Trace("iand-lemma")
             << "IAndSolver::Lemma: " << lem << " ; BITWISE_REFINE" << std::endl;
-        lems.push_back(lem);
+        NlLemma nlem(lem);
+        nlem.d_preprocess = true;
+        lems.push_back(nlem);
       } else {
         // this is the most naive model-based schema based on model values
         Node lem = valueBasedLemma(i);
