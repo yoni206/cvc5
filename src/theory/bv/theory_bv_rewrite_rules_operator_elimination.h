@@ -28,6 +28,25 @@ namespace theory {
 namespace bv {
 
 
+template <>
+inline bool RewriteRule<NegEliminate>::applies(TNode node)
+{
+  return (node.getKind() == kind::BITVECTOR_NEG);
+}
+
+template <>
+inline Node RewriteRule<NegEliminate>::apply(TNode node)
+{
+  //hacker's delight section 2-2 eq a
+  Debug("bv-rewrite") << "RewriteRule<NegEliminate>(" << node << ")"
+                      << std::endl;
+  TNode a = node[0];
+  unsigned size = utils::getSize(a);
+  Node one = utils::mkConst(size, 1);
+  Node nota = NodeManager::currentNM()->mkNode(kind::BITVECTOR_NOT, a);
+  Node bvadd = NodeManager::currentNM()->mkNode(kind::BITVECTOR_PLUS, nota, one);
+  return bvadd;
+}
 
 template <>
 inline bool RewriteRule<OrEliminate>::applies(TNode node)

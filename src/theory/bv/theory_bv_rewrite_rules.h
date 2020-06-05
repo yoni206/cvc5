@@ -120,6 +120,7 @@ enum RewriteRuleId
   AndZero,
   AndOne,
   AndOrXorConcatPullUp,
+  NegEliminate,
   OrEliminate,
   XorEliminate,
   OrZero,
@@ -204,8 +205,9 @@ inline std::ostream& operator << (std::ostream& out, RewriteRuleId ruleId) {
   case ConcatExtractMerge:  out << "ConcatExtractMerge";  return out;
   case ConcatConstantMerge: out << "ConcatConstantMerge"; return out;
   case AndOrXorConcatPullUp:out << "AndOrXorConcatPullUp";return out;
-  case OrEliminate:out << "OrEliminate";return out;
-  case XorEliminate:out << "XorEliminate";return out;
+  case NegEliminate:        out << "NegEliminate";        return out;
+  case OrEliminate:         out << "OrEliminate";         return out;
+  case XorEliminate:        out << "XorEliminate";        return out;
   case ExtractExtract:      out << "ExtractExtract";      return out;
   case ExtractWhole:        out << "ExtractWhole";        return out;
   case ExtractConcat:       out << "ExtractConcat";       return out;
@@ -589,8 +591,9 @@ struct AllRewriteRules {
   RewriteRule<BvIteMergeThenElse>             rule137;
   RewriteRule<BvIteMergeElseElse>             rule138;
   RewriteRule<AndOrXorConcatPullUp>           rule139;
-  RewriteRule<OrEliminate>                    rule140;
-  RewriteRule<XorEliminate>                   rule141;
+  RewriteRule<NegEliminate>                   rule140;
+  RewriteRule<OrEliminate>                    rule141;
+  RewriteRule<XorEliminate>                   rule142;
 };
 
 template<> inline

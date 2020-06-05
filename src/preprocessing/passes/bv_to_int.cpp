@@ -198,6 +198,7 @@ Node BVToInt::eliminationPass(Node n)
                                   RewriteRule<XnorEliminate>,
                                   RewriteRule<NandEliminate>,
                                   RewriteRule<NorEliminate>,
+                                  RewriteRule<NegEliminate>,
                                   RewriteRule<XorEliminate>,
                                   RewriteRule<OrEliminate>,
                                   RewriteRule<SubEliminate>,
