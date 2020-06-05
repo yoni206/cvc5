@@ -12,7 +12,7 @@
  ** \brief Implementation of integer and (IAND) solver
  **/
 
-#include "theory/arith/iand_solver.h"
+#include "theory/arith/nl/iand_solver.h"
 
 #include "options/arith_options.h"
 #include "options/smt_options.h"

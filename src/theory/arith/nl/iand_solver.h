@@ -12,15 +12,15 @@
  ** \brief Solver for integer and (IAND) constraints
  **/
 
-#ifndef CVC4__THEORY__ARITH__IAND_SOLVER_H
-#define CVC4__THEORY__ARITH__IAND_SOLVER_H
+#ifndef CVC4__THEORY__ARITH__NL__IAND_SOLVER_H
+#define CVC4__THEORY__ARITH__NL__IAND_SOLVER_H
 
 #include <map>
 #include <vector>
 
 #include "context/cdhashset.h"
 #include "expr/node.h"
-#include "theory/arith/nl_model.h"
+#include "theory/arith/nl/nl_model.h"
 #include "theory/arith/theory_arith.h"
 
 namespace CVC4 {
