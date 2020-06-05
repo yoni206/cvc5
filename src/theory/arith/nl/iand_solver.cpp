@@ -12,7 +12,7 @@
  ** \brief Implementation of integer and (IAND) solver
  **/
 
-#include "theory/arith/iand_solver.h"
+#include "theory/arith/nl/iand_solver.h"
 
 #include "options/arith_options.h"
 #include "options/smt_options.h"
@@ -27,6 +27,7 @@ using namespace CVC4::theory::arith::nl;
 namespace CVC4 {
 namespace theory {
 namespace arith {
+namespace nl {
 
 IAndSolver::IAndSolver(TheoryArith& containing, NlModel& model)
     : d_containing(containing),
@@ -66,10 +67,10 @@ void IAndSolver::initLastCall(const std::vector<Node>& assertions,
   Trace("iand") << "We have " << d_iands.size() << " IAND terms." << std::endl;
 }
 
-std::vector<Node> IAndSolver::checkInitialRefine()
+std::vector<NlLemma> IAndSolver::checkInitialRefine()
 {
   Trace("iand-check") << "IAndSolver::checkInitialRefine" << std::endl;
-  std::vector<Node> lems;
+  std::vector<NlLemma> lems;
   NodeManager* nm = NodeManager::currentNM();
   for (const std::pair<const unsigned, std::vector<Node> >& is : d_iands)
   {
@@ -120,11 +121,11 @@ std::vector<Node> IAndSolver::checkInitialRefine()
   return lems;
 }
 
-std::vector<Node> IAndSolver::checkFullRefine()
+std::vector<NlLemma> IAndSolver::checkFullRefine()
 {
   Trace("iand-check") << "IAndSolver::checkFullRefine";
   Trace("iand-check") << "IAND terms: " << std::endl;
-  std::vector<Node> lems;
+  std::vector<NlLemma> lems;
   for (const std::pair<const unsigned, std::vector<Node> >& is : d_iands)
   {
     // the reference bitwidth
@@ -162,23 +163,30 @@ std::vector<Node> IAndSolver::checkFullRefine()
       }
 
       // ************* additional lemma schemas go here
-      if (options::iandMode() == options::IandMode::SUM) {
+      if (options::iandMode() == options::IandMode::SUM)
+      {
         Node lem = sumBasedLemma(i);
         Trace("iand-lemma")
             << "IAndSolver::Lemma: " << lem << " ; SUM_REFINE" << std::endl;
-        lems.push_back(lem);
+        NlLemma nlem(lem);
+        nlem.d_preprocess = true;
+        lems.push_back(nlem);
       }
       else if (options::iandMode() == options::IandMode::BITWISE)
       {
         Node lem = bitwiseLemma(i);
         Trace("iand-lemma")
             << "IAndSolver::Lemma: " << lem << " ; BITWISE_REFINE" << std::endl;
-        lems.push_back(lem);
-      } else {
+        NlLemma nlem(lem);
+        nlem.d_preprocess = true;
+        lems.push_back(nlem);
+      }
+      else
+      {
         // this is the most naive model-based schema based on model values
         Node lem = valueBasedLemma(i);
-        Trace("iand-lemma") << "IAndSolver::Lemma: " << lem << " ; VALUE_REFINE"
-                            << std::endl;
+        Trace("iand-lemma")
+            << "IAndSolver::Lemma: " << lem << " ; VALUE_REFINE" << std::endl;
         lems.push_back(lem);
       }
     }
@@ -276,7 +284,10 @@ Node IAndSolver::sumBasedLemma(Node i)
   size_t bvsize = i.getOperator().getConst<IntAnd>().d_size;
   uint64_t granularity = options::BVAndIntegerGranularity();
   NodeManager* nm = NodeManager::currentNM();
-  Node lem = nm->mkNode(EQUAL, i, CVC4::preprocessing::passes::BVToInt::createBitwiseNode(x, y, bvsize, granularity, &oneBitAnd));
+  Node lem = nm->mkNode(EQUAL,
+                        i,
+                        CVC4::preprocessing::passes::BVToInt::createBitwiseNode(
+                            x, y, bvsize, granularity, &oneBitAnd));
   return lem;
 }
 
@@ -320,6 +331,7 @@ Node IAndSolver::bitwiseLemma(Node i)
   return lem;
 }
 
+}  // namespace nl
 }  // namespace arith
 }  // namespace theory
 }  // namespace CVC4

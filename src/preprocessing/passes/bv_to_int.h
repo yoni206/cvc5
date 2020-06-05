@@ -129,10 +129,10 @@ class BVToInt : public PreprocessingPass
    * @return A node that represents the operation, as described above.
    */
   static Node createBitwiseNode(Node x,
-                         Node y,
-                         uint64_t bvsize,
-                         uint64_t granularity,
-                         bool (*f)(bool, bool));
+                                Node y,
+                                uint64_t bvsize,
+                                uint64_t granularity,
+                                bool (*f)(bool, bool));
 
   /**
    * A helper function for createBitwiseNode

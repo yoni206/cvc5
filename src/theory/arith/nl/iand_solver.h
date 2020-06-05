@@ -12,20 +12,22 @@
  ** \brief Solver for integer and (IAND) constraints
  **/
 
-#ifndef CVC4__THEORY__ARITH__IAND_SOLVER_H
-#define CVC4__THEORY__ARITH__IAND_SOLVER_H
+#ifndef CVC4__THEORY__ARITH__NL__IAND_SOLVER_H
+#define CVC4__THEORY__ARITH__NL__IAND_SOLVER_H
 
 #include <map>
 #include <vector>
 
 #include "context/cdhashset.h"
 #include "expr/node.h"
+#include "theory/arith/nl/nl_lemma_utils.h"
 #include "theory/arith/nl/nl_model.h"
 #include "theory/arith/theory_arith.h"
 
 namespace CVC4 {
 namespace theory {
 namespace arith {
+namespace nl {
 
 /** Integer and solver class
  *
@@ -64,13 +66,13 @@ class IAndSolver
    * This should be a heuristic incomplete check that only introduces a
    * small number of new terms in the lemmas it returns.
    */
-  std::vector<Node> checkInitialRefine();
+  std::vector<NlLemma> checkInitialRefine();
   /** check full refine
    *
    * This should be a complete check that returns at least one lemma to
    * rule out the current model.
    */
-  std::vector<Node> checkFullRefine();
+  std::vector<NlLemma> checkFullRefine();
 
   //-------------------------------------------- end lemma schemas
  private:
@@ -130,6 +132,7 @@ class IAndSolver
   Node bitwiseLemma(Node i);
 }; /* class IAndSolver */
 
+}  // namespace nl
 }  // namespace arith
 }  // namespace theory
 }  // namespace CVC4

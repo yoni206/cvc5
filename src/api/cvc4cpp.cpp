@@ -214,7 +214,7 @@ const static std::unordered_map<Kind, CVC4::Kind, KindHashFunction> s_kinds{
     /* Arrays -------------------------------------------------------------- */
     {SELECT, CVC4::Kind::SELECT},
     {STORE, CVC4::Kind::STORE},
-    {STORE_ALL, CVC4::Kind::STORE_ALL},
+    {CONST_ARRAY, CVC4::Kind::STORE_ALL},
     /* Datatypes ----------------------------------------------------------- */
     {APPLY_SELECTOR, CVC4::Kind::APPLY_SELECTOR},
     {APPLY_CONSTRUCTOR, CVC4::Kind::APPLY_CONSTRUCTOR},
@@ -481,7 +481,7 @@ const static std::unordered_map<CVC4::Kind, Kind, CVC4::kind::KindHashFunction>
         /* Arrays ---------------------------------------------------------- */
         {CVC4::Kind::SELECT, SELECT},
         {CVC4::Kind::STORE, STORE},
-        {CVC4::Kind::STORE_ALL, STORE_ALL},
+        {CVC4::Kind::STORE_ALL, CONST_ARRAY},
         /* Datatypes ------------------------------------------------------- */
         {CVC4::Kind::APPLY_SELECTOR, APPLY_SELECTOR},
         {CVC4::Kind::APPLY_CONSTRUCTOR, APPLY_CONSTRUCTOR},
@@ -1494,6 +1494,15 @@ bool Term::isConst() const
 {
   CVC4_API_CHECK_NOT_NULL;
   return d_expr->isConst();
+}
+
+Term Term::getConstArrayBase() const
+{
+  CVC4_API_CHECK_NOT_NULL;
+  // CONST_ARRAY kind maps to STORE_ALL internal kind
+  CVC4_API_CHECK(d_expr->getKind() == CVC4::Kind::STORE_ALL)
+      << "Expecting a CONST_ARRAY Term when calling getConstArrayBase()";
+  return Term(d_solver, d_expr->getConst<ArrayStoreAll>().getExpr());
 }
 
 Term Term::notTerm() const
@@ -3908,8 +3917,9 @@ Op Solver::mkOp(Kind kind, uint32_t arg) const
                     .d_expr.get());
       break;
     case IAND:
-      res =
-          Op(this,kind, *mkValHelper<CVC4::IntAnd>(CVC4::IntAnd(arg)).d_expr.get());
+      res = Op(this,
+               kind,
+               *mkValHelper<CVC4::IntAnd>(CVC4::IntAnd(arg)).d_expr.get());
       break;
     case FLOATINGPOINT_TO_UBV:
       res = Op(
