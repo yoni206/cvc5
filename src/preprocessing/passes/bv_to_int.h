@@ -245,6 +245,8 @@ class BVToInt : public PreprocessingPass
    */
   void addFinalizeRangeAssertions(AssertionPipeline* assertionsToPreprocess);
 
+  Node translateQuantifiedFormula(Node current, kind::Kind_t k);
+
   /**
    * Caches for the different functions
    */
