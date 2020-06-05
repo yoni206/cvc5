@@ -167,7 +167,9 @@ std::vector<NlLemma> IAndSolver::checkFullRefine()
         Node lem = sumBasedLemma(i);
         Trace("iand-lemma")
             << "IAndSolver::Lemma: " << lem << " ; SUM_REFINE" << std::endl;
-        lems.push_back(lem);
+        NlLemma nlem(lem);
+        nlem.d_preprocess = true;
+        lems.push_back(nlem);
       }
       else if (options::iandMode() == options::IandMode::BITWISE)
       {
