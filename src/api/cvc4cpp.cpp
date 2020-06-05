@@ -3917,8 +3917,9 @@ Op Solver::mkOp(Kind kind, uint32_t arg) const
                     .d_expr.get());
       break;
     case IAND:
-      res =
-          Op(this, kind, *mkValHelper<CVC4::IntAnd>(CVC4::IntAnd(arg)).d_expr.get());
+      res = Op(this,
+               kind,
+               *mkValHelper<CVC4::IntAnd>(CVC4::IntAnd(arg)).d_expr.get());
       break;
     case FLOATINGPOINT_TO_UBV:
       res = Op(

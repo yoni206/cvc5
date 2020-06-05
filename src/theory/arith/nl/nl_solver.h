@@ -155,7 +155,7 @@ class NlSolver
    *      constraint that occurs in the current context.
    */
   std::vector<NlLemma> checkFactoring(const std::vector<Node>& asserts,
-                                   const std::vector<Node>& false_asserts);
+                                      const std::vector<Node>& false_asserts);
 
   /** check monomial infer resolution bounds
    *

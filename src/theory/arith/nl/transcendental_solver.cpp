@@ -700,10 +700,9 @@ std::vector<NlLemma> TranscendentalSolver::checkTranscendentalTangentPlanes()
   return lemmas;
 }
 
-bool TranscendentalSolver::checkTfTangentPlanesFun(
-    Node tf,
-    unsigned d,
-    std::vector<NlLemma>& lemmas)
+bool TranscendentalSolver::checkTfTangentPlanesFun(Node tf,
+                                                   unsigned d,
+                                                   std::vector<NlLemma>& lemmas)
 {
   NodeManager* nm = NodeManager::currentNM();
   Kind k = tf.getKind();

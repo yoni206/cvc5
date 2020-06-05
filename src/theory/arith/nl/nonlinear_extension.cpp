@@ -210,8 +210,8 @@ unsigned NonlinearExtension::filterLemmas(std::vector<NlLemma>& lemmas,
                                << et.second << std::endl;
       if (et.first)
       {
-        Trace("nl-ext-et") << "*** Lemma entailed to be in conflict : " << lem.d_lemma
-                           << std::endl;
+        Trace("nl-ext-et") << "*** Lemma entailed to be in conflict : "
+                           << lem.d_lemma << std::endl;
         // return just this lemma
         if (filterLemma(lem, out) > 0)
         {
@@ -623,8 +623,7 @@ void NonlinearExtension::check(Theory::Effort e)
   }
 }
 
-bool NonlinearExtension::modelBasedRefinement(
-    std::vector<NlLemma>& mlems)
+bool NonlinearExtension::modelBasedRefinement(std::vector<NlLemma>& mlems)
 {
   // get the assertions
   std::vector<Node> assertions;

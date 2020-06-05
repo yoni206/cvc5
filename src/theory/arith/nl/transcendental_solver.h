@@ -186,9 +186,7 @@ class TranscendentalSolver
    * It returns false if the bounds are not precise enough to add a
    * secant or tangent plane lemma.
    */
-  bool checkTfTangentPlanesFun(Node tf,
-                               unsigned d,
-                               std::vector<NlLemma>& lems);
+  bool checkTfTangentPlanesFun(Node tf, unsigned d, std::vector<NlLemma>& lems);
   //-------------------------------------------- end lemma schemas
  private:
   /** polynomial approximation bounds

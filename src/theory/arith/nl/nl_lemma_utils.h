@@ -30,8 +30,8 @@ class NlModel;
  * The data structure for a single lemma to process by the non-linear solver,
  * including the lemma itself and whether it should be preprocessed (see
  * OutputChannel::lemma).
- * 
- * This also includes data structures that encapsulate the side effect of adding 
+ *
+ * This also includes data structures that encapsulate the side effect of adding
  * this lemma in the non-linear solver. This is used to specify how the state of
  * the non-linear solver should update. This includes:
  * - A set of secant points to record (for transcendental secant plane

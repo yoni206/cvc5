@@ -162,7 +162,8 @@ std::vector<NlLemma> IAndSolver::checkFullRefine()
       }
 
       // ************* additional lemma schemas go here
-      if (options::iandMode() == options::IandMode::SUM) {
+      if (options::iandMode() == options::IandMode::SUM)
+      {
         Node lem = sumBasedLemma(i);
         Trace("iand-lemma")
             << "IAndSolver::Lemma: " << lem << " ; SUM_REFINE" << std::endl;
@@ -176,11 +177,13 @@ std::vector<NlLemma> IAndSolver::checkFullRefine()
         NlLemma nlem(lem);
         nlem.d_preprocess = true;
         lems.push_back(nlem);
-      } else {
+      }
+      else
+      {
         // this is the most naive model-based schema based on model values
         Node lem = valueBasedLemma(i);
-        Trace("iand-lemma") << "IAndSolver::Lemma: " << lem << " ; VALUE_REFINE"
-                            << std::endl;
+        Trace("iand-lemma")
+            << "IAndSolver::Lemma: " << lem << " ; VALUE_REFINE" << std::endl;
         lems.push_back(lem);
       }
     }
@@ -278,7 +281,10 @@ Node IAndSolver::sumBasedLemma(Node i)
   size_t bvsize = i.getOperator().getConst<IntAnd>().d_size;
   uint64_t granularity = options::BVAndIntegerGranularity();
   NodeManager* nm = NodeManager::currentNM();
-  Node lem = nm->mkNode(EQUAL, i, CVC4::preprocessing::passes::BVToInt::createBitwiseNode(x, y, bvsize, granularity, &oneBitAnd));
+  Node lem = nm->mkNode(EQUAL,
+                        i,
+                        CVC4::preprocessing::passes::BVToInt::createBitwiseNode(
+                            x, y, bvsize, granularity, &oneBitAnd));
   return lem;
 }
 

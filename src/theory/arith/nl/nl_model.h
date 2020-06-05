@@ -23,8 +23,8 @@
 #include "context/context.h"
 #include "expr/kind.h"
 #include "expr/node.h"
-#include "theory/theory_model.h"
 #include "theory/arith/nl/nl_lemma_utils.h"
+#include "theory/theory_model.h"
 
 namespace CVC4 {
 namespace theory {
