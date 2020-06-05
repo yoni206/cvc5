@@ -26,6 +26,7 @@
 namespace CVC4 {
 namespace theory {
 namespace arith {
+namespace nl {
 
 /** Integer and solver class
  *
@@ -130,6 +131,7 @@ class IAndSolver
   Node bitwiseLemma(Node i);
 }; /* class IAndSolver */
 
+}  // namespace nl
 }  // namespace arith
 }  // namespace theory
 }  // namespace CVC4

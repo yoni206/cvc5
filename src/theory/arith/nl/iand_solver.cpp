@@ -26,6 +26,7 @@ using namespace CVC4::kind;
 namespace CVC4 {
 namespace theory {
 namespace arith {
+namespace nl {
 
 IAndSolver::IAndSolver(TheoryArith& containing, NlModel& model)
     : d_containing(containing),
@@ -319,6 +320,7 @@ Node IAndSolver::bitwiseLemma(Node i)
   return lem;
 }
 
+}  // namespace nl
 }  // namespace arith
 }  // namespace theory
 }  // namespace CVC4
