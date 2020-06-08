@@ -23,7 +23,7 @@
 #include <vector>
 
 #include "expr/node.h"
-#include "expr/proof_skolem_cache.h"
+#include "expr/skolem_manager.h"
 #include "options/uf_options.h"
 #include "theory/bv/theory_bv_rewrite_rules_operator_elimination.h"
 #include "theory/bv/theory_bv_rewrite_rules_simplification.h"
@@ -329,7 +329,7 @@ Node BVToInt::bvToInt(Node n)
                 Node intToBVOp = d_nm->mkConst<IntToBitVector>(IntToBitVector(bvsize));
                 Node newNode = d_nm->mkNode(intToBVOp, newVar);
                 smt::currentSmtEngine()->defineFunction(
-                    current.toExpr(), args, newNode.toExpr());
+                    current.toExpr(), args, newNode.toExpr(), true);
               }
             }
             else
@@ -393,9 +393,10 @@ Node BVToInt::bvToInt(Node n)
               Node multV = d_nm->mkNode(kind::MULT, v, pow2(bvsize));
               Node lem3 = mkRangeConstraint(d_nm->mkNode(kind::MINUS, plus, multV), bvsize);
               Node lem = d_nm->mkNode(kind::AND, lem1, lem2, lem3);
-              Node sigma = ProofSkolemCache::mkSkolem(
+              SkolemManager* sm = d_nm->getSkolemManager();
+              Node sigma = sm->mkSkolem(
                 v, lem, "__bvToInt_sigma_var", "a bv2int sigma var for addition");
-              sigma = ProofSkolemCache::getWitnessForm(sigma);
+              sigma = SkolemManager::getWitnessForm(sigma);
               Node multSig = d_nm->mkNode(kind::MULT, sigma, pow2(bvsize));
               d_bvToIntCache[current] =
                   d_nm->mkNode(kind::MINUS, plus, multSig);
@@ -444,9 +445,10 @@ Node BVToInt::bvToInt(Node n)
               } else {
                 lem = d_nm->mkNode(kind::AND, rangeAssertions);
               }
-              Node sigma = ProofSkolemCache::mkSkolem(
+              SkolemManager* sm = d_nm->getSkolemManager();
+              Node sigma = sm->mkSkolem(
                 v, lem, "__bvToInt_sigma_var", "a bv2int sigma var for multiplication");
-              sigma = ProofSkolemCache::getWitnessForm(sigma);
+              sigma = SkolemManager::getWitnessForm(sigma);
               Node multSig = d_nm->mkNode(kind::MULT, sigma, pow2(bvsize));
               d_bvToIntCache[current] =
                   d_nm->mkNode(kind::MINUS, mult, multSig);
@@ -759,7 +761,7 @@ Node BVToInt::bvToInt(Node n)
                   intApplication = d_nm->mkNode(intToBVOp, intApplication);
                 }
                 smt::currentSmtEngine()->defineFunction(
-                    bvUF.toExpr(), args, intApplication.toExpr());
+                    bvUF.toExpr(), args, intApplication.toExpr(), true);
               }
               if (childrenTypesChanged(current) && options::ufHo()) {
               /**
@@ -788,9 +790,10 @@ Node BVToInt::bvToInt(Node n)
                 {
                   lem = d_nm->mkNode(kind::AND, lem, mkRangeConstraint(v, current.getType().getBitVectorSize()));
                 }
-                Node sigma = ProofSkolemCache::mkSkolem(
+                SkolemManager* sm = d_nm->getSkolemManager();
+                Node sigma = sm->mkSkolem(
                   v, lem, "__bvToInt_sigma_var", "a bv2int sigma var for UF application");
-                sigma = ProofSkolemCache::getWitnessForm(sigma);
+                sigma = SkolemManager::getWitnessForm(sigma);
                   d_bvToIntCache[current] =
                       sigma;
                 }
