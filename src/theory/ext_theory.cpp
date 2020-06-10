@@ -425,10 +425,13 @@ void ExtTheory::registerTermRec(Node n)
     if (visited.find(cur) == visited.end())
     {
       visited.insert(cur);
-      registerTerm(cur);
-      for (const Node& cc : cur)
+      if (!cur.isClosure())
       {
-        visit.push_back(cc);
+        registerTerm(cur);
+        for (const Node& cc : cur)
+        {
+          visit.push_back(cc);
+        }
       }
     }
   } while (!visit.empty());
