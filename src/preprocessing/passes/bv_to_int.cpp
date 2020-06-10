@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "expr/node.h"
+#include "expr/skolem_manager.h"
 #include "options/uf_options.h"
 #include "theory/bv/theory_bv_rewrite_rules_operator_elimination.h"
 #include "theory/bv/theory_bv_rewrite_rules_simplification.h"
@@ -197,6 +198,7 @@ Node BVToInt::eliminationPass(Node n)
                                   RewriteRule<XnorEliminate>,
                                   RewriteRule<NandEliminate>,
                                   RewriteRule<NorEliminate>,
+                                  RewriteRule<NegEliminate>,
                                   RewriteRule<XorEliminate>,
                                   RewriteRule<OrEliminate>,
                                   RewriteRule<SubEliminate>,
@@ -307,20 +309,28 @@ Node BVToInt::bvToInt(Node n)
             {
               // For bit-vector variables, we create integer variables and add a
               // range constraint.
-              Node newVar = d_nm->mkSkolem("__bvToInt_var",
-                                           d_nm->integerType(),
-                                           "Variable introduced in bvToInt "
-                                           "pass instead of original variable "
-                                               + current.toString());
-              uint64_t bvsize = current.getType().getBitVectorSize();
-              d_bvToIntCache[current] = newVar;
-              d_rangeAssertions.insert(mkRangeConstraint(newVar, bvsize));
-              std::vector<Expr> args;
-              Node intToBVOp =
-                  d_nm->mkConst<IntToBitVector>(IntToBitVector(bvsize));
-              Node newNode = d_nm->mkNode(intToBVOp, newVar);
-              smt::currentSmtEngine()->defineFunction(
-                  current.toExpr(), args, newNode.toExpr());
+              if (current.getKind() == kind::BOUND_VARIABLE) {
+                    std::stringstream ss;
+                    ss << current;
+                    Node nbv = d_nm->mkBoundVar(ss.str() + "_int", d_nm->integerType());
+                    d_bvToIntCache[current] = nbv;
+              } else {
+
+                Node newVar = d_nm->mkSkolem("__bvToInt_var",
+                                             d_nm->integerType(),
+                                             "Variable introduced in bvToInt "
+                                             "pass instead of original variable "
+                                                 + current.toString());
+                uint64_t bvsize =  current.getType().getBitVectorSize();
+                d_bvToIntCache[current] = newVar;
+                d_rangeAssertions.insert(mkRangeConstraint(
+                    newVar, bvsize));
+                std::vector<Expr> args;
+                Node intToBVOp = d_nm->mkConst<IntToBitVector>(IntToBitVector(bvsize));
+                Node newNode = d_nm->mkNode(intToBVOp, newVar);
+                smt::currentSmtEngine()->defineFunction(
+                    current.toExpr(), args, newNode.toExpr(), true);
+              }
             }
             else
             {
@@ -376,18 +386,20 @@ Node BVToInt::bvToInt(Node n)
                * with k being the bit width,
                * and sigma being either 0 or 1.
                */
-              Node sigma = d_nm->mkSkolem(
-                  "__bvToInt_sigma_var",
-                  d_nm->integerType(),
-                  "Variable introduced in bvToInt pass to avoid integer mod");
+              Node v = d_nm->mkBoundVar(d_nm->integerType());
+              Node lem1 = d_nm->mkNode(kind::LEQ, d_zero, v);
+              Node lem2 = d_nm->mkNode(kind::LEQ, v, d_one);
               Node plus = d_nm->mkNode(kind::PLUS, translated_children);
+              Node multV = d_nm->mkNode(kind::MULT, v, pow2(bvsize));
+              Node lem3 = mkRangeConstraint(d_nm->mkNode(kind::MINUS, plus, multV), bvsize);
+              Node lem = d_nm->mkNode(kind::AND, lem1, lem2, lem3);
+              SkolemManager* sm = d_nm->getSkolemManager();
+              Node sigma = sm->mkSkolem(
+                v, lem, "__bvToInt_sigma_var", "a bv2int sigma var for addition");
+              sigma = SkolemManager::getWitnessForm(sigma);
               Node multSig = d_nm->mkNode(kind::MULT, sigma, pow2(bvsize));
               d_bvToIntCache[current] =
                   d_nm->mkNode(kind::MINUS, plus, multSig);
-              d_rangeAssertions.insert(d_nm->mkNode(kind::LEQ, d_zero, sigma));
-              d_rangeAssertions.insert(d_nm->mkNode(kind::LEQ, sigma, d_one));
-              d_rangeAssertions.insert(
-                  mkRangeConstraint(d_bvToIntCache[current], bvsize));
               break;
             }
             case kind::BITVECTOR_MULT:
@@ -399,16 +411,12 @@ Node BVToInt::bvToInt(Node n)
                * with k being the bit width,
                * and sigma is between [0, 2^k - 1).
                */
-              Node sigma = d_nm->mkSkolem(
-                  "__bvToInt_sigma_var",
-                  d_nm->integerType(),
-                  "Variable introduced in bvToInt pass to avoid integer mod");
+              vector<Node> rangeAssertions;
+              Node v = d_nm->mkBoundVar(d_nm->integerType());
               Node mult = d_nm->mkNode(kind::MULT, translated_children);
-              Node multSig = d_nm->mkNode(kind::MULT, sigma, pow2(bvsize));
-              d_bvToIntCache[current] =
-                  d_nm->mkNode(kind::MINUS, mult, multSig);
-              d_rangeAssertions.insert(
-                  mkRangeConstraint(d_bvToIntCache[current], bvsize));
+              Node multV = d_nm->mkNode(kind::MULT, v, pow2(bvsize));
+              rangeAssertions.push_back(
+                  mkRangeConstraint(d_nm->mkNode(kind::MINUS, mult, multV), bvsize));
               if (translated_children[0].isConst()
                   || translated_children[1].isConst())
               {
@@ -421,16 +429,29 @@ Node BVToInt::bvToInt(Node n)
                 Node c = translated_children[0].isConst()
                              ? translated_children[0]
                              : translated_children[1];
-                d_rangeAssertions.insert(
-                    d_nm->mkNode(kind::LEQ, d_zero, sigma));
+                rangeAssertions.push_back(
+                    d_nm->mkNode(kind::LEQ, d_zero, v));
                 // the value of sigma is bounded by (c - 1)
                 // where c is the constant multiplicand
-                d_rangeAssertions.insert(d_nm->mkNode(kind::LT, sigma, c));
+                rangeAssertions.push_back(d_nm->mkNode(kind::LT, v, c));
               }
               else
               {
-                d_rangeAssertions.insert(mkRangeConstraint(sigma, bvsize));
+                rangeAssertions.push_back(mkRangeConstraint(v, bvsize));
               }
+              Node lem;
+              if (rangeAssertions.size() == 1) {
+                lem = rangeAssertions[0];
+              } else {
+                lem = d_nm->mkNode(kind::AND, rangeAssertions);
+              }
+              SkolemManager* sm = d_nm->getSkolemManager();
+              Node sigma = sm->mkSkolem(
+                v, lem, "__bvToInt_sigma_var", "a bv2int sigma var for multiplication");
+              sigma = SkolemManager::getWitnessForm(sigma);
+              Node multSig = d_nm->mkNode(kind::MULT, sigma, pow2(bvsize));
+              d_bvToIntCache[current] =
+                  d_nm->mkNode(kind::MINUS, mult, multSig);
               break;
             }
             case kind::BITVECTOR_UDIV_TOTAL:
@@ -740,7 +761,7 @@ Node BVToInt::bvToInt(Node n)
                   intApplication = d_nm->mkNode(intToBVOp, intApplication);
                 }
                 smt::currentSmtEngine()->defineFunction(
-                    bvUF.toExpr(), args, intApplication.toExpr());
+                    bvUF.toExpr(), args, intApplication.toExpr(), true);
               }
               if (childrenTypesChanged(current) && options::ufHo()) {
               /**
@@ -757,8 +778,8 @@ Node BVToInt::bvToInt(Node n)
               else {
                 translated_children.insert(translated_children.begin(), intUF);
                 // Insert the term to the cache
-                d_bvToIntCache[current] =
-                    d_nm->mkNode(kind::APPLY_UF, translated_children);
+                Node v = d_nm->mkBoundVar(d_nm->integerType());
+                Node lem = d_nm->mkNode(kind::EQUAL, v, d_nm->mkNode(kind::APPLY_UF, translated_children));
                 /**
                  * Add range constraints if necessary.
                  * If the original range was a BV sort, the current application of
@@ -767,12 +788,34 @@ Node BVToInt::bvToInt(Node n)
                  */
                 if (bvRange.isBitVector())
                 {
-                  d_rangeAssertions.insert(
-                      mkRangeConstraint(d_bvToIntCache[current],
-                                        current.getType().getBitVectorSize()));
+                  lem = d_nm->mkNode(kind::AND, lem, mkRangeConstraint(v, current.getType().getBitVectorSize()));
                 }
-              }
+                SkolemManager* sm = d_nm->getSkolemManager();
+                Node sigma = sm->mkSkolem(
+                  v, lem, "__bvToInt_sigma_var", "a bv2int sigma var for UF application");
+                sigma = SkolemManager::getWitnessForm(sigma);
+                  d_bvToIntCache[current] =
+                      sigma;
+                }
                 break;
+            }
+            case kind::BOUND_VAR_LIST:
+            {
+              Node result = d_nm->mkNode(kind::BOUND_VAR_LIST, translated_children);
+              d_bvToIntCache[current] = result;
+              break;
+            }
+            case kind::FORALL:
+            {
+              Node result = translateQuantifiedFormula(current, oldKind);
+              d_bvToIntCache[current] = result;
+              break;
+            }
+            case kind::EXISTS:
+            {
+              Node result = translateQuantifiedFormula(current, oldKind);
+              d_bvToIntCache[current] = result;
+              break;
             }
             default:
             {
@@ -1044,6 +1087,40 @@ Node BVToInt::createBitwiseNode(Node x,
                          nm->mkNode(kind::MULT, pow2(i * granularity), ite));
   }
   return sumNode;
+}
+
+Node BVToInt::translateQuantifiedFormula(Node current, kind::Kind_t k)
+{
+              Node boundVarList = current[0];
+              Assert(boundVarList.getKind() == kind::BOUND_VAR_LIST);
+              vector<Node> oldBoundVars;
+              vector<Node> newBoundVars;
+              vector<Node> rangeConstraints;
+              for (Node bv : current[0]) {
+                oldBoundVars.push_back(bv);
+                if (bv.getType().isBitVector()) {
+                  Node newBoundVar = d_bvToIntCache[bv];
+                  newBoundVars.push_back(newBoundVar);
+                  rangeConstraints.push_back(mkRangeConstraint(newBoundVar, bv.getType().getBitVectorSize()));
+                } else {
+                  newBoundVars.push_back(bv);
+                }
+              }
+              Node ranges;
+              Node matrix = d_bvToIntCache[current[1]];
+              matrix = matrix.substitute(oldBoundVars.begin(), oldBoundVars.end(), newBoundVars.begin(), newBoundVars.end());
+              if (rangeConstraints.size() > 0) {
+                if (rangeConstraints.size() ==1) {
+                  ranges = rangeConstraints[0];
+                } else {
+                  ranges = d_nm->mkNode(kind::AND, rangeConstraints);
+                }
+                matrix = d_nm->mkNode(k == kind::FORALL ? kind::IMPLIES : kind::AND, ranges, matrix);
+                
+              }
+              Node newBoundVarsList = d_nm->mkNode(kind::BOUND_VAR_LIST, newBoundVars);
+              Node result = d_nm->mkNode(kind::FORALL, newBoundVarsList, matrix);
+              return result;
 }
 
 Node BVToInt::createBVNotNode(Node n, uint64_t bvsize)
