@@ -297,7 +297,8 @@ Node BVToInt::bvToInt(Node n)
       {
         // We are now visiting current on the way back up.
         // This is when we do the actual translation.
-        doActualTranslation(current);
+        Node res = doActualTranslation(current);
+        d_bvToIntCache[current] = res;
         toVisit.pop_back();
       }
     }
@@ -306,7 +307,7 @@ Node BVToInt::bvToInt(Node n)
 }
 
 
-void BVToInt::doActualTranslation(Node current) {
+Node BVToInt::doActualTranslation(Node current) {
   uint64_t currentNumChildren = current.getNumChildren();
   uint64_t granularity = options::BVAndIntegerGranularity();
   Assert(0 <= granularity && granularity <= 8);
