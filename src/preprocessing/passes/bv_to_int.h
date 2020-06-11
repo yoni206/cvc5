@@ -234,6 +234,7 @@ class BVToInt : public PreprocessingPass
    */
   Node modpow2(Node n, uint64_t exponent);
 
+  void doActualTranslation(Node current);
   bool childrenTypesChanged(Node n);
 
   /**

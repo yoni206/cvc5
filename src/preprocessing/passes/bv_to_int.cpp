@@ -275,13 +275,10 @@ Node BVToInt::bvToInt(Node n)
   n = makeBinary(n);
   vector<Node> toVisit;
   toVisit.push_back(n);
-  uint64_t granularity = options::BVAndIntegerGranularity();
-  Assert(0 <= granularity && granularity <= 8);
 
   while (!toVisit.empty())
   {
     Node current = toVisit.back();
-    uint64_t currentNumChildren = current.getNumChildren();
     if (d_bvToIntCache.find(current) == d_bvToIntCache.end())
     {
       // This is the first time we visit this node and it is not in the cache.
@@ -300,6 +297,19 @@ Node BVToInt::bvToInt(Node n)
       {
         // We are now visiting current on the way back up.
         // This is when we do the actual translation.
+        doActualTranslation(current);
+        toVisit.pop_back();
+      }
+    }
+  }
+  return d_bvToIntCache[n].get();
+}
+
+
+void BVToInt::doActualTranslation(Node current) {
+  uint64_t currentNumChildren = current.getNumChildren();
+  uint64_t granularity = options::BVAndIntegerGranularity();
+  Assert(0 <= granularity && granularity <= 8);
         if (currentNumChildren == 0)
         {
           Assert(current.isVar() || current.isConst());
@@ -865,11 +875,6 @@ Node BVToInt::bvToInt(Node n)
             }
           }
         }
-        toVisit.pop_back();
-      }
-    }
-  }
-  return d_bvToIntCache[n].get();
 }
 
 bool BVToInt::childrenTypesChanged(Node n) {
