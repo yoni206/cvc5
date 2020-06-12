@@ -714,6 +714,8 @@ void BVToInt::doActualTranslation(Node current) {
               Node intUF;
               TypeNode tn = current.getOperator().getType();
               TypeNode bvRange = tn.getRangeType();
+              TypeNode intRange =
+                    bvRange.isBitVector() ? d_nm->integerType() : bvRange;
               if (d_bvToIntCache.find(bvUF) != d_bvToIntCache.end())
               {
                 intUF = d_bvToIntCache[bvUF].get();
@@ -727,8 +729,6 @@ void BVToInt::doActualTranslation(Node current) {
                  * the new range should be an integer sort.
                  * Otherwise, we keep the original range.
                  */
-                TypeNode intRange =
-                    bvRange.isBitVector() ? d_nm->integerType() : bvRange;
                 for (TypeNode d : bvDomain)
                 {
                   intDomain.push_back(d.isBitVector() ? d_nm->integerType()
@@ -788,7 +788,7 @@ void BVToInt::doActualTranslation(Node current) {
               else {
                 translated_children.insert(translated_children.begin(), intUF);
                 // Insert the term to the cache
-                Node v = d_nm->mkBoundVar(d_nm->integerType());
+                Node v = d_nm->mkBoundVar(intRange);
                 Node lem = d_nm->mkNode(kind::EQUAL, v, d_nm->mkNode(kind::APPLY_UF, translated_children));
                 /**
                  * Add range constraints if necessary.

@@ -445,6 +445,8 @@ bool ProcessAssertions::apply(AssertionPipeline& assertions)
   Debug("smt") << " assertions     : " << assertions.size() << endl;
 
   d_passes["theory-preprocess"]->apply(&assertions);
+  d_passes["ite-removal"]->apply(&assertions);
+  d_passes["apply-substs"]->apply(&assertions);
 
   if (options::bitblastMode() == options::BitblastMode::EAGER)
   {
