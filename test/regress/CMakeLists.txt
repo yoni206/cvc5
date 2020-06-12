@@ -2129,6 +2129,7 @@ set(regress_3_tests
   regress3/eq_diamond14.smtv1.smt2
   regress3/friedman_n6_i4.smtv1.smt2
   regress3/hole9.cvc
+  regress3/iand-quant-1.smt2
   regress3/incorrect1.smtv1.smt2
   regress3/issue2429.smt2
   regress3/issue4170.smt2
