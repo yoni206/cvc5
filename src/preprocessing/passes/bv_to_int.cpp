@@ -23,7 +23,7 @@
 #include <vector>
 
 #include "expr/node.h"
-#include "expr/skolem_manager.h"
+#include "expr/node_algorithm.h"
 #include "options/uf_options.h"
 #include "theory/bv/theory_bv_rewrite_rules_operator_elimination.h"
 #include "theory/bv/theory_bv_rewrite_rules_simplification.h"
@@ -379,79 +379,19 @@ Node BVToInt::bvToInt(Node n)
             case kind::BITVECTOR_PLUS:
             {
               uint64_t bvsize = current[0].getType().getBitVectorSize();
-              /**
-               * we avoid modular arithmetics by the addition of an
-               * indicator variable sigma.
-               * Tr(a+b) is Tr(a)+Tr(b)-(sigma*2^k),
-               * with k being the bit width,
-               * and sigma being either 0 or 1.
-               */
-              Node v = d_nm->mkBoundVar(d_nm->integerType());
-              Node lem1 = d_nm->mkNode(kind::LEQ, d_zero, v);
-              Node lem2 = d_nm->mkNode(kind::LEQ, v, d_one);
               Node plus = d_nm->mkNode(kind::PLUS, translated_children);
-              Node multV = d_nm->mkNode(kind::MULT, v, pow2(bvsize));
-              Node lem3 = mkRangeConstraint(d_nm->mkNode(kind::MINUS, plus, multV), bvsize);
-              Node lem = d_nm->mkNode(kind::AND, lem1, lem2, lem3);
-              SkolemManager* sm = d_nm->getSkolemManager();
-              Node sigma = sm->mkSkolem(
-                v, lem, "__bvToInt_sigma_var", "a bv2int sigma var for addition");
-              sigma = SkolemManager::getWitnessForm(sigma);
-              Node multSig = d_nm->mkNode(kind::MULT, sigma, pow2(bvsize));
-              d_bvToIntCache[current] =
-                  d_nm->mkNode(kind::MINUS, plus, multSig);
+              Node p2 = pow2(bvsize);
+              Node mod = d_nm->mkNode(kind::INTS_MODULUS_TOTAL, plus, p2);
+              d_bvToIntCache[current] = mod;
               break;
             }
             case kind::BITVECTOR_MULT:
             {
               uint64_t bvsize = current[0].getType().getBitVectorSize();
-              /**
-               * we use a similar trick to the one used for addition.
-               * Tr(a*b) is Tr(a)*Tr(b)-(sigma*2^k),
-               * with k being the bit width,
-               * and sigma is between [0, 2^k - 1).
-               */
-              vector<Node> rangeAssertions;
-              Node v = d_nm->mkBoundVar(d_nm->integerType());
               Node mult = d_nm->mkNode(kind::MULT, translated_children);
-              Node multV = d_nm->mkNode(kind::MULT, v, pow2(bvsize));
-              rangeAssertions.push_back(
-                  mkRangeConstraint(d_nm->mkNode(kind::MINUS, mult, multV), bvsize));
-              if (translated_children[0].isConst()
-                  || translated_children[1].isConst())
-              {
-                /*
-                 * based on equation (23), section 3.2.3 of:
-                 * Bozzano et al.
-                 * Encoding RTL Constructs for MathSAT: a Preliminary Report.
-                 */
-                // this is an optimization when one of the children is constant
-                Node c = translated_children[0].isConst()
-                             ? translated_children[0]
-                             : translated_children[1];
-                rangeAssertions.push_back(
-                    d_nm->mkNode(kind::LEQ, d_zero, v));
-                // the value of sigma is bounded by (c - 1)
-                // where c is the constant multiplicand
-                rangeAssertions.push_back(d_nm->mkNode(kind::LT, v, c));
-              }
-              else
-              {
-                rangeAssertions.push_back(mkRangeConstraint(v, bvsize));
-              }
-              Node lem;
-              if (rangeAssertions.size() == 1) {
-                lem = rangeAssertions[0];
-              } else {
-                lem = d_nm->mkNode(kind::AND, rangeAssertions);
-              }
-              SkolemManager* sm = d_nm->getSkolemManager();
-              Node sigma = sm->mkSkolem(
-                v, lem, "__bvToInt_sigma_var", "a bv2int sigma var for multiplication");
-              sigma = SkolemManager::getWitnessForm(sigma);
-              Node multSig = d_nm->mkNode(kind::MULT, sigma, pow2(bvsize));
-              d_bvToIntCache[current] =
-                  d_nm->mkNode(kind::MINUS, mult, multSig);
+              Node p2 = pow2(bvsize);
+              Node mod = d_nm->mkNode(kind::INTS_MODULUS_TOTAL, mult, p2);
+              d_bvToIntCache[current] = mod;
               break;
             }
             case kind::BITVECTOR_UDIV_TOTAL:
@@ -778,8 +718,8 @@ Node BVToInt::bvToInt(Node n)
               else {
                 translated_children.insert(translated_children.begin(), intUF);
                 // Insert the term to the cache
-                Node v = d_nm->mkBoundVar(d_nm->integerType());
-                Node lem = d_nm->mkNode(kind::EQUAL, v, d_nm->mkNode(kind::APPLY_UF, translated_children));
+                d_bvToIntCache[current] =
+                    d_nm->mkNode(kind::APPLY_UF, translated_children);
                 /**
                  * Add range constraints if necessary.
                  * If the original range was a BV sort, the current application of
@@ -788,15 +728,17 @@ Node BVToInt::bvToInt(Node n)
                  */
                 if (bvRange.isBitVector())
                 {
-                  lem = d_nm->mkNode(kind::AND, lem, mkRangeConstraint(v, current.getType().getBitVectorSize()));
+                  Node m = d_bvToIntCache[current];
+                  if (expr::hasFreeVar(m)) {
+                      throw TypeCheckingException(
+                          current.toExpr(),
+                          string("Cannot translate UF with bound variables to Int: ") + current.toString());
+                  }
+                  d_rangeAssertions.insert(
+                      mkRangeConstraint(d_bvToIntCache[current],
+                                        current.getType().getBitVectorSize()));
                 }
-                SkolemManager* sm = d_nm->getSkolemManager();
-                Node sigma = sm->mkSkolem(
-                  v, lem, "__bvToInt_sigma_var", "a bv2int sigma var for UF application");
-                sigma = SkolemManager::getWitnessForm(sigma);
-                  d_bvToIntCache[current] =
-                      sigma;
-                }
+              }
                 break;
             }
             case kind::BOUND_VAR_LIST:
