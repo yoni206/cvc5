@@ -217,9 +217,9 @@ set(regress_0_tests
   regress0/bv/bv_to_int_bvmul2.smt2
   regress0/bv/bv_to_int_zext.smt2
   regress0/bv/bv_to_int_bitwise.smt2
-  regress0/bv/bvuf_to_intuf.smt2
-  regress0/bv/bvuf_to_intuf_smtlib.smt2
-  regress0/bv/bvuf_to_intuf_sorts.smt2
+  regress0/bv/bv_to_int_bvuf_to_intuf.smt2
+  regress0/bv/bv_to_int_bvuf_to_intuf_smtlib.smt2
+  regress0/bv/bv_to_int_bvuf_to_intuf_sorts.smt2
   regress0/bv/bv2nat-ground-c.smt2
   regress0/bv/bv2nat-simp-range.smt2
   regress0/bv/bvmul-pow2-only.smt2
@@ -2127,6 +2127,9 @@ set(regress_3_tests
   regress3/bmc-ibm-5.smtv1.smt2
   regress3/bmc-ibm-7.smtv1.smt2
   regress3/bv_to_int_and_or.smt2
+  regress3/bv_to_int_check_bvsge_bvashr0_4bit.smt2.minimized.smt2
+  regress3/bv_to_int_check_bvsgt_bvlshr0_4bit.smt2.minimized.smt2
+  regress3/bv_to_int_check_bvsgt_bvmul_4bit.smt2.minimized.smt2
   regress3/eq_diamond14.smtv1.smt2
   regress3/friedman_n6_i4.smtv1.smt2
   regress3/hole9.cvc

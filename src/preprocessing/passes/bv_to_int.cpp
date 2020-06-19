@@ -180,6 +180,12 @@ Node BVToInt::eliminationPass(Node n)
   while (!toVisit.empty())
   {
     current = toVisit.back();
+    //assert that the node is binarized
+    kind::Kind_t k = current.getKind();
+    uint64_t numChildren = current.getNumChildren();
+    Assert((numChildren == 2) || !(k == kind::BITVECTOR_PLUS || k == kind::BITVECTOR_MULT
+              || k == kind::BITVECTOR_AND || k == kind::BITVECTOR_OR
+              || k == kind::BITVECTOR_XOR || k == kind::BITVECTOR_CONCAT));
     toVisit.pop_back();
     bool inEliminationCache =
         (d_eliminationCache.find(current) != d_eliminationCache.end());
@@ -271,8 +277,8 @@ Node BVToInt::eliminationPass(Node n)
  */
 Node BVToInt::bvToInt(Node n)
 {
-  n = eliminationPass(n);
   n = makeBinary(n);
+  n = eliminationPass(n);
   vector<Node> toVisit;
   toVisit.push_back(n);
   uint64_t granularity = options::BVAndIntegerGranularity();
@@ -910,13 +916,12 @@ Node BVToInt::createShiftNode(vector<Node> children,
    */
 
   /**
-   * Important note: we use INTS_DIVISION and not INTS_DIVISION_TOTAL because
-   * otherwise it is not sound
+   * Important note: we use INTS_DIVISION_TOTAL is safe here because we divide by 2^...
    */
-  kind::Kind_t then_kind = isLeftShift ? kind::MULT : kind::INTS_DIVISION;
+  kind::Kind_t then_kind = isLeftShift ? kind::MULT : kind::INTS_DIVISION_TOTAL;
   return d_nm->mkNode(kind::ITE,
                               d_nm->mkNode(kind::LT, y, d_nm->mkConst<Rational>(bvsize)),
-                              d_nm->mkNode(kind::INTS_MODULUS,
+                              d_nm->mkNode(kind::INTS_MODULUS_TOTAL,
                                                             d_nm->mkNode(then_kind, x, ite),
                                                             pow2(bvsize)),
                               d_zero);
