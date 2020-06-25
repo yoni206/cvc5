@@ -2,9 +2,9 @@
 /*! \file set_defaults.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Andrew Reynolds
+ **   Andrew Reynolds, Andres Noetzli, Aina Niemetz
  ** This file is part of the CVC4 project.
- ** Copyright (c) 2009-2019 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2009-2020 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved.  See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
@@ -264,6 +264,27 @@ void setDefaults(SmtEngine& smte, LogicInfo& logic)
       options::elimExtArithQuant.set(false);
       Trace("smt") << "turning off elim-ext-arith-quant, for strings-exp"
                    << std::endl;
+    }
+  }
+  // !!!!!!!!!!!!!!!! temporary, to support CI check for old proof system
+  if (options::proof())
+  {
+    options::proofNew.set(false);
+  }
+
+  if (options::arraysExp())
+  {
+    if (!logic.isQuantified())
+    {
+      logic = logic.getUnlockedCopy();
+      logic.enableQuantifiers();
+      logic.lock();
+    }
+    // Allows to answer sat more often by default.
+    if (!options::fmfBound.wasSetByUser())
+    {
+      options::fmfBound.set(true);
+      Trace("smt") << "turning on fmf-bound, for arrays-exp" << std::endl;
     }
   }
 
@@ -875,6 +896,16 @@ void setDefaults(SmtEngine& smte, LogicInfo& logic)
   }
   if (options::ufHo())
   {
+    // if higher-order, disable proof production
+    if (options::proofNew())
+    {
+      if (options::proofNew.wasSetByUser())
+      {
+        Warning() << "SmtEngine: turning off proof production (not yet "
+                     "supported with --uf-ho)\n";
+      }
+      options::proofNew.set(false);
+    }
     // if higher-order, then current variants of model-based instantiation
     // cannot be used
     if (options::mbqiMode() != options::MbqiMode::NONE)
@@ -1105,6 +1136,16 @@ void setDefaults(SmtEngine& smte, LogicInfo& logic)
     if (!options::cegqiPreRegInst.wasSetByUser())
     {
       options::cegqiPreRegInst.set(true);
+    }
+    // not compatible with proofs
+    if (options::proofNew())
+    {
+      if (options::proofNew.wasSetByUser())
+      {
+        Notice() << "SmtEngine: setting proof-new to false to support SyGuS"
+                 << std::endl;
+      }
+      options::proofNew.set(false);
     }
   }
   // counterexample-guided instantiation for non-sygus
@@ -1399,12 +1440,6 @@ void setDefaults(SmtEngine& smte, LogicInfo& logic)
     disableModels = true;
     sOptNoModel = "minisat-elimination";
   }
-  else if (logic.isTheoryEnabled(THEORY_ARITH) && !logic.isLinear()
-           && !options::nlExt())
-  {
-    disableModels = true;
-    sOptNoModel = "nonlinear arithmetic without nl-ext";
-  }
   else if (options::globalNegate())
   {
     disableModels = true;
@@ -1461,6 +1496,11 @@ void setDefaults(SmtEngine& smte, LogicInfo& logic)
         "Note that in a QF_BV problem UF symbols can be introduced for "
         "division. "
         "Try --bv-div-zero-const to interpret division by zero as a constant.");
+  }
+  // !!!!!!!!!!!!!!!! temporary, until proof-new is functional
+  if (options::proofNew())
+  {
+    throw OptionException("--proof-new is not yet supported.");
   }
 }
 
