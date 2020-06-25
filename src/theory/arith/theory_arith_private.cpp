@@ -1177,10 +1177,12 @@ Node TheoryArithPrivate::eliminateOperatorsRec(Node n)
 
 Node TheoryArithPrivate::eliminateOperators(Node node)
 {
+  std::cout << "panda eliminate: " << node << std::endl;
   NodeManager* nm = NodeManager::currentNM();
   SkolemManager* sm = nm->getSkolemManager();
 
   Kind k = node.getKind();
+  std::cout << "panda k = " << k << std::endl;
   switch (k)
   {
     case kind::TANGENT:
@@ -1376,6 +1378,7 @@ Node TheoryArithPrivate::eliminateOperators(Node node)
 
     case kind::INTS_DIVISION:
     {
+      std::cout << "panda ints_division" << std::endl;
       // partial function: integer div
       Node num = Rewriter::rewrite(node[0]);
       Node den = Rewriter::rewrite(node[1]);
@@ -4440,6 +4443,7 @@ DeltaRational TheoryArithPrivate::getDeltaValue(TNode term) const
     case kind::DIVISION_TOTAL:
     case kind::INTS_DIVISION_TOTAL:
     case kind::INTS_MODULUS_TOTAL: {  // 2 args
+      std::cout << "panda ints_division_total" << std::endl;
       Assert(!isSetup(term));
       DeltaRational denominator = getDeltaValue(term[1]);
       if (denominator.isZero()) {
