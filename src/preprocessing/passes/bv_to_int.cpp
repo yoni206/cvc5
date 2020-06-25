@@ -912,7 +912,7 @@ Node BVToInt::createShiftNode(vector<Node> children,
   // ite represents 2^x for every integer x from 0 to bvsize-1.
   Node ite = d_zero;
   Node body;
-  for (uint64_t i = 1; i < bvsize; i++)
+  for (uint64_t i = 0; i < bvsize; i++)
   {
     if (isLeftShift) {
       body = d_nm->mkNode(kind::INTS_MODULUS_TOTAL, d_nm->mkNode(kind::MULT, x, pow2(i)), pow2(bvsize));
