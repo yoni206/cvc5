@@ -133,7 +133,7 @@ Node BVToInt::makeBinary(Node n)
           Node child = d_binarizeCache[current[i]];
           result = d_nm->mkNode(current.getKind(), result, child);
         }
-        d_binarizeCache[current] = result;
+	d_binarizeCache[current] = result;
       }
       else if (numChildren > 0)
       {
@@ -169,7 +169,7 @@ Node BVToInt::makeBinary(Node n)
  * On the way down we rewrite the node but not it's children.
  * On the way up, we update the node's children to the rewritten ones.
  * For each sub-node, we perform rewrites to eliminate operators.
- * Then, the original children are added to toVisit stack so that we rewrite
+ * The§<n, the original children are added to toVisit stack so that we rewrite
  * them as well.
  */
 Node BVToInt::eliminationPass(Node n)
@@ -183,6 +183,7 @@ Node BVToInt::eliminationPass(Node n)
     //assert that the node is binarized
     kind::Kind_t k = current.getKind();
     uint64_t numChildren = current.getNumChildren();
+    cout << endl;
     Assert((numChildren == 2) || !(k == kind::BITVECTOR_PLUS || k == kind::BITVECTOR_MULT
               || k == kind::BITVECTOR_AND || k == kind::BITVECTOR_OR
               || k == kind::BITVECTOR_XOR || k == kind::BITVECTOR_CONCAT));
@@ -209,8 +210,6 @@ Node BVToInt::eliminationPass(Node n)
                                   RewriteRule<OrEliminate>,
                                   RewriteRule<SubEliminate>,
                                   RewriteRule<RepeatEliminate>,
-                                  RewriteRule<ZeroExtendEliminate>,
-                                  RewriteRule<SignExtendEliminate>,
                                   RewriteRule<RotateRightEliminate>,
                                   RewriteRule<RotateLeftEliminate>,
                                   RewriteRule<CompEliminate>,
@@ -237,7 +236,7 @@ Node BVToInt::eliminationPass(Node n)
       if (d_rebuildCache[current].get().isNull())
       {
         // current wasn't rebuilt yet.
-        uint64_t numChildren = current.getNumChildren();
+        numChildren = current.getNumChildren();
         if (numChildren == 0)
         {
           // We only eliminate operators that are not nullary.
@@ -551,6 +550,42 @@ Node BVToInt::bvToInt(Node n)
               d_bvToIntCache[current] = ite;
               break;
             }
+	    case kind::BITVECTOR_ZERO_EXTEND:
+	    {
+	      d_bvToIntCache[current] = translated_children[0];
+	      break;
+	    }
+	    case kind::BITVECTOR_SIGN_EXTEND:
+	    {
+              uint64_t bvsize = current[0].getType().getBitVectorSize();
+	      Node arg = translated_children[0];
+	      if (arg.isConst()) {
+		  Rational c(arg.getConst<Rational>());
+		  Rational twoToKMinusOne(intpow2(bvsize - 1));
+		  if (c < twoToKMinusOne) {
+		    d_bvToIntCache[current] = current;
+		  } else {
+		    uint64_t amount = bv::utils::getSignExtendAmount(current);
+		    Rational max_of_amount = intpow2(amount) - 1;
+		    Rational mul = max_of_amount * intpow2(bvsize);
+		    Rational sum = mul + c;
+		    Node result = d_nm->mkConst(sum);
+		    d_bvToIntCache[current] = result;
+		  }
+	      } else {
+		Node minSigned = bv::utils::mkMinSigned(bvsize);
+		Node condition = d_nm->mkNode(kind::LT, arg, minSigned);
+		Node thenResult = arg;
+		uint64_t amount = bv::utils::getSignExtendAmount(current);
+		Node left = maxInt(amount);
+		Node mul = d_nm->mkNode(kind::MULT, left, pow2(bvsize));
+		Node sum = d_nm->mkNode(kind::PLUS, mul, arg);
+		Node elseResult = sum;
+		Node ite = d_nm->mkNode(kind::ITE, condition, thenResult, elseResult);
+		d_bvToIntCache[current] = ite;
+	      }
+	      break;
+	    }
             case kind::BITVECTOR_CONCAT:
             {
               // (concat a b) translates to a*2^k+b, k being the bitwidth of b.
