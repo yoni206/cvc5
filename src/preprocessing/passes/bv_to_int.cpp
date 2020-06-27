@@ -183,7 +183,6 @@ Node BVToInt::eliminationPass(Node n)
     //assert that the node is binarized
     kind::Kind_t k = current.getKind();
     uint64_t numChildren = current.getNumChildren();
-    cout << endl;
     Assert((numChildren == 2) || !(k == kind::BITVECTOR_PLUS || k == kind::BITVECTOR_MULT
               || k == kind::BITVECTOR_AND || k == kind::BITVECTOR_OR
               || k == kind::BITVECTOR_XOR || k == kind::BITVECTOR_CONCAT));
