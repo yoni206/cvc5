@@ -573,7 +573,8 @@ Node BVToInt::bvToInt(Node n)
 		    d_bvToIntCache[current] = result;
 		  }
 	      } else {
-		Node minSigned = bv::utils::mkMinSigned(bvsize);
+		Rational twoToKMinusOne(intpow2(bvsize - 1));
+		Node minSigned = d_nm->mkConst(twoToKMinusOne);
 		Node condition = d_nm->mkNode(kind::LT, arg, minSigned);
 		Node thenResult = arg;
 		uint64_t amount = bv::utils::getSignExtendAmount(current);
