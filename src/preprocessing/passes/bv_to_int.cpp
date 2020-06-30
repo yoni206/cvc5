@@ -383,6 +383,7 @@ Node BVToInt::bvToInt(Node n)
             case kind::BITVECTOR_PLUS:
             {
               uint64_t bvsize = current[0].getType().getBitVectorSize();
+	      Assert(currentNumChildren == 2);
               Node plus = d_nm->mkNode(kind::PLUS, translated_children);
               Node p2 = pow2(bvsize);
               Node mod = d_nm->mkNode(kind::INTS_MODULUS_TOTAL, plus, p2);
@@ -561,10 +562,10 @@ Node BVToInt::bvToInt(Node n)
 	      if (arg.isConst()) {
 		  Rational c(arg.getConst<Rational>());
 		  Rational twoToKMinusOne(intpow2(bvsize - 1));
-		  if (c < twoToKMinusOne) {
-		    d_bvToIntCache[current] = current;
+		  uint64_t amount = bv::utils::getSignExtendAmount(current);		  
+		  if (c < twoToKMinusOne || amount == 0) {
+		    d_bvToIntCache[current] = arg;
 		  } else {
-		    uint64_t amount = bv::utils::getSignExtendAmount(current);
 		    Rational max_of_amount = intpow2(amount) - 1;
 		    Rational mul = max_of_amount * intpow2(bvsize);
 		    Rational sum = mul + c;
@@ -572,17 +573,21 @@ Node BVToInt::bvToInt(Node n)
 		    d_bvToIntCache[current] = result;
 		  }
 	      } else {
-		Rational twoToKMinusOne(intpow2(bvsize - 1));
-		Node minSigned = d_nm->mkConst(twoToKMinusOne);
-		Node condition = d_nm->mkNode(kind::LT, arg, minSigned);
-		Node thenResult = arg;
 		uint64_t amount = bv::utils::getSignExtendAmount(current);
-		Node left = maxInt(amount);
-		Node mul = d_nm->mkNode(kind::MULT, left, pow2(bvsize));
-		Node sum = d_nm->mkNode(kind::PLUS, mul, arg);
-		Node elseResult = sum;
-		Node ite = d_nm->mkNode(kind::ITE, condition, thenResult, elseResult);
-		d_bvToIntCache[current] = ite;
+		if (amount == 0) {
+		  d_bvToIntCache[current] = translated_children[0];
+		} else {
+		  Rational twoToKMinusOne(intpow2(bvsize - 1));
+		  Node minSigned = d_nm->mkConst(twoToKMinusOne);
+		  Node condition = d_nm->mkNode(kind::LT, arg, minSigned);
+		  Node thenResult = arg;
+		  Node left = maxInt(amount);
+		  Node mul = d_nm->mkNode(kind::MULT, left, pow2(bvsize));
+		  Node sum = d_nm->mkNode(kind::PLUS, mul, arg);
+		  Node elseResult = sum;
+		  Node ite = d_nm->mkNode(kind::ITE, condition, thenResult, elseResult);
+		  d_bvToIntCache[current] = ite;
+		}
 	      }
 	      break;
 	    }
