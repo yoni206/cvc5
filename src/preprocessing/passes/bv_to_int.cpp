@@ -198,9 +198,9 @@ Node BVToInt::eliminationPass(Node n)
       // eliminate operators from it
       Node currentEliminated =
           FixpointRewriteStrategy<RewriteRule<UdivZero>,
-                                  RewriteRule<SdivEliminate>,
-                                  RewriteRule<SremEliminate>,
-                                  RewriteRule<SmodEliminate>,
+                                  RewriteRule<SdivEliminateFewerBitwiseOps>,
+                                  RewriteRule<SremEliminateFewerBitwiseOps>,
+                                  RewriteRule<SmodEliminateFewerBitwiseOps>,
                                   RewriteRule<XnorEliminate>,
                                   RewriteRule<NandEliminate>,
                                   RewriteRule<NorEliminate>,
@@ -215,9 +215,7 @@ Node BVToInt::eliminationPass(Node n)
                                   RewriteRule<SleEliminate>,
                                   RewriteRule<SltEliminate>,
                                   RewriteRule<SgtEliminate>,
-                                  RewriteRule<SgeEliminate>,
-                                  RewriteRule<ShlByConst>,
-                                  RewriteRule<LshrByConst> >::apply(current);
+                                  RewriteRule<SgeEliminate>>::apply(current);
       // save in the cache
       d_eliminationCache[current] = currentEliminated;
       // put the eliminated node in the rebuild cache, but mark that it hasn't
@@ -277,6 +275,11 @@ Node BVToInt::bvToInt(Node n)
 {
   n = makeBinary(n);
   n = eliminationPass(n);
+  /**
+   *  binarize again, in case the elimination pass introduced
+   * non-binary terms (as can happen by RepeatEliminate, for example)
+   */
+  n = makeBinary(n);
   vector<Node> toVisit;
   toVisit.push_back(n);
   uint64_t granularity = options::BVAndIntegerGranularity();
@@ -382,8 +385,8 @@ Node BVToInt::bvToInt(Node n)
           {
             case kind::BITVECTOR_PLUS:
             {
-              uint64_t bvsize = current[0].getType().getBitVectorSize();
 	      Assert(currentNumChildren == 2);
+	      uint64_t bvsize = current[0].getType().getBitVectorSize();
               Node plus = d_nm->mkNode(kind::PLUS, translated_children);
               Node p2 = pow2(bvsize);
               Node mod = d_nm->mkNode(kind::INTS_MODULUS_TOTAL, plus, p2);
@@ -392,6 +395,7 @@ Node BVToInt::bvToInt(Node n)
             }
             case kind::BITVECTOR_MULT:
             {
+	      Assert(currentNumChildren == 2);	      
               uint64_t bvsize = current[0].getType().getBitVectorSize();
               Node mult = d_nm->mkNode(kind::MULT, translated_children);
               Node p2 = pow2(bvsize);
@@ -425,23 +429,6 @@ Node BVToInt::bvToInt(Node n)
                   translated_children[0],
                   modNode);
               d_bvToIntCache[current] = ite;
-              break;
-            }
-            case kind::BITVECTOR_NEG:
-            {
-              // (bvneg x) is 2^k-x, unless x is 0, 
-              // in which case the result should be 0.
-              // This can be expressed by (2^k-x) mod 2^k
-              // However, since mod is an expensive arithmetic operation,
-              // we represent `bvneg` using an ITE.
-              uint64_t bvsize = current[0].getType().getBitVectorSize();
-              Node pow2BvSize = pow2(bvsize);
-              Node neg =
-                  d_nm->mkNode(kind::MINUS, pow2BvSize, translated_children[0]);
-              Node isZero =
-                  d_nm->mkNode(kind::EQUAL, translated_children[0], d_zero);
-              d_bvToIntCache[current] =
-                  d_nm->mkNode(kind::ITE, isZero, d_zero, neg);
               break;
             }
             case kind::BITVECTOR_NOT:
@@ -948,7 +935,17 @@ Node BVToInt::createShiftNode(vector<Node> children,
    */
   Node x = children[0];
   Node y = children[1];
-  Assert(!y.isConst());
+  if (y.isConst()) {
+    Rational yc = y.getConst<Rational>();
+    if (yc <= std::numeric_limits<uint32_t>::max()) {
+      Node right = pow2(yc.getNumerator().toUnsignedInt());
+      if (isLeftShift) {
+        return d_nm->mkNode(kind::INTS_MODULUS_TOTAL, d_nm->mkNode(kind::MULT, x, right), pow2(bvsize));      
+      } else {
+        return d_nm->mkNode(kind::INTS_DIVISION_TOTAL, x, right);
+      }
+    }
+  }
   // ite represents 2^x for every integer x from 0 to bvsize-1.
   Node ite = d_zero;
   Node body;
@@ -964,9 +961,8 @@ Node BVToInt::createShiftNode(vector<Node> children,
                        body,
                        ite);
   }
-
   return ite;
-             }
+}
 
 Node BVToInt::createITEFromTable(
     Node x,

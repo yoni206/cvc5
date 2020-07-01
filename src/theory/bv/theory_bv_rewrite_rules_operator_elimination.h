@@ -37,7 +37,8 @@ inline bool RewriteRule<NegEliminate>::applies(TNode node)
 template <>
 inline Node RewriteRule<NegEliminate>::apply(TNode node)
 {
-  //hacker's delight section 2-2 eq a
+  // hacker's delight section 2-2 eqation a:
+  // -x = ~x-1
   Debug("bv-rewrite") << "RewriteRule<NegEliminate>(" << node << ")"
                       << std::endl;
   TNode a = node[0];
@@ -57,7 +58,8 @@ inline bool RewriteRule<OrEliminate>::applies(TNode node)
 template <>
 inline Node RewriteRule<OrEliminate>::apply(TNode node)
 {
-  // hacker's delight section 2-2 eq h
+  // hacker's delight section 2-2 eqation h:
+  // x+y = x|y + x&y
   Debug("bv-rewrite") << "RewriteRule<OrEliminate>(" << node << ")"
                       << std::endl;
   TNode a = node[0];
@@ -78,7 +80,8 @@ inline bool RewriteRule<XorEliminate>::applies(TNode node)
 template <>
 inline Node RewriteRule<XorEliminate>::apply(TNode node)
 {
-  // hacker's delight section 2-2 eq n
+  // hacker's delight section 2-2 eqation n:
+  // x xor y = x|y - x&y
   Debug("bv-rewrite") << "RewriteRule<XorEliminate>(" << node << ")"
                       << std::endl;
   TNode a = node[0];
@@ -460,6 +463,45 @@ inline Node RewriteRule<SdivEliminate>::apply(TNode node)
   return result;
 }
 
+
+template <>
+inline bool RewriteRule<SdivEliminateFewerBitwiseOps>::applies(TNode node)
+{
+  return (node.getKind() == kind::BITVECTOR_SDIV);
+}
+
+template <>
+inline Node RewriteRule<SdivEliminateFewerBitwiseOps>::apply(TNode node)
+{
+  Debug("bv-rewrite") << "RewriteRule<SdivEliminateFewerBitwiseOps>(" << node << ")"
+                      << std::endl;
+
+  NodeManager *nm = NodeManager::currentNM();
+  TNode a = node[0];
+  TNode b = node[1];
+  unsigned size = utils::getSize(a);
+  Node a_lt_0 =
+    nm->mkNode(kind::BITVECTOR_ULT, a, utils::mkMinSigned(size));
+  Node b_lt_0 =
+    nm->mkNode(kind::BITVECTOR_ULT, b, utils::mkMinSigned(size));
+  Node abs_a =
+      nm->mkNode(kind::ITE, a_lt_0, nm->mkNode(kind::BITVECTOR_NEG, a), a);
+  Node abs_b =
+      nm->mkNode(kind::ITE, b_lt_0, nm->mkNode(kind::BITVECTOR_NEG, b), b);
+
+  Node a_udiv_b =
+      nm->mkNode(options::bitvectorDivByZeroConst() ? kind::BITVECTOR_UDIV_TOTAL
+                                                    : kind::BITVECTOR_UDIV,
+                 abs_a,
+                 abs_b);
+  Node neg_result = nm->mkNode(kind::BITVECTOR_NEG, a_udiv_b);
+
+  Node condition = nm->mkNode(kind::XOR, a_lt_0, b_lt_0);
+  Node result = nm->mkNode(kind::ITE, condition, neg_result, a_udiv_b);
+
+  return result;
+}
+
 template <>
 inline bool RewriteRule<SremEliminate>::applies(TNode node)
 {
@@ -486,6 +528,41 @@ inline Node RewriteRule<SremEliminate>::apply(TNode node)
   Node abs_b =
       nm->mkNode(kind::ITE, b_lt_0, nm->mkNode(kind::BITVECTOR_NEG, b), b);
 
+  Node a_urem_b =
+      nm->mkNode(options::bitvectorDivByZeroConst() ? kind::BITVECTOR_UREM_TOTAL
+                                                    : kind::BITVECTOR_UREM,
+                 abs_a,
+                 abs_b);
+  Node neg_result = nm->mkNode(kind::BITVECTOR_NEG, a_urem_b);
+
+  Node result = nm->mkNode(kind::ITE, a_lt_0, neg_result, a_urem_b);
+
+  return result;
+}
+
+template <>
+inline bool RewriteRule<SremEliminateFewerBitwiseOps>::applies(TNode node)
+{
+  return (node.getKind() == kind::BITVECTOR_SREM);
+}
+
+template <>
+inline Node RewriteRule<SremEliminateFewerBitwiseOps>::apply(TNode node)
+{
+  Debug("bv-rewrite") << "RewriteRule<SremEliminateFewerBitwiseOps>(" << node << ")"
+                      << std::endl;
+  NodeManager *nm = NodeManager::currentNM();
+  TNode a = node[0];
+  TNode b = node[1];
+  unsigned size = utils::getSize(a);
+  Node a_lt_0 =
+    nm->mkNode(kind::BITVECTOR_ULT, a, utils::mkMinSigned(size));
+  Node b_lt_0 =
+    nm->mkNode(kind::BITVECTOR_ULT, b, utils::mkMinSigned(size));
+  Node abs_a =
+      nm->mkNode(kind::ITE, a_lt_0, nm->mkNode(kind::BITVECTOR_NEG, a), a);
+  Node abs_b =
+      nm->mkNode(kind::ITE, b_lt_0, nm->mkNode(kind::BITVECTOR_NEG, b), b);
   Node a_urem_b =
       nm->mkNode(options::bitvectorDivByZeroConst() ? kind::BITVECTOR_UREM_TOTAL
                                                     : kind::BITVECTOR_UREM,
@@ -548,6 +625,66 @@ inline Node RewriteRule<SmodEliminate>::apply(TNode node)
   Node cond1 = msb_s.eqNode(bit0).andNode(msb_t.eqNode(bit0));
   Node cond2 = msb_s.eqNode(bit1).andNode(msb_t.eqNode(bit0));
   Node cond3 = msb_s.eqNode(bit0).andNode(msb_t.eqNode(bit1));
+
+  Node result = cond0.iteNode(
+      u,
+      cond1.iteNode(
+          u,
+          cond2.iteNode(
+              nm->mkNode(kind::BITVECTOR_PLUS, neg_u, t),
+              cond3.iteNode(nm->mkNode(kind::BITVECTOR_PLUS, u, t), neg_u))));
+
+  return result;
+}
+
+template <>
+inline bool RewriteRule<SmodEliminateFewerBitwiseOps>::applies(TNode node)
+{
+  return (node.getKind() == kind::BITVECTOR_SMOD);
+}
+
+template <>
+inline Node RewriteRule<SmodEliminateFewerBitwiseOps>::apply(TNode node)
+{
+  Debug("bv-rewrite") << "RewriteRule<SmodEliminate>(" << node << ")"
+                      << std::endl;
+  NodeManager *nm = NodeManager::currentNM();
+  TNode s = node[0];
+  TNode t = node[1];
+  unsigned size = utils::getSize(s);
+
+  // (bvsmod s t) abbreviates
+  //     (let ((?msb_s ((_ extract |m-1| |m-1|) s))
+  //           (?msb_t ((_ extract |m-1| |m-1|) t)))
+  //       (let ((abs_s (ite (= ?msb_s #b0) s (bvneg s)))
+  //             (abs_t (ite (= ?msb_t #b0) t (bvneg t))))
+  //         (let ((u (bvurem abs_s abs_t)))
+  //           (ite (= u (_ bv0 m))
+  //                u
+  //           (ite (and (= ?msb_s #b0) (= ?msb_t #b0))
+  //                u
+  //           (ite (and (= ?msb_s #b1) (= ?msb_t #b0))
+  //                (bvadd (bvneg u) t)
+  //           (ite (and (= ?msb_s #b0) (= ?msb_t #b1))
+  //                (bvadd u t)
+  //                (bvneg u))))))))
+
+  Node s_lt_0 =
+    nm->mkNode(kind::BITVECTOR_ULT, s, utils::mkMinSigned(size));
+  Node t_lt_0 =
+    nm->mkNode(kind::BITVECTOR_ULT, t, utils::mkMinSigned(size));
+  Node abs_s =
+      nm->mkNode(kind::ITE, s_lt_0, nm->mkNode(kind::BITVECTOR_NEG, s), s);
+  Node abs_t =
+      nm->mkNode(kind::ITE, t_lt_0, nm->mkNode(kind::BITVECTOR_NEG, t), t);
+  
+  Node u = nm->mkNode(kind::BITVECTOR_UREM, abs_s, abs_t);
+  Node neg_u = nm->mkNode(kind::BITVECTOR_NEG, u);
+
+  Node cond0 = u.eqNode(utils::mkConst(size, 0));
+  Node cond1 = nm->mkNode(kind::NOT, s_lt_0).andNode(nm->mkNode(kind::NOT,t_lt_0));
+  Node cond2 = s_lt_0.andNode(nm->mkNode(kind::NOT, t_lt_0));
+  Node cond3 = nm->mkNode(kind::NOT, s_lt_0).andNode(t_lt_0);
 
   Node result = cond0.iteNode(
       u,

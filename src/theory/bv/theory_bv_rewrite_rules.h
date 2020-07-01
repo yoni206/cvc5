@@ -66,9 +66,12 @@ enum RewriteRuleId
   NorEliminate,
   XnorEliminate,
   SdivEliminate,
+  SdivEliminateFewerBitwiseOps,  
   UdivEliminate,
   SmodEliminate,
+  SmodEliminateFewerBitwiseOps,  
   SremEliminate,
+  SremEliminateFewerBitwiseOps,  
   ZeroExtendEliminate,
   SignExtendEliminate,
   BVToNatEliminate,
@@ -229,8 +232,11 @@ inline std::ostream& operator << (std::ostream& out, RewriteRuleId ruleId) {
   case NandEliminate:       out << "NandEliminate";       return out;
   case NorEliminate :       out << "NorEliminate";        return out;
   case SdivEliminate :      out << "SdivEliminate";       return out;
+  case SdivEliminateFewerBitwiseOps :      out << "SdivEliminateFewerBitwiseOps";       return out;    
   case SremEliminate :      out << "SremEliminate";       return out;
+  case SremEliminateFewerBitwiseOps :      out << "SremEliminateFewerBitwiseOps";       return out;    
   case SmodEliminate :      out << "SmodEliminate";       return out;
+  case SmodEliminateFewerBitwiseOps :      out << "SmodEliminateFewerBitwiseOps";       return out;    
   case ZeroExtendEliminate :out << "ZeroExtendEliminate"; return out;
   case EvalEquals :         out << "EvalEquals";          return out;
   case EvalConcat :         out << "EvalConcat";          return out;
@@ -594,6 +600,9 @@ struct AllRewriteRules {
   RewriteRule<NegEliminate>                   rule140;
   RewriteRule<OrEliminate>                    rule141;
   RewriteRule<XorEliminate>                   rule142;
+  RewriteRule<SdivEliminate>                  rule143;
+  RewriteRule<SremEliminate>                  rule144;
+  RewriteRule<SmodEliminate>                  rule145;
 };
 
 template<> inline
