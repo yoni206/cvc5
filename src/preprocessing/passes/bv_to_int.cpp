@@ -457,8 +457,16 @@ Node BVToInt::bvToInt(Node n)
                                                        translated_children[0],
                                                        translated_children[1]);
               }
-              else
+              else if (options::solveBVAsInt() == options::SolveBVAsIntMode::BV)       
               {
+       		 Node intToBVOp = d_nm->mkConst<IntToBitVector>(IntToBitVector(bvsize));
+		 Node x = translated_children[0];
+		 Node y = translated_children[1];
+		 Node bvx = d_nm->mkNode(intToBVOp, x);
+                 Node bvy = d_nm->mkNode(intToBVOp, y);
+                 Node bvand = d_nm->mkNode(kind::BITVECTOR_AND, bvx, bvy);
+                 Node result = d_nm->mkNode(kind::BITVECTOR_TO_NAT, bvand);
+	      } else {
                 Assert(options::solveBVAsInt()
                        == options::SolveBVAsIntMode::SUM);
                 // Construct an ite, based on granularity.

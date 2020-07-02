@@ -658,6 +658,9 @@ header = "options/smt_options.h"
 [[option.mode.IAND]]
   name = "iand"
   help = "Translate bvand to the iand operator (experimental)"
+[[option.mode.BV]]
+  name = "bv"
+  help = "Translate bvand back to bit-vectors"
 
 [[option]]
   name       = "BVAndIntegerGranularity"
