@@ -1,3 +1,4 @@
+; COMMAND-LINE:  --solve-bv-as-int=bv --no-check-proofs
 ; COMMAND-LINE:  --solve-bv-as-int=iand --iand-mode=value    --no-check-proofs
 ; EXPECT: unsat
 (set-logic QF_BV)

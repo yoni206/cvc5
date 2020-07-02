@@ -1,3 +1,4 @@
+; COMMAND-LINE:  --solve-bv-as-int=bv --no-check-proofs
 ; COMMAND-LINE: --solve-bv-as-int=sum --no-check-models 
 ; EXPECT: sat
 (set-logic QF_BV)

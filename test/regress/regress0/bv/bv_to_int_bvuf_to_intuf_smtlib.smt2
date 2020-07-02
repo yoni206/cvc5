@@ -1,3 +1,4 @@
+; COMMAND-LINE:  --solve-bv-as-int=bv --no-check-proofs
 ;COMMAND-LINE:  --solve-bv-as-int=sum --bvand-integer-granularity=1 --no-produce-models --no-produce-unsat-cores --no-check-proofs
 ;EXPECT: unsat
 

@@ -1,3 +1,4 @@
+; COMMAND-LINE:  --solve-bv-as-int=bv --no-check-proofs --no-check-models
 ; COMMAND-LINE:  --bvand-integer-granularity=1 --solve-bv-as-int=sum --full-saturate-quant --cegqi-all  --no-check-models  --no-check-proofs
 ;EXPECT: sat
 (set-logic BV)

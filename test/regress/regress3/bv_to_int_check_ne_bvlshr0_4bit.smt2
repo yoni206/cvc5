@@ -1,3 +1,4 @@
+; COMMAND-LINE:  --solve-bv-as-int=bv --no-check-proofs
 (set-logic BV)
 (declare-fun s () (_ BitVec 4))
 (declare-fun t () (_ BitVec 4))

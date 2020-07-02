@@ -466,6 +466,7 @@ Node BVToInt::bvToInt(Node n)
                  Node bvy = d_nm->mkNode(intToBVOp, y);
                  Node bvand = d_nm->mkNode(kind::BITVECTOR_AND, bvx, bvy);
                  Node result = d_nm->mkNode(kind::BITVECTOR_TO_NAT, bvand);
+		 d_bvToIntCache[current] = result;
 	      } else {
                 Assert(options::solveBVAsInt()
                        == options::SolveBVAsIntMode::SUM);
