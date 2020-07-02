@@ -2,9 +2,9 @@
 /*! \file rewrites.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Andrew Reynolds
+ **   Andrew Reynolds, Andres Noetzli
  ** This file is part of the CVC4 project.
- ** Copyright (c) 2009-2019 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2009-2020 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved.  See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
@@ -202,6 +202,7 @@ const char* toString(Rewrite r)
     case Rewrite::LEN_CONCAT: return "LEN_CONCAT";
     case Rewrite::LEN_REPL_INV: return "LEN_REPL_INV";
     case Rewrite::LEN_CONV_INV: return "LEN_CONV_INV";
+    case Rewrite::LEN_SEQ_UNIT: return "LEN_SEQ_UNIT";
     case Rewrite::CHARAT_ELIM: return "CHARAT_ELIM";
     case Rewrite::SEQ_UNIT_EVAL: return "SEQ_UNIT_EVAL";
     default: return "?";

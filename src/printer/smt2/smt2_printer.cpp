@@ -4,7 +4,7 @@
  ** Top contributors (to current version):
  **   Andrew Reynolds, Morgan Deters, Tim King
  ** This file is part of the CVC4 project.
- ** Copyright (c) 2009-2019 by the authors listed in the file AUTHORS
+ ** Copyright (c) 2009-2020 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved.  See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
@@ -21,6 +21,7 @@
 #include <typeinfo>
 #include <vector>
 
+#include "api/cvc4cpp.h"
 #include "expr/dtype.h"
 #include "expr/node_manager_attributes.h"
 #include "expr/node_visitor.h"
@@ -592,40 +593,14 @@ void Smt2Printer::toStream(std::ostream& out,
   case kind::PARTIAL_SELECT_0:
   case kind::PARTIAL_SELECT_1:
   case kind::ARRAY_TYPE:
-    out << smtKindString(k, d_variant) << " ";
-    break;
+  case kind::EQ_RANGE: out << smtKindString(k, d_variant) << " "; break;
 
   // string theory
   case kind::STRING_CONCAT:
-    if(d_variant == z3str_variant) {
-      out << "Concat ";
-      for(unsigned i = 0; i < n.getNumChildren(); ++i) {
-        toStream(out, n[i], -1, types, TypeNode::null());
-        if(i + 1 < n.getNumChildren()) {
-          out << ' ';
-        }
-        if(i + 2 < n.getNumChildren()) {
-          out << "(Concat ";
-        }
-      }
-      for(unsigned i = 0; i < n.getNumChildren() - 1; ++i) {
-        out << ")";
-      }
-      return;
-    }
     out << "str.++ ";
     break;
   case kind::STRING_IN_REGEXP: {
     stringstream ss;
-    if(d_variant == z3str_variant && stringifyRegexp(n[1], ss)) {
-      out << "= ";
-      toStream(out, n[0], -1, types, TypeNode::null());
-      out << " ";
-      Node str = NodeManager::currentNM()->mkConst(String(ss.str()));
-      toStream(out, str, -1, types, TypeNode::null());
-      out << ")";
-      return;
-    }
     out << smtKindString(k, d_variant) << " ";
     break;
   }
@@ -1074,6 +1049,8 @@ static string smtKindString(Kind k, Variant v)
   case kind::ARRAY_TYPE: return "Array";
   case kind::PARTIAL_SELECT_0: return "partial_select_0";
   case kind::PARTIAL_SELECT_1: return "partial_select_1";
+  case kind::EQ_RANGE:
+    return "eqrange";
 
     // bv theory
   case kind::BITVECTOR_CONCAT: return "concat";
@@ -1191,7 +1168,7 @@ static string smtKindString(Kind k, Variant v)
 
   //string theory
   case kind::STRING_CONCAT: return "str.++";
-  case kind::STRING_LENGTH: return v == z3str_variant ? "Length" : "str.len";
+  case kind::STRING_LENGTH: return "str.len";
   case kind::STRING_SUBSTR: return "str.substr" ;
   case kind::STRING_STRCTN: return "str.contains" ;
   case kind::STRING_CHARAT: return "str.at" ;
@@ -1288,7 +1265,6 @@ void Smt2Printer::toStream(std::ostream& out,
       || tryToStream<EmptyCommand>(out, c)
       || tryToStream<EchoCommand>(out, c, d_variant)
       || tryToStream<SynthFunCommand>(out, c)
-      || tryToStream<DeclareSygusPrimedVarCommand>(out, c)
       || tryToStream<DeclareSygusFunctionCommand>(out, c)
       || tryToStream<DeclareSygusVarCommand>(out, c)
       || tryToStream<SygusConstraintCommand>(out, c)
@@ -1671,8 +1647,8 @@ static void toStream(std::ostream& out, const DefineFunctionCommand* c)
 
 static void toStream(std::ostream& out, const DefineFunctionRecCommand* c)
 {
-  const vector<Expr>& funcs = c->getFunctions();
-  const vector<vector<Expr> >& formals = c->getFormals();
+  const vector<api::Term>& funcs = c->getFunctions();
+  const vector<vector<api::Term> >& formals = c->getFormals();
   out << "(define-fun";
   if (funcs.size() > 1)
   {
@@ -1695,10 +1671,10 @@ static void toStream(std::ostream& out, const DefineFunctionRecCommand* c)
     }
     out << funcs[i] << " (";
     // print its type signature
-    vector<Expr>::const_iterator itf = formals[i].begin();
+    vector<api::Term>::const_iterator itf = formals[i].begin();
     for (;;)
     {
-      out << "(" << (*itf) << " " << (*itf).getType() << ")";
+      out << "(" << (*itf) << " " << (*itf).getSort() << ")";
       ++itf;
       if (itf != formals[i].end())
       {
@@ -1709,8 +1685,8 @@ static void toStream(std::ostream& out, const DefineFunctionRecCommand* c)
         break;
       }
     }
-    Type type = funcs[i].getType();
-    type = static_cast<FunctionType>(type).getRangeType();
+    api::Sort type = funcs[i].getSort();
+    type = type.getFunctionCodomainSort();
     out << ") " << type;
     if (funcs.size() > 1)
     {
@@ -1721,7 +1697,7 @@ static void toStream(std::ostream& out, const DefineFunctionRecCommand* c)
   {
     out << ") (";
   }
-  const vector<Expr>& formulas = c->getFormulas();
+  const vector<api::Term>& formulas = c->getFormulas();
   for (unsigned i = 0, size = formulas.size(); i < size; i++)
   {
     if (i > 0)
@@ -1855,12 +1831,7 @@ static void toStream(std::ostream& out,
                      const SetBenchmarkLogicCommand* c,
                      Variant v)
 {
-  // Z3-str doesn't have string-specific logic strings(?), so comment it
-  if(v == z3str_variant) {
-    out << "; (set-logic " << c->getLogic() << ")";
-  } else {
-    out << "(set-logic " << c->getLogic() << ")";
-  }
+  out << "(set-logic " << c->getLogic() << ")";
 }
 
 static void toStream(std::ostream& out, const SetInfoCommand* c, Variant v)
@@ -2024,7 +1995,7 @@ static void toStream(std::ostream& out, const CommentCommand* c, Variant v)
   string s = c->getComment();
   size_t pos = 0;
   while((pos = s.find_first_of('"', pos)) != string::npos) {
-    s.replace(pos, 1, (v == z3str_variant || v == smt2_0_variant) ? "\\\"" : "\"\"");
+    s.replace(pos, 1, v == smt2_0_variant ? "\\\"" : "\"\"");
     pos += 2;
   }
   out << "(set-info :notes \"" << s << "\")";
@@ -2038,7 +2009,7 @@ static void toStream(std::ostream& out, const EchoCommand* c, Variant v)
   // escape all double-quotes
   size_t pos = 0;
   while((pos = s.find('"', pos)) != string::npos) {
-    s.replace(pos, 1, (v == z3str_variant || v == smt2_0_variant) ? "\\\"" : "\"\"");
+    s.replace(pos, 1, v == smt2_0_variant ? "\\\"" : "\"\"");
     pos += 2;
   }
   out << "(echo \"" << s << "\")";
@@ -2158,12 +2129,6 @@ static void toStream(std::ostream& out, const DeclareSygusFunctionCommand* c)
   out << " (" << argTypes << ") " << ft.getRangeType() << ')';
 }
 
-static void toStream(std::ostream& out, const DeclareSygusPrimedVarCommand* c)
-{
-  out << '(' << c->getCommandName() << ' ' << CVC4::quoteSymbol(c->getSymbol())
-      << ' ' << c->getType() << ')';
-}
-
 static void toStream(std::ostream& out, const DeclareSygusVarCommand* c)
 {
   out << '(' << c->getCommandName() << ' ' << c->getVar() << ' ' << c->getType()
@@ -2243,7 +2208,7 @@ static void errorToStream(std::ostream& out, std::string message, Variant v) {
   // escape all double-quotes
   size_t pos = 0;
   while((pos = message.find('"', pos)) != string::npos) {
-    message.replace(pos, 1, (v == z3str_variant || v == smt2_0_variant) ? "\\\"" : "\"\"");
+    message.replace(pos, 1, v == smt2_0_variant ? "\\\"" : "\"\"");
     pos += 2;
   }
   out << "(error \"" << message << "\")" << endl;
@@ -2273,9 +2238,6 @@ static OutputLanguage variantToLanguage(Variant variant)
   switch(variant) {
   case smt2_0_variant:
     return language::output::LANG_SMTLIB_V2_0;
-  case z3str_variant:
-    return language::output::LANG_Z3STR;
-  case sygus_variant: return language::output::LANG_SYGUS_V1;
   case no_variant:
   default: return language::output::LANG_SMTLIB_V2_6;
   }

@@ -37,7 +37,7 @@ class IAndSolver
   typedef context::CDHashSet<Node, NodeHashFunction> NodeSet;
 
  public:
-  IAndSolver(TheoryArith& containing, nl::NlModel& model);
+  IAndSolver(TheoryArith& containing, NlModel& model);
   ~IAndSolver();
 
   /** init last call
@@ -79,7 +79,7 @@ class IAndSolver
   // The theory of arithmetic containing this extension.
   TheoryArith& d_containing;
   /** Reference to the non-linear model object */
-  nl::NlModel& d_model;
+  NlModel& d_model;
   /** commonly used terms */
   Node d_zero;
   Node d_one;
