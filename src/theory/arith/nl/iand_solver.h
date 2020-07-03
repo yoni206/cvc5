@@ -21,6 +21,7 @@
 #include "context/cdhashset.h"
 #include "expr/node.h"
 #include "theory/arith/nl/nl_lemma_utils.h"
+#include "theory/arith/nl/nl_iand_utils.h"
 #include "theory/arith/nl/nl_model.h"
 #include "theory/arith/theory_arith.h"
 
@@ -87,6 +88,7 @@ class IAndSolver
   Node d_two;
   Node d_true;
   Node d_false;
+  IAndHelper d_iandHelper;
   /** IAND terms that have been given initial refinement lemmas */
   NodeSet d_initRefine;
   /** all IAND terms, for each bit-width */

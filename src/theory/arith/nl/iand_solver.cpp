@@ -19,6 +19,7 @@
 #include "preprocessing/passes/bv_to_int.h"
 #include "theory/arith/arith_msum.h"
 #include "theory/arith/arith_utilities.h"
+#include "theory/arith/nl/nl_iand_utils.h"
 #include "util/iand.h"
 
 using namespace CVC4::kind;
@@ -151,11 +152,21 @@ std::vector<NlLemma> IAndSolver::checkFullRefine()
       // ************* additional lemma schemas go here
       if (options::iandMode() == options::IandMode::SUM)
       {
-        // add lemmas based on sum mode
+	Node lem = bitwiseLemma(i);	        // add lemmas based on sum mode
+        Trace("iand-lemma")	
+            << "IAndSolver::Lemma: " << lem << " ; BITWISE_REFINE" << std::endl;	
+        NlLemma nlem(lem);	
+        nlem.d_preprocess = true;	
+        lems.push_back(nlem);
       }
       else if (options::iandMode() == options::IandMode::BITWISE)
       {
-        // add lemmas based on sum mode
+	  Node lem = bitwiseLemma(i);	        // add lemmas based on sum mode
+          Trace("iand-lemma")	
+            << "IAndSolver::Lemma: " << lem << " ; BITWISE_REFINE" << std::endl;	
+          NlLemma nlem(lem);	
+          nlem.d_preprocess = true;	
+          lems.push_back(nlem);
       }
       else
       {
@@ -250,8 +261,6 @@ Node IAndSolver::valueBasedLemma(Node i)
   return lem;
 }
 
-bool oneBitAnd(bool a, bool b) { return (a && b); }
-
 Node IAndSolver::sumBasedLemma(Node i)
 {
   Assert(i.getKind() == IAND);
@@ -262,8 +271,8 @@ Node IAndSolver::sumBasedLemma(Node i)
   NodeManager* nm = NodeManager::currentNM();
   Node lem = nm->mkNode(EQUAL,
                         i,
-                        CVC4::preprocessing::passes::BVToInt::createBitwiseNode(
-                            x, y, bvsize, granularity, &oneBitAnd));
+                        d_iandHelper.createBitwiseNode(
+						       x, y, bvsize, granularity));
   return lem;
 }
 

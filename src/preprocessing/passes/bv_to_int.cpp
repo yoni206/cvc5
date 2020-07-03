@@ -46,7 +46,7 @@ static Rational intpow2(uint64_t b)
 /**
  * Helper functions for createBitwiseNode
  */
-bool oneBitAnd(bool a, bool b) { return (a && b); }
+
 
 bool oneBitOr(bool a, bool b) { return (a || b); }
 
@@ -472,11 +472,10 @@ Node BVToInt::bvToInt(Node n)
                        == options::SolveBVAsIntMode::SUM);
                 // Construct an ite, based on granularity.
                 Assert(translated_children.size() == 2);
-                Node newNode = createBitwiseNode(translated_children[0],
+                Node newNode = d_iandHelper.createBitwiseNode(translated_children[0],
                                                  translated_children[1],
                                                  bvsize,
-                                                 granularity,
-                                                 &oneBitAnd);
+							      granularity);
                 d_bvToIntCache[current] = newNode;
               }
               break;
@@ -973,119 +972,7 @@ Node BVToInt::createShiftNode(vector<Node> children,
   return ite;
 }
 
-Node BVToInt::createITEFromTable(
-    Node x,
-    Node y,
-    uint64_t granularity,
-    std::map<std::pair<uint64_t, uint64_t>, uint64_t> table)
-{
-  Assert(granularity <= 8);
-  uint64_t max_value = ((uint64_t)pow(2, granularity));
-  // The table represents a function from pairs of integers to integers, where
-  // all integers are between 0 (inclusive) and max_value (exclusive).
-  Assert(table.size() == max_value * max_value);
-  NodeManager* nm = NodeManager::currentNM();
-  Node ite = nm->mkConst<Rational>(table[std::make_pair(0, 0)]);
-  for (uint64_t i = 0; i < max_value; i++)
-  {
-    for (uint64_t j = 0; j < max_value; j++)
-    {
-      if ((i == 0) && (j == 0))
-      {
-        continue;
-      }
-      ite = nm->mkNode(
-          kind::ITE,
-          nm->mkNode(kind::AND,
-                     nm->mkNode(kind::EQUAL, x, nm->mkConst<Rational>(i)),
-                     nm->mkNode(kind::EQUAL, y, nm->mkConst<Rational>(j))),
-          nm->mkConst<Rational>(table[std::make_pair(i, j)]),
-          ite);
-    }
-  }
-  return ite;
-}
 
-Node BVToInt::createBitwiseNode(Node x,
-                                Node y,
-                                uint64_t bvsize,
-                                uint64_t granularity,
-                                bool (*f)(bool, bool))
-{
-  /**
-   * Standardize granularity.
-   * If it is greater than bvsize, it is set to bvsize.
-   * Otherwise, it is set to the closest (going down)  divider of bvsize.
-   */
-  Assert(granularity > 0);
-  if (granularity > bvsize)
-  {
-    granularity = bvsize;
-  }
-  else
-  {
-    while (bvsize % granularity != 0)
-    {
-      granularity = granularity - 1;
-    }
-  }
-  // transform f into a table
-  // f is defined over 1 bit, while the table is defined over `granularity` bits
-  std::map<std::pair<uint64_t, uint64_t>, uint64_t> table;
-  uint64_t max_value = ((uint64_t)pow(2, granularity));
-  for (uint64_t i = 0; i < max_value; i++)
-  {
-    for (uint64_t j = 0; j < max_value; j++)
-    {
-      uint64_t sum = 0;
-      for (uint64_t n = 0; n < granularity; n++)
-      {
-        // b is the result of f on the current bit
-        bool b = f((((i >> n) & 1) == 1), (((j >> n) & 1) == 1));
-        // add the corresponding power of 2 only if the result is 1
-        if (b)
-        {
-          sum += 1 << n;
-        }
-      }
-      table[std::make_pair(i, j)] = sum;
-    }
-  }
-   Assert(table.size() == max_value * max_value);
-
-  /*
-   * Create the sum.
-   * For granularity 1, the sum has bvsize elements.
-   * In contrast, if bvsize = granularity, sum has one element.
-   * Each element in the sum is an ite that corresponds to the generated table,
-   * multiplied by the appropriate power of two.
-   * More details are in bv_to_int.h .
-   */
-  uint64_t sumSize = bvsize / granularity;
-  NodeManager* nm = NodeManager::currentNM();
-  Node sumNode = nm->mkConst<Rational>(0);
-  /**
-   * extract definition in integers is:
-   * (define-fun intextract ((k Int) (i Int) (j Int) (a Int)) Int
-   * (mod (div a (two_to_the j)) (two_to_the (+ (- i j) 1))))
-   */
-  for (uint64_t i = 0; i < sumSize; i++)
-  {
-    Node xExtract = nm->mkNode(
-        kind::INTS_MODULUS_TOTAL,
-        nm->mkNode(kind::INTS_DIVISION_TOTAL, x, pow2(i * granularity)),
-        pow2(granularity));
-    Node yExtract = nm->mkNode(
-        kind::INTS_MODULUS_TOTAL,
-        nm->mkNode(kind::INTS_DIVISION_TOTAL, y, pow2(i * granularity)),
-        pow2(granularity));
-    Node ite = createITEFromTable(xExtract, yExtract, granularity, table);
-    sumNode = nm->mkNode(kind::PLUS,
-                         sumNode,
-                         nm->mkNode(kind::MULT, pow2(i * granularity), ite));
-  }
-  return sumNode;
-}
 
 Node BVToInt::translateQuantifiedFormula(Node current, kind::Kind_t k)
 {
