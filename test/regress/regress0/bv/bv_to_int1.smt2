@@ -1,7 +1,8 @@
-; COMMAND-LINE: --solve-bv-as-int=1 --no-check-models  --no-check-unsat-cores --no-check-proofs 
-; COMMAND-LINE: --solve-bv-as-int=2 --no-check-models  --no-check-unsat-cores --no-check-proofs
-; COMMAND-LINE: --solve-bv-as-int=3 --no-check-models  --no-check-unsat-cores --no-check-proofs
-; COMMAND-LINE: --solve-bv-as-int=4 --no-check-models  --no-check-unsat-cores --no-check-proofs
+; COMMAND-LINE:  --solve-bv-as-int=bv --no-check-proofs
+; COMMAND-LINE:  --solve-bv-as-int=sum --bvand-integer-granularity=1    --no-check-proofs 
+; COMMAND-LINE:  --solve-bv-as-int=sum --bvand-integer-granularity=2    --no-check-proofs
+; COMMAND-LINE:  --solve-bv-as-int=sum --bvand-integer-granularity=3    --no-check-proofs
+; COMMAND-LINE:  --solve-bv-as-int=sum --bvand-integer-granularity=4    --no-check-proofs
 ; EXPECT: unsat
 (set-logic QF_BV)
 (declare-fun x () (_ BitVec 4))

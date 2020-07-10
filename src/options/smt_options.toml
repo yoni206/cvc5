@@ -280,6 +280,7 @@ header = "options/smt_options.h"
   long       = "check-synth-sol"
   type       = "bool"
   default    = "false"
+  read_only  = true
   help       = "checks whether produced solutions to functions-to-synthesize satisfy the conjecture"
 
 [[option]]
@@ -450,8 +451,9 @@ header = "options/smt_options.h"
   long       = "tlimit=MS"
   type       = "unsigned long"
   handler    = "limitHandler"
+  notifies   = ["notifyTlimit"]
   read_only  = true
-  help       = "enable time limiting of wall clock time (give milliseconds)"
+  help       = "enable time limiting (give milliseconds)"
 
 [[option]]
   name       = "perCallMillisecondLimit"
@@ -460,6 +462,7 @@ header = "options/smt_options.h"
   long       = "tlimit-per=MS"
   type       = "unsigned long"
   handler    = "limitHandler"
+  notifies   = ["notifyTlimitPer"]
   read_only  = true
   help       = "enable time limiting per query (give milliseconds)"
 
@@ -470,6 +473,7 @@ header = "options/smt_options.h"
   long       = "rlimit=N"
   type       = "unsigned long"
   handler    = "limitHandler"
+  notifies   = ["notifyRlimit"]
   read_only  = true
   help       = "enable resource limiting (currently, roughly the number of SAT conflicts)"
 
@@ -480,6 +484,7 @@ header = "options/smt_options.h"
   long       = "rlimit-per=N"
   type       = "unsigned long"
   handler    = "limitHandler"
+  notifies   = ["notifyRlimitPer"]
   read_only  = true
   help       = "enable resource limiting per query"
 
@@ -639,11 +644,32 @@ header = "options/smt_options.h"
 [[option]]
   name       = "solveBVAsInt"
   category   = "undocumented"
-  long       = "solve-bv-as-int=N"
+  long       = "solve-bv-as-int=MODE"
+  type       = "SolveBVAsIntMode"
+  default    = "OFF"
+  help       = "mode for translating BVAnd to integer"
+  help_mode  = "solve-bv-as-int modes."
+[[option.mode.OFF]]
+  name = "off"
+  help = "Do not translate bit-vectors to integers"
+[[option.mode.SUM]]
+  name = "sum"
+  help = "Generate a sum expression for each bvand instance, based on the value in --solbv-bv-as-int-granularity"
+[[option.mode.IAND]]
+  name = "iand"
+  help = "Translate bvand to the iand operator (experimental)"
+[[option.mode.BV]]
+  name = "bv"
+  help = "Translate bvand back to bit-vectors"
+
+[[option]]
+  name       = "BVAndIntegerGranularity"
+  category   = "undocumented"
+  long       = "bvand-integer-granularity=N"
   type       = "uint32_t"
-  default    = "0"
+  default    = "1"
   read_only  = true
-  help       = "attempt to solve BV formulas by translation to integer arithmetic (experimental)"
+  help       = "granularity to use in --solve-bv-as-int mode and for iand operator (experimental)"
 
 [[option]]
   name       = "iandMode"

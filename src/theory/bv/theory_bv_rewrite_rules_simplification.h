@@ -310,7 +310,6 @@ Node RewriteRule<ShlByConst>::apply(TNode node) {
   Assert(amount < Integer(1).multiplyByPow2(32));
 
   uint32_t uint32_amount = amount.toUnsignedInt();
-
   Node left = utils::mkExtract(a, size - 1 - uint32_amount, 0);
   Node right = utils::mkZero(uint32_amount);
   return utils::mkConcat(left, right); 

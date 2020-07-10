@@ -19,6 +19,7 @@
 #include "preprocessing/passes/bv_to_int.h"
 #include "theory/arith/arith_msum.h"
 #include "theory/arith/arith_utilities.h"
+#include "theory/arith/nl/nl_iand_utils.h"
 #include "util/iand.h"
 
 using namespace CVC4::kind;
@@ -98,6 +99,20 @@ std::vector<NlLemma> IAndSolver::checkInitialRefine()
       conj.push_back(nm->mkNode(LEQ, i, i[1]));
       // x=y => iand(x,y)=x
       conj.push_back(nm->mkNode(IMPLIES, i[0].eqNode(i[1]), i.eqNode(i[0])));
+
+      //(= (+ (iand x y) (ior x y)) (+ x y))
+      // Node ior = mkIOr(k,i[0],i[1]);
+      // conj.push_back(i.eqNode(nm->mkNode(MINUS, nm->mkNode(PLUS, i[0], i[1]),
+      // ior)));
+      //(>= (ior x y) x)
+      // conj.push_back(nm->mkNode(GEQ, ior, i[0]));
+      //(>= (ior x y) y)
+      // conj.push_back(nm->mkNode(GEQ, ior, i[1]));
+      //(= (iand x (inot y)) (- x (iand x y)))
+      // TODO
+      //(= (- x y) (- (iand x (inot y)) (iand (inot x) y)))
+      // TODO
+
       Node lem = conj.size() == 1 ? conj[0] : nm->mkNode(AND, conj);
       Trace("iand-lemma") << "IAndSolver::Lemma: " << lem << " ; INIT_REFINE"
                           << std::endl;
@@ -151,11 +166,21 @@ std::vector<NlLemma> IAndSolver::checkFullRefine()
       // ************* additional lemma schemas go here
       if (options::iandMode() == options::IandMode::SUM)
       {
-        // add lemmas based on sum mode
+	Node lem = bitwiseLemma(i);	        // add lemmas based on sum mode
+        Trace("iand-lemma")	
+            << "IAndSolver::Lemma: " << lem << " ; BITWISE_REFINE" << std::endl;	
+        NlLemma nlem(lem);	
+        nlem.d_preprocess = true;	
+        lems.push_back(nlem);
       }
       else if (options::iandMode() == options::IandMode::BITWISE)
       {
-        // add lemmas based on sum mode
+	  Node lem = bitwiseLemma(i);	        // add lemmas based on sum mode
+          Trace("iand-lemma")	
+            << "IAndSolver::Lemma: " << lem << " ; BITWISE_REFINE" << std::endl;	
+          NlLemma nlem(lem);	
+          nlem.d_preprocess = true;	
+          lems.push_back(nlem);
       }
       else
       {
@@ -250,7 +275,60 @@ Node IAndSolver::valueBasedLemma(Node i)
   return lem;
 }
 
-bool oneBitAnd(bool a, bool b) { return (a && b); }
+Node IAndSolver::sumBasedLemma(Node i)
+{
+  Assert(i.getKind() == IAND);
+  Node x = i[0];
+  Node y = i[1];
+  size_t bvsize = i.getOperator().getConst<IntAnd>().d_size;
+  uint64_t granularity = options::BVAndIntegerGranularity();
+  NodeManager* nm = NodeManager::currentNM();
+  Node lem = nm->mkNode(EQUAL,
+                        i,
+                        d_iandHelper.createBitwiseNode(
+						       x, y, bvsize, granularity));
+  return lem;
+}
+
+Node IAndSolver::bitwiseLemma(Node i)
+{
+  Assert(i.getKind() == IAND);
+  Node x = i[0];
+  Node y = i[1];
+
+  unsigned k = i.getOperator().getConst<IntAnd>().d_size;
+
+  Rational absI = d_model.computeAbstractModelValue(i).getConst<Rational>();
+  Rational concI = d_model.computeConcreteModelValue(i).getConst<Rational>();
+
+  Assert(absI.isIntegral());
+  Assert(concI.isIntegral());
+
+  BitVector bvAbsI = BitVector(k, absI.getNumerator());
+  BitVector bvConcI = BitVector(k, concI.getNumerator());
+
+  NodeManager* nm = NodeManager::currentNM();
+  Node lem = d_true;
+
+  // compare each bit to bvI
+  Node cond;
+  Node bitIAnd;
+  for (unsigned j = 0; j < k; j++)
+  {
+    if (bvAbsI.extract(j, j) != bvConcI.extract(j, j))
+    {
+      // x[j] & y[j] == ite(x[j] == 1 ^ y[j] == 1, 1, 0)
+      cond = nm->mkNode(AND,
+                        iextract(j, j, x).eqNode(d_one),
+                        iextract(j, j, y).eqNode(d_one));
+      bitIAnd = nm->mkNode(ITE, cond, d_one, d_zero);
+      // enforce bitwise equality
+      lem = nm->mkNode(AND, lem, iextract(j, j, i).eqNode(bitIAnd));
+    }
+  }
+
+  return lem;
+}
 
 }  // namespace nl
 }  // namespace arith
