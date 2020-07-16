@@ -146,7 +146,7 @@ class BVToInt : public PreprocessingPass
    * @param k A non-negative integer
    * @return A node that represents the constant 2^k
    */
-  static Node pow2(uint64_t k);
+  Node pow2(uint64_t k);
 
   /**
    * @param k A positive integer k

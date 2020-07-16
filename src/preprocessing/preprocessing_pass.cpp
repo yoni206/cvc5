@@ -18,7 +18,6 @@
 
 #include "smt/dump.h"
 #include "smt/smt_statistics_registry.h"
-#include "expr/node_algorithm.h"
 
 namespace CVC4 {
 namespace preprocessing {
@@ -30,9 +29,6 @@ PreprocessingPassResult PreprocessingPass::apply(
   Chat() << d_name << "..." << std::endl;
   dumpAssertions(("pre-" + d_name).c_str(), *assertionsToPreprocess);
   PreprocessingPassResult result = applyInternal(assertionsToPreprocess);
-  for (uint64_t i = 0; i < assertionsToPreprocess->size(); ++i) {
-      Assert(!expr::hasFreeVar((*assertionsToPreprocess)[i]));
-  }
   dumpAssertions(("post-" + d_name).c_str(), *assertionsToPreprocess);
   Trace("preprocessing") << "POST " << d_name << std::endl;
   return result;

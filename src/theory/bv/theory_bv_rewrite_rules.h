@@ -646,33 +646,29 @@ struct ApplyRuleToChildren {
   }
 };
 
-template <typename R1,
-          typename R2 = RewriteRule<EmptyRule>,
-          typename R3 = RewriteRule<EmptyRule>,
-          typename R4 = RewriteRule<EmptyRule>,
-          typename R5 = RewriteRule<EmptyRule>,
-          typename R6 = RewriteRule<EmptyRule>,
-          typename R7 = RewriteRule<EmptyRule>,
-          typename R8 = RewriteRule<EmptyRule>,
-          typename R9 = RewriteRule<EmptyRule>,
-          typename R10 = RewriteRule<EmptyRule>,
-          typename R11 = RewriteRule<EmptyRule>,
-          typename R12 = RewriteRule<EmptyRule>,
-          typename R13 = RewriteRule<EmptyRule>,
-          typename R14 = RewriteRule<EmptyRule>,
-          typename R15 = RewriteRule<EmptyRule>,
-          typename R16 = RewriteRule<EmptyRule>,
-          typename R17 = RewriteRule<EmptyRule>,
-          typename R18 = RewriteRule<EmptyRule>,
-          typename R19 = RewriteRule<EmptyRule>,
-          typename R20 = RewriteRule<EmptyRule>,
-          typename R21 = RewriteRule<EmptyRule>,
-          typename R22 = RewriteRule<EmptyRule>,
-          typename R23 = RewriteRule<EmptyRule>,
-          typename R24 = RewriteRule<EmptyRule>,
-          typename R25 = RewriteRule<EmptyRule> >
-struct LinearRewriteStrategy
-{
+template <
+  typename R1,
+  typename R2  = RewriteRule<EmptyRule>,
+  typename R3  = RewriteRule<EmptyRule>,
+  typename R4  = RewriteRule<EmptyRule>,
+  typename R5  = RewriteRule<EmptyRule>,
+  typename R6  = RewriteRule<EmptyRule>,
+  typename R7  = RewriteRule<EmptyRule>,
+  typename R8  = RewriteRule<EmptyRule>,
+  typename R9  = RewriteRule<EmptyRule>,
+  typename R10 = RewriteRule<EmptyRule>,
+  typename R11 = RewriteRule<EmptyRule>,
+  typename R12 = RewriteRule<EmptyRule>,
+  typename R13 = RewriteRule<EmptyRule>,
+  typename R14 = RewriteRule<EmptyRule>,
+  typename R15 = RewriteRule<EmptyRule>,
+  typename R16 = RewriteRule<EmptyRule>,
+  typename R17 = RewriteRule<EmptyRule>,
+  typename R18 = RewriteRule<EmptyRule>,
+  typename R19 = RewriteRule<EmptyRule>,
+  typename R20 = RewriteRule<EmptyRule>
+  >
+struct LinearRewriteStrategy {
   static Node apply(TNode node) {
     Node current = node;
     if (R1::applies(current)) current  = R1::template run<false>(current);
@@ -695,42 +691,33 @@ struct LinearRewriteStrategy
     if (R18::applies(current)) current = R18::template run<false>(current);
     if (R19::applies(current)) current = R19::template run<false>(current);
     if (R20::applies(current)) current = R20::template run<false>(current);
-    if (R21::applies(current)) current = R21::template run<false>(current);
-    if (R22::applies(current)) current = R22::template run<false>(current);
-    if (R23::applies(current)) current = R23::template run<false>(current);
-    if (R24::applies(current)) current = R24::template run<false>(current);
-    if (R25::applies(current)) current = R25::template run<false>(current);
     return current;
   }
 };
 
-template <typename R1,
-          typename R2 = RewriteRule<EmptyRule>,
-          typename R3 = RewriteRule<EmptyRule>,
-          typename R4 = RewriteRule<EmptyRule>,
-          typename R5 = RewriteRule<EmptyRule>,
-          typename R6 = RewriteRule<EmptyRule>,
-          typename R7 = RewriteRule<EmptyRule>,
-          typename R8 = RewriteRule<EmptyRule>,
-          typename R9 = RewriteRule<EmptyRule>,
-          typename R10 = RewriteRule<EmptyRule>,
-          typename R11 = RewriteRule<EmptyRule>,
-          typename R12 = RewriteRule<EmptyRule>,
-          typename R13 = RewriteRule<EmptyRule>,
-          typename R14 = RewriteRule<EmptyRule>,
-          typename R15 = RewriteRule<EmptyRule>,
-          typename R16 = RewriteRule<EmptyRule>,
-          typename R17 = RewriteRule<EmptyRule>,
-          typename R18 = RewriteRule<EmptyRule>,
-          typename R19 = RewriteRule<EmptyRule>,
-          typename R20 = RewriteRule<EmptyRule>,
-          typename R21 = RewriteRule<EmptyRule>,
-          typename R22 = RewriteRule<EmptyRule>,
-          typename R23 = RewriteRule<EmptyRule>,
-          typename R24 = RewriteRule<EmptyRule>,
-          typename R25 = RewriteRule<EmptyRule> >
-struct FixpointRewriteStrategy
-{
+template <
+  typename R1,
+  typename R2  = RewriteRule<EmptyRule>,
+  typename R3  = RewriteRule<EmptyRule>,
+  typename R4  = RewriteRule<EmptyRule>,
+  typename R5  = RewriteRule<EmptyRule>,
+  typename R6  = RewriteRule<EmptyRule>,
+  typename R7  = RewriteRule<EmptyRule>,
+  typename R8  = RewriteRule<EmptyRule>,
+  typename R9  = RewriteRule<EmptyRule>,
+  typename R10 = RewriteRule<EmptyRule>,
+  typename R11 = RewriteRule<EmptyRule>,
+  typename R12 = RewriteRule<EmptyRule>,
+  typename R13 = RewriteRule<EmptyRule>,
+  typename R14 = RewriteRule<EmptyRule>,
+  typename R15 = RewriteRule<EmptyRule>,
+  typename R16 = RewriteRule<EmptyRule>,
+  typename R17 = RewriteRule<EmptyRule>,
+  typename R18 = RewriteRule<EmptyRule>,
+  typename R19 = RewriteRule<EmptyRule>,
+  typename R20 = RewriteRule<EmptyRule>
+  >
+struct FixpointRewriteStrategy {
   static Node apply(TNode node) {
     Node previous = node; 
     Node current = node;
@@ -756,11 +743,6 @@ struct FixpointRewriteStrategy
       if (R18::applies(current)) current = R18::template run<false>(current);
       if (R19::applies(current)) current = R19::template run<false>(current);
       if (R20::applies(current)) current = R20::template run<false>(current);
-      if (R21::applies(current)) current = R21::template run<false>(current);
-      if (R22::applies(current)) current = R22::template run<false>(current);
-      if (R23::applies(current)) current = R23::template run<false>(current);
-      if (R24::applies(current)) current = R24::template run<false>(current);
-      if (R25::applies(current)) current = R25::template run<false>(current);
     } while (previous != current);
     
     return current;

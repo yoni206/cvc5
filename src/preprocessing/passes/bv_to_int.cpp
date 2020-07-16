@@ -38,7 +38,7 @@ using namespace CVC4::theory::bv;
 
 namespace {
 
-static Rational intpow2(uint64_t b)
+Rational intpow2(uint64_t b)
 {
   return Rational(Integer(2).pow(b), Integer(1));
 }
@@ -78,8 +78,7 @@ Node BVToInt::maxInt(uint64_t k)
 Node BVToInt::pow2(uint64_t k)
 {
   Assert(k >= 0);
-  NodeManager* nm = NodeManager::currentNM();
-  return nm->mkConst<Rational>(intpow2(k));
+  return d_nm->mkConst<Rational>(intpow2(k));
 }
 
 Node BVToInt::modpow2(Node n, uint64_t exponent)
@@ -169,7 +168,7 @@ Node BVToInt::makeBinary(Node n)
  * On the way down we rewrite the node but not it's children.
  * On the way up, we update the node's children to the rewritten ones.
  * For each sub-node, we perform rewrites to eliminate operators.
- * The§<n, the original children are added to toVisit stack so that we rewrite
+ * Then, the original children are added to toVisit stack so that we rewrite
  * them as well.
  */
 Node BVToInt::eliminationPass(Node n)

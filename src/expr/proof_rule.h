@@ -102,12 +102,8 @@ enum class PfRule : uint32_t
   // Conclusion: (= t t')
   // where
   //   t' is
-  //   toWitness(Rewriter{idr}(toSkolem(t)*sigma{ids}(Fn)*...*sigma{ids}(F1)))
-  //   toSkolem(...) converts terms from witness form to Skolem form,
-  //   toWitness(...) converts terms from Skolem form to witness form.
+  //   Rewriter{idr}(t*sigma{ids}(Fn)*...*sigma{ids}(F1))
   //
-  // Notice that:
-  //   toSkolem(t')=Rewriter{idr}(toSkolem(t)*sigma{ids}(Fn)*...*sigma{ids}(F1))
   // In other words, from the point of view of Skolem forms, this rule
   // transforms t to t' by standard substitution + rewriting.
   //
@@ -125,7 +121,7 @@ enum class PfRule : uint32_t
   // ---------------------------------------------------------------
   // Conclusion: F
   // where
-  //   Rewriter{idr}(F*sigma{ids}(Fn)*...*sigma{ids}(F1)) == true
+  //   Rewriter{idr}(toWitness(F)*sigma{ids}(Fn)*...*sigma{ids}(F1)) == true
   // where ids and idr are method identifiers.
   //
   // Notice that we apply rewriting on the witness form of F, meaning that this
@@ -145,7 +141,7 @@ enum class PfRule : uint32_t
   // Conclusion: F'
   // where
   //   F' is
-  //   toWitness(Rewriter{idr}(toSkolem(F)*sigma{ids}(Fn)*...*sigma{ids}(F1)).
+  //   Rewriter{idr}(F*sigma{ids}(Fn)*...*sigma{ids}(F1)).
   // where ids and idr are method identifiers.
   //
   // We rewrite only on the Skolem form of F, similar to MACRO_SR_EQ_INTRO.
@@ -161,13 +157,32 @@ enum class PfRule : uint32_t
   // ----------------------------------------
   // Conclusion: G
   // where
-  //   Rewriter{idr}(F*sigma{ids}(Fn)*...*sigma{ids}(F1)) ==
-  //   Rewriter{idr}(G*sigma{ids}(Fn)*...*sigma{ids}(F1))
+  //   Rewriter{idr}(toWitness(F)*sigma{ids}(Fn)*...*sigma{ids}(F1)) ==
+  //   Rewriter{idr}(toWitness(G)*sigma{ids}(Fn)*...*sigma{ids}(F1))
   //
   // Notice that we apply rewriting on the witness form of F and G, similar to
   // MACRO_SR_PRED_INTRO.
   MACRO_SR_PRED_TRANSFORM,
+  // ======== Theory Rewrite
+  // Children: none
+  // Arguments: (t, preRewrite?)
+  // ----------------------------------------
+  // Conclusion: (= t t')
+  // where
+  //  t' is the result of applying either a pre-rewrite or a post-rewrite step
+  //  to t (depending on the second argument).
+  THEORY_REWRITE,
 
+  //================================================= Processing rules
+  // ======== Preprocess
+  // Children: none
+  // Arguments: (F)
+  // ---------------------------------------------------------------
+  // Conclusion: F
+  // where F is an equality of the form t = t' where t was replaced by t'
+  // based on some preprocessing pass, or otherwise F was added as a new
+  // assertion by some preprocessing pass.
+  PREPROCESS,
   //================================================= Boolean rules
   // ======== Split
   // Children: none
@@ -175,6 +190,13 @@ enum class PfRule : uint32_t
   // ---------------------
   // Conclusion: (or F (not F))
   SPLIT,
+  // ======== Equality resolution
+  // Children: (P1:F1, P2:(= F1 F2))
+  // Arguments: none
+  // ---------------------
+  // Conclusion: (F2)
+  // Note this can optionally be seen as a macro for EQUIV_ELIM1+RESOLUTION.
+  EQ_RESOLVE,
   // ======== And elimination
   // Children: (P:(and F1 ... Fn))
   // Arguments: (i)
