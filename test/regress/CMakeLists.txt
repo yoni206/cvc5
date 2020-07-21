@@ -1041,6 +1041,7 @@ set(regress_0_tests
   regress0/sygus/no-logic.sy
   regress0/sygus/no-syntax-test-bool.sy
   regress0/sygus/no-syntax-test.sy
+  regress0/sygus/order_err.sy
   regress0/sygus/parity-AIG-d0.sy
   regress0/sygus/parse-bv-let.sy
   regress0/sygus/pbe-pred-contra.sy

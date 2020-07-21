@@ -1,0 +1,30 @@
+(set-logic BV)
+(set-option :lang sygus2)
+(synth-fun F ((a (_ BitVec 4)) (b (_ BitVec 4)) (c (_ BitVec 4))) Bool
+(
+  (BV (_ BitVec 4)) (BO Bool) 
+)
+(
+  (BV (_ BitVec 4)  (
+       a
+       b
+       c
+    )
+  )
+  (BO Bool (
+       (= BV BV)
+     )
+  )
+
+)
+)
+
+(declare-var a (_ BitVec 4))
+(declare-var b (_ BitVec 4))
+(declare-var c (_ BitVec 4))
+
+(constraint 
+  (= 
+    (F a b c) 
+      (and (= a (_ bv9 4)) (= b (_ bv12 4)) (= c (_ bv15 4)))))
+(check-synth)
