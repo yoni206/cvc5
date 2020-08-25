@@ -1,0 +1,45 @@
+; Congruence :
+
+(declare refl (! t term
+	(th_holds (= t t)))
+
+; TODO this is not the rule defined in CVC4
+; For now we are using this to avoid logical operators
+; (disjunction)
+(declare symm (! s term
+        (! t term
+        (! u (th_holds (= s t))
+        (th_holds (= t s))))))
+
+(declare trans (! t1 term
+        (! t2 term
+        (! t3 term
+        (! u1 (th_holds (= t1 t2))
+        (! u2 (th_holds (= t2 t3))
+        (th_holds (= t1 t3))))))))
+
+(declare cong (! a1 term
+              (! b1 term
+              (! a2 term
+              (! b2 term
+              (! u1 (th_holds (= a1 b1))
+              (! u2 (th_holds (= a2 b2))
+              (! t (^ (well_typed (apply a1 a2)) ok)
+                (th_holds (= (apply a1 a2) (apply b1 b2)))))))))))
+
+(declare true_intro (! f term
+                    (! u (th_holds f)
+                    (th_holds (= f true)))))
+
+(declare true_elim (! f term
+                   (! u (th_holds (= f true))
+                   (th_holds f))))
+
+(declare false_intro (! f term
+                    (! u (th_holds (apply not f))
+                    (th_holds (= f false)))))
+
+(declare false_elim (! f term
+                   (! u (th_holds (= f false))
+                   (th_holds (apply not f)))))
+

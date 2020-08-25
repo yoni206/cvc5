@@ -1,0 +1,2 @@
+(declare true_holds (th_holds true))
+(declare not_false_true (th_holds (= (apply not false) true)))
