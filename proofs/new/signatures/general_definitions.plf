@@ -18,7 +18,8 @@
 (declare true term)
 (declare false term)
 
-(declare not term)
+(declare f_not term)
+(define not (# t term (apply f_not t)))
 
 ; Equality:
 ; f_= is an equality symbol, which is a term, to be used with an apply

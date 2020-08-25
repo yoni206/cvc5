@@ -67,9 +67,9 @@
 ; Show (= false false) using false_intro and true_elim
 (check
 (: (th_holds (= false false))
-(false_intro false (true_elim (apply not false) not_false_true))))
+(false_intro false (true_elim (not false) not_false_true))))
 
 ; Show (not false) using false_elim and refl
 (check
-(: (th_holds (apply not false))
+(: (th_holds (not false))
 (false_elim false (refl false))))

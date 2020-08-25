@@ -36,10 +36,10 @@
                    (th_holds f))))
 
 (declare false_intro (! f term
-                    (! u (th_holds (apply not f))
+                    (! u (th_holds (not f))
                     (th_holds (= f false)))))
 
 (declare false_elim (! f term
                    (! u (th_holds (= f false))
-                   (th_holds (apply not f)))))
+                   (th_holds (not f)))))
 
