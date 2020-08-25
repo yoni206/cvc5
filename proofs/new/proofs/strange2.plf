@@ -1,0 +1,20 @@
+(declare sort type)
+(declare term type)
+(declare th_holds (! t term type))
+(declare f_=  term)
+(declare apply (! t1 term (! t2 term term)))
+(define = (# t1 term (# t2 term (apply (apply f_= t1) t2))))
+(declare var (! v mpz (! s sort term)))
+(declare refl (! t term (th_holds (= t t)))
+(declare symm (! s term (! t term (! u (th_holds (= s t)) (th_holds (= t s))))))
+
+
+(declare U sort)
+(define a (var 1 U))
+(define b (var 2 U))
+
+(check
+(% p (th_holds (= a b)) 
+(: (th_holds (= b a))
+   (symm a b p))
+))
