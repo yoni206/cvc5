@@ -38,6 +38,13 @@
    (symm (apply f a) (apply f b) (cong f f a b (refl f) p)))
 ))
 
+; Show (not (= (f b) (f a))) assuming (not (= (f a ) (f b)))
+(check
+(% p (th_holds (not (= (apply f a) (apply f b))))
+(: (th_holds (not (= (apply f b) (apply f a))))
+   (neg_symm (apply f a) (apply f b) p))
+))
+
 ; Show (= (f a) (f c)) assuming (= (f a ) (f b)) and (= (f b) ( f c))
 (check
 (% p1 (th_holds (= (apply f a) (apply f b))) 

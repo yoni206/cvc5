@@ -3,13 +3,15 @@
 (declare refl (! t term
 	(th_holds (= t t)))
 
-; TODO this is not the rule defined in CVC4
-; For now we are using this to avoid logical operators
-; (disjunction)
 (declare symm (! s term
         (! t term
         (! u (th_holds (= s t))
         (th_holds (= t s))))))
+
+(declare neg_symm (! s term
+        (! t term
+        (! u (th_holds (not (= s t)))
+        (th_holds (not (= t s)))))))
 
 (declare trans (! t1 term
         (! t2 term
