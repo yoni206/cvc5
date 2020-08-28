@@ -7,7 +7,7 @@
 (declare var (! v mpz (! s sort term)))
 (declare bvar (! v mpz (! s sort term)))
 (declare forall (! v mpz (! s sort term)))
-(declare arrow (! s1 sort (! s2 sort sort)))
+(declare arrow (! s1 sort (! s2 sort sort)))    
 (program mpz_ifequal ((v1 mpz) (v mpz) (t term) (s term)) term (mp_ifzero (mp_add (mp_neg v1) v) t s))
 
 (program sub ((t term) (v mpz) (s term)) term
@@ -34,7 +34,6 @@
 (define c (var 3 U))
 (define f (var 4 (arrow U V)))
 
-; Show f(a)=b from forall x. f(x)=b
 (check
 (% p (th_holds (apply (forall 5 U) (= (apply f (bvar 5 U)) b)))
 (: (th_holds (= (apply f a) b))
