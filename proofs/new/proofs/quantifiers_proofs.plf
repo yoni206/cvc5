@@ -1,0 +1,20 @@
+(declare U sort)
+(declare V sort)
+(define a (var 1 U))
+(define b (var 2 U))
+(define c (var 3 U))
+(define f (var 4 (arrow U V)))
+
+
+; Show f(a)=b from forall x. f(x)=b
+(check
+(% p (th_holds (apply (forall 1 U) (= (apply f (bvar 1 U)) b)))
+(: (th_holds (= (apply f a) b))
+  (instantiate 
+    (= (apply f (bvar 1 U)) b) 
+    1 
+    U 
+    p 
+    a 
+    (= (apply f a) b) ) 
+)))

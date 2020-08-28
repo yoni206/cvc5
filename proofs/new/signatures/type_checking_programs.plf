@@ -34,7 +34,5 @@
     (default (fail sort))
   )
 )
-(declare Ok type)
-(declare ok Ok)
 (program well_typed ((t term)) Ok
   (do (type_check t) ok))

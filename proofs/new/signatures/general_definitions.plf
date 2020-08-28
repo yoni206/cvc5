@@ -29,13 +29,15 @@
 
 ; Free constants :
 (declare var (! v mpz (! s sort term)))
+; BOUND_VARIABLE, i.e. a variable
+(declare bvar (! v mpz (! s sort term)))
 
 ; Quantifiers : 
 ; universals
 (declare forall (! v mpz (! s sort term)))
-; BOUND_VARIABLE, i.e. a variable
-(declare bvar (! v mpz (! s sort term)))
 
 ;;;; To write (forall ((x Int)) (P x)):
 ; (apply (forall 1 Int) (apply P (bvar 1 Int)))
 
+(declare Ok type)
+(declare ok Ok)

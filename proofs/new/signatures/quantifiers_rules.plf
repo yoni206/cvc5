@@ -1,0 +1,25 @@
+(program sub ((matrix term) (v mpz) (t term) (s sort)) term
+  (match matrix
+    ((bvar v s) t)
+    ((apply t1 t2) (apply (sub t1 v t (type_check t1)) (sub t2 v t (type_check t2))))
+  ))
+
+(program is_instance 
+  (
+    (orig term) 
+    (instance term) 
+    (v mpz) 
+    (t term) 
+    (s sort) 
+  ) Ok 
+  (match (sub orig v t s) (instance ok)))
+
+
+(declare instantiate (! matrix term
+                     (! v mpz
+                     (! s sort
+                     (! u (th_holds (apply (forall v s) matrix))
+                     (! t term
+                     (! matrixi term
+                     (! r (^ (is_instance matrix matrixi v t s) ok)
+                     (th_holds matrixi)))))))))
