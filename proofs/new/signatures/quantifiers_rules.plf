@@ -5,10 +5,14 @@
 (program sub ((t term) (v mpz) (s term)) term
   (match t
     ((bvar v1 u1) 
-       (mpz_ifequal v v1 (bvar v1 u1) s))
+       (mpz_ifequal v v1 s t))
     ((apply t1 t2) (apply (sub t1 v s) (sub t2 v s)))
     (default t)
   ))
+
+(program sub_and_type_check ((t term) (v mpz) (s term) (u sort)) term
+  (match (type_check s)
+    (u (sub t v s))))
 
 (declare instantiate (! matrix term
                      (! v mpz
@@ -17,6 +21,6 @@
                      (! matrixi term
                      (! p (th_holds (apply (forall v u) matrix))
 ;                     (! r1 (^ (type_check s) u)
-                     (! r2 (^ (sub matrix v s) matrixi)
-                     (th_holds matrixi))))))))
-;)
+;                     (! r2 (^ (sub matrix v s) matrixi)
+                     (! r (^ (sub_and_type_check matrix v s u) matrixi)
+                     (th_holds matrixi)))))))))
