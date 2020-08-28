@@ -5,7 +5,6 @@
 (define c (var 3 U))
 (define f (var 4 (arrow U V)))
 
-
 ; Show f(a)=b from forall x. f(x)=b
 (check
 (% p (th_holds (apply (forall 5 U) (= (apply f (bvar 5 U)) b)))
