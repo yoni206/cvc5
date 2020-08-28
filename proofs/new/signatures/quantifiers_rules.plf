@@ -1,25 +1,22 @@
-(program sub ((matrix term) (v mpz) (t term) (s sort)) term
-  (match matrix
-    ((bvar v s) t)
-    ((apply t1 t2) (apply (sub t1 v t (type_check t1)) (sub t2 v t (type_check t2))))
+(program mpz_ifequal ((v1 mpz) (v mpz) (t term) (s term)) term
+  (mp_ifzero (mp_add (mp_neg v1) v) t s)
+)
+
+(program sub ((t term) (v mpz) (s term)) term
+  (match t
+    ((bvar v1 u1) 
+       (mpz_ifequal v v1 (bvar v1 u1) s))
+    ((apply t1 t2) (apply (sub t1 v s) (sub t2 v s)))
+    (default t)
   ))
-
-(program is_instance 
-  (
-    (orig term) 
-    (instance term) 
-    (v mpz) 
-    (t term) 
-    (s sort) 
-  ) Ok 
-  (match (sub orig v t s) (instance ok)))
-
 
 (declare instantiate (! matrix term
                      (! v mpz
-                     (! s sort
-                     (! u (th_holds (apply (forall v s) matrix))
-                     (! t term
+                     (! u sort
+                     (! s term
                      (! matrixi term
-                     (! r (^ (is_instance matrix matrixi v t s) ok)
-                     (th_holds matrixi)))))))))
+                     (! p (th_holds (apply (forall v u) matrix))
+;                     (! r1 (^ (type_check s) u)
+                     (! r2 (^ (sub matrix v s) matrixi)
+                     (th_holds matrixi))))))))
+;)

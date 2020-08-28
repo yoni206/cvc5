@@ -8,13 +8,13 @@
 
 ; Show f(a)=b from forall x. f(x)=b
 (check
-(% p (th_holds (apply (forall 1 U) (= (apply f (bvar 1 U)) b)))
+(% p (th_holds (apply (forall 5 U) (= (apply f (bvar 5 U)) b)))
 (: (th_holds (= (apply f a) b))
   (instantiate 
-    (= (apply f (bvar 1 U)) b) 
-    1 
-    U 
-    p 
+    (= (apply f (bvar 5 U)) b) 
+    5 
+    U  
     a 
-    (= (apply f a) b) ) 
-)))
+    (= (apply f a) b) 
+    p
+))))
