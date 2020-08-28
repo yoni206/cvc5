@@ -11,8 +11,7 @@
   ))
 
 (program sub_and_type_check ((t term) (v mpz) (s term) (u sort)) term
-  (match (type_check s)
-    (u (sub t v s))))
+  (ifequal (type_check s) u (sub t v s) (fail term)))
 
 (declare instantiate (! matrix term
                      (! v mpz
