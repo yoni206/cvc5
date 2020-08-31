@@ -29,7 +29,7 @@
     7
     U
     (apply g (apply h c))
-    (= (apply g (apply h c)))
+    (= (apply f (apply g (apply h c))) b)
     p
 )))))
   
