@@ -18,14 +18,14 @@
     (default t)
   ))
 
-(declare instantiate (! matrix term
+(declare instantiate (! body term
                      (! v mpz
                      (! u sort
                      (! s term
-                     (! matrixi term
-                     (! p (holds (apply (forall v u) matrix))
-                     (! r2 (^ (substitute matrix v s) matrixi)
-                     (holds matrixi))))))))
+                     (! bodyi term
+                     (! p (holds (apply (forall v u) body))
+                     (! r2 (^ (substitute body v s) bodyi)
+                     (holds bodyi))))))))
 
 (declare U sort)
 (declare V sort)
