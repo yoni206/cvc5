@@ -3,7 +3,7 @@
 (declare term type)
 
 ; Theory holds: term t holds, where t should have Boolean type
-(declare th_holds (! t term type))
+(declare holds (! t term type))
 
 ; sorts :
 (declare Bool sort)

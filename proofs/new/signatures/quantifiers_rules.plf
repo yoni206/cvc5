@@ -18,8 +18,8 @@
                      (! u sort
                      (! s term
                      (! matrixi term
-                     (! p (th_holds (apply (forall v u) matrix))
+                     (! p (holds (apply (forall v u) matrix))
 ;                     (! r1 (^ (type_check s) u)
 ;                     (! r2 (^ (sub matrix v s) matrixi)
                      (! r (^ (sub_and_type_check matrix v s u) matrixi)
-                     (th_holds matrixi)))))))))
+                     (holds matrixi)))))))))

@@ -9,8 +9,8 @@
 
 ; Show f(a)=b from forall x. f(x)=b
 (check
-(% p (th_holds (apply (forall 7 U) (= (apply f (bvar 7 U)) b)))
-(: (th_holds (= (apply f a) b))
+(% p (holds (apply (forall 7 U) (= (apply f (bvar 7 U)) b)))
+(: (holds (= (apply f a) b))
   (instantiate 
     (= (apply f (bvar 7 U)) b) 
     7 
@@ -22,8 +22,8 @@
 
 ; Show f(g(h(c)))=b
 (check
-(% p (th_holds (apply (forall 7 U) (= (apply f (bvar 7 U)) b)))
-(: (th_holds (= (apply f (apply g (apply h c))) b)
+(% p (holds (apply (forall 7 U) (= (apply f (bvar 7 U)) b)))
+(: (holds (= (apply f (apply g (apply h c))) b)
   (instantiate
   (= (apply f (bvar 7 U)) b)
     7

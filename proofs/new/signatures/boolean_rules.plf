@@ -1,2 +1,2 @@
-(declare true_holds (th_holds true))
-(declare not_false_true (th_holds (= (not false) true)))
+(declare true_holds (holds true))
+(declare not_false_true (holds (= (not false) true)))
