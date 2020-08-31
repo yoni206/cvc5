@@ -10,11 +10,11 @@
 (declare arrow (! s1 sort (! s2 sort sort)))    
 (program mpz_ifequal ((v1 mpz) (v mpz) (t term) (s term)) term (mp_ifzero (mp_add (mp_neg v1) v) t s))
 
-(program sub ((t term) (v mpz) (s term)) term
+(program substitute ((t term) (v mpz) (s term)) term
   (match t
     ((bvar v1 u1) 
        (mpz_ifequal v v1 (bvar v1 u1) s))
-    ((apply t1 t2) (apply (sub t1 v s) (sub t2 v s)))
+    ((apply t1 t2) (apply (substitute t1 v s) (substitute t2 v s)))
     (default t)
   ))
 
@@ -24,7 +24,7 @@
                      (! s term
                      (! matrixi term
                      (! p (holds (apply (forall v u) matrix))
-                     (! r2 (^ (sub matrix v s) matrixi)
+                     (! r2 (^ (substitute matrix v s) matrixi)
                      (holds matrixi))))))))
 
 (declare U sort)
