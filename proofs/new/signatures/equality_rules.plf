@@ -1,7 +1,7 @@
 ; Congruence :
 
 (declare refl (! t term
-	(holds (= t t)))
+	(holds (= t t))))
 
 (declare symm (! s term
         (! t term

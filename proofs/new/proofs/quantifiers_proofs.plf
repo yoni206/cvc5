@@ -21,15 +21,15 @@
 ))))
 
 ; Show f(g(h(c)))=b
-(check
-(% p (holds (apply (forall 7 U) (= (apply f (bvar 7 U)) b)))
-(: (holds (= (apply f (apply g (apply h c))) b)
-  (instantiate
-  (= (apply f (bvar 7 U)) b)
-    7
-    U
-    (apply g (apply h c))
-    (= (apply f (apply g (apply h c))) b)
-    p
-)))))
+; (check
+; (% p (holds (apply (forall 7 U) (= (apply f (bvar 7 U)) b)))
+; (: (holds (= (apply f (apply g (apply h c))) b)
+;   (instantiate
+;   (= (apply f (bvar 7 U)) b)
+;     7
+;     U
+;     (apply g (apply h c))
+;     (= (apply f (apply g (apply h c))) b)
+;     p
+; )))))
   
