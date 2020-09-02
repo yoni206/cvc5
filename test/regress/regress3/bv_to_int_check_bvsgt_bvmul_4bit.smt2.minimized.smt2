@@ -1,7 +1,7 @@
-; COMMAND-LINE:  --cegqi-all --full-saturate-quant --solve-bv-as-int=bv --no-check-proofs --no-check-models
-; COMMAND-LINE:  --cegqi-all --full-saturate-quant --bvand-integer-granularity=1 --solve-bv-as-int=sum     --no-check-proofs
-; COMMAND-LINE:  --cegqi-all --full-saturate-quant --bvand-integer-granularity=1 --solve-bv-as-int=iand --iand-mode=value   --no-check-proofs
-; COMMAND-LINE:  --cegqi-all --full-saturate-quant --bvand-integer-granularity=2 --solve-bv-as-int=sum     --no-check-proofs
+; COMMAND-LINE:  --cegqi-all --full-saturate-quant --solve-bv-as-int=bv  --no-check-models
+; COMMAND-LINE:  --cegqi-all --full-saturate-quant --bvand-integer-granularity=1 --solve-bv-as-int=sum     
+; COMMAND-LINE:  --cegqi-all --full-saturate-quant --bvand-integer-granularity=1 --solve-bv-as-int=iand --iand-mode=value   
+; COMMAND-LINE:  --cegqi-all --full-saturate-quant --bvand-integer-granularity=2 --solve-bv-as-int=sum     
 ; EXPECT: unsat
 (set-logic BV)
 (declare-fun s () (_ BitVec 4))
