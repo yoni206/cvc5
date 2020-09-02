@@ -934,26 +934,13 @@ Node BVToInt::createShiftNode(vector<Node> children,
    * from SMT-LIB:
    * [[(bvshl s t)]] := nat2bv[m](bv2nat([[s]]) * 2^(bv2nat([[t]])))
    * [[(bvlshr s t)]] := nat2bv[m](bv2nat([[s]]) div 2^(bv2nat([[t]])))
-   * Since we don't have exponentiation, we use the ite declared above.
-   */
-
-  /**
-   * Important note: we use INTS_DIVISION_TOTAL is safe here because we divide by 2^...
+   * Since we don't have exponentiation, we use an ite.
+   * Important note: below we use INTS_DIVISION_TOTAL, which is safe here because we divide by 2^... which is never 0.
    */
   Node x = children[0];
   Node y = children[1];
-  if (y.isConst()) {
-    Rational yc = y.getConst<Rational>();
-    if (yc <= std::numeric_limits<uint32_t>::max()) {
-      Node right = pow2(yc.getNumerator().toUnsignedInt());
-      if (isLeftShift) {
-        return d_nm->mkNode(kind::INTS_MODULUS_TOTAL, d_nm->mkNode(kind::MULT, x, right), pow2(bvsize));      
-      } else {
-        return d_nm->mkNode(kind::INTS_DIVISION_TOTAL, x, right);
-      }
-    }
-  }
-  // ite represents 2^x for every integer x from 0 to bvsize-1.
+  //shifting by const is eliminated by the theory rewriter
+  Assert(!y.isConst());
   Node ite = d_zero;
   Node body;
   for (uint64_t i = 0; i < bvsize; i++)
