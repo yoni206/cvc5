@@ -155,8 +155,7 @@ std::vector<NlLemma> IAndSolver::checkFullRefine()
 	Node lem = bitwiseLemma(i);	        // add lemmas based on sum mode
         Trace("iand-lemma")	
             << "IAndSolver::Lemma: " << lem << " ; BITWISE_REFINE" << std::endl;	
-        NlLemma nlem(lem);	
-        nlem.d_preprocess = true;	
+        NlLemma nlem(lem, LemmaProperty::PREPROCESS, nullptr, Inference::IAND_SUM_REFINE);
         lems.push_back(nlem);
       }
       else if (options::iandMode() == options::IandMode::BITWISE)
@@ -164,8 +163,7 @@ std::vector<NlLemma> IAndSolver::checkFullRefine()
 	  Node lem = bitwiseLemma(i);	        // add lemmas based on sum mode
           Trace("iand-lemma")	
             << "IAndSolver::Lemma: " << lem << " ; BITWISE_REFINE" << std::endl;	
-          NlLemma nlem(lem);	
-          nlem.d_preprocess = true;	
+          NlLemma nlem(lem, LemmaProperty::PREPROCESS, nullptr, Inference::IAND_BITWISE_REFINE);
           lems.push_back(nlem);
       }
       else

@@ -72,6 +72,10 @@ enum class Inference : uint32_t
   IAND_INIT_REFINE,
   // value refinements (IAndSolver::checkFullRefine)
   IAND_VALUE_REFINE,
+  // sum refinements (IAndSolver::checkFullRefine)
+  IAND_SUM_REFINE,
+  // bitwise refinements (IAndSolver::checkFullRefine)
+  IAND_BITWISE_REFINE,
   //-------------------- cad solver
   // conflict / infeasible subset obtained from cad
   CAD_CONFLICT,
