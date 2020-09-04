@@ -102,7 +102,7 @@ std::vector<NlLemma> IAndSolver::checkInitialRefine()
       Node lem = conj.size() == 1 ? conj[0] : nm->mkNode(AND, conj);
       Trace("iand-lemma") << "IAndSolver::Lemma: " << lem << " ; INIT_REFINE"
                           << std::endl;
-      lems.emplace_back(lem, Inference::IAND_INIT_REFINE);
+      lems.emplace_back(lem, InferenceId::NL_IAND_INIT_REFINE);
     }
   }
   return lems;
@@ -155,7 +155,7 @@ std::vector<NlLemma> IAndSolver::checkFullRefine()
 	Node lem = bitwiseLemma(i);	        // add lemmas based on sum mode
         Trace("iand-lemma")	
             << "IAndSolver::Lemma: " << lem << " ; BITWISE_REFINE" << std::endl;	
-        NlLemma nlem(lem, LemmaProperty::PREPROCESS, nullptr, Inference::IAND_SUM_REFINE);
+        NlLemma nlem(lem, LemmaProperty::PREPROCESS, nullptr, InferenceId::NL_IAND_SUM_REFINE);
         lems.push_back(nlem);
       }
       else if (options::iandMode() == options::IandMode::BITWISE)
@@ -163,7 +163,7 @@ std::vector<NlLemma> IAndSolver::checkFullRefine()
 	  Node lem = bitwiseLemma(i);	        // add lemmas based on sum mode
           Trace("iand-lemma")	
             << "IAndSolver::Lemma: " << lem << " ; BITWISE_REFINE" << std::endl;	
-          NlLemma nlem(lem, LemmaProperty::PREPROCESS, nullptr, Inference::IAND_BITWISE_REFINE);
+          NlLemma nlem(lem, LemmaProperty::PREPROCESS, nullptr, InferenceId::NL_IAND_BITWISE_REFINE);
           lems.push_back(nlem);
       }
       else
@@ -172,7 +172,7 @@ std::vector<NlLemma> IAndSolver::checkFullRefine()
         Node lem = valueBasedLemma(i);
         Trace("iand-lemma")
             << "IAndSolver::Lemma: " << lem << " ; VALUE_REFINE" << std::endl;
-        lems.emplace_back(lem, Inference::IAND_VALUE_REFINE);
+        lems.emplace_back(lem, InferenceId::NL_IAND_VALUE_REFINE);
       }
     }
   }

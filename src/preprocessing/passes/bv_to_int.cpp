@@ -48,16 +48,6 @@ Rational intpow2(uint64_t b)
  */
 
 
-bool oneBitOr(bool a, bool b) { return (a || b); }
-
-bool oneBitXor(bool a, bool b) { return a != b; }
-
-bool oneBitXnor(bool a, bool b) { return a == b; }
-
-bool oneBitNand(bool a, bool b) { return !(a && b); }
-
-bool oneBitNor(bool a, bool b) { return !(a || b); }
-
 } //end empty namespace
 
 Node BVToInt::mkRangeConstraint(Node newVar, uint64_t k)
@@ -544,47 +534,67 @@ Node BVToInt::bvToInt(Node n)
               d_bvToIntCache[current] = ite;
               break;
             }
-	    case kind::BITVECTOR_ZERO_EXTEND:
-	    {
-	      d_bvToIntCache[current] = translated_children[0];
-	      break;
-	    }
-	    case kind::BITVECTOR_SIGN_EXTEND:
-	    {
+            case kind::BITVECTOR_ZERO_EXTEND:
+            {
+              d_bvToIntCache[current] = translated_children[0];
+              break;
+            }
+            case kind::BITVECTOR_SIGN_EXTEND:
+            {
               uint64_t bvsize = current[0].getType().getBitVectorSize();
-	      Node arg = translated_children[0];
-	      if (arg.isConst()) {
-		  Rational c(arg.getConst<Rational>());
-		  Rational twoToKMinusOne(intpow2(bvsize - 1));
-		  uint64_t amount = bv::utils::getSignExtendAmount(current);		  
-		  if (c < twoToKMinusOne || amount == 0) {
-		    d_bvToIntCache[current] = arg;
-		  } else {
-		    Rational max_of_amount = intpow2(amount) - 1;
-		    Rational mul = max_of_amount * intpow2(bvsize);
-		    Rational sum = mul + c;
-		    Node result = d_nm->mkConst(sum);
-		    d_bvToIntCache[current] = result;
-		  }
-	      } else {
-		uint64_t amount = bv::utils::getSignExtendAmount(current);
-		if (amount == 0) {
-		  d_bvToIntCache[current] = translated_children[0];
-		} else {
-		  Rational twoToKMinusOne(intpow2(bvsize - 1));
-		  Node minSigned = d_nm->mkConst(twoToKMinusOne);
-		  Node condition = d_nm->mkNode(kind::LT, arg, minSigned);
-		  Node thenResult = arg;
-		  Node left = maxInt(amount);
-		  Node mul = d_nm->mkNode(kind::MULT, left, pow2(bvsize));
-		  Node sum = d_nm->mkNode(kind::PLUS, mul, arg);
-		  Node elseResult = sum;
-		  Node ite = d_nm->mkNode(kind::ITE, condition, thenResult, elseResult);
-		  d_bvToIntCache[current] = ite;
-		}
-	      }
-	      break;
-	    }
+              Node arg = translated_children[0];
+              if (arg.isConst())
+              {
+                Rational c(arg.getConst<Rational>());
+                Rational twoToKMinusOne(intpow2(bvsize - 1));
+                uint64_t amount = bv::utils::getSignExtendAmount(current);
+                /* if the msb is 0, this is like zero_extend.
+                 *  msb is 0 <-> the value is less than 2^{bvsize-1}
+                 */
+                if (c < twoToKMinusOne || amount == 0)
+                {
+                  d_bvToIntCache[current] = arg;
+                }
+                else
+                {
+                  /* otherwise, we add the integer equivalent of
+                   * 11....1 `amount` times
+                   */
+                  Rational max_of_amount = intpow2(amount) - 1;
+                  Rational mul = max_of_amount * intpow2(bvsize);
+                  Rational sum = mul + c;
+                  Node result = d_nm->mkConst(sum);
+                  d_bvToIntCache[current] = result;
+                }
+              }
+              else
+              {
+                uint64_t amount = bv::utils::getSignExtendAmount(current);
+                if (amount == 0)
+                {
+                  d_bvToIntCache[current] = translated_children[0];
+                }
+                else
+                {
+                  Rational twoToKMinusOne(intpow2(bvsize - 1));
+                  Node minSigned = d_nm->mkConst(twoToKMinusOne);
+                  /* condition checks whether the msb is 1.
+                   * This holds when the integer value is smaller than
+                   * 100...0, which is 2^{bvsize-1}.
+                   */
+                  Node condition = d_nm->mkNode(kind::LT, arg, minSigned);
+                  Node thenResult = arg;
+                  Node left = maxInt(amount);
+                  Node mul = d_nm->mkNode(kind::MULT, left, pow2(bvsize));
+                  Node sum = d_nm->mkNode(kind::PLUS, mul, arg);
+                  Node elseResult = sum;
+                  Node ite = d_nm->mkNode(
+                      kind::ITE, condition, thenResult, elseResult);
+                  d_bvToIntCache[current] = ite;
+                }
+              }
+              break;
+            }
             case kind::BITVECTOR_CONCAT:
             {
               // (concat a b) translates to a*2^k+b, k being the bitwidth of b.
@@ -930,24 +940,30 @@ Node BVToInt::createShiftNode(vector<Node> children,
                               uint64_t bvsize,
                               bool isLeftShift)
 {
-    /**
+  /**
    * from SMT-LIB:
    * [[(bvshl s t)]] := nat2bv[m](bv2nat([[s]]) * 2^(bv2nat([[t]])))
    * [[(bvlshr s t)]] := nat2bv[m](bv2nat([[s]]) div 2^(bv2nat([[t]])))
    * Since we don't have exponentiation, we use an ite.
-   * Important note: below we use INTS_DIVISION_TOTAL, which is safe here because we divide by 2^... which is never 0.
+   * Important note: below we use INTS_DIVISION_TOTAL, which is safe here
+   * because we divide by 2^... which is never 0.
    */
   Node x = children[0];
   Node y = children[1];
-  //shifting by const is eliminated by the theory rewriter
+  // shifting by const is eliminated by the theory rewriter
   Assert(!y.isConst());
   Node ite = d_zero;
   Node body;
   for (uint64_t i = 0; i < bvsize; i++)
   {
-    if (isLeftShift) {
-      body = d_nm->mkNode(kind::INTS_MODULUS_TOTAL, d_nm->mkNode(kind::MULT, x, pow2(i)), pow2(bvsize));
-    } else {
+    if (isLeftShift)
+    {
+      body = d_nm->mkNode(kind::INTS_MODULUS_TOTAL,
+                          d_nm->mkNode(kind::MULT, x, pow2(i)),
+                          pow2(bvsize));
+    }
+    else
+    {
       body = d_nm->mkNode(kind::INTS_DIVISION_TOTAL, x, pow2(i));
     }
     ite = d_nm->mkNode(kind::ITE,
@@ -957,8 +973,6 @@ Node BVToInt::createShiftNode(vector<Node> children,
   }
   return ite;
 }
-
-
 
 Node BVToInt::translateQuantifiedFormula(Node current, kind::Kind_t k)
 {
