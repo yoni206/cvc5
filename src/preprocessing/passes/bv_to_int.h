@@ -225,6 +225,9 @@ class BVToInt : public PreprocessingPass
    * original UF f.
    */
   void defineBVUFAsIntUF(Node bvUF);
+
+  Node translate(Node original, const vector<Node>& translated_children);
+
   /**
    * Caches for the different functions
    */
