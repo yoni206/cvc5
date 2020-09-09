@@ -364,12 +364,24 @@ Node BVToInt::bvToInt(Node n)
           {
             translated_children.push_back(d_bvToIntCache[current[i]]);
           }
+          Node translation = translate(current, translated_children); 
+          d_bvToIntCache[current] = translation;
+        }
+        toVisit.pop_back();
+      }
+    }
+  }
+  return d_bvToIntCache[n].get();
+}
+
+Node translate(Node original, const vector<Node>& translated_children) {
           // The translation of the current node is determined by the kind of
           // the node.
           kind::Kind_t oldKind = current.getKind();
           //ultbv and sltbv were supposed to be eliminated before this point.
           Assert(oldKind != kind::BITVECTOR_ULTBV);
           Assert(oldKind != kind::BITVECTOR_SLTBV);
+          Node returnNode;
           switch (oldKind)
           {
             case kind::BITVECTOR_PLUS:
@@ -378,8 +390,7 @@ Node BVToInt::bvToInt(Node n)
 	      uint64_t bvsize = current[0].getType().getBitVectorSize();
               Node plus = d_nm->mkNode(kind::PLUS, translated_children);
               Node p2 = pow2(bvsize);
-              Node mod = d_nm->mkNode(kind::INTS_MODULUS_TOTAL, plus, p2);
-              d_bvToIntCache[current] = mod;
+              returnNode = d_nm->mkNode(kind::INTS_MODULUS_TOTAL, plus, p2);
               break;
             }
             case kind::BITVECTOR_MULT:
@@ -388,8 +399,7 @@ Node BVToInt::bvToInt(Node n)
               uint64_t bvsize = current[0].getType().getBitVectorSize();
               Node mult = d_nm->mkNode(kind::MULT, translated_children);
               Node p2 = pow2(bvsize);
-              Node mod = d_nm->mkNode(kind::INTS_MODULUS_TOTAL, mult, p2);
-              d_bvToIntCache[current] = mod;
+              returnNode = d_nm->mkNode(kind::INTS_MODULUS_TOTAL, mult, p2);
               break;
             }
             case kind::BITVECTOR_UDIV_TOTAL:
@@ -399,12 +409,11 @@ Node BVToInt::bvToInt(Node n)
               Node pow2BvSize = pow2(bvsize);
               Node divNode =
                   d_nm->mkNode(kind::INTS_DIVISION_TOTAL, translated_children);
-              Node ite = d_nm->mkNode(
+              returnNode = d_nm->mkNode(
                   kind::ITE,
                   d_nm->mkNode(kind::EQUAL, translated_children[1], d_zero),
                   d_nm->mkNode(kind::MINUS, pow2BvSize, d_one),
                   divNode);
-              d_bvToIntCache[current] = ite;
               break;
             }
             case kind::BITVECTOR_UREM_TOTAL:
@@ -412,27 +421,25 @@ Node BVToInt::bvToInt(Node n)
               // we use an ITE for the case where the second operand is 0.
               Node modNode =
                   d_nm->mkNode(kind::INTS_MODULUS_TOTAL, translated_children);
-              Node ite = d_nm->mkNode(
+              returnNode = d_nm->mkNode(
                   kind::ITE,
                   d_nm->mkNode(kind::EQUAL, translated_children[1], d_zero),
                   translated_children[0],
                   modNode);
-              d_bvToIntCache[current] = ite;
               break;
             }
             case kind::BITVECTOR_NOT:
             {
               uint64_t bvsize = current[0].getType().getBitVectorSize();
               // we use a specified function to generate the node.
-              d_bvToIntCache[current] =
-                  createBVNotNode(translated_children[0], bvsize);
+              returnNode = createBVNotNode(translated_children[0], bvsize);
               break;
             }
             case kind::BITVECTOR_TO_NAT:
             {
               // In this case, we already translated the child to integer.
               // So the result is the translated child.
-              d_bvToIntCache[current] = translated_children[0];
+              returnNode = translated_children[0];
               break;
             }
             case kind::BITVECTOR_AND:
@@ -441,7 +448,7 @@ Node BVToInt::bvToInt(Node n)
               if (options::solveBVAsInt() == options::SolveBVAsIntMode::IAND)
               {
                 Node iAndOp = d_nm->mkConst(IntAnd(bvsize));
-                d_bvToIntCache[current] = d_nm->mkNode(kind::IAND,
+                returnNode = d_nm->mkNode(kind::IAND,
                                                        iAndOp,
                                                        translated_children[0],
                                                        translated_children[1]);
@@ -454,18 +461,16 @@ Node BVToInt::bvToInt(Node n)
 		 Node bvx = d_nm->mkNode(intToBVOp, x);
                  Node bvy = d_nm->mkNode(intToBVOp, y);
                  Node bvand = d_nm->mkNode(kind::BITVECTOR_AND, bvx, bvy);
-                 Node result = d_nm->mkNode(kind::BITVECTOR_TO_NAT, bvand);
-		 d_bvToIntCache[current] = result;
+                 returnNode = d_nm->mkNode(kind::BITVECTOR_TO_NAT, bvand);
 	      } else {
                 Assert(options::solveBVAsInt()
                        == options::SolveBVAsIntMode::SUM);
                 // Construct an ite, based on granularity.
                 Assert(translated_children.size() == 2);
-                Node newNode = d_iandHelper.createBitwiseNode(translated_children[0],
+                returnNode = d_iandHelper.createBitwiseNode(translated_children[0],
                                                  translated_children[1],
                                                  bvsize,
 							      granularity);
-                d_bvToIntCache[current] = newNode;
               }
               break;
             }
@@ -478,8 +483,7 @@ Node BVToInt::bvToInt(Node n)
                * Otherwise, the result is 0.
                */
               uint64_t bvsize = current[0].getType().getBitVectorSize();
-              Node newNode = createShiftNode(translated_children, bvsize, true);
-              d_bvToIntCache[current] = newNode;
+              returnNode = createShiftNode(translated_children, bvsize, true);
               break;
             }
             case kind::BITVECTOR_LSHR:
@@ -491,8 +495,7 @@ Node BVToInt::bvToInt(Node n)
                * Otherwise, the result is 0.
                */
               uint64_t bvsize = current[0].getType().getBitVectorSize();
-              Node newNode = createShiftNode(translated_children, bvsize, false);
-              d_bvToIntCache[current] = newNode;
+              returnNode = createShiftNode(translated_children, bvsize, false);
               break;
             }
             case kind::BITVECTOR_ASHR:
@@ -521,22 +524,20 @@ Node BVToInt::bvToInt(Node n)
                   translated_children[1]};
               Node elseNode = createBVNotNode(
                   createShiftNode(children, bvsize, false), bvsize);
-              Node ite = d_nm->mkNode(kind::ITE, condition, thenNode, elseNode);
-              d_bvToIntCache[current] = ite;
+              returnNode = d_nm->mkNode(kind::ITE, condition, thenNode, elseNode);
               break;
             }
             case kind::BITVECTOR_ITE:
             {
               // Lifted to a boolean ite.
               Node cond = d_nm->mkNode(kind::EQUAL, translated_children[0], d_one);
-              Node ite = d_nm->mkNode(
+              returnNode = d_nm->mkNode(
                   kind::ITE, cond, translated_children[1], translated_children[2]);
-              d_bvToIntCache[current] = ite;
               break;
             }
             case kind::BITVECTOR_ZERO_EXTEND:
             {
-              d_bvToIntCache[current] = translated_children[0];
+              returnNode = translated_children[0];
               break;
             }
             case kind::BITVECTOR_SIGN_EXTEND:
@@ -553,7 +554,7 @@ Node BVToInt::bvToInt(Node n)
                  */
                 if (c < twoToKMinusOne || amount == 0)
                 {
-                  d_bvToIntCache[current] = arg;
+                  returnNode = arg;
                 }
                 else
                 {
@@ -563,8 +564,7 @@ Node BVToInt::bvToInt(Node n)
                   Rational max_of_amount = intpow2(amount) - 1;
                   Rational mul = max_of_amount * intpow2(bvsize);
                   Rational sum = mul + c;
-                  Node result = d_nm->mkConst(sum);
-                  d_bvToIntCache[current] = result;
+                  returnNode = d_nm->mkConst(sum);
                 }
               }
               else
@@ -572,7 +572,7 @@ Node BVToInt::bvToInt(Node n)
                 uint64_t amount = bv::utils::getSignExtendAmount(current);
                 if (amount == 0)
                 {
-                  d_bvToIntCache[current] = translated_children[0];
+                  returnNode = translated_children[0];
                 }
                 else
                 {
@@ -590,7 +590,7 @@ Node BVToInt::bvToInt(Node n)
                   Node elseResult = sum;
                   Node ite = d_nm->mkNode(
                       kind::ITE, condition, thenResult, elseResult);
-                  d_bvToIntCache[current] = ite;
+                  returnNode = ite;
                 }
               }
               break;
@@ -603,8 +603,7 @@ Node BVToInt::bvToInt(Node n)
               Node a = d_nm->mkNode(
                   kind::MULT, translated_children[0], pow2BvSizeRight);
               Node b = translated_children[1];
-              Node sum = d_nm->mkNode(kind::PLUS, a, b);
-              d_bvToIntCache[current] = sum;
+              returnNode = d_nm->mkNode(kind::PLUS, a, b);
               break;
             }
             case kind::BITVECTOR_EXTRACT:
@@ -614,70 +613,69 @@ Node BVToInt::bvToInt(Node n)
               Node a = current[0];
               uint64_t i = bv::utils::getExtractHigh(current);
               uint64_t j = bv::utils::getExtractLow(current);
-              Assert(d_bvToIntCache.find(a) != d_bvToIntCache.end());
               Assert(i >= j);
               Node div = d_nm->mkNode(
-                  kind::INTS_DIVISION_TOTAL, d_bvToIntCache[a].get(), pow2(j));
-              d_bvToIntCache[current] = modpow2(div, i - j + 1);
+                  kind::INTS_DIVISION_TOTAL, translated_children[0], pow2(j));
+              returnNode = modpow2(div, i - j + 1);
               break;
             }
             case kind::EQUAL:
             {
-              d_bvToIntCache[current] =
+              returnNode =
                   d_nm->mkNode(kind::EQUAL, translated_children);
               break;
             }
             case kind::BITVECTOR_ULT:
             {
-              d_bvToIntCache[current] =
+              returnNode =
                   d_nm->mkNode(kind::LT, translated_children);
               break;
             }
             case kind::BITVECTOR_ULE:
             {
-              d_bvToIntCache[current] =
+              returnNode =
                   d_nm->mkNode(kind::LEQ, translated_children);
               break;
             }
             case kind::BITVECTOR_UGT:
             {
-              d_bvToIntCache[current] =
+              returnNode =
                   d_nm->mkNode(kind::GT, translated_children);
               break;
             }
             case kind::BITVECTOR_UGE:
             {
-              d_bvToIntCache[current] =
+              returnNode =
                   d_nm->mkNode(kind::GEQ, translated_children);
               break;
             }
             case kind::LT:
             {
-              d_bvToIntCache[current] =
+              returnNode =
                   d_nm->mkNode(kind::LT, translated_children);
               break;
             }
             case kind::LEQ:
             {
-              d_bvToIntCache[current] =
+              returnNode =
                   d_nm->mkNode(kind::LEQ, translated_children);
               break;
             }
             case kind::GT:
             {
-              d_bvToIntCache[current] =
+              returnNode =
                   d_nm->mkNode(kind::GT, translated_children);
               break;
             }
             case kind::GEQ:
             {
-              d_bvToIntCache[current] =
+              returnNode =
                   d_nm->mkNode(kind::GEQ, translated_children);
               break;
             }
             case kind::ITE:
             {
-              d_bvToIntCache[current] = d_nm->mkNode(oldKind, translated_children);
+              returnNode = d_nm->mkNode(oldKind, translated_children);
               break;
             }
             case kind::APPLY_UF:
@@ -767,8 +765,7 @@ Node BVToInt::bvToInt(Node n)
               }
               else {
                 translated_children.insert(translated_children.begin(), intUF);
-                // Insert the term to the cache
-                d_bvToIntCache[current] =
+                returnNode =
                     d_nm->mkNode(kind::APPLY_UF, translated_children);
                 /**
                  * Add range constraints if necessary.
@@ -778,14 +775,13 @@ Node BVToInt::bvToInt(Node n)
                  */
                 if (bvRange.isBitVector())
                 {
-                  Node m = d_bvToIntCache[current];
-                  if (expr::hasFreeVar(m)) {
+                  if (expr::hasFreeVar(returnNode)) {
                       throw TypeCheckingException(
                           current.toExpr(),
                           string("Cannot translate UF with bound variables to Int: ") + current.toString());
                   }
                   d_rangeAssertions.insert(
-                      mkRangeConstraint(d_bvToIntCache[current],
+                      mkRangeConstraint(returnNode,
                                         current.getType().getBitVectorSize()));
                 }
               }
@@ -793,20 +789,17 @@ Node BVToInt::bvToInt(Node n)
             }
             case kind::BOUND_VAR_LIST:
             {
-              Node result = d_nm->mkNode(kind::BOUND_VAR_LIST, translated_children);
-              d_bvToIntCache[current] = result;
+              returnNode = d_nm->mkNode(kind::BOUND_VAR_LIST, translated_children);
               break;
             }
             case kind::FORALL:
             {
-              Node result = translateQuantifiedFormula(current, oldKind);
-              d_bvToIntCache[current] = result;
+              returnNode = translateQuantifiedFormula(current, oldKind);
               break;
             }
             case kind::EXISTS:
             {
-              Node result = translateQuantifiedFormula(current, oldKind);
-              d_bvToIntCache[current] = result;
+              returnNode = translateQuantifiedFormula(current, oldKind);
               break;
             }
             default:
@@ -853,15 +846,10 @@ Node BVToInt::bvToInt(Node n)
                 translation = d_nm->mkNode(kind::BITVECTOR_TO_NAT, translation);
               }
 
-              d_bvToIntCache[current] = translation;
+              returnNode = translation;
             }
           }
-        }
-        toVisit.pop_back();
-      }
-    }
-  }
-  return d_bvToIntCache[n].get();
+  return returnNode;
 }
 
 bool BVToInt::childrenTypesChanged(Node n) {
