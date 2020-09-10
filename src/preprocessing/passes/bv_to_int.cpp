@@ -271,8 +271,6 @@ Node BVToInt::bvToInt(Node n)
   n = makeBinary(n);
   vector<Node> toVisit;
   toVisit.push_back(n);
-  uint64_t granularity = options::BVAndIntegerGranularity();
-  Assert(0 <= granularity && granularity <= 8);
 
   while (!toVisit.empty())
   {
@@ -284,8 +282,8 @@ Node BVToInt::bvToInt(Node n)
       // We mark this node as visited but not translated by assiging
       // a null node to it.
       d_bvToIntCache[current] = Node();
-      // all the node's chidlren are added to the stack to be visited
-      // before visigint this node again.
+      // all the node's children are added to the stack to be visited
+      // before visiting this node again.
       toVisit.insert(toVisit.end(), current.begin(), current.end());
       // If this is a UF applicatinon, we also add the function to
       // toVisit.
@@ -800,31 +798,23 @@ Node BVToInt::translateFunctionSymbol(Node bvUF)
   os << "__bvToInt_fun_" << bvUF << "_int";
   intUF = d_nm->mkSkolem(
       os.str(), d_nm->mkFunctionType(intDomain, intRange), "bv2int function");
-  // Insert the function symbol itself to the cache
-  d_bvToIntCache[bvUF] = intUF;
   // introduce a `define-fun` in the smt-engine to keep
   // the correspondence between the original
   // function symbol and the new one.
-  defineBVUFAsIntUF(bvUF);
+  defineBVUFAsIntUF(bvUF, intUF);
   return intUF;
 }
 
-void BVToInt::defineBVUFAsIntUF(Node bvUF)
+void BVToInt::defineBVUFAsIntUF(Node bvUF, Node intUF)
 {
   // This function should only be called after translating
   // the function symbol to a new function symbol
   // with the right domain and range.
-  Assert(d_bvToIntCache.find(bvUF) != d_bvToIntCache.end());
 
   // get domain and range of the original function
   TypeNode tn = bvUF.getType();
   vector<TypeNode> bvDomain = tn.getArgTypes();
   TypeNode bvRange = tn.getRangeType();
-
-  // get the translated function symbol
-  Node intUF = d_bvToIntCache[bvUF];
-
-  // create a symbolic  application to be used in define-fun
 
   // symbolic arguments of original function
   vector<Expr> args;
