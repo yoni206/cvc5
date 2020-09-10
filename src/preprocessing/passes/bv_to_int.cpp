@@ -304,63 +304,8 @@ Node BVToInt::bvToInt(Node n)
         // This is when we do the actual translation.
         if (currentNumChildren == 0)
         {
-          Assert(current.isVar() || current.isConst());
-          if (current.isVar())
-          {
-            if (current.getType().isBitVector())
-            {
-              // For bit-vector variables, we create integer variables and add a
-              // range constraint.
-              if (current.getKind() == kind::BOUND_VARIABLE) {
-                    std::stringstream ss;
-                    ss << current;
-                    Node nbv = d_nm->mkBoundVar(ss.str() + "_int", d_nm->integerType());
-                    d_bvToIntCache[current] = nbv;
-              } else {
-
-                Node newVar = d_nm->mkSkolem("__bvToInt_var",
-                                             d_nm->integerType(),
-                                             "Variable introduced in bvToInt "
-                                             "pass instead of original variable "
-                                                 + current.toString());
-                uint64_t bvsize =  current.getType().getBitVectorSize();
-                d_bvToIntCache[current] = newVar;
-                d_rangeAssertions.insert(mkRangeConstraint(
-                    newVar, bvsize));
-                std::vector<Expr> args;
-                Node intToBVOp = d_nm->mkConst<IntToBitVector>(IntToBitVector(bvsize));
-                Node newNode = d_nm->mkNode(intToBVOp, newVar);
-                smt::currentSmtEngine()->defineFunction(
-                    current.toExpr(), args, newNode.toExpr(), true);
-              }
-            }
-            else if (current.getType().isFunction())
-            {
-              d_bvToIntCache[current] = translateFunctionSymbol(current);
-            }
-            else
-            {
-              // variables other than bit-vector variables and function symbols
-              // are left intact
-              d_bvToIntCache[current] = current;
-            }
-          }
-          else
-          {
-            // current is a const
-            if (current.getKind() == kind::CONST_BITVECTOR)
-            {
-              // Bit-vector constants are transformed into their integer value.
-              BitVector constant(current.getConst<BitVector>());
-              Integer c = constant.toInteger();
-              d_bvToIntCache[current] = d_nm->mkConst<Rational>(c);
-            }
-            else
-            {
-              // Other constants stay the same.
-              d_bvToIntCache[current] = current;
-            }
-          }
+          Node translation = translateNoChildren(current);
+          d_bvToIntCache[current] = translation;
         }
         else
         {
@@ -380,7 +325,8 @@ Node BVToInt::bvToInt(Node n)
           {
             translated_children.push_back(d_bvToIntCache[current[i]]);
           }
-          Node translation = translate(current, translated_children); 
+          Node translation =
+              translateWithChildren(current, translated_children);
           d_bvToIntCache[current] = translation;
         }
         toVisit.pop_back();
@@ -390,7 +336,71 @@ Node BVToInt::bvToInt(Node n)
   return d_bvToIntCache[n].get();
 }
 
-Node BVToInt::translate(Node original, const vector<Node>& translated_children)
+Node BVToInt::translateNoChildren(Node original)
+{
+  Node translation;
+  Assert(original.isVar() || original.isConst());
+  if (original.isVar())
+  {
+    if (original.getType().isBitVector())
+    {
+      // For bit-vector variables, we create integer variables and add a
+      // range constraint.
+      if (original.getKind() == kind::BOUND_VARIABLE)
+      {
+        std::stringstream ss;
+        ss << original;
+        translation = d_nm->mkBoundVar(ss.str() + "_int", d_nm->integerType());
+      }
+      else
+      {
+        Node newVar = d_nm->mkSkolem("__bvToInt_var",
+                                     d_nm->integerType(),
+                                     "Variable introduced in bvToInt "
+                                     "pass instead of original variable "
+                                         + original.toString());
+        uint64_t bvsize = original.getType().getBitVectorSize();
+        translation = newVar;
+        d_rangeAssertions.insert(mkRangeConstraint(newVar, bvsize));
+        std::vector<Expr> args;
+        Node intToBVOp = d_nm->mkConst<IntToBitVector>(IntToBitVector(bvsize));
+        Node newNode = d_nm->mkNode(intToBVOp, newVar);
+        smt::currentSmtEngine()->defineFunction(
+            original.toExpr(), args, newNode.toExpr(), true);
+      }
+    }
+    else if (original.getType().isFunction())
+    {
+      translation = translateFunctionSymbol(original);
+    }
+    else
+    {
+      // variables other than bit-vector variables and function symbols
+      // are left intact
+      translation = original;
+    }
+  }
+  else
+  {
+    // original is a const
+    if (original.getKind() == kind::CONST_BITVECTOR)
+    {
+      // Bit-vector constants are transformed into their integer value.
+      BitVector constant(original.getConst<BitVector>());
+      Integer c = constant.toInteger();
+      translation = d_nm->mkConst<Rational>(c);
+    }
+    else
+    {
+      // Other constants stay the same.
+      translation = original;
+    }
+  }
+  return translation;
+}
+
+Node BVToInt::translateWithChildren(Node original,
+                                    const vector<Node>& translated_children)
 {
   // The translation of the original node is determined by the kind of
   // the node.
