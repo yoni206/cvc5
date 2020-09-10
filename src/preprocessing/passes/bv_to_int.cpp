@@ -319,7 +319,8 @@ Node BVToInt::bvToInt(Node n)
            * these children were already translated.
            * We save their translation for easy access.
            * If the node's kind is APPLY_UF,
-           * we also need to include the translated uninterpreted function in this list.
+           * we also need to include the translated uninterpreted function in
+           * this list.
            */
           vector<Node> translated_children;
           if (current.getKind() == kind::APPLY_UF)
