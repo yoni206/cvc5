@@ -283,6 +283,12 @@ Node BVToInt::bvToInt(Node n)
       // This is the first time we visit this node and it is not in the cache.
       d_bvToIntCache[current] = Node();
       toVisit.insert(toVisit.end(), current.begin(), current.end());
+      // If this is a UF applicatinon, we also add the function to
+      // toVisit.
+      if (current.getKind() == kind::APPLY_UF)
+      {
+        toVisit.push_back(current.getOperator());
+      }
     }
     else
     {
@@ -328,9 +334,14 @@ Node BVToInt::bvToInt(Node n)
                     current.toExpr(), args, newNode.toExpr(), true);
               }
             }
+            else if (current.getType().isFunction())
+            {
+              d_bvToIntCache[current] = translateFunctionSymbol(current);
+            }
             else
             {
-              // variables other than bit-vector variables are left intact
+              // variables other than bit-vector variables and function symbols
+              // are left intact
               d_bvToIntCache[current] = current;
             }
           }
@@ -360,6 +371,11 @@ Node BVToInt::bvToInt(Node n)
            * We save their translation for future use.
            */
           vector<Node> translated_children;
+          if (current.getKind() == kind::APPLY_UF)
+          {
+            translated_children.push_back(
+                d_bvToIntCache[current.getOperator()]);
+          }
           for (uint64_t i = 0; i < currentNumChildren; i++)
           {
             translated_children.push_back(d_bvToIntCache[current[i]]);
@@ -671,49 +687,6 @@ Node BVToInt::translate(Node original, const vector<Node>& translated_children)
     }
     case kind::APPLY_UF:
     {
-      /*
-       * We replace all BV-sorts of the domain with INT
-       * If the range is a BV sort, we replace it with INT
-       */
-
-      // construct the new function symbol.
-      Node bvUF = original.getOperator();
-      Node intUF;
-      TypeNode tn = original.getOperator().getType();
-      TypeNode bvRange = tn.getRangeType();
-      if (d_bvToIntCache.find(bvUF) != d_bvToIntCache.end())
-      {
-        intUF = d_bvToIntCache[bvUF].get();
-      }
-      else
-      {
-        // The function symbol has not been converted yet
-        vector<TypeNode> bvDomain = tn.getArgTypes();
-        vector<TypeNode> intDomain;
-        /**
-         * if the original range is a bit-vector sort,
-         * the new range should be an integer sort.
-         * Otherwise, we keep the original range.
-         * Similarly for the domains.
-         */
-        TypeNode intRange =
-            bvRange.isBitVector() ? d_nm->integerType() : bvRange;
-        for (TypeNode d : bvDomain)
-        {
-          intDomain.push_back(d.isBitVector() ? d_nm->integerType() : d);
-        }
-        ostringstream os;
-        os << "__bvToInt_fun_" << bvUF << "_int";
-        intUF = d_nm->mkSkolem(os.str(),
-                               d_nm->mkFunctionType(intDomain, intRange),
-                               "bv2int function");
-        // Insert the function symbol itself to the cache
-        d_bvToIntCache[bvUF] = intUF;
-        // introduce a `define-fun` in the smt-engine to keep
-        // the correspondence between the original
-        // function symbol and the new one.
-        defineBVUFAsIntUF(bvUF);
-      }
       /**
        * higher order logic allows comparing between functions
        * The original translation does not support this,
@@ -727,26 +700,19 @@ Node BVToInt::translate(Node original, const vector<Node>& translated_children)
             original.toExpr(),
             string("Cannot translate to Int: ") + original.toString());
       }
-
       // Now that the translated function symbol was
       // created, we translate the applicatio and add to the cache.
       // Additionally, we add
       // range constraints induced by the original BV width of the
       // the functions range (codomain)..
-      vector<Node> achildren;
-      achildren.insert(achildren.begin(), intUF);
-      achildren.insert(achildren.end(),
-                       translated_children.begin(),
-                       translated_children.end());
       // Insert the translated application term to the cache
-      returnNode = d_nm->mkNode(kind::APPLY_UF, achildren);
+      returnNode = d_nm->mkNode(kind::APPLY_UF, translated_children);
       // Add range constraints if necessary.
       // If the original range was a BV sort, the original application of
       // the function Must be within the range determined by the
       // bitwidth.
-      if (bvRange.isBitVector())
+      if (original.getType().isBitVector())
       {
-        Node m = d_bvToIntCache[original];
         d_rangeAssertions.insert(mkRangeConstraint(
             returnNode, original.getType().getBitVectorSize()));
       }
@@ -791,6 +757,39 @@ Node BVToInt::translate(Node original, const vector<Node>& translated_children)
   Trace("bv-to-int-debug") << "original: " << original << endl;
   Trace("bv-to-int-debug") << "returnNode: " << returnNode << endl;
   return returnNode;
+}
+
+Node BVToInt::translateFunctionSymbol(Node bvUF)
+{
+  // construct the new function symbol.
+  Node intUF;
+  TypeNode tn = bvUF.getType();
+  TypeNode bvRange = tn.getRangeType();
+  // The function symbol has not been converted yet
+  vector<TypeNode> bvDomain = tn.getArgTypes();
+  vector<TypeNode> intDomain;
+  /**
+   * if the original range is a bit-vector sort,
+   * the new range should be an integer sort.
+   * Otherwise, we keep the original range.
+   * Similarly for the domains.
+   */
+  TypeNode intRange = bvRange.isBitVector() ? d_nm->integerType() : bvRange;
+  for (TypeNode d : bvDomain)
+  {
+    intDomain.push_back(d.isBitVector() ? d_nm->integerType() : d);
+  }
+  ostringstream os;
+  os << "__bvToInt_fun_" << bvUF << "_int";
+  intUF = d_nm->mkSkolem(
+      os.str(), d_nm->mkFunctionType(intDomain, intRange), "bv2int function");
+  // Insert the function symbol itself to the cache
+  d_bvToIntCache[bvUF] = intUF;
+  // introduce a `define-fun` in the smt-engine to keep
+  // the correspondence between the original
+  // function symbol and the new one.
+  defineBVUFAsIntUF(bvUF);
+  return intUF;
 }
 
 void BVToInt::defineBVUFAsIntUF(Node bvUF)

@@ -226,6 +226,7 @@ class BVToInt : public PreprocessingPass
    */
   void defineBVUFAsIntUF(Node bvUF);
 
+  Node translateFunctionSymbol(Node bvUF);
   Node translate(Node original, const vector<Node>& translated_children);
 
   /**
