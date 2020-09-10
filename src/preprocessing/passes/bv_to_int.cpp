@@ -207,6 +207,8 @@ Node BVToInt::eliminationPass(Node n)
                                   RewriteRule<SgeEliminate>>::apply(current);
       // save in the cache
       d_eliminationCache[current] = currentEliminated;
+      // also assign the eliminated now to itself to avoid revisiting.
+      d_eliminationCache[currentEliminated] = currentEliminated;
       // put the eliminated node in the rebuild cache, but mark that it hasn't
       // yet been rebuilt by assigning null.
       d_rebuildCache[currentEliminated] = Node();
@@ -578,7 +580,6 @@ Node BVToInt::translateWithChildren(Node original,
     {
       // ((_ extract i j) a) is a / 2^j mod 2^{i-j+1}
       // original = a[i:j]
-      Node a = original[0];
       uint64_t i = bv::utils::getExtractHigh(original);
       uint64_t j = bv::utils::getExtractLow(original);
       Assert(i >= j);
@@ -641,7 +642,7 @@ Node BVToInt::translateWithChildren(Node original,
     {
       /**
        * higher order logic allows comparing between functions
-       * The original translation does not support this,
+       * The translation does not support this,
        * as the translated functions may be different outside
        * of the bounds that were relevant for the original
        * bit-vectors.
@@ -652,11 +653,6 @@ Node BVToInt::translateWithChildren(Node original,
             original.toExpr(),
             string("Cannot translate to Int: ") + original.toString());
       }
-      // Now that the translated function symbol was
-      // created, we translate the applicatio and add to the cache.
-      // Additionally, we add
-      // range constraints induced by the original BV width of the
-      // the functions range (codomain)..
       // Insert the translated application term to the cache
       returnNode = d_nm->mkNode(kind::APPLY_UF, translated_children);
       // Add range constraints if necessary.
@@ -941,9 +937,6 @@ PreprocessingPassResult BVToInt::applyInternal(
 void BVToInt::addFinalizeRangeAssertions(
     AssertionPipeline* assertionsToPreprocess)
 {
-  int indexOfLastAssertion = assertionsToPreprocess->size() - 1;
-  Node lastAssertion = (*assertionsToPreprocess)[indexOfLastAssertion];
-  Node rangeAssertions;
   vector<Node> vec_range;
   vec_range.assign(d_rangeAssertions.key_begin(), d_rangeAssertions.key_end());
   if (vec_range.size() == 0)
@@ -952,19 +945,18 @@ void BVToInt::addFinalizeRangeAssertions(
   }
   if (vec_range.size() == 1)
   {
-    rangeAssertions = vec_range[0];
+    assertionsToPreprocess->push_back(vec_range[0]);
+    Trace("bv-to-int-debug")
+        << "range constraints: " << vec_range[0].toString() << std::endl;
   }
   else if (vec_range.size() >= 2)
   {
-    rangeAssertions = Rewriter::rewrite(d_nm->mkNode(kind::AND, vec_range));
+    Node rangeAssertions =
+        Rewriter::rewrite(d_nm->mkNode(kind::AND, vec_range));
+    assertionsToPreprocess->push_back(rangeAssertions);
+    Trace("bv-to-int-debug")
+        << "range constraints: " << rangeAssertions.toString() << std::endl;
   }
-  Trace("bv-to-int-debug") << "range constraints: "
-                           << rangeAssertions.toString() << std::endl;
-
-  Node newLastAssertion =
-      d_nm->mkNode(kind::AND, lastAssertion, rangeAssertions);
-  newLastAssertion = Rewriter::rewrite(newLastAssertion);
-  assertionsToPreprocess->replace(indexOfLastAssertion, newLastAssertion);
 }
 
 Node BVToInt::createShiftNode(vector<Node> children,
