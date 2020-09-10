@@ -281,7 +281,11 @@ Node BVToInt::bvToInt(Node n)
     if (d_bvToIntCache.find(current) == d_bvToIntCache.end())
     {
       // This is the first time we visit this node and it is not in the cache.
+      // We mark this node as visited but not translated by assiging
+      // a null node to it.
       d_bvToIntCache[current] = Node();
+      // all the node's chidlren are added to the stack to be visited
+      // before visigint this node again.
       toVisit.insert(toVisit.end(), current.begin(), current.end());
       // If this is a UF applicatinon, we also add the function to
       // toVisit.
@@ -292,7 +296,7 @@ Node BVToInt::bvToInt(Node n)
     }
     else
     {
-      // We already visited this node
+      // We already visited and translated this node
       if (!d_bvToIntCache[current].get().isNull())
       {
         // We are done computing the translation for current
@@ -313,7 +317,9 @@ Node BVToInt::bvToInt(Node n)
            * The current node has children.
            * Since we are on the way back up,
            * these children were already translated.
-           * We save their translation for future use.
+           * We save their translation for easy access.
+           * If the node's kind is APPLY_UF,
+           * we also need to include the translated uninterpreted function in this list.
            */
           vector<Node> translated_children;
           if (current.getKind() == kind::APPLY_UF)
