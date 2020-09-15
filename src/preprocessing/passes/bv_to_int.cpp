@@ -169,12 +169,13 @@ Node BVToInt::eliminationPass(Node n)
   while (!toVisit.empty())
   {
     current = toVisit.back();
-    //assert that the node is binarized
+    // assert that the node is binarized
     kind::Kind_t k = current.getKind();
     uint64_t numChildren = current.getNumChildren();
-    Assert((numChildren == 2) || !(k == kind::BITVECTOR_PLUS || k == kind::BITVECTOR_MULT
-              || k == kind::BITVECTOR_AND || k == kind::BITVECTOR_OR
-              || k == kind::BITVECTOR_XOR || k == kind::BITVECTOR_CONCAT));
+    Assert((numChildren == 2)
+           || !(k == kind::BITVECTOR_PLUS || k == kind::BITVECTOR_MULT
+                || k == kind::BITVECTOR_AND || k == kind::BITVECTOR_OR
+                || k == kind::BITVECTOR_XOR || k == kind::BITVECTOR_CONCAT));
     toVisit.pop_back();
     bool inEliminationCache =
         (d_eliminationCache.find(current) != d_eliminationCache.end());
@@ -266,10 +267,8 @@ Node BVToInt::bvToInt(Node n)
 {
   n = makeBinary(n);
   n = eliminationPass(n);
-  /**
-   *  binarize again, in case the elimination pass introduced
-   * non-binary terms (as can happen by RepeatEliminate, for example)
-   */
+  // binarize again, in case the elimination pass introduced
+  // non-binary terms (as can happen by RepeatEliminate, for example).
   n = makeBinary(n);
   vector<Node> toVisit;
   toVisit.push_back(n);
@@ -416,6 +415,7 @@ Node BVToInt::translateWithChildren(Node original,
     }
     case kind::BITVECTOR_AND:
     {
+
       uint64_t bvsize = original[0].getType().getBitVectorSize();
       if (options::solveBVAsInt() == options::SolveBVAsIntMode::IAND)
       {
@@ -891,7 +891,7 @@ Node BVToInt::reconstructNode(Node originalNode,
   {
     builder << originalNode.getOperator();
   }
-  for (uint i = 0; i < originalNode.getNumChildren(); i++)
+  for (size_t i = 0; i < originalNode.getNumChildren(); i++)
   {
     Node originalChild = originalNode[i];
     Node translatedChild = translated_children[i];
