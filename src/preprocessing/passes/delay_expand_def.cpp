@@ -58,12 +58,14 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
     {
       Node w = SkolemManager::getWitnessForm(uf);
       Assert(w.getKind() == kind::WITNESS);
+      Node wr = Rewriter::rewrite(w);
+      Assert(wr.getKind() == kind::LAMBDA);
       std::vector<Expr> args;
-      for (const Node& wc : w[0])
+      for (const Node& wc : wr[0])
       {
         args.push_back(wc.toExpr());
       }
-      smt->defineFunction(ufe, args, w[1].toExpr(), true);
+      smt->defineFunction(ufe, args, wr[1].toExpr(), true);
     }
   }
 

@@ -34,6 +34,7 @@
 #include "theory/logic_info.h"
 #include "theory/quantifiers/fun_def_process.h"
 #include "theory/theory_engine.h"
+#include "expr/skolem_manager.h"
 
 using namespace CVC4::preprocessing;
 using namespace CVC4::theory;
@@ -587,6 +588,7 @@ Node ProcessAssertions::expandDefinitions(
     bool expandOnly)
 {
   NodeManager* nm = d_smt.d_nodeManager;
+  SkolemManager * sm = nm->getSkolemManager();
   std::stack<std::tuple<Node, Node, bool>> worklist;
   std::stack<Node> result;
   worklist.push(std::make_tuple(Node(n), Node(n), false));
@@ -743,7 +745,19 @@ Node ProcessAssertions::expandDefinitions(
 
         Assert(t != NULL);
         TrustNode trn = t->expandDefinition(n);
-        node = trn.isNull() ? Node(n) : trn.getNode();
+        if (trn.isNull())
+        {
+          node = n;
+        }
+        else if (options::delayExpandDef())
+        {
+          // instead delay it
+          node = sm->mkPurifyKindApp(node);
+        }
+        else
+        {
+          node = trn.getNode();
+        }
       }
 
       // the partial functions can fall through, in which case we still

@@ -272,7 +272,8 @@ Node SkolemManager::mkPurifyKindUf(Kind k, Node op, TypeNode ftn)
     args.push_back(v);
   }
   Node app = nm->mkNode(k, args);
-  Node lambda = nm->mkNode(kind::LAMBDA, app);
+  Node bvl = nm->mkNode(BOUND_VAR_LIST, args);
+  Node lambda = nm->mkNode(kind::LAMBDA, bvl, app);
   Node sk = mkPurifySkolem(lambda, "ufk");
   PurifyKindAttribute pka;
   uint32_t uk = static_cast<uint32_t>(k);
