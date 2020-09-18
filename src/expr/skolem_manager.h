@@ -171,6 +171,8 @@ class SkolemManager
   Node mkPurifyKindApp(Node app);
   /** Get kind for UF, or undefined */
   Kind getPurifyKindForUf(Node op) const;
+  /** Get kind op for UF, or null */
+  Node getPurifyKindOpForUf(Node op) const;
   //---------------------------------------------- end UF abstraction of kinds
 
   /**
@@ -205,7 +207,7 @@ class SkolemManager
    */
   std::map<std::pair<Node, Node>, Node> d_witnessBoundVar;
   /** Cache for mkUfForKind below */
-  std::map<Kind, Node> d_kindToUf;
+  std::map<std::pair<Kind, Node>, Node> d_kindToUf;
   /** Convert to witness or skolem form */
   static Node convertInternal(Node n, bool toWitness);
   /** Get or make skolem attribute for witness term w */

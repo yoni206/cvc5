@@ -38,10 +38,16 @@ struct PurifySkolemAttributeId
 };
 typedef expr::Attribute<PurifySkolemAttributeId, Node> PurifySkolemAttribute;
 
+/** Attribute for the kind that a node purifies */
 struct PurifyKindAttributeId
 {
 };
-typedef expr::Attribute<PurifyKindAttributeId, Kind> PurifyKindAttribute;
+typedef expr::Attribute<PurifyKindAttributeId, uint32_t> PurifyKindAttribute;
+/** Attribute for the (parametrized) op that a node purifies */
+struct PurifyKindOpAttributeId
+{
+};
+typedef expr::Attribute<PurifyKindOpAttributeId, Node> PurifyKindOpAttribute;
 
 Node SkolemManager::mkSkolem(Node v,
                              Node pred,
@@ -225,9 +231,20 @@ Kind SkolemManager::getPurifyKindForUf(Node op) const
   PurifyKindAttribute pka;
   if (op.hasAttribute(pka))
   {
-    return op.getAttribute(pka);
+    uint32_t uk = op.getAttribute(pka);
+    return static_cast<Kind>(uk);
   }
   return kind::UNDEFINED_KIND;
+}
+
+Node SkolemManager::getPurifyKindOpForUf(Node op) const
+{
+  PurifyKindOpAttribute pkoa;
+  if (op.hasAttribute(pkoa))
+  {
+    return op.getAttribute(pkoa);
+  }
+  return Node::null();
 }
 
 Node SkolemManager::mkPurifyKindUf(Kind k, Node op, TypeNode ftn)
@@ -257,6 +274,14 @@ Node SkolemManager::mkPurifyKindUf(Kind k, Node op, TypeNode ftn)
   Node app = nm->mkNode(k, args);
   Node lambda = nm->mkNode(kind::LAMBDA, app);
   Node sk = mkPurifySkolem(lambda, "ufk");
+  PurifyKindAttribute pka;
+  uint32_t uk = static_cast<uint32_t>(k);
+  sk.setAttribute(pka, uk);
+  if (!op.isNull())
+  {
+    PurifyKindOpAttribute pkoa;
+    sk.setAttribute(pkoa, op);
+  }
   d_kindToUf[key] = sk;
   return sk;
 }
