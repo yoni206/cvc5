@@ -18,6 +18,7 @@
 #include <utility>
 
 #include "expr/node_manager_attributes.h"
+#include "expr/skolem_manager.h"
 #include "options/arith_options.h"
 #include "options/base_options.h"
 #include "options/bv_options.h"
@@ -34,7 +35,6 @@
 #include "theory/logic_info.h"
 #include "theory/quantifiers/fun_def_process.h"
 #include "theory/theory_engine.h"
-#include "expr/skolem_manager.h"
 
 using namespace CVC4::preprocessing;
 using namespace CVC4::theory;
@@ -141,7 +141,10 @@ bool ProcessAssertions::apply(Assertions& as)
     unordered_map<Node, Node, NodeHashFunction> cache;
     for (size_t i = 0, nasserts = assertions.size(); i < nasserts; ++i)
     {
-      assertions.replace(i, expandDefinitions(assertions[i], cache, false, options::delayExpandDef()));
+      assertions.replace(
+          i,
+          expandDefinitions(
+              assertions[i], cache, false, options::delayExpandDef()));
     }
   }
   Trace("smt-proc")
@@ -585,10 +588,11 @@ void ProcessAssertions::dumpAssertions(const char* key,
 Node ProcessAssertions::expandDefinitions(
     TNode n,
     unordered_map<Node, Node, NodeHashFunction>& cache,
-    bool expandOnly, bool delay)
+    bool expandOnly,
+    bool delay)
 {
   NodeManager* nm = d_smt.d_nodeManager;
-  SkolemManager * sm = nm->getSkolemManager();
+  SkolemManager* sm = nm->getSkolemManager();
   std::stack<std::tuple<Node, Node, bool>> worklist;
   std::stack<Node> result;
   worklist.push(std::make_tuple(Node(n), Node(n), false));
