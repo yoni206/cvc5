@@ -185,6 +185,16 @@ class BVToInt : public PreprocessingPass
   Node translateQuantifiedFormula(Node current, kind::Kind_t k);
 
   /**
+   * @param quantifiedNode a node whose main operator is forall/exists.
+   * @return a node opbtained from quantifiedNode by:
+   * 1. Replacing all bound BV variables by new bound integer variables.
+   * 2. Add range constraints for the new variables, induced by the original
+   * bit-width. These range constraints are added with "AND" in case of exists
+   * and with "IMPLIES" in case of forall.
+   */
+  Node translateQuantifiedFormula(Node quantifiedNode);
+
+  /**
    * Reconstructs a node whose main operator cannot be
    * translated to integers.
    * Reconstruction is done by casting to integers/bit-vectors
