@@ -16,11 +16,11 @@
 
 #include "theory/rewriter.h"
 
+using namespace CVC4::theory;
+
 namespace CVC4 {
 namespace preprocessing {
 namespace passes {
-
-using namespace CVC4::theory;
 
 DelayExpandDefs::DelayExpandDefs(PreprocessingPassContext* preprocContext)
     : PreprocessingPass(preprocContext, "delay-expand-def"){};

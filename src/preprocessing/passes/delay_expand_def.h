@@ -19,6 +19,7 @@
 
 #include "preprocessing/preprocessing_pass.h"
 #include "preprocessing/preprocessing_pass_context.h"
+#include "theory/trust_node.h"
 
 namespace CVC4 {
 namespace preprocessing {
@@ -37,7 +38,7 @@ class DelayExpandDefs : public PreprocessingPass
   PreprocessingPassResult applyInternal(
       AssertionPipeline* assertionsToPreprocess) override;
   /** Apply delayed expand definitions */
-  TrustNode expandDefinitions(Node n);
+  theory::TrustNode expandDefinitions(Node n);
 };
 
 }  // namespace passes

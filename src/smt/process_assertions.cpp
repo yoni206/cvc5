@@ -325,6 +325,11 @@ bool ProcessAssertions::apply(Assertions& as)
   }
   Debug("smt") << " assertions     : " << assertions.size() << endl;
 
+  if (options::delayExpandDef())
+  {
+    d_passes["delay-expand-def"]->apply(&assertions);
+  }
+  
   {
     d_smt.d_stats->d_numAssertionsPre += assertions.size();
     d_passes["ite-removal"]->apply(&assertions);
