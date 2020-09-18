@@ -744,23 +744,17 @@ Node ProcessAssertions::expandDefinitions(
       else if (!expandOnly)
       {
         // do not do any theory stuff if expandOnly is true
-
-        theory::Theory* t = d_smt.getTheoryEngine()->theoryOf(node);
-
-        Assert(t != NULL);
-        TrustNode trn = t->expandDefinition(n);
-        if (trn.isNull())
+        Kind k = node.getKind();
+        if (delay && k==INTS_MODULUS)
         {
-          node = n;
-        }
-        else if (delay)
-        {
-          // instead delay it
           node = sm->mkPurifyKindApp(node);
         }
         else
         {
-          node = trn.getNode();
+          theory::Theory* t = d_smt.getTheoryEngine()->theoryOf(node);
+          Assert(t != NULL);
+          TrustNode trn = t->expandDefinition(n);
+          node = trn.isNull() ? Node(n) : trn.getNode();
         }
       }
 
