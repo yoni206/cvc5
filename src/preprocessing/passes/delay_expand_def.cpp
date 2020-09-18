@@ -14,8 +14,8 @@
 
 #include "preprocessing/passes/delay_expand_def.h"
 
-#include "theory/rewriter.h"
 #include "expr/skolem_manager.h"
+#include "theory/rewriter.h"
 
 using namespace CVC4::theory;
 
@@ -38,7 +38,8 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
     {
       Node next = trn.getNode();
       assertionsToPreprocess->replace(i, Rewriter::rewrite(next));
-      Trace("quantifiers-preprocess") << "*** Delay expand defs " << prev << endl;
+      Trace("quantifiers-preprocess")
+          << "*** Delay expand defs " << prev << endl;
       Trace("quantifiers-preprocess")
           << "   ...got " << (*assertionsToPreprocess)[i] << endl;
     }
@@ -48,7 +49,7 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
   // We also must ensure that all purification UF are defined. This is
   // to ensure that all are replaced in e.g. terms in models.
   std::vector<Node> ufs = sm->getPurifyKindUfs();
-  SmtEngine * smt = d_preprocContext->getSmt();
+  SmtEngine* smt = d_preprocContext->getSmt();
   for (const Node& uf : ufs)
   {
     Expr ufe = uf.toExpr();
@@ -56,7 +57,7 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
     if (!smt->isDefinedFunction(ufe))
     {
       Node w = SkolemManager::getWitnessForm(uf);
-      Assert (w.getKind()==kind::WITNESS);
+      Assert(w.getKind() == kind::WITNESS);
       std::vector<Expr> args;
       for (const Node& wc : w[0])
       {
@@ -71,34 +72,35 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
 
 TrustNode DelayExpandDefs::expandDefinitions(Node n)
 {
-  NodeManager * nm = NodeManager::currentNM();
+  NodeManager* nm = NodeManager::currentNM();
   SkolemManager* sm = nm->getSkolemManager();
   std::unordered_map<TNode, Node, TNodeHashFunction> visited;
   std::unordered_map<TNode, Node, TNodeHashFunction>::iterator it;
   std::vector<TNode> visit;
   TNode cur;
   visit.push_back(n);
-  do 
+  do
   {
     cur = visit.back();
     visit.pop_back();
     it = visited.find(cur);
 
-    if (it == visited.end()) 
+    if (it == visited.end())
     {
       visited[cur] = Node::null();
       visit.push_back(cur);
-      visit.insert(visit.end(),cur.begin(),cur.end());
-    } 
-    else if (it->second.isNull()) 
+      visit.insert(visit.end(), cur.begin(), cur.end());
+    }
+    else if (it->second.isNull())
     {
       Node ret = cur;
       bool needsRcons = false;
       std::vector<Node> children;
-      if (cur.getMetaKind() == kind::metakind::PARAMETERIZED) {
+      if (cur.getMetaKind() == kind::metakind::PARAMETERIZED)
+      {
         children.push_back(cur.getOperator());
       }
-      for (const Node& cn : cur )
+      for (const Node& cn : cur)
       {
         it = visited.find(cn);
         Assert(it != visited.end());
@@ -106,17 +108,17 @@ TrustNode DelayExpandDefs::expandDefinitions(Node n)
         needsRcons = needsRcons || cn != it->second;
         children.push_back(it->second);
       }
-      if (cur.getKind()==kind::APPLY_UF)
+      if (cur.getKind() == kind::APPLY_UF)
       {
         Node op = children[0];
         // maybe its a purification for kind?
         Kind pk = sm->getPurifyKindForUf(op);
-        if (pk!=kind::UNDEFINED_KIND)
+        if (pk != kind::UNDEFINED_KIND)
         {
           Node pOp = sm->getPurifyKindOpForUf(op);
           if (pOp.isNull())
           {
-            children.erase(children.begin(), children.begin()+1);
+            children.erase(children.begin(), children.begin() + 1);
           }
           else
           {
@@ -126,7 +128,7 @@ TrustNode DelayExpandDefs::expandDefinitions(Node n)
           needsRcons = false;
         }
       }
-      if (needsRcons) 
+      if (needsRcons)
       {
         ret = nm->mkNode(cur.getKind(), children);
       }
@@ -137,7 +139,6 @@ TrustNode DelayExpandDefs::expandDefinitions(Node n)
   Assert(!visited.find(n)->second.isNull());
   return TrustNode::mkTrustRewrite(n, visited[n], nullptr);
 }
-
 
 }  // namespace passes
 }  // namespace preprocessing

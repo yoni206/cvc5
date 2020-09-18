@@ -26,9 +26,9 @@ namespace preprocessing {
 namespace passes {
 
 /**
-  * Applies "delayed expand definitions", which eliminates purification UF
-  * for kinds.
-  */
+ * Applies "delayed expand definitions", which eliminates purification UF
+ * for kinds.
+ */
 class DelayExpandDefs : public PreprocessingPass
 {
  public:

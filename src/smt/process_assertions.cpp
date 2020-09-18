@@ -329,7 +329,7 @@ bool ProcessAssertions::apply(Assertions& as)
   {
     d_passes["delay-expand-def"]->apply(&assertions);
   }
-  
+
   {
     d_smt.d_stats->d_numAssertionsPre += assertions.size();
     d_passes["ite-removal"]->apply(&assertions);
@@ -435,7 +435,7 @@ bool ProcessAssertions::apply(Assertions& as)
   {
     d_passes["ho-elim"]->apply(&assertions);
   }
-  
+
   // apply delayed expand definitions
   if (options::delayExpandDef())
   {
