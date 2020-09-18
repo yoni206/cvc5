@@ -182,8 +182,6 @@ class BVToInt : public PreprocessingPass
    */
   void addFinalizeRangeAssertions(AssertionPipeline* assertionsToPreprocess);
 
-  Node translateQuantifiedFormula(Node current, kind::Kind_t k);
-
   /**
    * @param quantifiedNode a node whose main operator is forall/exists.
    * @return a node opbtained from quantifiedNode by:
