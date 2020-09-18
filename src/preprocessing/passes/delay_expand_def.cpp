@@ -38,9 +38,9 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
     {
       Node next = trn.getNode();
       assertionsToPreprocess->replace(i, Rewriter::rewrite(next));
-      Trace("quantifiers-preprocess")
+      Trace("delay-exp-def")
           << "*** Delay expand defs " << prev << endl;
-      Trace("quantifiers-preprocess")
+      Trace("delay-exp-def")
           << "   ...got " << (*assertionsToPreprocess)[i] << endl;
     }
   }
@@ -60,6 +60,7 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
       Assert(w.getKind() == kind::WITNESS);
       Node wr = Rewriter::rewrite(w);
       Assert(wr.getKind() == kind::LAMBDA);
+      Trace("delay-exp-def") << "Define " << uf << " based on " << w << " --> " << wr << std::endl;
       std::vector<Expr> args;
       for (const Node& wc : wr[0])
       {

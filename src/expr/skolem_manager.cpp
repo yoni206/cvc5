@@ -266,13 +266,15 @@ Node SkolemManager::mkPurifyKindUf(Kind k, Node op, TypeNode ftn)
   {
     args.push_back(op);
   }
+  std::vector<Node> largs;
   for (const TypeNode& atn : argTypes)
   {
     Node v = nm->mkBoundVar(atn);
     args.push_back(v);
+    largs.push_back(v);
   }
   Node app = nm->mkNode(k, args);
-  Node bvl = nm->mkNode(BOUND_VAR_LIST, args);
+  Node bvl = nm->mkNode(BOUND_VAR_LIST, largs);
   Node lambda = nm->mkNode(kind::LAMBDA, bvl, app);
   Node sk = mkPurifySkolem(lambda, "ufk");
   PurifyKindAttribute pka;
