@@ -15,6 +15,7 @@
 #include "preprocessing/passes/delay_expand_def.h"
 
 #include "theory/rewriter.h"
+#include "expr/skolem_manager.h"
 
 using namespace CVC4::theory;
 
@@ -42,8 +43,15 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
           << "   ...got " << (*assertionsToPreprocess)[i] << endl;
     }
   }
+  NodeManager* nm = NodeManager::currentNM();
+  SkolemManager* sm = nm->getSkolemManager();
   // We also must ensure that all purification UF are defined. This is
   // to ensure that all are replaced in e.g. terms in models.
+  std::vector<Node> ufs = sm->getPurifyKindUfs();
+  for (const Node& uf : ufs)
+  {
+    Node w = SkolemManager::getWitnessForm(uf);
+  }
 
   return PreprocessingPassResult::NO_CONFLICT;
 }

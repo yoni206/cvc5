@@ -435,6 +435,11 @@ bool ProcessAssertions::apply(Assertions& as)
   {
     d_passes["ho-elim"]->apply(&assertions);
   }
+  
+  if (options::delayExpandDef())
+  {
+    d_passes["delay-expand-def"]->apply(&assertions);
+  }
 
   // begin: INVARIANT to maintain: no reordering of assertions or
   // introducing new ones
