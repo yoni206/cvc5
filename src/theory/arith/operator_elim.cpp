@@ -52,6 +52,10 @@ TrustNode OperatorElim::eliminate(Node n)
   Node nn = eliminateOperators(n, tg);
   if (nn != n)
   {
+    if (options::delayExpandDef())
+    {
+      // TODO
+    }
     // since elimination may introduce new operators to eliminate, we must
     // recursively eliminate result
     Node nnr = eliminateOperatorsRec(nn, tg);
