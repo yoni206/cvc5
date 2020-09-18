@@ -71,10 +71,71 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
 
 TrustNode DelayExpandDefs::expandDefinitions(Node n)
 {
-  
-  
-  
-  return TrustNode::null();
+  NodeManager * nm = NodeManager::currentNM();
+  SkolemManager* sm = nm->getSkolemManager();
+  std::unordered_map<TNode, Node, TNodeHashFunction> visited;
+  std::unordered_map<TNode, Node, TNodeHashFunction>::iterator it;
+  std::vector<TNode> visit;
+  TNode cur;
+  visit.push_back(n);
+  do 
+  {
+    cur = visit.back();
+    visit.pop_back();
+    it = visited.find(cur);
+
+    if (it == visited.end()) 
+    {
+      visited[cur] = Node::null();
+      visit.push_back(cur);
+      visit.insert(visit.end(),cur.begin(),cur.end());
+    } 
+    else if (it->second.isNull()) 
+    {
+      Node ret = cur;
+      bool needsRcons = false;
+      std::vector<Node> children;
+      if (cur.getMetaKind() == kind::metakind::PARAMETERIZED) {
+        children.push_back(cur.getOperator());
+      }
+      for (const Node& cn : cur )
+      {
+        it = visited.find(cn);
+        Assert(it != visited.end());
+        Assert(!it->second.isNull());
+        needsRcons = needsRcons || cn != it->second;
+        children.push_back(it->second);
+      }
+      if (cur.getKind()==kind::APPLY_UF)
+      {
+        Node op = children[0];
+        // maybe its a purification for kind?
+        Kind pk = sm->getPurifyKindForUf(op);
+        if (pk!=kind::UNDEFINED_KIND)
+        {
+          Node pOp = sm->getPurifyKindOpForUf(op);
+          if (pOp.isNull())
+          {
+            children.erase(children.begin(), children.begin()+1);
+          }
+          else
+          {
+            children[0] = pOp;
+          }
+          ret = nm->mkNode(pk, children);
+          needsRcons = false;
+        }
+      }
+      if (needsRcons) 
+      {
+        ret = nm->mkNode(cur.getKind(), children);
+      }
+      visited[cur] = ret;
+    }
+  } while (!visit.empty());
+  Assert(visited.find(n) != visited.end());
+  Assert(!visited.find(n)->second.isNull());
+  return TrustNode::mkTrustRewrite(n, visited[n], nullptr);
 }
 
 
