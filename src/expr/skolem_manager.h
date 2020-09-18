@@ -172,7 +172,7 @@ class SkolemManager
   /** Get kind for UF, or undefined */
   Kind getPurifyKindForUf(Node op) const;
   //---------------------------------------------- end UF abstraction of kinds
-  
+
   /**
    * Convert to witness form, where notice this recursively replaces *all*
    * skolems in n by their corresponding witness term. This is intended to be

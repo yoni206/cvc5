@@ -199,15 +199,16 @@ Node SkolemManager::mkExistential(Node t, Node p)
 
 Node SkolemManager::mkPurifyKindApp(Node app)
 {
-  Assert(app.getKind()!=APPLY_UF);
+  Assert(app.getKind() != APPLY_UF);
   NodeManager* nm = NodeManager::currentNM();
   Node op;
-  if (app.getMetaKind() == kind::metakind::PARAMETERIZED ){
+  if (app.getMetaKind() == kind::metakind::PARAMETERIZED)
+  {
     op = app.getOperator();
   }
   std::vector<TypeNode> argTypes;
   std::vector<Node> args;
-  for (const Node& nc : app )
+  for (const Node& nc : app)
   {
     argTypes.push_back(nc.getType());
     args.push_back(nc);
@@ -231,14 +232,14 @@ Kind SkolemManager::getPurifyKindForUf(Node op) const
 
 Node SkolemManager::mkPurifyKindUf(Kind k, Node op, TypeNode ftn)
 {
-  std::pair<Kind, Node> key(k,op);
+  std::pair<Kind, Node> key(k, op);
   std::map<std::pair<Kind, Node>, Node>::iterator it = d_kindToUf.find(key);
-  if (it!=d_kindToUf.end())
+  if (it != d_kindToUf.end())
   {
-    Assert (it->second.getType()==ftn);
+    Assert(it->second.getType() == ftn);
     return it->second;
   }
-  Assert (ftn.isFunction());
+  Assert(ftn.isFunction());
   std::vector<TypeNode> argTypes = ftn.getArgTypes();
   TypeNode rangeType = ftn.getRangeType();
   // make the lambda
