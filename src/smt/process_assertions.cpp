@@ -436,6 +436,7 @@ bool ProcessAssertions::apply(Assertions& as)
     d_passes["ho-elim"]->apply(&assertions);
   }
   
+  // apply delayed expand definitions
   if (options::delayExpandDef())
   {
     d_passes["delay-expand-def"]->apply(&assertions);

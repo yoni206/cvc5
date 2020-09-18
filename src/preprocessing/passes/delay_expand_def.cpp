@@ -38,7 +38,7 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
     {
       Node next = trn.getNode();
       assertionsToPreprocess->replace(i, Rewriter::rewrite(next));
-      Trace("quantifiers-preprocess") << "*** Expand defs " << prev << endl;
+      Trace("quantifiers-preprocess") << "*** Delay expand defs " << prev << endl;
       Trace("quantifiers-preprocess")
           << "   ...got " << (*assertionsToPreprocess)[i] << endl;
     }
@@ -48,9 +48,22 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
   // We also must ensure that all purification UF are defined. This is
   // to ensure that all are replaced in e.g. terms in models.
   std::vector<Node> ufs = sm->getPurifyKindUfs();
+  SmtEngine * smt = d_preprocContext->getSmt();
   for (const Node& uf : ufs)
   {
-    Node w = SkolemManager::getWitnessForm(uf);
+    Expr ufe = uf.toExpr();
+    // define the function
+    if (!smt->isDefinedFunction(ufe))
+    {
+      Node w = SkolemManager::getWitnessForm(uf);
+      Assert (w.getKind()==kind::WITNESS);
+      std::vector<Expr> args;
+      for (const Node& wc : w[0])
+      {
+        args.push_back(wc.toExpr());
+      }
+      smt->defineFunction(ufe, args, w[1].toExpr(), true);
+    }
   }
 
   return PreprocessingPassResult::NO_CONFLICT;

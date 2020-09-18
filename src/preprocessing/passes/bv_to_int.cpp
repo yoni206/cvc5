@@ -823,7 +823,7 @@ void BVToInt::defineBVUFAsIntUF(Node bvUF, Node intUF)
   // If the result is BV, it needs to be casted back.
   result = castToType(result, resultType);
   // add the function definition to the smt engine.
-  smt::currentSmtEngine()->defineFunction(
+  d_preprocContext->getSmt()->defineFunction(
       bvUF.toExpr(), args, result.toExpr(), true);
 }
 
