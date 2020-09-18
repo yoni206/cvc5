@@ -286,6 +286,16 @@ Node SkolemManager::mkPurifyKindUf(Kind k, Node op, TypeNode ftn)
   return sk;
 }
 
+std::vector<Node> SkolemManager::getPurifyKindUfs() const
+{
+  std::vector<Node> ufs;
+  for (const std::pair<const std::pair<Kind, Node>, Node>& ku : d_kindToUf)
+  {
+    ufs.push_back(ku.second);
+  }
+  return ufs;
+}
+
 ProofGenerator* SkolemManager::getProofGenerator(Node t)
 {
   std::map<Node, ProofGenerator*>::iterator it = d_gens.find(t);

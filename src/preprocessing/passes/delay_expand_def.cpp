@@ -42,12 +42,16 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
           << "   ...got " << (*assertionsToPreprocess)[i] << endl;
     }
   }
+  // We also must ensure that all purification UF are defined. This is
+  // to ensure that all are replaced in e.g. terms in models.
 
   return PreprocessingPassResult::NO_CONFLICT;
 }
 
 TrustNode DelayExpandDefs::expandDefinitions(Node n)
 {
+  
+  
   
   return TrustNode::null();
 }

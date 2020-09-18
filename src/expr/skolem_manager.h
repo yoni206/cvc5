@@ -173,6 +173,8 @@ class SkolemManager
   Kind getPurifyKindForUf(Node op) const;
   /** Get kind op for UF, or null */
   Node getPurifyKindOpForUf(Node op) const;
+  /** Get all purification kind UFs */
+  std::vector<Node> getPurifyKindUfs() const;
   //---------------------------------------------- end UF abstraction of kinds
 
   /**
