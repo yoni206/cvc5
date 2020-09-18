@@ -66,3 +66,12 @@ header = "options/theory_options.h"
 [[option.mode.CARE_GRAPH]]
   name = "care-graph"
   help = "Use care graphs for theory combination."
+
+[[option]]
+  name       = "delayExpandDef"
+  category   = "regular"
+  long       = "delay-exp-def"
+  type       = "bool"
+  default    = "false"
+  help       = "delay the expansion of certain functions"
+

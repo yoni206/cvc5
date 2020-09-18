@@ -166,6 +166,13 @@ class SkolemManager
    * where T is the type of t, and x is a variable unique to t,p.
    */
   Node mkExistential(Node t, Node p);
+  //---------------------------------------------- UF abstraction of kinds
+  /** Convert to UF app */
+  Node mkPurifyKindApp(Node app);
+  /** Get kind for UF, or undefined */
+  Kind getPurifyKindForUf(Node op) const;
+  //---------------------------------------------- end UF abstraction of kinds
+  
   /**
    * Convert to witness form, where notice this recursively replaces *all*
    * skolems in n by their corresponding witness term. This is intended to be
@@ -187,7 +194,6 @@ class SkolemManager
   static void convertToWitnessFormVec(std::vector<Node>& vec);
   /** convert to Skolem form vector */
   static void convertToSkolemFormVec(std::vector<Node>& vec);
-
  private:
   /**
    * Mapping from witness terms to proof generators.
@@ -198,6 +204,8 @@ class SkolemManager
    * mkExistential.
    */
   std::map<std::pair<Node, Node>, Node> d_witnessBoundVar;
+  /** Cache for mkUfForKind below */
+  std::map<Kind, Node> d_kindToUf;
   /** Convert to witness or skolem form */
   static Node convertInternal(Node n, bool toWitness);
   /** Get or make skolem attribute for witness term w */
@@ -228,6 +236,11 @@ class SkolemManager
    * t and s are terms.
    */
   Node getOrMakeBoundVariable(Node t, Node s);
+  /**
+   * Get the UF for builtin kind k, where ftn is the type of the operator
+   * for that kind.
+   */
+  Node mkPurifyKindUf(Kind k, Node op, TypeNode ftn);
 };
 
 }  // namespace CVC4
