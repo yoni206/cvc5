@@ -141,7 +141,7 @@ bool ProcessAssertions::apply(Assertions& as)
     unordered_map<Node, Node, NodeHashFunction> cache;
     for (size_t i = 0, nasserts = assertions.size(); i < nasserts; ++i)
     {
-      assertions.replace(i, expandDefinitions(assertions[i], cache));
+      assertions.replace(i, expandDefinitions(assertions[i], cache, false, options::delayExpandDef()));
     }
   }
   Trace("smt-proc")
@@ -585,7 +585,7 @@ void ProcessAssertions::dumpAssertions(const char* key,
 Node ProcessAssertions::expandDefinitions(
     TNode n,
     unordered_map<Node, Node, NodeHashFunction>& cache,
-    bool expandOnly)
+    bool expandOnly, bool delay)
 {
   NodeManager* nm = d_smt.d_nodeManager;
   SkolemManager * sm = nm->getSkolemManager();
@@ -621,7 +621,7 @@ Node ProcessAssertions::expandDefinitions(
         {
           Node f = (*i).second.getFormula();
           // must expand its definition
-          Node fe = expandDefinitions(f, cache, expandOnly);
+          Node fe = expandDefinitions(f, cache, expandOnly, delay);
           // replacement must be closed
           if ((*i).second.getFormals().size() > 0)
           {
@@ -732,7 +732,7 @@ Node ProcessAssertions::expandDefinitions(
                                       n.begin() + formals.size());
         Debug("expand") << "made : " << instance << endl;
 
-        Node expanded = expandDefinitions(instance, cache, expandOnly);
+        Node expanded = expandDefinitions(instance, cache, expandOnly, delay);
         cache[n] = (n == expanded ? Node::null() : expanded);
         result.push(expanded);
         continue;
@@ -749,7 +749,7 @@ Node ProcessAssertions::expandDefinitions(
         {
           node = n;
         }
-        else if (options::delayExpandDef())
+        else if (delay)
         {
           // instead delay it
           node = sm->mkPurifyKindApp(node);
