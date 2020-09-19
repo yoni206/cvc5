@@ -169,7 +169,8 @@ TrustNode TheoryPreprocessor::preprocess(TNode node,
     Assert(!isProofEnabled() || newLemmas[i].getGenerator() != nullptr);
     newLemmas[i].debugCheckClosed("tpp-proof-debug",
                                   "TheoryPreprocessor::lemma_new");
-    Trace("tpp-proof-debug") << "New lemma: " << newLemmas[i].getNode() << std::endl;
+    Trace("tpp-proof-debug")
+        << "New lemma: " << newLemmas[i].getNode() << std::endl;
   }
   if (node == retNode)
   {

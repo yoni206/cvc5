@@ -119,8 +119,7 @@ RewriteResponse ArithRewriter::preRewriteTerm(TNode t){
     case kind::ARCCOTANGENT:
     case kind::SQRT: return preRewriteTranscendental(t);
     case kind::INTS_DIVISION:
-    case kind::INTS_MODULUS:
-      return rewriteIntsDivMod(t,true);
+    case kind::INTS_MODULUS: return rewriteIntsDivMod(t, true);
     case kind::INTS_DIVISION_TOTAL:
     case kind::INTS_MODULUS_TOTAL:
       return rewriteIntsDivModTotal(t,true);
@@ -183,8 +182,7 @@ RewriteResponse ArithRewriter::postRewriteTerm(TNode t){
     case kind::ARCCOTANGENT:
     case kind::SQRT: return postRewriteTranscendental(t);
     case kind::INTS_DIVISION:
-    case kind::INTS_MODULUS:
-      return rewriteIntsDivMod(t, false);
+    case kind::INTS_MODULUS: return rewriteIntsDivMod(t, false);
     case kind::INTS_DIVISION_TOTAL:
     case kind::INTS_MODULUS_TOTAL:
       return rewriteIntsDivModTotal(t, false);
@@ -765,28 +763,30 @@ RewriteResponse ArithRewriter::rewriteDiv(TNode t, bool pre){
 
 RewriteResponse ArithRewriter::rewriteIntsDivMod(TNode t, bool pre)
 {
-  NodeManager * nm = NodeManager::currentNM();
+  NodeManager* nm = NodeManager::currentNM();
   Kind k = t.getKind();
   Node zero = nm->mkConst(Rational(0));
-  if (k==kind::INTS_MODULUS)
+  if (k == kind::INTS_MODULUS)
   {
-    if (t[1].isConst() && t[1]!=zero)
+    if (t[1].isConst() && t[1] != zero)
     {
       Kind k0 = t[0].getKind();
-      if (k0==kind::INTS_MODULUS && t[0][1]==t[1])
+      if (k0 == kind::INTS_MODULUS && t[0][1] == t[1])
       {
         // (mod (mod x c) c) --> (mod x c) for non-zero c
-        Trace("arith-rewrite-ext") << "Rewrite : " << t << " " << t[0] << std::endl;
+        Trace("arith-rewrite-ext")
+            << "Rewrite : " << t << " " << t[0] << std::endl;
         return RewriteResponse(REWRITE_AGAIN, t[0]);
       }
-      else if (k0==kind::NONLINEAR_MULT || k0==kind::MULT || k0==kind::PLUS)
+      else if (k0 == kind::NONLINEAR_MULT || k0 == kind::MULT
+               || k0 == kind::PLUS)
       {
         // can drop all
         std::vector<Node> newChildren;
         bool childChanged = false;
         for (const Node& tc : t[0])
         {
-          if (tc.getKind()==kind::INTS_MODULUS && tc[1]==t[1])
+          if (tc.getKind() == kind::INTS_MODULUS && tc[1] == t[1])
           {
             newChildren.push_back(tc[0]);
             childChanged = true;
@@ -797,20 +797,22 @@ RewriteResponse ArithRewriter::rewriteIntsDivMod(TNode t, bool pre)
         if (childChanged)
         {
           Node ret = nm->mkNode(k0, newChildren);
-          Trace("arith-rewrite-ext") << "Rewrite : " << t << " " << ret << std::endl;
+          Trace("arith-rewrite-ext")
+              << "Rewrite : " << t << " " << ret << std::endl;
           return RewriteResponse(REWRITE_AGAIN, ret);
         }
       }
     }
   }
-  if (k==kind::INTS_DIVISION)
+  if (k == kind::INTS_DIVISION)
   {
-    if (t[0].getKind()==kind::INTS_MODULUS && t[0][1]==t[1])
+    if (t[0].getKind() == kind::INTS_MODULUS && t[0][1] == t[1])
     {
-      if (t[1].isConst() && t[1]!=zero)
+      if (t[1].isConst() && t[1] != zero)
       {
-        // (div (mod x c) c) --> 0 for non-zero c 
-        Trace("arith-rewrite-ext") << "Rewrite : " << t << " " << zero << std::endl;
+        // (div (mod x c) c) --> 0 for non-zero c
+        Trace("arith-rewrite-ext")
+            << "Rewrite : " << t << " " << zero << std::endl;
         return RewriteResponse(REWRITE_AGAIN, zero);
       }
     }

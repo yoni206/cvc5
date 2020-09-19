@@ -15,8 +15,8 @@
 #include "preprocessing/passes/delay_expand_def.h"
 
 #include "expr/skolem_manager.h"
-#include "theory/rewriter.h"
 #include "expr/term_context_stack.h"
+#include "theory/rewriter.h"
 
 using namespace CVC4::theory;
 
@@ -47,11 +47,13 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
   for (size_t i = 0; i < size; ++i)
   {
     Node prev = (*assertionsToPreprocess)[i];
-    Trace("delay-exp-def-assert") << "DelayExpandDefs: assert: " << prev << std::endl;
+    Trace("delay-exp-def-assert")
+        << "DelayExpandDefs: assert: " << prev << std::endl;
     Node next = Rewriter::rewrite(prev);
-    if (prev!=next)
+    if (prev != next)
     {
-      Trace("delay-exp-def-assert") << ".......................: " << next << std::endl;
+      Trace("delay-exp-def-assert")
+          << ".......................: " << next << std::endl;
       assertionsToPreprocess->replace(i, next);
     }
   }
@@ -71,7 +73,8 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
       Assert(w.getKind() == kind::WITNESS);
       Node wr = Rewriter::rewrite(w);
       Assert(wr.getKind() == kind::LAMBDA);
-      Trace("delay-exp-def-debug") << "Define " << uf << " based on " << w << " --> " << wr << std::endl;
+      Trace("delay-exp-def-debug")
+          << "Define " << uf << " based on " << w << " --> " << wr << std::endl;
       std::vector<Expr> args;
       for (const Node& wc : wr[0])
       {
@@ -176,7 +179,7 @@ void DelayExpandDefs::learn(Node n, ExtPolNodeCache& cache)
     {
       cache.insert(curr);
       ExtPolarityTermContext::getFlags(nodeVal, ptype, pol);
-      if (ptype==PolarityType::ENTAILED)
+      if (ptype == PolarityType::ENTAILED)
       {
         // this formula is entailed by n, call learn literal and push children
         learnLiteral(node, pol);
@@ -184,17 +187,17 @@ void DelayExpandDefs::learn(Node n, ExtPolNodeCache& cache)
       }
     }
   }
-  
 }
 
 void DelayExpandDefs::learnLiteral(Node n, bool pol)
 {
   Kind nk = n.getKind();
-  if (nk!=kind::EQUAL && nk!=kind::GEQ)
+  if (nk != kind::EQUAL && nk != kind::GEQ)
   {
     return;
   }
-  Trace("delay-exp-def-learn") << "DelayExpandDefs::learnLiteral: " << n << ", " << pol << std::endl;
+  Trace("delay-exp-def-learn")
+      << "DelayExpandDefs::learnLiteral: " << n << ", " << pol << std::endl;
 }
 
 }  // namespace passes

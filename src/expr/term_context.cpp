@@ -118,30 +118,29 @@ void PolarityTermContext::getFlags(uint32_t val, bool& hasPol, bool& pol)
 
 std::ostream& operator<<(std::ostream& out, PolarityType ptype)
 {
-  switch(ptype)
+  switch (ptype)
   {
-    case PolarityType::NONE: out << "NONE";break;
-    case PolarityType::SOME: out << "SOME";break;
-    case PolarityType::ENTAILED: out << "ENTAILED";break;
-    default : out << "?"; break;
+    case PolarityType::NONE: out << "NONE"; break;
+    case PolarityType::SOME: out << "SOME"; break;
+    case PolarityType::ENTAILED: out << "ENTAILED"; break;
+    default: out << "?"; break;
   }
   return out;
 }
 
-uint32_t ExtPolarityTermContext::initialValue() const
-{
-  return 5;
-}
+uint32_t ExtPolarityTermContext::initialValue() const { return 5; }
 
-uint32_t ExtPolarityTermContext::computeValue(TNode t, uint32_t tval, size_t index) const
+uint32_t ExtPolarityTermContext::computeValue(TNode t,
+                                              uint32_t tval,
+                                              size_t index) const
 {
-  if (tval==0)
+  if (tval == 0)
   {
     // still no polarity
     return 0;
   }
-  bool wasEntailed = tval%3==2;
-  bool pol = tval>=3;
+  bool wasEntailed = tval % 3 == 2;
+  bool pol = tval >= 3;
   Kind tk = t.getKind();
   switch (tk)
   {
@@ -149,32 +148,32 @@ uint32_t ExtPolarityTermContext::computeValue(TNode t, uint32_t tval, size_t ind
     case kind::OR:
     case kind::SEP_STAR:
       // lose entailment based on polarity
-      return (wasEntailed && pol==(tk==kind::OR)) ? tval-1 : tval;
+      return (wasEntailed && pol == (tk == kind::OR)) ? tval - 1 : tval;
     case kind::IMPLIES:
       // first child reverses
-      if (index==0)
+      if (index == 0)
       {
         tval = tval + (pol ? -3 : 3);
       }
       // no entailment if positive polarity
-      return (wasEntailed && pol) ? tval-1 : tval;
+      return (wasEntailed && pol) ? tval - 1 : tval;
     case kind::NOT:
       // polarity reversed
       return tval + (pol ? -3 : 3);
     case kind::ITE:
       // head has no polarity, branches preserve without entailment
-      if (index==0)
+      if (index == 0)
       {
         return 0;
       }
-      return wasEntailed ? tval-1 : tval;
+      return wasEntailed ? tval - 1 : tval;
     case kind::FORALL:
       // body preserves without entailment, others have no polarity.
-      if (index!=1)
+      if (index != 1)
       {
         return 0;
       }
-      return wasEntailed ? tval-1 : tval;
+      return wasEntailed ? tval - 1 : tval;
     default:
       // no polarity
       break;
@@ -187,10 +186,12 @@ uint32_t ExtPolarityTermContext::getValue(PolarityType ptype, bool pol)
   return static_cast<uint32_t>(ptype) + (pol ? 3 : 0);
 }
 
-void ExtPolarityTermContext::getFlags(uint32_t val, PolarityType& ptype, bool& pol)
+void ExtPolarityTermContext::getFlags(uint32_t val,
+                                      PolarityType& ptype,
+                                      bool& pol)
 {
-  ptype = static_cast<PolarityType>(val%3);
-  pol = val>=3;
+  ptype = static_cast<PolarityType>(val % 3);
+  pol = val >= 3;
 }
 
 }  // namespace CVC4

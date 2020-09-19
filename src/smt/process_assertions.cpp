@@ -84,7 +84,7 @@ void ProcessAssertions::finishInit(PreprocessingPassContext* pc)
     d_passes[passName].reset(
         ppReg.createPass(d_preprocessingPassContext, passName));
   }
-  
+
   if (options::delayExpandDef())
   {
     d_delayExpKinds.insert(INTS_MODULUS);
@@ -747,7 +747,7 @@ Node ProcessAssertions::expandDefinitions(
       {
         // do not do any theory stuff if expandOnly is true
         Kind nk = node.getKind();
-        if (delay && d_delayExpKinds.find(nk)!=d_delayExpKinds.end())
+        if (delay && d_delayExpKinds.find(nk) != d_delayExpKinds.end())
         {
           node = sm->mkPurifyKindApp(node);
         }

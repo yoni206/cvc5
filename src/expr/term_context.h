@@ -164,7 +164,7 @@ enum class PolarityType
  */
 std::ostream& operator<<(std::ostream& out, PolarityType ptype);
 
-/** 
+/**
  * Extended polarity context, also computes whether a literal is entailed.
  */
 class ExtPolarityTermContext : public TermContext
