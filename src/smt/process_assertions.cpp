@@ -84,6 +84,12 @@ void ProcessAssertions::finishInit(PreprocessingPassContext* pc)
     d_passes[passName].reset(
         ppReg.createPass(d_preprocessingPassContext, passName));
   }
+  
+  if (options::delayExpandDef())
+  {
+    d_delayExpKinds.insert(INTS_MODULUS);
+    d_delayExpKinds.insert(INTS_DIVISION);
+  }
 }
 
 void ProcessAssertions::cleanup() { d_passes.clear(); }
@@ -741,7 +747,7 @@ Node ProcessAssertions::expandDefinitions(
       {
         // do not do any theory stuff if expandOnly is true
         Kind nk = node.getKind();
-        if (delay && nk==INTS_MODULUS)
+        if (delay && d_delayExpKinds.find(nk)!=d_delayExpKinds.end())
         {
           node = sm->mkPurifyKindApp(node);
         }

@@ -33,17 +33,13 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
   for (size_t i = 0; i < size; ++i)
   {
     Node prev = (*assertionsToPreprocess)[i];
-    Trace("delay-exp-def-assert") << "DelayExpandDefs: assert " << prev << std::endl;
     TrustNode trn = expandDefinitions(prev);
     Node next = trn.isNull() ? prev : trn.getNode();
+    Trace("delay-exp-def-assert") << "DelayExpandDefs: assert: " << next << std::endl;
     Node nextr = Rewriter::rewrite(next);
     if (prev!=nextr)
     {
       assertionsToPreprocess->replace(i, nextr);
-      Trace("delay-exp-def")
-          << "*** Delay expand defs " << prev << std::endl;
-      Trace("delay-exp-def")
-          << "   ...got " << nextr << std::endl;
     }
   }
   NodeManager* nm = NodeManager::currentNM();
@@ -62,7 +58,7 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
       Assert(w.getKind() == kind::WITNESS);
       Node wr = Rewriter::rewrite(w);
       Assert(wr.getKind() == kind::LAMBDA);
-      Trace("delay-exp-def") << "Define " << uf << " based on " << w << " --> " << wr << std::endl;
+      Trace("delay-exp-def-debug") << "Define " << uf << " based on " << w << " --> " << wr << std::endl;
       std::vector<Expr> args;
       for (const Node& wc : wr[0])
       {
