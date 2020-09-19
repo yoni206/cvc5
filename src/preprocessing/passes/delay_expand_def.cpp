@@ -39,6 +39,10 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
     Node nextr = Rewriter::rewrite(next);
     if (prev!=nextr)
     {
+      if (next!=nextr)
+      {
+        Trace("delay-exp-def-assert") << ".......................: " << nextr << std::endl;
+      }
       assertionsToPreprocess->replace(i, nextr);
     }
   }
