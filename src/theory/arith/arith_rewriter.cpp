@@ -120,7 +120,7 @@ RewriteResponse ArithRewriter::preRewriteTerm(TNode t){
     case kind::SQRT: return preRewriteTranscendental(t);
     case kind::INTS_DIVISION:
     case kind::INTS_MODULUS:
-      return RewriteResponse(REWRITE_DONE, t);
+      return rewriteIntsDivMod(t,true);
     case kind::INTS_DIVISION_TOTAL:
     case kind::INTS_MODULUS_TOTAL:
       return rewriteIntsDivModTotal(t,true);
@@ -184,7 +184,7 @@ RewriteResponse ArithRewriter::postRewriteTerm(TNode t){
     case kind::SQRT: return postRewriteTranscendental(t);
     case kind::INTS_DIVISION:
     case kind::INTS_MODULUS:
-      return RewriteResponse(REWRITE_DONE, t);
+      return rewriteIntsDivMod(t, false);
     case kind::INTS_DIVISION_TOTAL:
     case kind::INTS_MODULUS_TOTAL:
       return rewriteIntsDivModTotal(t, false);
@@ -763,6 +763,19 @@ RewriteResponse ArithRewriter::rewriteDiv(TNode t, bool pre){
   }
 }
 
+RewriteResponse ArithRewriter::rewriteIntsDivMod(TNode t, bool pre)
+{
+  Kind k = t.getKind();
+  if (k==kind::INTS_MODULUS && t[0].getKind()==kind::INTS_MODULUS && t[0][1]==t[1])
+  {
+    if (t[1].isConst() && !t[1].getConst<Rational>().isZero())
+    {
+      return RewriteResponse(REWRITE_AGAIN, t[0]);
+    }
+  }
+  return RewriteResponse(REWRITE_DONE, t);
+}
+
 RewriteResponse ArithRewriter::rewriteIntsDivModTotal(TNode t, bool pre){
   Kind k = t.getKind();
   // Assert(k == kind::INTS_MODULUS || k == kind::INTS_MODULUS_TOTAL ||
@@ -815,10 +828,7 @@ RewriteResponse ArithRewriter::rewriteIntsDivModTotal(TNode t, bool pre){
     Node resultNode = mkRationalNode(Rational(result));
     return RewriteResponse(REWRITE_DONE, resultNode);
   }
-  else
-  {
-    return RewriteResponse(REWRITE_DONE, t);
-  }
+  return RewriteResponse(REWRITE_DONE, t);
 }
 
 }/* CVC4::theory::arith namespace */

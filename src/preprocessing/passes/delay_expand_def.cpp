@@ -33,15 +33,17 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
   for (size_t i = 0; i < size; ++i)
   {
     Node prev = (*assertionsToPreprocess)[i];
+    Trace("delay-exp-def-assert") << "DelayExpandDefs: assert " << prev << std::endl;
     TrustNode trn = expandDefinitions(prev);
-    if (!trn.isNull())
+    Node next = trn.isNull() ? prev : trn.getNode();
+    Node nextr = Rewriter::rewrite(next);
+    if (prev!=nextr)
     {
-      Node next = trn.getNode();
-      assertionsToPreprocess->replace(i, Rewriter::rewrite(next));
+      assertionsToPreprocess->replace(i, nextr);
       Trace("delay-exp-def")
-          << "*** Delay expand defs " << prev << endl;
+          << "*** Delay expand defs " << prev << std::endl;
       Trace("delay-exp-def")
-          << "   ...got " << (*assertionsToPreprocess)[i] << endl;
+          << "   ...got " << nextr << std::endl;
     }
   }
   NodeManager* nm = NodeManager::currentNM();
