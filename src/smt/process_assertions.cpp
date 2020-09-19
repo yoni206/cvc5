@@ -332,6 +332,8 @@ bool ProcessAssertions::apply(Assertions& as)
   if (options::delayExpandDef())
   {
     d_passes["delay-expand-def"]->apply(&assertions);
+    // now apply theory preprocessing so that ite-removal below is complete
+    d_passes["theory-preprocess"]->apply(&assertions);
   }
 
   {
@@ -438,12 +440,6 @@ bool ProcessAssertions::apply(Assertions& as)
   if (options::ufHo())
   {
     d_passes["ho-elim"]->apply(&assertions);
-  }
-
-  // apply delayed expand definitions
-  if (options::delayExpandDef())
-  {
-    d_passes["delay-expand-def"]->apply(&assertions);
   }
 
   // begin: INVARIANT to maintain: no reordering of assertions or
@@ -744,8 +740,8 @@ Node ProcessAssertions::expandDefinitions(
       else if (!expandOnly)
       {
         // do not do any theory stuff if expandOnly is true
-        Kind k = node.getKind();
-        if (delay && k==INTS_MODULUS)
+        Kind nk = node.getKind();
+        if (delay && nk==INTS_MODULUS)
         {
           node = sm->mkPurifyKindApp(node);
         }
