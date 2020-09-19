@@ -35,10 +35,19 @@ class DelayExpandDefs : public PreprocessingPass
   DelayExpandDefs(PreprocessingPassContext* preprocContext);
 
  protected:
+   typedef  std::unordered_set<
+        std::pair<Node, uint32_t>,
+        PairHashFunction<Node, uint32_t, NodeHashFunction> > ExtPolNodeCache;
   PreprocessingPassResult applyInternal(
       AssertionPipeline* assertionsToPreprocess) override;
   /** Apply delayed expand definitions */
   theory::TrustNode expandDefinitions(Node n);
+  /** Learn */
+  void learn(Node n, ExtPolNodeCache& cache);
+  /** Learn literal */
+  void learnLiteral(Node n, bool pol);
+  /** static upper/lower bounds */
+  std::map< Node, std::pair< Node, Node > > d_bounds;
 };
 
 }  // namespace passes

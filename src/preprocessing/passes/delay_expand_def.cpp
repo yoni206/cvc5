@@ -16,6 +16,7 @@
 
 #include "expr/skolem_manager.h"
 #include "theory/rewriter.h"
+#include "expr/term_context_stack.h"
 
 using namespace CVC4::theory;
 
@@ -30,20 +31,28 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
     AssertionPipeline* assertionsToPreprocess)
 {
   size_t size = assertionsToPreprocess->size();
+  ExtPolNodeCache ecache;
   for (size_t i = 0; i < size; ++i)
   {
     Node prev = (*assertionsToPreprocess)[i];
     TrustNode trn = expandDefinitions(prev);
-    Node next = trn.isNull() ? prev : trn.getNode();
-    Trace("delay-exp-def-assert") << "DelayExpandDefs: assert: " << next << std::endl;
-    Node nextr = Rewriter::rewrite(next);
-    if (prev!=nextr)
+    if (!trn.isNull())
     {
-      if (next!=nextr)
-      {
-        Trace("delay-exp-def-assert") << ".......................: " << nextr << std::endl;
-      }
-      assertionsToPreprocess->replace(i, nextr);
+      assertionsToPreprocess->replace(i, trn.getNode());
+    }
+    // learn entailed literals
+    learn((*assertionsToPreprocess)[i], ecache);
+  }
+  // now, rewrite
+  for (size_t i = 0; i < size; ++i)
+  {
+    Node prev = (*assertionsToPreprocess)[i];
+    Trace("delay-exp-def-assert") << "DelayExpandDefs: assert: " << prev << std::endl;
+    Node next = Rewriter::rewrite(prev);
+    if (prev!=next)
+    {
+      Trace("delay-exp-def-assert") << ".......................: " << next << std::endl;
+      assertionsToPreprocess->replace(i, next);
     }
   }
   NodeManager* nm = NodeManager::currentNM();
@@ -143,6 +152,49 @@ TrustNode DelayExpandDefs::expandDefinitions(Node n)
   Assert(visited.find(n) != visited.end());
   Assert(!visited.find(n)->second.isNull());
   return TrustNode::mkTrustRewrite(n, visited[n], nullptr);
+}
+
+void DelayExpandDefs::learn(Node n, ExtPolNodeCache& cache)
+{
+  ExtPolarityTermContext eptc;
+  TCtxStack ctx(&eptc);
+  ctx.pushInitial(n);
+  std::pair<Node, uint32_t> curr;
+  Node node;
+  uint32_t nodeVal;
+  ExtPolNodeCache::const_iterator itc;
+  bool pol;
+  PolarityType ptype;
+  while (!ctx.empty())
+  {
+    curr = ctx.getCurrent();
+    itc = cache.find(curr);
+    node = curr.first;
+    nodeVal = curr.second;
+    ctx.pop();
+    if (itc == cache.end())
+    {
+      cache.insert(curr);
+      ExtPolarityTermContext::getFlags(nodeVal, ptype, pol);
+      if (ptype==PolarityType::ENTAILED)
+      {
+        // this formula is entailed by n, call learn literal and push children
+        learnLiteral(node, pol);
+        ctx.pushChildren(node, nodeVal);
+      }
+    }
+  }
+  
+}
+
+void DelayExpandDefs::learnLiteral(Node n, bool pol)
+{
+  Kind nk = n.getKind();
+  if (nk!=kind::EQUAL && nk!=kind::GEQ)
+  {
+    return;
+  }
+  Trace("delay-exp-def-learn") << "DelayExpandDefs::learnLiteral: " << n << ", " << pol << std::endl;
 }
 
 }  // namespace passes
