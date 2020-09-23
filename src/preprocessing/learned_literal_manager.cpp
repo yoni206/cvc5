@@ -21,7 +21,7 @@ namespace preprocessing {
 
 
 LearnedLiteralManager::LearnedLiteralManager(
-    SmtEngine* smt, context::UserContext * u) : d_smt(smt), d_learnedLits(u){}
+    SmtEngine* smt, PreprocessingPassContext * pcontext, context::UserContext * u) : d_smt(smt), d_pcontext(pcontext), d_learnedLits(u){}
 
 void LearnedLiteralManager::notifyLearnedLiteral(Node lit)
 {
@@ -41,6 +41,7 @@ std::vector<Node>& LearnedLiteralManager::getLearnedLiterals()
     }
     //TODO: update based on substitutions?
     Node learnedLit = (*it).first;
+    //Node tlsNode = d_top_level_substs.apply(intNode);
     d_currLearnedLits.push_back(learnedLit);
   }
   return d_currLearnedLits;

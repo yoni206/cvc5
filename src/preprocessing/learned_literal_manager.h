@@ -24,11 +24,13 @@
 namespace CVC4 {
 namespace preprocessing {
 
+class PreprocessingPassContext;
+  
 class LearnedLiteralManager
 {
  public:
   LearnedLiteralManager(
-      SmtEngine* smt, context::UserContext * u);
+      SmtEngine* smt, PreprocessingPassContext * pcontext, context::UserContext * u);
 
   SmtEngine* getSmt() { return d_smt; }
   /** 
@@ -46,6 +48,8 @@ class LearnedLiteralManager
   typedef context::CDHashMap<Node, bool, NodeHashFunction> NodeBoolMap;
   /** Pointer to the SmtEngine that this context was created in. */
   SmtEngine* d_smt;
+  /** Pointer to the preprocessing context */
+  PreprocessingPassContext * d_pcontext;
   /** Learned literals */
   NodeBoolMap d_learnedLits;
   /** Current */

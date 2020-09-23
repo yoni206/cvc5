@@ -269,7 +269,8 @@ Node SkolemManager::mkPurifyKindUf(Kind k, Node op, TypeNode ftn)
   std::vector<Node> largs;
   for (const TypeNode& atn : argTypes)
   {
-    Node v = nm->mkBoundVar(atn);
+    TypeNode atnb = atn.getBaseType();
+    Node v = nm->mkBoundVar(atnb);
     args.push_back(v);
     largs.push_back(v);
   }

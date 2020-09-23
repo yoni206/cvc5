@@ -30,7 +30,7 @@ PreprocessingPassContext::PreprocessingPassContext(
       d_iteRemover(iteRemover),
       d_topLevelSubstitutions(smt->getUserContext()),
       d_circuitPropagator(circuitPropagator),
-      d_llm(smt, smt->getUserContext()),
+      d_llm(smt, this, smt->getUserContext()),
       d_symsInAssertions(smt->getUserContext())
 {
 }
