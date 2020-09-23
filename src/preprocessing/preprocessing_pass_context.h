@@ -97,6 +97,10 @@ class PreprocessingPassContext
    * been applied to it.
    */
   void notifyLearnedLiteral(Node lit);
+  /** 
+   * Get the learned literals
+   */
+  std::vector<Node>& getLearnedLiterals();
  private:
   /** Pointer to the SmtEngine that this context was created in. */
   SmtEngine* d_smt;

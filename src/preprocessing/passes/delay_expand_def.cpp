@@ -41,7 +41,16 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
       assertionsToPreprocess->replace(i, trn.getNode());
     }
     // learn entailed literals
-    learn((*assertionsToPreprocess)[i], ecache);
+    //learn((*assertionsToPreprocess)[i], ecache);
+  }
+  std::vector<Node>& learnedLits = d_preprocContext->getLearnedLiterals();
+  if (Trace.isOn("delay-exp-def-ll"))
+  {
+    Trace("delay-exp-def-ll") << "Learned literals:" << std::endl;
+    for (const Node& l : learnedLits)
+    {
+      Trace("delay-exp-def-ll") << "- " << l << std::endl;
+    }
   }
   // now, rewrite
   for (size_t i = 0; i < size; ++i)

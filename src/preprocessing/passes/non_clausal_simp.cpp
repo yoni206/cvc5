@@ -192,15 +192,6 @@ PreprocessingPassResult NonClausalSimp::applyInternal(
             << "solved " << learnedLiteral << std::endl;
         Assert(Rewriter::rewrite(newSubstitutions.apply(learnedLiteral))
                    .isConst());
-        //        vector<pair<Node, Node> > equations;
-        //        constantPropagations.simplifyLHS(top_level_substs, equations,
-        //        true); if (equations.empty()) {
-        //          break;
-        //        }
-        //        Assert(equations[0].first.isConst() &&
-        //        equations[0].second.isConst() && equations[0].first !=
-        //        equations[0].second);
-        // else fall through
         break;
       }
       case Theory::PP_ASSERT_STATUS_CONFLICT:

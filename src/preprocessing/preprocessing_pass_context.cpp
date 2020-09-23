@@ -30,7 +30,7 @@ PreprocessingPassContext::PreprocessingPassContext(
       d_iteRemover(iteRemover),
       d_topLevelSubstitutions(smt->getUserContext()),
       d_circuitPropagator(circuitPropagator),
-      d_llm(smt),
+      d_llm(smt, smt->getUserContext()),
       d_symsInAssertions(smt->getUserContext())
 {
 }
@@ -65,6 +65,11 @@ void PreprocessingPassContext::recordSymbolsInAssertions(
 void PreprocessingPassContext::notifyLearnedLiteral(Node lit)
 {
   d_llm.notifyLearnedLiteral(lit);
+}
+
+std::vector<Node>& PreprocessingPassContext::getLearnedLiterals()
+{
+  return d_circuitPropagator->getLearnedLiterals();
 }
 
 }  // namespace preprocessing

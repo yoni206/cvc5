@@ -21,11 +21,18 @@ namespace preprocessing {
 
 
 LearnedLiteralManager::LearnedLiteralManager(
-    SmtEngine* smt) : d_smt(smt){}
+    SmtEngine* smt, context::UserContext * u) : d_smt(smt), d_learnedLits(u){}
 
-void LearnedLiteralManager::processLearnedLiteral(Node lit)
+void LearnedLiteralManager::notifyLearnedLiteral(Node lit)
 {
+  //d_learnedLits[lit] = true;
+  Trace("pp-llm") << "LLM:notifyLearnedLiteral: " << lit << std::endl;
+}
 
+std::vector<Node>& LearnedLiteralManager::getLearnedLiterals()
+{
+  // make current
+  return d_currLearnedLits;
 }
 
 }  // namespace preprocessing
