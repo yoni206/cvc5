@@ -89,6 +89,12 @@ void ProcessAssertions::finishInit(PreprocessingPassContext* pc)
   {
     d_delayExpKinds.insert(INTS_MODULUS);
     d_delayExpKinds.insert(INTS_DIVISION);
+    d_delayExpKinds.insert(MODULUS);
+    d_delayExpKinds.insert(DIVISION);
+    d_delayExpKinds.insert(TO_INTEGER);
+    d_delayExpKinds.insert(IS_INTEGER);
+    d_delayExpKinds.insert(ABS);
+    // could do other syntax sugar transcendental functions
   }
 }
 

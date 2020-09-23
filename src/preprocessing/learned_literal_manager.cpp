@@ -25,13 +25,24 @@ LearnedLiteralManager::LearnedLiteralManager(
 
 void LearnedLiteralManager::notifyLearnedLiteral(Node lit)
 {
-  //d_learnedLits[lit] = true;
+  d_learnedLits[lit] = true;
   Trace("pp-llm") << "LLM:notifyLearnedLiteral: " << lit << std::endl;
 }
 
 std::vector<Node>& LearnedLiteralManager::getLearnedLiterals()
 {
   // make current
+  d_currLearnedLits.clear();
+  for (NodeBoolMap::const_iterator it = d_learnedLits.begin(), itEnd = d_learnedLits.end(); it != itEnd; ++it)
+  {
+    if (!(*it).second)
+    {
+      continue;
+    }
+    //TODO: update based on substitutions?
+    Node learnedLit = (*it).first;
+    d_currLearnedLits.push_back(learnedLit);
+  }
   return d_currLearnedLits;
 }
 

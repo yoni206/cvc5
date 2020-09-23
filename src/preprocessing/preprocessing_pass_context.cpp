@@ -69,7 +69,7 @@ void PreprocessingPassContext::notifyLearnedLiteral(Node lit)
 
 std::vector<Node>& PreprocessingPassContext::getLearnedLiterals()
 {
-  return d_circuitPropagator->getLearnedLiterals();
+  return d_llm.getLearnedLiterals();
 }
 
 }  // namespace preprocessing

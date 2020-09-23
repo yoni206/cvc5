@@ -42,10 +42,12 @@ class LearnedLiteralManager
   /** Get learned literals */
   std::vector<Node>& getLearnedLiterals();
  private:
+   /** Learned literal map */
+  typedef context::CDHashMap<Node, bool, NodeHashFunction> NodeBoolMap;
   /** Pointer to the SmtEngine that this context was created in. */
   SmtEngine* d_smt;
   /** Learned literals */
-  context::CDHashMap<Node, bool, NodeHashFunction> d_learnedLits;
+  NodeBoolMap d_learnedLits;
   /** Current */
   std::vector<Node> d_currLearnedLits;
 }; 

@@ -41,12 +41,11 @@ class DelayExpandDefs : public PreprocessingPass
       ExtPolNodeCache;
   PreprocessingPassResult applyInternal(
       AssertionPipeline* assertionsToPreprocess) override;
-  /** Apply delayed expand definitions */
-  theory::TrustNode expandDefinitions(Node n);
-  /** Learn */
-  void learn(Node n, ExtPolNodeCache& cache);
-  /** Learn literal */
-  void learnLiteral(Node n, bool pol);
+  /** 
+   * Apply expand delayed definitions, which replaces APPLY_UF that purify
+   * builtin kinds with their original operators.
+   */
+  theory::TrustNode expandDelayedDefinitions(Node n);
   /** static upper/lower bounds */
   std::map<Node, std::pair<Node, Node> > d_bounds;
 };
