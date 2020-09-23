@@ -30,6 +30,7 @@ PreprocessingPassContext::PreprocessingPassContext(
       d_iteRemover(iteRemover),
       d_topLevelSubstitutions(smt->getUserContext()),
       d_circuitPropagator(circuitPropagator),
+      d_llm(smt),
       d_symsInAssertions(smt->getUserContext())
 {
 }
@@ -59,6 +60,11 @@ void PreprocessingPassContext::recordSymbolsInAssertions(
   {
     d_symsInAssertions.insert(s);
   }
+}
+
+void PreprocessingPassContext::processLearnedLiteral(Node lit)
+{
+  
 }
 
 }  // namespace preprocessing

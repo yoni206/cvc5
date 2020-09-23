@@ -38,6 +38,8 @@ libcvc4_add_sources(
   lib/strtok_r.h
   preprocessing/assertion_pipeline.cpp
   preprocessing/assertion_pipeline.h
+  preprocessing/learned_literal_manager.cpp
+  preprocessing/learned_literal_manager.h
   preprocessing/passes/ackermann.cpp
   preprocessing/passes/ackermann.h
   preprocessing/passes/apply_substs.cpp
