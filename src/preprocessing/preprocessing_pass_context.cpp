@@ -62,9 +62,9 @@ void PreprocessingPassContext::recordSymbolsInAssertions(
   }
 }
 
-void PreprocessingPassContext::processLearnedLiteral(Node lit)
+void PreprocessingPassContext::notifyLearnedLiteral(Node lit)
 {
-  
+  d_llm.notifyLearnedLiteral(lit);
 }
 
 }  // namespace preprocessing

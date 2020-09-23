@@ -90,13 +90,13 @@ class PreprocessingPassContext
   void recordSymbolsInAssertions(const std::vector<Node>& assertions);
 
   /** 
-   * Process learned literal. This method is called when a literal is
+   * Notify learned literal. This method is called when a literal is
    * entailed by the current set of assertions.
    * 
    * It should be rewritten, and such that top level substitutions have
    * been applied to it.
    */
-  void processLearnedLiteral(Node lit);
+  void notifyLearnedLiteral(Node lit);
  private:
   /** Pointer to the SmtEngine that this context was created in. */
   SmtEngine* d_smt;
