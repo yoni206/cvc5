@@ -46,10 +46,17 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
   std::vector<Node>& learnedLits = d_preprocContext->getLearnedLiterals();
   if (Trace.isOn("delay-exp-def-ll"))
   {
-    Trace("delay-exp-def-ll") << "Learned literals:" << std::endl;
-    for (const Node& l : learnedLits)
+    if (learnedLits.empty())
     {
-      Trace("delay-exp-def-ll") << "- " << l << std::endl;
+      Trace("delay-exp-def-ll") << "No learned literals" << std::endl;
+    }
+    else
+    {
+      Trace("delay-exp-def-ll") << "Learned literals:" << std::endl;
+      for (const Node& l : learnedLits)
+      {
+        Trace("delay-exp-def-ll") << "- " << l << std::endl;
+      }
     }
   }
   // now, rewrite
