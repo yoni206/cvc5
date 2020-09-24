@@ -249,8 +249,8 @@ Node SkolemManager::getPurifyKindOpForUf(Node op) const
 
 Node SkolemManager::mkPurifyKindUf(Kind k, Node op, TypeNode ftn)
 {
-  std::pair<Kind, Node> key(k, op);
-  std::map<std::pair<Kind, Node>, Node>::iterator it = d_kindToUf.find(key);
+  std::tuple<Kind, Node, TypeNode> key(k, op, ftn);
+  std::map<std::tuple<Kind, Node, TypeNode>, Node>::iterator it = d_kindToUf.find(key);
   if (it != d_kindToUf.end())
   {
     Assert(it->second.getType() == ftn);
@@ -269,8 +269,7 @@ Node SkolemManager::mkPurifyKindUf(Kind k, Node op, TypeNode ftn)
   std::vector<Node> largs;
   for (const TypeNode& atn : argTypes)
   {
-    TypeNode atnb = atn.getBaseType();
-    Node v = nm->mkBoundVar(atnb);
+    Node v = nm->mkBoundVar(atn);
     args.push_back(v);
     largs.push_back(v);
   }
@@ -293,7 +292,7 @@ Node SkolemManager::mkPurifyKindUf(Kind k, Node op, TypeNode ftn)
 std::vector<Node> SkolemManager::getPurifyKindUfs() const
 {
   std::vector<Node> ufs;
-  for (const std::pair<const std::pair<Kind, Node>, Node>& ku : d_kindToUf)
+  for (const std::pair<const std::tuple<Kind, Node, TypeNode>, Node>& ku : d_kindToUf)
   {
     ufs.push_back(ku.second);
   }
