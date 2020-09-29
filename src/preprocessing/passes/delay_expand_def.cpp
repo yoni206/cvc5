@@ -19,6 +19,7 @@
 #include "theory/rewriter.h"
 
 using namespace CVC4::theory;
+using namespace CVC4::kind;
 
 namespace CVC4 {
 namespace preprocessing {
@@ -30,47 +31,39 @@ DelayExpandDefs::DelayExpandDefs(PreprocessingPassContext* preprocContext)
 PreprocessingPassResult DelayExpandDefs::applyInternal(
     AssertionPipeline* assertionsToPreprocess)
 {
-  size_t size = assertionsToPreprocess->size();
-  ExtPolNodeCache ecache;
-  for (size_t i = 0; i < size; ++i)
-  {
-    Node prev = (*assertionsToPreprocess)[i];
-    TrustNode trn = expandDelayedDefinitions(prev);
-    if (!trn.isNull())
-    {
-      assertionsToPreprocess->replace(i, trn.getNode());
-    }
-    // learn entailed literals
-    //learn((*assertionsToPreprocess)[i], ecache);
-  }
+  arith::BoundInference binfer;
   std::vector<Node>& learnedLits = d_preprocContext->getLearnedLiterals();
-  if (Trace.isOn("delay-exp-def-ll"))
+  if (learnedLits.empty())
   {
-    if (learnedLits.empty())
+    Trace("delay-exp-def-ll") << "No learned literals" << std::endl;
+  }
+  else
+  {
+    Trace("delay-exp-def-ll") << "Learned literals:" << std::endl;
+    for (const Node& l : learnedLits)
     {
-      Trace("delay-exp-def-ll") << "No learned literals" << std::endl;
-    }
-    else
-    {
-      Trace("delay-exp-def-ll") << "Learned literals:" << std::endl;
-      for (const Node& l : learnedLits)
+      Node e = expandDelayedDefinitions(l, binfer);
+      // maybe for bound inference?
+      Kind k = e.getKind();
+      if (k==EQUAL || k==GEQ)
       {
-        Trace("delay-exp-def-ll") << "- " << l << std::endl;
+        binfer.add(e);
       }
+      Trace("delay-exp-def-ll") << "- " << e << std::endl;
     }
   }
-  // now, rewrite
+  size_t size = assertionsToPreprocess->size();
   for (size_t i = 0; i < size; ++i)
   {
     Node prev = (*assertionsToPreprocess)[i];
     Trace("delay-exp-def-assert")
         << "DelayExpandDefs: assert: " << prev << std::endl;
-    Node next = Rewriter::rewrite(prev);
-    if (prev != next)
+    Node e = expandDelayedDefinitions(prev, binfer);
+    if (e!=prev)
     {
       Trace("delay-exp-def-assert")
-          << ".......................: " << next << std::endl;
-      assertionsToPreprocess->replace(i, next);
+          << ".......................: " << e << std::endl;
+      assertionsToPreprocess->replace(i, e);
     }
   }
   NodeManager* nm = NodeManager::currentNM();
@@ -103,7 +96,7 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
   return PreprocessingPassResult::NO_CONFLICT;
 }
 
-TrustNode DelayExpandDefs::expandDelayedDefinitions(Node n)
+Node DelayExpandDefs::expandDelayedDefinitions(Node n, arith::BoundInference& binfer)
 {
   NodeManager* nm = NodeManager::currentNM();
   SkolemManager* sm = nm->getSkolemManager();
@@ -158,21 +151,74 @@ TrustNode DelayExpandDefs::expandDelayedDefinitions(Node n)
             children[0] = pOp;
           }
           ret = nm->mkNode(pk, children);
+          ret = rewriteDelayed(ret, binfer);
           needsRcons = false;
         }
       }
       if (needsRcons)
       {
         ret = nm->mkNode(cur.getKind(), children);
+        // rewrite here
+        Trace("delay-exp-def-rr") << "Rewrite " << ret << std::endl;
+        ret = rewriteDelayed(ret, binfer);
       }
       visited[cur] = ret;
     }
   } while (!visit.empty());
   Assert(visited.find(n) != visited.end());
   Assert(!visited.find(n)->second.isNull());
-  return TrustNode::mkTrustRewrite(n, visited[n], nullptr);
+  return visited[n];
 }
 
+Node DelayExpandDefs::rewriteDelayed(Node n, theory::arith::BoundInference& binfer)
+{
+  NodeManager * nm = NodeManager::currentNM();
+  Trace("delay-exp-def-rr") << "Rewrite " << n << std::endl;
+  Node nr = Rewriter::rewrite(n);
+  Kind k = nr.getKind();
+  if (k==INTS_DIVISION || k==INTS_MODULUS || k==DIVISION)
+  {
+    // simpler if we know the divisor is non-zero
+    Node num = n[0];
+    Node den = n[1];
+    bool isNonZeroDen = false;
+    if (den.isConst())
+    {
+      isNonZeroDen = (den.getConst<Rational>().sgn()!=0);
+    }
+    else
+    {
+      arith::Bounds db = binfer.get(den);
+      Trace("delay-exp-def-rr") << "Bounds for " << den << " : " << db.lower << " " << db.upper << std::endl;
+      if (!db.lower.isNull() && db.lower.getConst<Rational>().sgn()==1)
+      {
+        isNonZeroDen = true;
+      }
+      else if (!db.upper.isNull() && db.upper.getConst<Rational>().sgn()==-1)
+      {
+        isNonZeroDen = true;
+      }
+    }
+    if (isNonZeroDen)
+    {
+      Trace("delay-exp-def-rr") << "...non-zero denominator" << std::endl;
+      Kind nk = k;
+      switch(k)
+      {
+        case INTS_DIVISION: nk = INTS_DIVISION_TOTAL;break;
+        case INTS_MODULUS: nk = INTS_MODULUS_TOTAL;break;
+        case DIVISION: nk = DIVISION_TOTAL;break;
+        default:Assert(false);break;
+      }
+      std::vector<Node> children;
+      children.insert(children.end(), n.begin(), n.end());
+      nr = nm->mkNode(nk, children);
+      nr = Rewriter::rewrite(nr);
+    }
+  }
+  return nr;
+}
+  
 }  // namespace passes
 }  // namespace preprocessing
 }  // namespace CVC4

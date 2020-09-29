@@ -20,6 +20,7 @@
 #include "preprocessing/preprocessing_pass.h"
 #include "preprocessing/preprocessing_pass_context.h"
 #include "theory/trust_node.h"
+#include "theory/arith/bound_inference.h"
 
 namespace CVC4 {
 namespace preprocessing {
@@ -45,7 +46,11 @@ class DelayExpandDefs : public PreprocessingPass
    * Apply expand delayed definitions, which replaces APPLY_UF that purify
    * builtin kinds with their original operators.
    */
-  theory::TrustNode expandDelayedDefinitions(Node n);
+  Node expandDelayedDefinitions(Node n, theory::arith::BoundInference& binfer);
+  /**
+   * Delayed rewrite
+   */
+  Node rewriteDelayed(Node n, theory::arith::BoundInference& binfer);
   /** static upper/lower bounds */
   std::map<Node, std::pair<Node, Node> > d_bounds;
 };
