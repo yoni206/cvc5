@@ -169,6 +169,8 @@ libcvc4_add_sources(
   prop/cryptominisat.h
   prop/kissat.cpp
   prop/kissat.h
+  prop/proof_cnf_stream.cpp
+  prop/proof_cnf_stream.h
   prop/minisat/core/Dimacs.h
   prop/minisat/core/Solver.cc
   prop/minisat/core/Solver.h
@@ -194,6 +196,10 @@ libcvc4_add_sources(
   prop/sat_solver_factory.cpp
   prop/sat_solver_factory.h
   prop/bv_sat_solver_notify.h
+  prop/proof_post_processor.cpp
+  prop/proof_post_processor.h
+  prop/sat_proof_manager.cpp
+  prop/sat_proof_manager.h
   prop/sat_solver_types.cpp
   prop/sat_solver_types.h
   prop/theory_proxy.cpp
@@ -373,6 +379,8 @@ libcvc4_add_sources(
   theory/arith/operator_elim.h
   theory/arith/partial_model.cpp
   theory/arith/partial_model.h
+  theory/arith/proof_checker.cpp
+  theory/arith/proof_checker.h
   theory/arith/simplex.cpp
   theory/arith/simplex.h
   theory/arith/simplex_update.cpp
@@ -408,18 +416,22 @@ libcvc4_add_sources(
   theory/assertion.h
   theory/atom_requests.cpp
   theory/atom_requests.h
+  theory/bags/bags_rewriter.cpp
+  theory/bags/bags_rewriter.h
+  theory/bags/bags_statistics.cpp
+  theory/bags/bags_statistics.h
   theory/bags/inference_manager.cpp
   theory/bags/inference_manager.h
   theory/bags/normal_form.cpp
   theory/bags/normal_form.h
+  theory/bags/rewrites.cpp
+  theory/bags/rewrites.h
   theory/bags/solver_state.cpp
   theory/bags/solver_state.h
   theory/bags/term_registry.cpp
   theory/bags/term_registry.h
   theory/bags/theory_bags.cpp
   theory/bags/theory_bags.h
-  theory/bags/theory_bags_rewriter.cpp
-  theory/bags/theory_bags_rewriter.h
   theory/bags/theory_bags_type_enumerator.cpp
   theory/bags/theory_bags_type_enumerator.h
   theory/bags/theory_bags_type_rules.h
