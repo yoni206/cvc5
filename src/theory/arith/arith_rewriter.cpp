@@ -870,7 +870,7 @@ RewriteResponse ArithRewriter::rewriteIntsDivModTotal(TNode t, bool pre)
         // (mod (op ... (mod x c) ...) c) ---> (mod (op ... x ...) c) where
         // op is one of { NONLINEAR_MULT, MULT, PLUS }.
         Node ret = nm->mkNode(k0, newChildren);
-        ret = nm->mkNode(kind::INTS_MODULUS_TOTAL, ret, t[0]);
+        ret = nm->mkNode(kind::INTS_MODULUS_TOTAL, ret, t[1]);
         return returnRewrite(t, ret, Rewrite::MOD_CHILD_MOD);
       }
     }
