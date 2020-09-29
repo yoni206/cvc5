@@ -22,6 +22,7 @@
 
 #include "theory/theory.h"
 #include "theory/theory_rewriter.h"
+#include "theory/arith/rewrites.h"
 
 namespace CVC4 {
 namespace theory {
@@ -67,7 +68,8 @@ class ArithRewriter : public TheoryRewriter
   static inline bool isTerm(TNode n) {
     return !isAtom(n);
   }
-
+  /** return rewrite */
+  static RewriteResponse returnRewrite(TNode t, Node ret, const char * c);
 }; /* class ArithRewriter */
 
 }/* CVC4::theory::arith namespace */

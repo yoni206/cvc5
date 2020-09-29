@@ -1603,7 +1603,7 @@ void SmtEngine::checkModel(bool hardFailure) {
   Notice() << *m;
 
   // are we check the result of formulas after expand definitions?
-  bool checkWithExpand = false;
+  bool checkWithExpand = true;//false;
 
   // We have a "fake context" for the substitution map (we don't need it
   // to be context-dependent)
