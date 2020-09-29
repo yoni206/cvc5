@@ -1707,7 +1707,7 @@ void SmtEngine::checkModel(bool hardFailure) {
     // Apply any define-funs from the problem.
     {
       unordered_map<Node, Node, NodeHashFunction> cache;
-      n = d_pp->expandDefinitions(n, cache);
+      n = d_pp->expandDefinitions(n, cache, true);
     }
     Notice() << "SmtEngine::checkModel(): -- expands to " << n << endl;
 
@@ -1725,7 +1725,7 @@ void SmtEngine::checkModel(bool hardFailure) {
 
     // Simplify the result and replace the already-known ITEs (this is important
     // for ground ITEs under quantifiers).
-    n = d_pp->simplify(n, true);
+    n = d_pp->simplify(n, true, true);
     Notice()
         << "SmtEngine::checkModel(): -- simplifies with ite replacement to  "
         << n << endl;

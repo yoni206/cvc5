@@ -124,7 +124,7 @@ Node Preprocessor::expandDefinitions(
   return d_processor.expandDefinitions(n, cache, expandOnly);
 }
 
-Node Preprocessor::simplify(const Node& node, bool removeItes)
+Node Preprocessor::simplify(const Node& node, bool removeItes, bool expandOnly)
 {
   Trace("smt") << "SMT simplify(" << node << ")" << endl;
   if (Dump.isOn("benchmark"))
@@ -139,7 +139,7 @@ Node Preprocessor::simplify(const Node& node, bool removeItes)
     nas.getType(true);
   }
   std::unordered_map<Node, Node, NodeHashFunction> cache;
-  Node n = d_processor.expandDefinitions(nas, cache);
+  Node n = d_processor.expandDefinitions(nas, cache, expandOnly);
   Node ns = applySubstitutions(n);
   if (removeItes)
   {
