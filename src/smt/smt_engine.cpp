@@ -1601,7 +1601,7 @@ void SmtEngine::checkModel(bool hardFailure) {
 
   // Output the model
   Notice() << *m;
-  
+
   // are we check the result of formulas after expand definitions?
   bool checkWithExpand = false;
 

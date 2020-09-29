@@ -837,7 +837,8 @@ RewriteResponse ArithRewriter::rewriteIntsDivModTotal(TNode t, bool pre){
     // (div x 0) ---> 0 or (mod x 0) ---> 0
     return RewriteResponse(REWRITE_DONE, mkRationalNode(0));
   }else if(dIsConstant && d.getConst<Rational>().isOne()){
-    if(k == kind::INTS_MODULUS_TOTAL){
+    if (k == kind::INTS_MODULUS_TOTAL)
+    {
       // (mod x 1) --> 0
       return RewriteResponse(REWRITE_DONE, mkRationalNode(0));
     }

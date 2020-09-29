@@ -24,13 +24,13 @@
 #include "context/cdo.h"
 #include "context/context.h"
 #include "decision/decision_engine.h"
+#include "preprocessing/learned_literal_manager.h"
 #include "preprocessing/util/ite_utilities.h"
 #include "smt/smt_engine.h"
 #include "smt/term_formula_removal.h"
 #include "theory/booleans/circuit_propagator.h"
 #include "theory/theory_engine.h"
 #include "util/resource_manager.h"
-#include "preprocessing/learned_literal_manager.h"
 
 namespace CVC4 {
 namespace preprocessing {
@@ -57,7 +57,7 @@ class PreprocessingPassContext
 
   /** Get the learned literal manager */
   LearnedLiteralManager* getLearnedLiteralManager();
-  
+
   context::CDHashSet<Node, NodeHashFunction>& getSymsInAssertions()
   {
     return d_symsInAssertions;
@@ -89,18 +89,19 @@ class PreprocessingPassContext
    */
   void recordSymbolsInAssertions(const std::vector<Node>& assertions);
 
-  /** 
+  /**
    * Notify learned literal. This method is called when a literal is
    * entailed by the current set of assertions.
-   * 
+   *
    * It should be rewritten, and such that top level substitutions have
    * been applied to it.
    */
   void notifyLearnedLiteral(Node lit);
-  /** 
+  /**
    * Get the learned literals
    */
   std::vector<Node>& getLearnedLiterals();
+
  private:
   /** Pointer to the SmtEngine that this context was created in. */
   SmtEngine* d_smt;
@@ -117,11 +118,11 @@ class PreprocessingPassContext
   /** Instance of the circuit propagator */
   theory::booleans::CircuitPropagator* d_circuitPropagator;
 
-  /** 
+  /**
    * The learned literal manager
    */
   LearnedLiteralManager d_llm;
-  
+
   /**
    * The (user-context-dependent) set of symbols that occur in at least one
    * assertion in the current user context.

@@ -79,7 +79,9 @@ class Preprocessor
    * term positions) from the result.
    * @return The simplified term.
    */
-  Node simplify(const Node& n, bool removeItes = false, bool expandOnly = false);
+  Node simplify(const Node& n,
+                bool removeItes = false,
+                bool expandOnly = false);
   /**
    * Expand the definitions in a term or formula n.  No other
    * simplification or normalization is done.

@@ -45,7 +45,7 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
       Node e = expandDelayedDefinitions(l, binfer);
       // maybe for bound inference?
       Kind k = e.getKind();
-      if (k==EQUAL || k==GEQ)
+      if (k == EQUAL || k == GEQ)
       {
         binfer.add(e);
       }
@@ -59,7 +59,7 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
     Trace("delay-exp-def-assert")
         << "DelayExpandDefs: assert: " << prev << std::endl;
     Node e = expandDelayedDefinitions(prev, binfer);
-    if (e!=prev)
+    if (e != prev)
     {
       Trace("delay-exp-def-assert")
           << ".......................: " << e << std::endl;
@@ -96,7 +96,8 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
   return PreprocessingPassResult::NO_CONFLICT;
 }
 
-Node DelayExpandDefs::expandDelayedDefinitions(Node n, arith::BoundInference& binfer)
+Node DelayExpandDefs::expandDelayedDefinitions(Node n,
+                                               arith::BoundInference& binfer)
 {
   NodeManager* nm = NodeManager::currentNM();
   SkolemManager* sm = nm->getSkolemManager();
@@ -170,13 +171,14 @@ Node DelayExpandDefs::expandDelayedDefinitions(Node n, arith::BoundInference& bi
   return visited[n];
 }
 
-Node DelayExpandDefs::rewriteDelayed(Node n, theory::arith::BoundInference& binfer)
+Node DelayExpandDefs::rewriteDelayed(Node n,
+                                     theory::arith::BoundInference& binfer)
 {
-  NodeManager * nm = NodeManager::currentNM();
+  NodeManager* nm = NodeManager::currentNM();
   Trace("delay-exp-def-rr") << "Rewrite " << n << std::endl;
   Node nr = Rewriter::rewrite(n);
   Kind k = nr.getKind();
-  if (k==INTS_DIVISION || k==INTS_MODULUS || k==DIVISION)
+  if (k == INTS_DIVISION || k == INTS_MODULUS || k == DIVISION)
   {
     // simpler if we know the divisor is non-zero
     Node num = n[0];
@@ -184,17 +186,18 @@ Node DelayExpandDefs::rewriteDelayed(Node n, theory::arith::BoundInference& binf
     bool isNonZeroDen = false;
     if (den.isConst())
     {
-      isNonZeroDen = (den.getConst<Rational>().sgn()!=0);
+      isNonZeroDen = (den.getConst<Rational>().sgn() != 0);
     }
     else
     {
       arith::Bounds db = binfer.get(den);
-      Trace("delay-exp-def-rr") << "Bounds for " << den << " : " << db.lower << " " << db.upper << std::endl;
-      if (!db.lower.isNull() && db.lower.getConst<Rational>().sgn()==1)
+      Trace("delay-exp-def-rr") << "Bounds for " << den << " : " << db.lower
+                                << " " << db.upper << std::endl;
+      if (!db.lower.isNull() && db.lower.getConst<Rational>().sgn() == 1)
       {
         isNonZeroDen = true;
       }
-      else if (!db.upper.isNull() && db.upper.getConst<Rational>().sgn()==-1)
+      else if (!db.upper.isNull() && db.upper.getConst<Rational>().sgn() == -1)
       {
         isNonZeroDen = true;
       }
@@ -203,12 +206,12 @@ Node DelayExpandDefs::rewriteDelayed(Node n, theory::arith::BoundInference& binf
     {
       Trace("delay-exp-def-rr") << "...non-zero denominator" << std::endl;
       Kind nk = k;
-      switch(k)
+      switch (k)
       {
-        case INTS_DIVISION: nk = INTS_DIVISION_TOTAL;break;
-        case INTS_MODULUS: nk = INTS_MODULUS_TOTAL;break;
-        case DIVISION: nk = DIVISION_TOTAL;break;
-        default:Assert(false);break;
+        case INTS_DIVISION: nk = INTS_DIVISION_TOTAL; break;
+        case INTS_MODULUS: nk = INTS_MODULUS_TOTAL; break;
+        case DIVISION: nk = DIVISION_TOTAL; break;
+        default: Assert(false); break;
       }
       std::vector<Node> children;
       children.insert(children.end(), n.begin(), n.end());
@@ -217,7 +220,7 @@ Node DelayExpandDefs::rewriteDelayed(Node n, theory::arith::BoundInference& binf
     }
   }
   // constant int div / mod elimination by bound inference
-  if (k==INTS_DIVISION_TOTAL || k==INTS_MODULUS_TOTAL)
+  if (k == INTS_DIVISION_TOTAL || k == INTS_MODULUS_TOTAL)
   {
     Node num = n[0];
     Node den = n[1];
@@ -228,7 +231,7 @@ Node DelayExpandDefs::rewriteDelayed(Node n, theory::arith::BoundInference& binf
   }
   return nr;
 }
-  
+
 }  // namespace passes
 }  // namespace preprocessing
 }  // namespace CVC4

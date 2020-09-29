@@ -19,9 +19,12 @@
 namespace CVC4 {
 namespace preprocessing {
 
-
-LearnedLiteralManager::LearnedLiteralManager(
-    SmtEngine* smt, PreprocessingPassContext * pcontext, context::UserContext * u) : d_smt(smt), d_pcontext(pcontext), d_learnedLits(u){}
+LearnedLiteralManager::LearnedLiteralManager(SmtEngine* smt,
+                                             PreprocessingPassContext* pcontext,
+                                             context::UserContext* u)
+    : d_smt(smt), d_pcontext(pcontext), d_learnedLits(u)
+{
+}
 
 void LearnedLiteralManager::notifyLearnedLiteral(Node lit)
 {
@@ -33,15 +36,18 @@ std::vector<Node>& LearnedLiteralManager::getLearnedLiterals()
 {
   // make current
   d_currLearnedLits.clear();
-  for (NodeBoolMap::const_iterator it = d_learnedLits.begin(), itEnd = d_learnedLits.end(); it != itEnd; ++it)
+  for (NodeBoolMap::const_iterator it = d_learnedLits.begin(),
+                                   itEnd = d_learnedLits.end();
+       it != itEnd;
+       ++it)
   {
     if (!(*it).second)
     {
       continue;
     }
-    //TODO: update based on substitutions?
+    // TODO: update based on substitutions?
     Node learnedLit = (*it).first;
-    //Node tlsNode = d_top_level_substs.apply(intNode);
+    // Node tlsNode = d_top_level_substs.apply(intNode);
     d_currLearnedLits.push_back(learnedLit);
   }
   return d_currLearnedLits;

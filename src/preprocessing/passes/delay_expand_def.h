@@ -19,8 +19,8 @@
 
 #include "preprocessing/preprocessing_pass.h"
 #include "preprocessing/preprocessing_pass_context.h"
-#include "theory/trust_node.h"
 #include "theory/arith/bound_inference.h"
+#include "theory/trust_node.h"
 
 namespace CVC4 {
 namespace preprocessing {
@@ -42,7 +42,7 @@ class DelayExpandDefs : public PreprocessingPass
       ExtPolNodeCache;
   PreprocessingPassResult applyInternal(
       AssertionPipeline* assertionsToPreprocess) override;
-  /** 
+  /**
    * Apply expand delayed definitions, which replaces APPLY_UF that purify
    * builtin kinds with their original operators.
    */

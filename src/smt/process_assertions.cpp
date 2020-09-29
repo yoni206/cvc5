@@ -147,7 +147,7 @@ bool ProcessAssertions::apply(Assertions& as)
     for (size_t i = 0, nasserts = assertions.size(); i < nasserts; ++i)
     {
       Node expd = expandDefinitions(
-              assertions[i], cache, false, options::delayExpandDef());
+          assertions[i], cache, false, options::delayExpandDef());
       if (expd != assertions[i])
       {
         assertions.replace(i, expd);
