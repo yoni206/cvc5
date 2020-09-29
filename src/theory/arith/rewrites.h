@@ -29,6 +29,16 @@ namespace arith {
 enum class Rewrite : uint32_t
 {
   NONE,
+  CONST_EVAL,
+  MOD_TOTAL_BY_CONST,
+  DIV_TOTAL_BY_CONST,
+  DIV_MOD_BY_ZERO,
+  MOD_BY_ONE,
+  DIV_BY_ONE,
+  DIV_MOD_PULL_NEG_DEN,
+  MOD_OVER_MOD,
+  MOD_CHILD_MOD,
+  DIV_OVER_MOD
 };
 
 /**

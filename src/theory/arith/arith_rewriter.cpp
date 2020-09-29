@@ -772,7 +772,7 @@ RewriteResponse ArithRewriter::rewriteIntsDivMod(TNode t, bool pre)
     {
       // can immediately replace by INTS_MODULUS_TOTAL
       Node ret = nm->mkNode(kind::INTS_MODULUS_TOTAL, t[0], t[1]);
-      return RewriteResponse(REWRITE_AGAIN, ret);
+      return returnRewrite(t, ret, Rewrite::MOD_TOTAL_BY_CONST);
     }
   }
   if (k == kind::INTS_DIVISION)
@@ -781,7 +781,7 @@ RewriteResponse ArithRewriter::rewriteIntsDivMod(TNode t, bool pre)
     {
       // can immediately replace by INTS_DIVISION_TOTAL
       Node ret = nm->mkNode(kind::INTS_DIVISION_TOTAL, t[0], t[1]);
-      return RewriteResponse(REWRITE_AGAIN, ret);
+      return returnRewrite(t, ret, Rewrite::DIV_TOTAL_BY_CONST);
     }
   }
   return RewriteResponse(REWRITE_DONE, t);
@@ -800,16 +800,16 @@ RewriteResponse ArithRewriter::rewriteIntsDivModTotal(TNode t, bool pre){
   bool dIsConstant = d.getKind() == kind::CONST_RATIONAL;
   if(dIsConstant && d.getConst<Rational>().isZero()){
     // (div x 0) ---> 0 or (mod x 0) ---> 0
-    return RewriteResponse(REWRITE_DONE, mkRationalNode(0));
+    return returnRewrite(t, mkRationalNode(0), Rewrite::DIV_MOD_BY_ZERO);
   }else if(dIsConstant && d.getConst<Rational>().isOne()){
     if (k == kind::INTS_MODULUS_TOTAL)
     {
       // (mod x 1) --> 0
-      return RewriteResponse(REWRITE_DONE, mkRationalNode(0));
+      return returnRewrite(t, mkRationalNode(0), Rewrite::MOD_BY_ONE);
     }
     Assert(k == kind::INTS_DIVISION_TOTAL);
     // (div x 1) --> x
-    return RewriteResponse(REWRITE_AGAIN, n);
+    return returnRewrite(t, n, Rewrite::DIV_BY_ONE);
   }
   else if (dIsConstant && d.getConst<Rational>().sgn() < 0)
   {
@@ -820,7 +820,7 @@ RewriteResponse ArithRewriter::rewriteIntsDivModTotal(TNode t, bool pre){
     Node ret = (k == kind::INTS_DIVISION || k == kind::INTS_DIVISION_TOTAL)
                    ? nm->mkNode(kind::UMINUS, nn)
                    : nn;
-    return RewriteResponse(REWRITE_AGAIN_FULL, ret);
+    return returnRewrite(t, ret, Rewrite::DIV_MOD_PULL_NEG_DEN);
   }
   else if (dIsConstant && n.getKind() == kind::CONST_RATIONAL)
   {
@@ -837,7 +837,7 @@ RewriteResponse ArithRewriter::rewriteIntsDivModTotal(TNode t, bool pre){
     // constant evaluation
     // (mod c1 c2) ---> c3 or (div c1 c2) ---> c3
     Node resultNode = mkRationalNode(Rational(result));
-    return RewriteResponse(REWRITE_DONE, resultNode);
+    return returnRewrite(t, resultNode, Rewrite::CONST_EVAL);
   }
   if (k==kind::INTS_MODULUS_TOTAL)
   {
@@ -847,9 +847,7 @@ RewriteResponse ArithRewriter::rewriteIntsDivModTotal(TNode t, bool pre){
     if (k0 == kind::INTS_MODULUS_TOTAL && t[0][1] == t[1])
     {
       // (mod (mod x c) c) --> (mod x c)
-      Trace("arith-rewrite-ext")
-          << "Rewrite : " << t << " " << t[0] << std::endl;
-      return RewriteResponse(REWRITE_AGAIN, t[0]);
+      return returnRewrite(t, t[0], Rewrite::MOD_OVER_MOD);
     }
     else if (k0 == kind::NONLINEAR_MULT || k0 == kind::MULT
               || k0 == kind::PLUS)
@@ -872,9 +870,7 @@ RewriteResponse ArithRewriter::rewriteIntsDivModTotal(TNode t, bool pre){
         // (mod (op ... (mod x c) ...) c) ---> (mod (op ... x ...) c) where
         // op is one of { NONLINEAR_MULT, MULT, PLUS }.
         Node ret = nm->mkNode(k0, newChildren);
-        Trace("arith-rewrite-ext")
-            << "Rewrite : " << t << " " << ret << std::endl;
-        return RewriteResponse(REWRITE_AGAIN, ret);
+        return returnRewrite(t, ret, Rewrite::MOD_CHILD_MOD);
       }
     }
   }
@@ -887,16 +883,16 @@ RewriteResponse ArithRewriter::rewriteIntsDivModTotal(TNode t, bool pre){
     {
       // (div (mod x c) c) --> 0
       Node ret = mkRationalNode(0);
-      return returnRewrite(t, ret, "div-over-mod");
+      return returnRewrite(t, ret, Rewrite::DIV_OVER_MOD);
     }
   }
   return RewriteResponse(REWRITE_DONE, t);
 }
 
-RewriteResponse ArithRewriter::returnRewrite(TNode t, Node ret, const char * c)
+RewriteResponse ArithRewriter::returnRewrite(TNode t, Node ret, Rewrite r)
 {
   Trace("arith-rewrite")
-      << "ArithRewriter : " << t << " == " << ret << " by " << c << std::endl;
+      << "ArithRewriter : " << t << " == " << ret << " by " << r << std::endl;
   return RewriteResponse(REWRITE_AGAIN, ret);
 }
 

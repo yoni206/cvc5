@@ -69,7 +69,7 @@ class ArithRewriter : public TheoryRewriter
     return !isAtom(n);
   }
   /** return rewrite */
-  static RewriteResponse returnRewrite(TNode t, Node ret, const char * c);
+  static RewriteResponse returnRewrite(TNode t, Node ret, Rewrite r);
 }; /* class ArithRewriter */
 
 }/* CVC4::theory::arith namespace */
