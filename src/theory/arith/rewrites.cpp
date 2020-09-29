@@ -18,7 +18,7 @@
 
 namespace CVC4 {
 namespace theory {
-namespace bags {
+namespace arith {
 
 const char* toString(Rewrite r)
 {
@@ -45,6 +45,6 @@ std::ostream& operator<<(std::ostream& out, Rewrite r)
   return out;
 }
 
-}  // namespace bags
+}  // namespace arith
 }  // namespace theory
 }  // namespace CVC4
