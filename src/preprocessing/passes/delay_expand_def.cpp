@@ -216,6 +216,16 @@ Node DelayExpandDefs::rewriteDelayed(Node n, theory::arith::BoundInference& binf
       nr = Rewriter::rewrite(nr);
     }
   }
+  // constant int div / mod elimination by bound inference
+  if (k==INTS_DIVISION_TOTAL || k==INTS_MODULUS_TOTAL)
+  {
+    Node num = n[0];
+    Node den = n[1];
+    if (den.isConst())
+    {
+      arith::Bounds db = binfer.get(num);
+    }
+  }
   return nr;
 }
   

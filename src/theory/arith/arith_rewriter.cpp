@@ -773,7 +773,7 @@ RewriteResponse ArithRewriter::rewriteIntsDivMod(TNode t, bool pre)
       Kind k0 = t[0].getKind();
       if (k0 == kind::INTS_MODULUS && t[0][1] == t[1])
       {
-        // (mod (mod x c) c) --> (mod x c) for non-zero c
+        // (mod (mod x c) c) --> (mod x c) for non-zero constant c
         Trace("arith-rewrite-ext")
             << "Rewrite : " << t << " " << t[0] << std::endl;
         return RewriteResponse(REWRITE_AGAIN, t[0]);
@@ -796,6 +796,8 @@ RewriteResponse ArithRewriter::rewriteIntsDivMod(TNode t, bool pre)
         }
         if (childChanged)
         {
+          // (mod (op ... (mod x c) ...) c) ---> (mod (op ... x ...) c) where
+          // op is one of { NONLINEAR_MULT, MULT, PLUS }.
           Node ret = nm->mkNode(k0, newChildren);
           Trace("arith-rewrite-ext")
               << "Rewrite : " << t << " " << ret << std::endl;
@@ -828,28 +830,26 @@ RewriteResponse ArithRewriter::rewriteIntsDivModTotal(TNode t, bool pre){
   //Leaving the function as before (INTS_MODULUS can be handled),
   // but restricting its use here
   Assert(k == kind::INTS_MODULUS_TOTAL || k == kind::INTS_DIVISION_TOTAL);
-  TNode n = t[0], d = t[1];
+  TNode n = t[0];
+  TNode d = t[1];
   bool dIsConstant = d.getKind() == kind::CONST_RATIONAL;
   if(dIsConstant && d.getConst<Rational>().isZero()){
-    if(k == kind::INTS_MODULUS_TOTAL || k == kind::INTS_DIVISION_TOTAL){
-      return RewriteResponse(REWRITE_DONE, mkRationalNode(0));
-    }else{
-      // Do nothing for k == INTS_MODULUS
-      return RewriteResponse(REWRITE_DONE, t);
-    }
+    // (div x 0) ---> 0 or (mod x 0) ---> 0
+    return RewriteResponse(REWRITE_DONE, mkRationalNode(0));
   }else if(dIsConstant && d.getConst<Rational>().isOne()){
-    if(k == kind::INTS_MODULUS || k == kind::INTS_MODULUS_TOTAL){
+    if(k == kind::INTS_MODULUS_TOTAL){
+      // (mod x 1) --> 0
       return RewriteResponse(REWRITE_DONE, mkRationalNode(0));
-    }else{
-      Assert(k == kind::INTS_DIVISION || k == kind::INTS_DIVISION_TOTAL);
-      return RewriteResponse(REWRITE_AGAIN, n);
     }
+    Assert(k == kind::INTS_DIVISION_TOTAL);
+    // (div x 1) --> x
+    return RewriteResponse(REWRITE_AGAIN, n);
   }
   else if (dIsConstant && d.getConst<Rational>().sgn() < 0)
   {
     // pull negation
-    //   (div x (- c)) ---> (- (div x c))
-    //   (mod x (- c)) ---> (mod x c)
+    // (div x (- c)) ---> (- (div x c))
+    // (mod x (- c)) ---> (mod x c)
     NodeManager* nm = NodeManager::currentNM();
     Node nn = nm->mkNode(k, t[0], nm->mkConst(-t[1].getConst<Rational>()));
     Node ret = (k == kind::INTS_DIVISION || k == kind::INTS_DIVISION_TOTAL)
@@ -869,6 +869,8 @@ RewriteResponse ArithRewriter::rewriteIntsDivModTotal(TNode t, bool pre){
 
     Integer result = isDiv ? ni.euclidianDivideQuotient(di) : ni.euclidianDivideRemainder(di);
 
+    // constant evaluation
+    // (mod c1 c2) ---> c3 or (div c1 c2) ---> c3
     Node resultNode = mkRationalNode(Rational(result));
     return RewriteResponse(REWRITE_DONE, resultNode);
   }
