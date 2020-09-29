@@ -787,7 +787,8 @@ RewriteResponse ArithRewriter::rewriteIntsDivMod(TNode t, bool pre)
   return RewriteResponse(REWRITE_DONE, t);
 }
 
-RewriteResponse ArithRewriter::rewriteIntsDivModTotal(TNode t, bool pre){
+RewriteResponse ArithRewriter::rewriteIntsDivModTotal(TNode t, bool pre)
+{
   if (pre)
   {
     return RewriteResponse(REWRITE_DONE, t);
@@ -839,7 +840,7 @@ RewriteResponse ArithRewriter::rewriteIntsDivModTotal(TNode t, bool pre){
     Node resultNode = mkRationalNode(Rational(result));
     return returnRewrite(t, resultNode, Rewrite::CONST_EVAL);
   }
-  if (k==kind::INTS_MODULUS_TOTAL)
+  if (k == kind::INTS_MODULUS_TOTAL)
   {
     // Note these rewrites do not need to account for modulus by zero as being
     // a UF, which is handled by the reduction of INTS_MODULUS.
@@ -849,8 +850,7 @@ RewriteResponse ArithRewriter::rewriteIntsDivModTotal(TNode t, bool pre){
       // (mod (mod x c) c) --> (mod x c)
       return returnRewrite(t, t[0], Rewrite::MOD_OVER_MOD);
     }
-    else if (k0 == kind::NONLINEAR_MULT || k0 == kind::MULT
-              || k0 == kind::PLUS)
+    else if (k0 == kind::NONLINEAR_MULT || k0 == kind::MULT || k0 == kind::PLUS)
     {
       // can drop all
       std::vector<Node> newChildren;
@@ -891,8 +891,8 @@ RewriteResponse ArithRewriter::rewriteIntsDivModTotal(TNode t, bool pre){
 
 RewriteResponse ArithRewriter::returnRewrite(TNode t, Node ret, Rewrite r)
 {
-  Trace("arith-rewrite")
-      << "ArithRewriter : " << t << " == " << ret << " by " << r << std::endl;
+  Trace("arith-rewrite") << "ArithRewriter : " << t << " == " << ret << " by "
+                         << r << std::endl;
   return RewriteResponse(REWRITE_AGAIN, ret);
 }
 

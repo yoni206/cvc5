@@ -20,9 +20,9 @@
 #ifndef CVC4__THEORY__ARITH__ARITH_REWRITER_H
 #define CVC4__THEORY__ARITH__ARITH_REWRITER_H
 
+#include "theory/arith/rewrites.h"
 #include "theory/theory.h"
 #include "theory/theory_rewriter.h"
-#include "theory/arith/rewrites.h"
 
 namespace CVC4 {
 namespace theory {

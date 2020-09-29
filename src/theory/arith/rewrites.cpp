@@ -25,16 +25,16 @@ const char* toString(Rewrite r)
   switch (r)
   {
     case Rewrite::NONE: return "NONE";
-case Rewrite::CONST_EVAL: return "CONST_EVAL";
-  case Rewrite::MOD_TOTAL_BY_CONST: return "MOD_TOTAL_BY_CONST";
-  case Rewrite::DIV_TOTAL_BY_CONST: return "DIV_TOTAL_BY_CONST";
-  case Rewrite::DIV_MOD_BY_ZERO: return "DIV_MOD_BY_ZERO";
-  case Rewrite::MOD_BY_ONE: return "MOD_BY_ONE";
-  case Rewrite::DIV_BY_ONE: return "DIV_BY_ONE";
-  case Rewrite::DIV_MOD_PULL_NEG_DEN: return "DIV_MOD_PULL_NEG_DEN";
-  case Rewrite::MOD_OVER_MOD: return "MOD_OVER_MOD";
-  case Rewrite::MOD_CHILD_MOD: return "MOD_CHILD_MOD";
-  case Rewrite::DIV_OVER_MOD: return "DIV_OVER_MOD";
+    case Rewrite::CONST_EVAL: return "CONST_EVAL";
+    case Rewrite::MOD_TOTAL_BY_CONST: return "MOD_TOTAL_BY_CONST";
+    case Rewrite::DIV_TOTAL_BY_CONST: return "DIV_TOTAL_BY_CONST";
+    case Rewrite::DIV_MOD_BY_ZERO: return "DIV_MOD_BY_ZERO";
+    case Rewrite::MOD_BY_ONE: return "MOD_BY_ONE";
+    case Rewrite::DIV_BY_ONE: return "DIV_BY_ONE";
+    case Rewrite::DIV_MOD_PULL_NEG_DEN: return "DIV_MOD_PULL_NEG_DEN";
+    case Rewrite::MOD_OVER_MOD: return "MOD_OVER_MOD";
+    case Rewrite::MOD_CHILD_MOD: return "MOD_CHILD_MOD";
+    case Rewrite::DIV_OVER_MOD: return "DIV_OVER_MOD";
     default: return "?";
   }
 }
