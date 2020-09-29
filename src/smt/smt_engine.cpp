@@ -1601,6 +1601,9 @@ void SmtEngine::checkModel(bool hardFailure) {
 
   // Output the model
   Notice() << *m;
+  
+  // are we check the result of formulas after expand definitions?
+  bool checkWithExpand = false;
 
   // We have a "fake context" for the substitution map (we don't need it
   // to be context-dependent)
@@ -1707,7 +1710,7 @@ void SmtEngine::checkModel(bool hardFailure) {
     // Apply any define-funs from the problem.
     {
       unordered_map<Node, Node, NodeHashFunction> cache;
-      n = d_pp->expandDefinitions(n, cache, true);
+      n = d_pp->expandDefinitions(n, cache, !checkWithExpand);
     }
     Notice() << "SmtEngine::checkModel(): -- expands to " << n << endl;
 
@@ -1725,7 +1728,7 @@ void SmtEngine::checkModel(bool hardFailure) {
 
     // Simplify the result and replace the already-known ITEs (this is important
     // for ground ITEs under quantifiers).
-    n = d_pp->simplify(n, true, true);
+    n = d_pp->simplify(n, true, !checkWithExpand);
     Notice()
         << "SmtEngine::checkModel(): -- simplifies with ite replacement to  "
         << n << endl;
