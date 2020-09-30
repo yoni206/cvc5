@@ -189,8 +189,9 @@ Node DelayExpandDefs::rewriteDelayed(Node n,
     else
     {
       arith::Bounds db = binfer.get(den);
-      Trace("delay-exp-def-rr-debug") << "Bounds for " << den << " : " << db.lower
-                                << " " << db.upper << std::endl;
+      Trace("delay-exp-def-rr-debug")
+          << "Bounds for " << den << " : " << db.lower << " " << db.upper
+          << std::endl;
       if (!db.lower.isNull() && db.lower.getConst<Rational>().sgn() == 1)
       {
         isNonZeroDen = true;
@@ -214,7 +215,8 @@ Node DelayExpandDefs::rewriteDelayed(Node n,
       std::vector<Node> children;
       children.insert(children.end(), n.begin(), n.end());
       nr = nm->mkNode(nk, children);
-      Trace("delay-exp-def-rr") << "DelayExpandDefs::Rewrite : " << n << " == " << nr << std::endl;
+      Trace("delay-exp-def-rr")
+          << "DelayExpandDefs::Rewrite : " << n << " == " << nr << std::endl;
       nr = Rewriter::rewrite(nr);
     }
   }

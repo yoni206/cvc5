@@ -309,7 +309,8 @@ bool ProcessAssertions::apply(Assertions& as)
   {
     d_passes["delay-expand-def"]->apply(&assertions);
   }
-  if (options::delayExpandDef() || options::solveBVAsInt() != options::SolveBVAsIntMode::OFF)
+  if (options::delayExpandDef()
+      || options::solveBVAsInt() != options::SolveBVAsIntMode::OFF)
   {
     // now apply theory preprocessing so that ite-removal below is complete
     d_passes["theory-preprocess"]->apply(&assertions);
@@ -715,7 +716,7 @@ Node ProcessAssertions::expandDefinitions(
         Kind nk = node.getKind();
         if (delay && d_delayExpKinds.find(nk) != d_delayExpKinds.end())
         {
-          //node = sm->mkPurifyKindApp(node);
+          // node = sm->mkPurifyKindApp(node);
         }
         else
         {

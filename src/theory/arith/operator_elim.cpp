@@ -275,7 +275,8 @@ Node OperatorElim::eliminateOperators(Node node, TConvProofGenerator* tg)
       }
       if (k == INTS_MODULUS_TOTAL)
       {
-        return nm->mkNode(MINUS, num, nm->mkNode(MULT, den, intVar));;
+        return nm->mkNode(MINUS, num, nm->mkNode(MULT, den, intVar));
+        ;
       }
       else
       {
