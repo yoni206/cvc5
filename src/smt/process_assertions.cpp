@@ -715,7 +715,7 @@ Node ProcessAssertions::expandDefinitions(
         Kind nk = node.getKind();
         if (delay && d_delayExpKinds.find(nk) != d_delayExpKinds.end())
         {
-          node = sm->mkPurifyKindApp(node);
+          //node = sm->mkPurifyKindApp(node);
         }
         else
         {

@@ -152,17 +152,15 @@ Node DelayExpandDefs::expandDelayedDefinitions(Node n,
             children[0] = pOp;
           }
           ret = nm->mkNode(pk, children);
-          ret = rewriteDelayed(ret, binfer);
           needsRcons = false;
         }
       }
       if (needsRcons)
       {
         ret = nm->mkNode(cur.getKind(), children);
-        // rewrite here
-        Trace("delay-exp-def-rr") << "Rewrite " << ret << std::endl;
-        ret = rewriteDelayed(ret, binfer);
       }
+      // rewrite here
+      ret = rewriteDelayed(ret, binfer);
       visited[cur] = ret;
     }
   } while (!visit.empty());
@@ -175,7 +173,7 @@ Node DelayExpandDefs::rewriteDelayed(Node n,
                                      theory::arith::BoundInference& binfer)
 {
   NodeManager* nm = NodeManager::currentNM();
-  Trace("delay-exp-def-rr") << "Rewrite " << n << std::endl;
+  Trace("delay-exp-def-rr-debug") << "Rewrite " << n << std::endl;
   Node nr = Rewriter::rewrite(n);
   Kind k = nr.getKind();
   if (k == INTS_DIVISION || k == INTS_MODULUS || k == DIVISION)
@@ -191,7 +189,7 @@ Node DelayExpandDefs::rewriteDelayed(Node n,
     else
     {
       arith::Bounds db = binfer.get(den);
-      Trace("delay-exp-def-rr") << "Bounds for " << den << " : " << db.lower
+      Trace("delay-exp-def-rr-debug") << "Bounds for " << den << " : " << db.lower
                                 << " " << db.upper << std::endl;
       if (!db.lower.isNull() && db.lower.getConst<Rational>().sgn() == 1)
       {
@@ -204,7 +202,7 @@ Node DelayExpandDefs::rewriteDelayed(Node n,
     }
     if (isNonZeroDen)
     {
-      Trace("delay-exp-def-rr") << "...non-zero denominator" << std::endl;
+      Trace("delay-exp-def-rr-debug") << "...non-zero denominator" << std::endl;
       Kind nk = k;
       switch (k)
       {
@@ -216,6 +214,7 @@ Node DelayExpandDefs::rewriteDelayed(Node n,
       std::vector<Node> children;
       children.insert(children.end(), n.begin(), n.end());
       nr = nm->mkNode(nk, children);
+      Trace("delay-exp-def-rr") << "DelayExpandDefs::Rewrite : " << n << " == " << nr << std::endl;
       nr = Rewriter::rewrite(nr);
     }
   }
