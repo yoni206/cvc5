@@ -370,11 +370,9 @@ PreprocessingPassResult NonClausalSimp::applyInternal(
     }
   }
 
-  NodeBuilder<> learnedBuilder(kind::AND);
   Assert(assertionsToPreprocess->getRealAssertionsEnd()
          <= assertionsToPreprocess->size());
-  learnedBuilder << (*assertionsToPreprocess)
-          [assertionsToPreprocess->getRealAssertionsEnd() - 1];
+  std::vector<Node> learnedLitsToConjoin;
 
   for (size_t i = 0; i < learned_literals.size(); ++i)
   {
@@ -401,7 +399,7 @@ PreprocessingPassResult NonClausalSimp::applyInternal(
       continue;
     }
     s.insert(learned);
-    learnedBuilder << learned;
+    learnedLitsToConjoin.push_back(learned);
     Trace("non-clausal-simplify")
         << "non-clausal learned : " << learned << std::endl;
   }
@@ -423,7 +421,7 @@ PreprocessingPassResult NonClausalSimp::applyInternal(
       continue;
     }
     s.insert(cProp);
-    learnedBuilder << cProp;
+    learnedLitsToConjoin.push_back(cProp);
     Trace("non-clausal-simplify")
         << "non-clausal constant propagation : " << cProp << std::endl;
   }
@@ -434,11 +432,11 @@ PreprocessingPassResult NonClausalSimp::applyInternal(
   // substituting
   top_level_substs.addSubstitutions(newSubstitutions);
 
-  if (learnedBuilder.getNumChildren() > 1)
+  if (!learnedLitsToConjoin.empty())
   {
-    assertionsToPreprocess->replace(
-        assertionsToPreprocess->getRealAssertionsEnd() - 1,
-        Rewriter::rewrite(Node(learnedBuilder)));
+    size_t replIndex = assertionsToPreprocess->getRealAssertionsEnd() - 1;
+    Node newConj = NodeManager::currentNM()->mkAnd(learnedLitsToConjoin);
+    assertionsToPreprocess->conjoin(replIndex, newConj);
   }
 
   propagator->setNeedsFinish(true);
