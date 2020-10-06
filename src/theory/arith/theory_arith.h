@@ -18,6 +18,7 @@
 #pragma once
 
 #include "expr/node.h"
+#include "theory/arith/arith_preprocess.h"
 #include "theory/arith/arith_rewriter.h"
 #include "theory/arith/arith_state.h"
 #include "theory/arith/inference_manager.h"
@@ -91,7 +92,7 @@ class TheoryArith : public Theory {
   void propagate(Effort e) override;
   TrustNode explain(TNode n) override;
 
-  bool collectModelInfo(TheoryModel* m) override;
+  bool collectModelInfo(TheoryModel* m, const std::set<Node>& termSet) override;
   /**
    * Collect model values in m based on the relevant terms given by termSet.
    */
@@ -144,8 +145,8 @@ class TheoryArith : public Theory {
    * arithmetic.
    */
   std::unique_ptr<nl::NonlinearExtension> d_nonlinearExtension;
-  /** The operator elimination utility */
-  OperatorElim d_opElim;
+  /** The preprocess utility */
+  ArithPreprocess d_arithPreproc;
   /** The theory rewriter for this theory. */
   ArithRewriter d_rewriter;
 };/* class TheoryArith */

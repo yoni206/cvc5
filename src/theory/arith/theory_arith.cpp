@@ -45,7 +45,7 @@ TheoryArith::TheoryArith(context::Context* c,
       d_astate(*d_internal, c, u, valuation),
       d_inferenceManager(*this, d_astate, pnm),
       d_nonlinearExtension(nullptr),
-      d_opElim(pnm, logicInfo)
+      d_arithPreproc(d_astate, d_inferenceManager, pnm, logicInfo)
 {
   smtStatisticsRegistry()->registerStat(&d_ppRewriteTimer);
 
@@ -105,7 +105,7 @@ TrustNode TheoryArith::expandDefinition(Node node)
     return TrustNode::null();
   }
   // call eliminate operators
-  return d_opElim.eliminate(node);
+  return d_arithPreproc.eliminate(node);
 }
 
 void TheoryArith::notifySharedTerm(TNode n) { d_internal->notifySharedTerm(n); }
@@ -152,7 +152,7 @@ TrustNode TheoryArith::ppRewriteTerms(TNode n)
   // example, quantifier instantiation may use TO_INTEGER terms; SyGuS may
   // introduce non-standard arithmetic terms appearing in grammars.
   // call eliminate operators
-  return d_opElim.eliminate(n);
+  return d_arithPreproc.eliminate(n);
 }
 
 Theory::PPAssertStatus TheoryArith::ppAssert(TNode in, SubstitutionMap& outSubstitutions) {
@@ -229,12 +229,9 @@ void TheoryArith::propagate(Effort e) {
   d_internal->propagate(e);
 }
 
-bool TheoryArith::collectModelInfo(TheoryModel* m)
+bool TheoryArith::collectModelInfo(TheoryModel* m,
+                                   const std::set<Node>& termSet)
 {
-  std::set<Node> termSet;
-  // Work out which variables are needed
-  const std::set<Kind>& irrKinds = m->getIrrelevantKinds();
-  computeAssertedTerms(termSet, irrKinds);
   // this overrides behavior to not assert equality engine
   return collectModelValues(m, termSet);
 }
