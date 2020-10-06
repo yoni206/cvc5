@@ -34,10 +34,11 @@ namespace nl {
 
 NonlinearExtension::NonlinearExtension(TheoryArith& containing,
                                        ArithState& state,
-                                       eq::EqualityEngine* ee)
+                                       eq::EqualityEngine* ee, ArithPreprocess& pp)
     : d_containing(containing),
       d_im(containing.getInferenceManager()),
       d_ee(ee),
+      d_preproc(pp),
       d_needsLastCall(false),
       d_checkCounter(0),
       d_extTheoryCb(ee),
@@ -188,16 +189,21 @@ void NonlinearExtension::getAssertions(std::vector<Node>& assertions)
     Trace("nl-ext") << "Loaded " << assertion.d_assertion << " from theory"
                     << std::endl;
     Node lit = assertion.d_assertion;
+    bool pol = lit.getKind() != NOT;
+    Node atom_orig = lit.getKind() == NOT ? lit[0] : lit;
+    if (d_preproc.isReduced(atom_orig))
+    {
+      // it was reduced by the preprocessing module, skip
+      continue;
+    }
     if (useRelevance && !v.isRelevant(lit))
     {
       // not relevant, skip
       continue;
     }
     init_assertions.insert(lit);
-    // check for concrete bounds
-    bool pol = lit.getKind() != NOT;
-    Node atom_orig = lit.getKind() == NOT ? lit[0] : lit;
 
+    // check for concrete bounds
     std::vector<Node> atoms;
     if (atom_orig.getKind() == EQUAL)
     {

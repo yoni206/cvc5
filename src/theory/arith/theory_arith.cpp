@@ -44,8 +44,8 @@ TheoryArith::TheoryArith(context::Context* c,
       d_ppRewriteTimer("theory::arith::ppRewriteTimer"),
       d_astate(*d_internal, c, u, valuation),
       d_inferenceManager(*this, d_astate, pnm),
-      d_nonlinearExtension(nullptr),
-      d_arithPreproc(d_astate, d_inferenceManager, pnm, logicInfo)
+      d_arithPreproc(d_astate, d_inferenceManager, pnm, logicInfo),
+      d_nonlinearExtension(nullptr)
 {
   smtStatisticsRegistry()->registerStat(&d_ppRewriteTimer);
 
@@ -82,7 +82,7 @@ void TheoryArith::finishInit()
   if (logicInfo.isTheoryEnabled(THEORY_ARITH) && !logicInfo.isLinear())
   {
     d_nonlinearExtension.reset(
-        new nl::NonlinearExtension(*this, d_astate, d_equalityEngine));
+        new nl::NonlinearExtension(*this, d_astate, d_equalityEngine, d_arithPreproc));
   }
   // finish initialize internally
   d_internal->finishInit();
@@ -100,7 +100,7 @@ void TheoryArith::preRegisterTerm(TNode n)
 TrustNode TheoryArith::expandDefinition(Node node)
 {
   // do not eliminate based on the mode
-  if (options::arithPreprocess() != ArithPreprocessMode::EXPAND)
+  if (options::arithPreprocess() != options::ArithPreprocessMode::EXPAND)
   {
     return TrustNode::null();
   }
@@ -144,7 +144,7 @@ TrustNode TheoryArith::ppRewrite(TNode atom)
 TrustNode TheoryArith::ppRewriteTerms(TNode n)
 {
   if (Theory::theoryOf(n) != THEORY_ARITH
-      || options::arithPreprocess() != ArithPreprocessMode::EXPAND)
+      || options::arithPreprocess() != options::ArithPreprocessMode::EXPAND)
   {
     return TrustNode::null();
   }
@@ -201,10 +201,14 @@ void TheoryArith::postCheck(Effort level)
 bool TheoryArith::preNotifyFact(
     TNode atom, bool pol, TNode fact, bool isPrereg, bool isInternal)
 {
-  if (options::arithPreprocess() != ArithPreprocessMode::EXPAND)
+  if (options::arithPreprocess() == options::ArithPreprocessMode::EAGER)
   {
-    // TODO
-    // if (
+    if (d_arithPreproc.reduceAssertion(atom))
+    {
+      // atom contained extended operators that were eliminated, we can
+      // ignore this atom
+      return true;
+    }
   }
   d_internal->preNotifyFact(atom, pol, fact);
   // We do not assert to the equality engine of arithmetic in the standard way,
