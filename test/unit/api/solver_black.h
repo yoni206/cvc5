@@ -206,6 +206,10 @@ void SolverBlack::testGetBooleanSort()
 void SolverBlack::testGetIntegerSort()
 {
   TS_ASSERT_THROWS_NOTHING(d_solver->getIntegerSort());
+  Term x = d_solver->mkConst(d_solver->getIntegerSort(), "x");
+  std::cout << "panda x 1: " << x << std::endl;
+  std::unique_ptr<Solver> another_solver;
+  std::cout << "panda x 2: " << x << std::endl;
 }
 
 void SolverBlack::testGetNullSort()
