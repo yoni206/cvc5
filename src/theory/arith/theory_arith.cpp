@@ -100,7 +100,7 @@ void TheoryArith::preRegisterTerm(TNode n)
 TrustNode TheoryArith::expandDefinition(Node node)
 {
   // do not eliminate based on the mode
-  if (options::arithPreprocess()!=ArithPreprocessMode::EXPAND)
+  if (options::arithPreprocess() != ArithPreprocessMode::EXPAND)
   {
     return TrustNode::null();
   }
@@ -143,7 +143,8 @@ TrustNode TheoryArith::ppRewrite(TNode atom)
 
 TrustNode TheoryArith::ppRewriteTerms(TNode n)
 {
-  if (Theory::theoryOf(n) != THEORY_ARITH || options::arithPreprocess()!=ArithPreprocessMode::EXPAND)
+  if (Theory::theoryOf(n) != THEORY_ARITH
+      || options::arithPreprocess() != ArithPreprocessMode::EXPAND)
   {
     return TrustNode::null();
   }
@@ -200,10 +201,10 @@ void TheoryArith::postCheck(Effort level)
 bool TheoryArith::preNotifyFact(
     TNode atom, bool pol, TNode fact, bool isPrereg, bool isInternal)
 {
-  if (options::arithPreprocess()!=ArithPreprocessMode::EXPAND)
+  if (options::arithPreprocess() != ArithPreprocessMode::EXPAND)
   {
     // TODO
-    //if (
+    // if (
   }
   d_internal->preNotifyFact(atom, pol, fact);
   // We do not assert to the equality engine of arithmetic in the standard way,

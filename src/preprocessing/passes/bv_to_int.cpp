@@ -960,11 +960,10 @@ void BVToInt::addFinalizeRangeAssertions(
   {
     return;
   }
-  Node rangeAssertions =
-      Rewriter::rewrite(d_nm->mkAnd(vec_range));
+  Node rangeAssertions = Rewriter::rewrite(d_nm->mkAnd(vec_range));
   assertionsToPreprocess->push_back(rangeAssertions);
-  Trace("bv-to-int-debug")
-      << "range constraints: " << rangeAssertions.toString() << std::endl;
+  Trace("bv-to-int-debug") << "range constraints: "
+                           << rangeAssertions.toString() << std::endl;
 }
 
 Node BVToInt::createShiftNode(vector<Node> children,
