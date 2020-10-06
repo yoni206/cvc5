@@ -2,9 +2,10 @@ PR done:
 
 PR current:
 
+(1) Better arithmetic rewriting *
+
 PR planned:
 
-(1) Better arithmetic rewriting
-(2) Learned literal manager
-(3) Skolem manager purify UF
+~ (2) Learned literal manager
+~ (3) Skolem manager purify UF
 (4) Delay expand definitions (req 3)
