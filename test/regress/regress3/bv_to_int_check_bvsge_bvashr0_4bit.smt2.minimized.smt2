@@ -1,9 +1,4 @@
-; COMMAND-LINE:  --solve-bv-as-int=bv  --no-check-models
-; COMMAND-LINE:  --cegqi-all --full-saturate-quant --bvand-integer-granularity=1 --solve-bv-as-int=sum      --no-check-models
-; COMMAND-LINE:  --cegqi-all --full-saturate-quant --bvand-integer-granularity=1 --solve-bv-as-int=iand --iand-mode=sum     --no-check-models
-; COMMAND-LINE:  --cegqi-all --full-saturate-quant --bvand-integer-granularity=1 --solve-bv-as-int=iand --iand-mode=bitwise     --no-check-models
-; COMMAND-LINE:  --cegqi-all --full-saturate-quant --bvand-integer-granularity=1 --solve-bv-as-int=iand     --no-check-models
-; COMMAND-LINE:  --cegqi-all --full-saturate-quant --bvand-integer-granularity=2 --solve-bv-as-int=sum      --no-check-models
+; COMMAND-LINE:  --solve-bv-as-int=sum  --no-check-models
 ; EXPECT: sat
 (set-logic BV)
 (declare-fun s () (_ BitVec 3))

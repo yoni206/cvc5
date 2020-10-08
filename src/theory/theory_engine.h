@@ -2,10 +2,10 @@
 /*! \file theory_engine.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Dejan Jovanovic, Andrew Reynolds, Morgan Deters
+ **   Andrew Reynolds, Dejan Jovanovic, Morgan Deters
  ** This file is part of the CVC4 project.
  ** Copyright (c) 2009-2020 by the authors listed in the file AUTHORS
- ** in the top-level source directory) and their institutional affiliations.
+ ** in the top-level source directory and their institutional affiliations.
  ** All rights reserved.  See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
@@ -87,6 +87,7 @@ struct NodeTheoryPairHashFunction {
 namespace theory {
 class TheoryModel;
 class CombinationEngine;
+class SharedSolver;
 class DecisionManager;
 class RelevanceManager;
 
@@ -113,6 +114,7 @@ class TheoryEngine {
   friend class theory::CombinationEngine;
   friend class theory::EngineOutputChannel;
   friend class theory::CombinationEngine;
+  friend class theory::SharedSolver;
 
   /** Associated PropEngine engine */
   prop::PropEngine* d_propEngine;
@@ -152,14 +154,10 @@ class TheoryEngine {
   /** The proof generator */
   std::shared_ptr<TheoryEngineProofGenerator> d_tepg;
   //--------------------------------- end new proofs
-
-  /**
-   * The database of shared terms.
-   */
-  SharedTermsDatabase d_sharedTerms;
-
   /** The combination manager we are using */
   std::unique_ptr<theory::CombinationEngine> d_tc;
+  /** The shared solver of the above combination engine. */
+  theory::SharedSolver* d_sharedSolver;
   /**
    * The quantifiers engine
    */
@@ -173,9 +171,6 @@ class TheoryEngine {
 
   /** Default visitor for pre-registration */
   PreRegisterVisitor d_preRegistrationVisitor;
-
-  /** Visitor for collecting shared terms */
-  SharedTermsVisitor d_sharedTermsVisitor;
 
   /** are we in eager model building mode? (see setEagerModelBuilding). */
   bool d_eager_model_building;
@@ -499,10 +494,13 @@ class TheoryEngine {
   void shutdown();
 
   /**
-   * Solve the given literal with a theory that owns it.
+   * Solve the given literal with a theory that owns it. The proof of tliteral
+   * is carried in the trust node. The proof added to substitutionOut should
+   * take this proof into account (when proofs are enabled).
    */
-  theory::Theory::PPAssertStatus solve(TNode literal,
-                                    theory::SubstitutionMap& substitutionOut);
+  theory::Theory::PPAssertStatus solve(
+      theory::TrustNode tliteral,
+      theory::TrustSubstitutionMap& substitutionOut);
 
   /**
    * Preregister a Theory atom with the responsible theory (or

@@ -2,10 +2,10 @@
 /*! \file inference_manager.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Gereon Kremer
+ **   Gereon Kremer, Mathias Preiner
  ** This file is part of the CVC4 project.
  ** Copyright (c) 2009-2020 by the authors listed in the file AUTHORS
- ** in the top-level source directory) and their institutional affiliations.
+ ** in the top-level source directory and their institutional affiliations.
  ** All rights reserved.  See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
@@ -86,12 +86,16 @@ void InferenceManager::flushWaitingLemmas()
   }
   d_waitingLem.clear();
 }
+void InferenceManager::clearWaitingLemmas()
+{
+  d_waitingLem.clear();
+}
 
 void InferenceManager::addConflict(const Node& conf, InferenceId inftype)
 {
   Trace("arith::infman") << "Adding conflict: " << inftype << " " << conf
                          << std::endl;
-  conflict(Rewriter::rewrite(conf));
+  conflict(conf);
 }
 
 bool InferenceManager::hasUsed() const

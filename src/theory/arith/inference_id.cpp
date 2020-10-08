@@ -2,10 +2,10 @@
 /*! \file inference_id.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Andrew Reynolds
+ **   Gereon Kremer
  ** This file is part of the CVC4 project.
  ** Copyright (c) 2009-2020 by the authors listed in the file AUTHORS
- ** in the top-level source directory) and their institutional affiliations.
+ ** in the top-level source directory and their institutional affiliations.
  ** All rights reserved.  See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
@@ -44,6 +44,8 @@ const char* toString(InferenceId i)
     case InferenceId::NL_IAND_BITWISE_REFINE: return "IAND_BITWISE_REFINE";
     case InferenceId::NL_CAD_CONFLICT: return "CAD_CONFLICT";
     case InferenceId::NL_CAD_EXCLUDED_INTERVAL: return "CAD_EXCLUDED_INTERVAL";
+    case InferenceId::NL_ICP_CONFLICT: return "ICP_CONFLICT";
+    case InferenceId::NL_ICP_PROPAGATION: return "ICP_PROPAGATION";
     default: return "?";
   }
 }

@@ -2,10 +2,10 @@
 /*! \file bv_to_int.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Yoni Zohar, Ahmed Irfan
+ **   Yoni Zohar, Ahmed Irfan, Andres Noetzli
  ** This file is part of the CVC4 project.
  ** Copyright (c) 2009-2020 by the authors listed in the file AUTHORS
- ** in the top-level source directory) and their institutional affiliations.
+ ** in the top-level source directory and their institutional affiliations.
  ** All rights reserved.  See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
@@ -170,7 +170,8 @@ Node BVToInt::eliminationPass(Node n)
   {
     current = toVisit.back();
     // assert that the node is binarized
-    kind::Kind_t k = current.getKind();
+    // The following variable is only used in assertions
+    CVC4_UNUSED kind::Kind_t k = current.getKind();
     uint64_t numChildren = current.getNumChildren();
     Assert((numChildren == 2)
            || !(k == kind::BITVECTOR_PLUS || k == kind::BITVECTOR_MULT
@@ -351,7 +352,8 @@ Node BVToInt::translateWithChildren(Node original,
   // ultbv and sltbv were supposed to be eliminated before this point.
   Assert(oldKind != kind::BITVECTOR_ULTBV);
   Assert(oldKind != kind::BITVECTOR_SLTBV);
-  uint64_t originalNumChildren = original.getNumChildren();
+  // The following variable will only be used in assertions.
+  CVC4_UNUSED uint64_t originalNumChildren = original.getNumChildren();
   Node returnNode;
   switch (oldKind)
   {
@@ -415,7 +417,11 @@ Node BVToInt::translateWithChildren(Node original,
     }
     case kind::BITVECTOR_AND:
     {
-
+      // We support three configurations:
+      // 1. translating to IAND
+      // 2. translating back to BV (using BITVECTOR_TO_NAT and INT_TO_BV
+      // operators)
+      // 3. translating into a sum
       uint64_t bvsize = original[0].getType().getBitVectorSize();
       if (options::solveBVAsInt() == options::SolveBVAsIntMode::IAND)
       {
@@ -425,12 +431,15 @@ Node BVToInt::translateWithChildren(Node original,
       }
       else if (options::solveBVAsInt() == options::SolveBVAsIntMode::BV)
       {
+        // translate the children back to BV
         Node intToBVOp = d_nm->mkConst<IntToBitVector>(IntToBitVector(bvsize));
         Node x = translated_children[0];
         Node y = translated_children[1];
         Node bvx = d_nm->mkNode(intToBVOp, x);
         Node bvy = d_nm->mkNode(intToBVOp, y);
+        // perform bvand on the bit-vectors
         Node bvand = d_nm->mkNode(kind::BITVECTOR_AND, bvx, bvy);
+        // translate the result to integers
         returnNode = d_nm->mkNode(kind::BITVECTOR_TO_NAT, bvand);
       }
       else
