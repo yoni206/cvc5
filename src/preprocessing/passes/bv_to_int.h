@@ -88,7 +88,6 @@ class BVToInt : public PreprocessingPass
  public:
   BVToInt(PreprocessingPassContext* preprocContext);
 
-  
  protected:
   PreprocessingPassResult applyInternal(
       AssertionPipeline* assertionsToPreprocess) override;
@@ -283,6 +282,7 @@ class BVToInt : public PreprocessingPass
    */
   Node d_zero;
   Node d_one;
+  
   /** helper class for handeling bvand translation */
   theory::arith::nl::IAndTable d_iandTable;
 };

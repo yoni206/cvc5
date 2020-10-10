@@ -23,7 +23,6 @@
 #include <vector>
 
 #include "expr/node.h"
-#include "expr/node_algorithm.h"
 #include "options/uf_options.h"
 #include "theory/bv/theory_bv_rewrite_rules_operator_elimination.h"
 #include "theory/bv/theory_bv_rewrite_rules_simplification.h"
