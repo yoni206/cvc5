@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file nl_iand_utils.h
+/*! \file iand_table.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Yoni Zohar
@@ -12,8 +12,8 @@
  ** \brief Utilities for processing lemmas from the non-linear solver
  **/
 
-#ifndef CVC4__THEORY__ARITH__NL__NL_IAND_UTILS_H
-#define CVC4__THEORY__ARITH__NL__NL_IAND_UTILS_H
+#ifndef CVC4__THEORY__ARITH__IAND_TABLE_H
+#define CVC4__THEORY__ARITH__IAND_TABLE_H
 
 #include <tuple>
 #include <vector>
@@ -24,10 +24,13 @@ namespace theory {
 namespace arith {
 namespace nl {
 
-class IAndHelper {
-
+/**
+ * A class that computes tables for iand values
+ * with various bit-widths
+ */
+class IAndTable
+{
  public:
-  
   /**
    * A generic function that creates a node that represents a bitwise
    * operation.
@@ -76,10 +79,7 @@ class IAndHelper {
    *        to the original bitwise operation.
    * @return A node that represents the operation, as described above.
    */
-  Node createBitwiseNode(Node x,
-                                Node y,
-                                uint64_t bvsize,
-			 uint64_t granularity);
+  Node createBitwiseNode(Node x, Node y, uint64_t bvsize, uint64_t granularity);
 
   /**
    * A helper function for createBitwiseNode
@@ -97,7 +97,7 @@ class IAndHelper {
       Node x,
       Node y,
       uint64_t granularity,
-      std::map<std::pair<int64_t, int64_t>, int64_t> table);
+      const std::map<std::pair<int64_t, int64_t>, int64_t>& table);
 
 
   Node createPart(Node x, Node y, uint64_t granularity);
@@ -113,4 +113,4 @@ class IAndHelper {
 }  // namespace theory
 }  // namespace CVC4
 
-#endif /* CVC4__THEORY__ARITH__NL_IAND_UTILS_H */
+#endif /* CVC4__THEORY__ARITH__IAND_TABLE_H */

@@ -75,7 +75,7 @@
 #include "context/context.h"
 #include "preprocessing/preprocessing_pass.h"
 #include "preprocessing/preprocessing_pass_context.h"
-#include "theory/arith/nl/nl_iand_utils.h"
+#include "theory/arith/nl/iand_table.h"
 
 namespace CVC4 {
 namespace preprocessing {
@@ -283,8 +283,8 @@ class BVToInt : public PreprocessingPass
    */
   Node d_zero;
   Node d_one;
-
-  theory::arith::nl::IAndHelper d_iandHelper;
+  /** helper class for handeling bvand translation */
+  theory::arith::nl::IAndTable d_iandTable;
 };
 
 }  // namespace passes

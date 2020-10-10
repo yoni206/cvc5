@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file nl_iand_utils.cpp
+/*! \file iand_table.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Yoni Zohar
@@ -9,13 +9,16 @@
  ** All rights reserved.  See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** \brief Implementation of utilities for the non-linear solver
+ ** \brief Utilities to maintain finite tables that represent
+ ** the value of iand.
  **/
 
-#include "cvc4_private.h"
-#include "theory/arith/nl/nl_iand_utils.h"
-#include "theory/arith/nl/nl_model.h"
+#include "theory/arith/nl/iand_table.h"
+
 #include <cmath>
+
+#include "cvc4_private.h"
+#include "theory/arith/nl/nl_model.h"
 namespace CVC4 {
 namespace theory {
 namespace arith {
@@ -35,28 +38,25 @@ Node pow2(uint64_t k)
 
 bool oneBitAnd(bool a, bool b) { return (a && b); }
 
-
-
-
-Node IAndHelper::createITEFromTable(
+Node IAndTable::createITEFromTable(
     Node x,
     Node y,
     uint64_t granularity,
-    std::map<std::pair<int64_t, int64_t>, int64_t> table)
+    const std::map<std::pair<int64_t, int64_t>, int64_t>& table)
 {
+  NodeManager* nm = NodeManager::currentNM();
   Assert(granularity <= 8);
   int64_t num_of_values = ((int64_t)pow(2, granularity)) ;
   // The table represents a function from pairs of integers to integers, where
   // all integers are between 0 (inclusive) and num_of_values (exclusive).
   Assert(table.size() == 1+ ((uint64_t)(num_of_values * num_of_values)));
   //start with the default, most common value
-  NodeManager* nm = NodeManager::currentNM();
-  Node ite = nm->mkConst<Rational>(table[std::make_pair(-1, -1)]);
+  Node ite = nm->mkConst<Rational>(table.at(std::make_pair(-1, -1)));
   for (int64_t i = 0; i < num_of_values; i++)
   {
     for (int64_t j = 0; j < num_of_values; j++)
     {
-      if (table[std::make_pair(i,j)] == table[std::make_pair(-1,-1)])
+      if (table.at(std::make_pair(i,j)) == table.at(std::make_pair(-1,-1)))
       {
         continue;
       }
@@ -66,24 +66,25 @@ Node IAndHelper::createITEFromTable(
               kind::AND,
               nm->mkNode(kind::EQUAL, x, nm->mkConst<Rational>(i)),
               nm->mkNode(kind::EQUAL, y, nm->mkConst<Rational>(j))),
-          nm->mkConst<Rational>(table[std::make_pair(i, j)]),
+          nm->mkConst<Rational>(table.at(std::make_pair(i, j))),
           ite);
     }
   }
   return ite;
 }
 
-Node IAndHelper::createBitwiseNode(Node x,
-                                Node y,
-                                uint64_t bvsize,
-				   uint64_t granularity)
+Node IAndTable::createBitwiseNode(Node x,
+                                  Node y,
+                                  uint64_t bvsize,
+                                  uint64_t granularity)
 {
+  NodeManager* nm = NodeManager::currentNM();
   /**
    * Standardize granularity.
    * If it is greater than bvsize, it is set to bvsize.
    * Otherwise, it is set to the closest (going down)  divider of bvsize.
    */
-  Assert(granularity > 0);
+  Assert(0 < granularity && granularity <= 8);
   if (granularity > bvsize)
   {
     granularity = bvsize;
@@ -105,7 +106,6 @@ Node IAndHelper::createBitwiseNode(Node x,
    * More details are in bv_to_int.h .
    */
   uint64_t sumSize = bvsize / granularity;
-  NodeManager* nm = NodeManager::currentNM();
   Node sumNode = nm->mkConst<Rational>(0);
   /**
    * extract definition in integers is:
@@ -130,13 +130,13 @@ Node IAndHelper::createBitwiseNode(Node x,
   return sumNode;
 }
 
-Node IAndHelper::createPart(Node x, Node y, uint64_t granularity) {
+Node IAndTable::createPart(Node x, Node y, uint64_t granularity) {
     std::map<std::pair<int64_t, int64_t>, int64_t> table = getAndTable(granularity);
     Node ite = createITEFromTable(x, y, granularity, table);
     return ite;
   }
 
-std::map<std::pair<int64_t, int64_t>, int64_t> IAndHelper::getAndTable(uint64_t granularity) {
+std::map<std::pair<int64_t, int64_t>, int64_t> IAndTable::getAndTable(uint64_t granularity) {
   if (d_bvandTable.find(granularity) != d_bvandTable.end()) {
     return d_bvandTable[granularity];
   }
@@ -169,7 +169,7 @@ std::map<std::pair<int64_t, int64_t>, int64_t> IAndHelper::getAndTable(uint64_t 
    return table;
 }
 
-void IAndHelper::addDefaultValue(std::map<std::pair<int64_t, int64_t>, int64_t>& table, int64_t num_of_values) {
+void IAndTable::addDefaultValue(std::map<std::pair<int64_t, int64_t>, int64_t>& table, int64_t num_of_values) {
   std::map<int64_t, int64_t> counters;
   for (int64_t i = 0; i <= num_of_values;i++) {
 

@@ -19,7 +19,6 @@
 #include "preprocessing/passes/bv_to_int.h"
 #include "theory/arith/arith_msum.h"
 #include "theory/arith/arith_utilities.h"
-#include "theory/arith/nl/nl_iand_utils.h"
 #include "util/iand.h"
 
 using namespace CVC4::kind;
@@ -262,7 +261,7 @@ Node IAndSolver::sumBasedLemma(Node i)
   NodeManager* nm = NodeManager::currentNM();
   Node lem = nm->mkNode(EQUAL,
                         i,
-                        d_iandHelper.createBitwiseNode(
+                        d_iandTable.createBitwiseNode(
 						       x, y, bvsize, granularity));
   return lem;
 }

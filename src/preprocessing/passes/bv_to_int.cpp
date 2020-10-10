@@ -43,11 +43,6 @@ Rational intpow2(uint64_t b)
   return Rational(Integer(2).pow(b), Integer(1));
 }
 
-/**
- * Helper functions for createBitwiseNode
- */
-
-
 } //end empty namespace
 
 Node BVToInt::mkRangeConstraint(Node newVar, uint64_t k)
@@ -448,10 +443,10 @@ Node BVToInt::translateWithChildren(Node original,
         // Construct an ite, based on granularity.
         Assert(translated_children.size() == 2);
         returnNode =
-            d_iandHelper.createBitwiseNode(translated_children[0],
-                                           translated_children[1],
-                                           bvsize,
-                                           options::BVAndIntegerGranularity());
+            d_iandTable.createBitwiseNode(translated_children[0],
+                                          translated_children[1],
+                                          bvsize,
+                                          options::BVAndIntegerGranularity());
       }
       break;
     }

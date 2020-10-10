@@ -23,7 +23,7 @@
 #include "theory/arith/arith_state.h"
 #include "theory/arith/inference_manager.h"
 #include "theory/arith/nl/nl_lemma_utils.h"
-#include "theory/arith/nl/nl_iand_utils.h"
+#include "theory/arith/nl/iand_table.h"
 #include "theory/arith/nl/nl_model.h"
 
 namespace CVC4 {
@@ -89,7 +89,7 @@ class IAndSolver
   Node d_two;
   Node d_true;
   Node d_false;
-  IAndHelper d_iandHelper;
+  IAndTable d_iandTable;
   /** IAND terms that have been given initial refinement lemmas */
   NodeSet d_initRefine;
   /** all IAND terms, for each bit-width */
