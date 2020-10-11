@@ -1407,12 +1407,6 @@ void TheoryArithPrivate::releaseArithVar(ArithVar v){
 ArithVar TheoryArithPrivate::requestArithVar(TNode x, bool aux, bool internal){
   //TODO : The VarList trick is good enough?
   Assert(isLeaf(x) || VarList::isMember(x) || x.getKind() == PLUS || internal);
-  if(getLogicInfo().isLinear() && Variable::isDivMember(x)){
-    stringstream ss;
-    ss << "A non-linear fact (involving div/mod/divisibility) was asserted to arithmetic in a linear logic: " << x << endl
-       << "if you only use division (or modulus) by a constant value, or if you only use the divisibility-by-k predicate, try using the --rewrite-divk option.";
-    throw LogicException(ss.str());
-  }
   Assert(!d_partialModel.hasArithVar(x));
   Assert(x.getType().isReal());  // real or integer
 
