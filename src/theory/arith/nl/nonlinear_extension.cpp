@@ -54,12 +54,9 @@ NonlinearExtension::NonlinearExtension(TheoryArith& containing,
       d_iandSlv(d_im, state, d_model),
       d_builtModel(containing.getSatContext(), false)
 {
-  d_extTheory.addFunctionKind(kind::DIVISION);
   d_extTheory.addFunctionKind(kind::DIVISION_TOTAL);
-  d_extTheory.addFunctionKind(kind::INTS_DIVISION);
   d_extTheory.addFunctionKind(kind::INTS_DIVISION_TOTAL);
-  d_extTheory.addFunctionKind(kind::DIVISION);
-  d_extTheory.addFunctionKind(kind::DIVISION_TOTAL);
+  d_extTheory.addFunctionKind(kind::INTS_MODULUS_TOTAL);
   d_extTheory.addFunctionKind(kind::NONLINEAR_MULT);
   d_extTheory.addFunctionKind(kind::EXPONENTIAL);
   d_extTheory.addFunctionKind(kind::SINE);
