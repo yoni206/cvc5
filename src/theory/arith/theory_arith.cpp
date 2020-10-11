@@ -209,7 +209,7 @@ bool TheoryArith::preNotifyFact(
     {
       // atom contained extended operators that were eliminated, we can
       // ignore this atom
-      return true;
+      //return true;
     }
   }
   d_internal->preNotifyFact(atom, pol, fact);

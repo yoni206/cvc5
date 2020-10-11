@@ -565,7 +565,6 @@ Node ProcessAssertions::expandDefinitions(
     bool delay)
 {
   NodeManager* nm = d_smt.d_nodeManager;
-  SkolemManager* sm = nm->getSkolemManager();
   std::stack<std::tuple<Node, Node, bool>> worklist;
   std::stack<Node> result;
   worklist.push(std::make_tuple(Node(n), Node(n), false));
