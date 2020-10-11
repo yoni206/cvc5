@@ -26,8 +26,8 @@
 #include "context/cdlist.h"
 #include "expr/kind.h"
 #include "expr/node.h"
-#include "theory/arith/inference_manager.h"
 #include "theory/arith/arith_preprocess.h"
+#include "theory/arith/inference_manager.h"
 #include "theory/arith/nl/cad_solver.h"
 #include "theory/arith/nl/ext_theory_callback.h"
 #include "theory/arith/nl/iand_solver.h"
@@ -75,7 +75,10 @@ class NonlinearExtension
   typedef context::CDHashSet<Node, NodeHashFunction> NodeSet;
 
  public:
-  NonlinearExtension(TheoryArith& containing, ArithState& state, eq::EqualityEngine* ee, ArithPreprocess& pp);
+  NonlinearExtension(TheoryArith& containing,
+                     ArithState& state,
+                     eq::EqualityEngine* ee,
+                     ArithPreprocess& pp);
   ~NonlinearExtension();
   /**
    * Does non-context dependent setup for a node connected to a theory.
@@ -232,7 +235,7 @@ class NonlinearExtension
   InferenceManager& d_im;
   // pointer to used equality engine
   eq::EqualityEngine* d_ee;
-  /** 
+  /**
    * Reference to the arithmetic preprocessing utility, which is queried to
    * know whether a literal is reduced (and hence can be ignored).
    */

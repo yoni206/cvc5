@@ -81,8 +81,8 @@ void TheoryArith::finishInit()
   const LogicInfo& logicInfo = getLogicInfo();
   if (logicInfo.isTheoryEnabled(THEORY_ARITH) && !logicInfo.isLinear())
   {
-    d_nonlinearExtension.reset(
-        new nl::NonlinearExtension(*this, d_astate, d_equalityEngine, d_arithPreproc));
+    d_nonlinearExtension.reset(new nl::NonlinearExtension(
+        *this, d_astate, d_equalityEngine, d_arithPreproc));
   }
   // finish initialize internally
   d_internal->finishInit();
