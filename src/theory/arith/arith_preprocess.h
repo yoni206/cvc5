@@ -65,6 +65,8 @@ class ArithPreprocess
   bool isReduced(TNode atom) const;
 
  private:
+  /** Preprocess n, recursively */
+  TrustNode preprocess(Node n);
   /** Reference to the inference manager */
   InferenceManager& d_im;
   /** The operator elimination utility */
