@@ -208,8 +208,11 @@ bool TheoryArith::preNotifyFact(
     if (d_arithPreproc.reduceAssertion(atom))
     {
       // atom contained extended operators that were eliminated, we can
-      // ignore this atom
-      // return true;
+      // ignore this atom. Right now, just ignore is_int.
+      if (atom.getKind()==kind::IS_INTEGER)
+      {
+        return true;
+      }
     }
   }
   d_internal->preNotifyFact(atom, pol, fact);
