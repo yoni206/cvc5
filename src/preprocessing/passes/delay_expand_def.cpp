@@ -70,8 +70,7 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
   return PreprocessingPassResult::NO_CONFLICT;
 }
 
-Node DelayExpandDefs::rewriteDelayedRec(Node n,
-                                               arith::BoundInference& binfer)
+Node DelayExpandDefs::rewriteDelayedRec(Node n, arith::BoundInference& binfer)
 {
   NodeManager* nm = NodeManager::currentNM();
   std::unordered_map<TNode, Node, TNodeHashFunction> visited;
