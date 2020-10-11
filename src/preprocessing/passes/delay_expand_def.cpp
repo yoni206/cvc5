@@ -42,7 +42,7 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
     Trace("delay-exp-def-ll") << "Learned literals:" << std::endl;
     for (const Node& l : learnedLits)
     {
-      Node e = expandDelayedDefinitions(l, binfer);
+      Node e = rewriteDelayedRec(l, binfer);
       // maybe for bound inference?
       Kind k = e.getKind();
       if (k == EQUAL || k == GEQ)
@@ -58,7 +58,7 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
     Node prev = (*assertionsToPreprocess)[i];
     Trace("delay-exp-def-assert")
         << "DelayExpandDefs: assert: " << prev << std::endl;
-    Node e = expandDelayedDefinitions(prev, binfer);
+    Node e = rewriteDelayedRec(prev, binfer);
     if (e != prev)
     {
       Trace("delay-exp-def-assert")
@@ -66,41 +66,14 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
       assertionsToPreprocess->replace(i, e);
     }
   }
-  NodeManager* nm = NodeManager::currentNM();
-  SkolemManager* sm = nm->getSkolemManager();
-  // We also must ensure that all purification UF are defined. This is
-  // to ensure that all are replaced in e.g. terms in models.
-  std::vector<Node> ufs = sm->getPurifyKindUfs();
-  SmtEngine* smt = d_preprocContext->getSmt();
-  for (const Node& uf : ufs)
-  {
-    Expr ufe = uf.toExpr();
-    // define the function
-    if (!smt->isDefinedFunction(ufe))
-    {
-      Node w = SkolemManager::getWitnessForm(uf);
-      Assert(w.getKind() == kind::WITNESS);
-      Node wr = Rewriter::rewrite(w);
-      Assert(wr.getKind() == kind::LAMBDA);
-      Trace("delay-exp-def-debug")
-          << "Define " << uf << " based on " << w << " --> " << wr << std::endl;
-      std::vector<Expr> args;
-      for (const Node& wc : wr[0])
-      {
-        args.push_back(wc.toExpr());
-      }
-      smt->defineFunction(ufe, args, wr[1].toExpr(), true);
-    }
-  }
 
   return PreprocessingPassResult::NO_CONFLICT;
 }
 
-Node DelayExpandDefs::expandDelayedDefinitions(Node n,
+Node DelayExpandDefs::rewriteDelayedRec(Node n,
                                                arith::BoundInference& binfer)
 {
   NodeManager* nm = NodeManager::currentNM();
-  SkolemManager* sm = nm->getSkolemManager();
   std::unordered_map<TNode, Node, TNodeHashFunction> visited;
   std::unordered_map<TNode, Node, TNodeHashFunction>::iterator it;
   std::vector<TNode> visit;
@@ -134,26 +107,6 @@ Node DelayExpandDefs::expandDelayedDefinitions(Node n,
         Assert(!it->second.isNull());
         needsRcons = needsRcons || cn != it->second;
         children.push_back(it->second);
-      }
-      if (cur.getKind() == kind::APPLY_UF)
-      {
-        Node op = children[0];
-        // maybe its a purification for kind?
-        Kind pk = sm->getPurifyKindForUf(op);
-        if (pk != kind::UNDEFINED_KIND)
-        {
-          Node pOp = sm->getPurifyKindOpForUf(op);
-          if (pOp.isNull())
-          {
-            children.erase(children.begin(), children.begin() + 1);
-          }
-          else
-          {
-            children[0] = pOp;
-          }
-          ret = nm->mkNode(pk, children);
-          needsRcons = false;
-        }
       }
       if (needsRcons)
       {

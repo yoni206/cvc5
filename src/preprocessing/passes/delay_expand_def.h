@@ -46,7 +46,7 @@ class DelayExpandDefs : public PreprocessingPass
    * Apply expand delayed definitions, which replaces APPLY_UF that purify
    * builtin kinds with their original operators.
    */
-  Node expandDelayedDefinitions(Node n, theory::arith::BoundInference& binfer);
+  Node rewriteDelayedRec(Node n, theory::arith::BoundInference& binfer);
   /**
    * Delayed rewrite
    */
