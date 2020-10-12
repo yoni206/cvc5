@@ -108,7 +108,8 @@ TrustNode TheoryArith::expandDefinition(Node node)
   return d_arithPreproc.eliminate(node);
 }
 
-void TheoryArith::notifySharedTerm(TNode n) { 
+void TheoryArith::notifySharedTerm(TNode n)
+{
   if (options::arithPreprocess() == options::ArithPreprocessMode::EAGER)
   {
     d_arithPreproc.reduceAssertion(n);
@@ -215,7 +216,7 @@ bool TheoryArith::preNotifyFact(
     {
       // atom contained extended operators that were eliminated, we can
       // ignore this atom. Right now, just ignore is_int.
-      if (atom.getKind()==kind::IS_INTEGER)
+      if (atom.getKind() == kind::IS_INTEGER)
       {
         return true;
       }
