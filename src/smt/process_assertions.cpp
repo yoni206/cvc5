@@ -312,10 +312,6 @@ bool ProcessAssertions::apply(Assertions& as)
   if (options::delayExpandDef())
   {
     d_passes["delay-expand-def"]->apply(&assertions);
-  }
-  if (options::delayExpandDef()
-      || options::solveBVAsInt() != options::SolveBVAsIntMode::OFF)
-  {
     // now apply theory preprocessing so that ite-removal below is complete
     d_passes["theory-preprocess"]->apply(&assertions);
   }

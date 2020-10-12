@@ -108,7 +108,13 @@ TrustNode TheoryArith::expandDefinition(Node node)
   return d_arithPreproc.eliminate(node);
 }
 
-void TheoryArith::notifySharedTerm(TNode n) { d_internal->notifySharedTerm(n); }
+void TheoryArith::notifySharedTerm(TNode n) { 
+  if (options::arithPreprocess() == options::ArithPreprocessMode::EAGER)
+  {
+    d_arithPreproc.reduceAssertion(n);
+  }
+  d_internal->notifySharedTerm(n);
+}
 
 TrustNode TheoryArith::ppRewrite(TNode atom)
 {
