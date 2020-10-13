@@ -116,7 +116,7 @@ Node BVToInt::makeBinary(Node n)
           Node child = d_binarizeCache[current[i]];
           result = d_nm->mkNode(current.getKind(), result, child);
         }
-	d_binarizeCache[current] = result;
+        d_binarizeCache[current] = result;
       }
       else if (numChildren > 0)
       {
@@ -439,7 +439,7 @@ Node BVToInt::translateWithChildren(Node original,
       else
       {
         Assert(options::solveBVAsInt() == options::SolveBVAsIntMode::SUM);
-        // Construct an ite, based on granularity.
+        // Construct a sum of ites, based on granularity.
         Assert(translated_children.size() == 2);
         returnNode =
             d_iandTable.createBitwiseNode(translated_children[0],
