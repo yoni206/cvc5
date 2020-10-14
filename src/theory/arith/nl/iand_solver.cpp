@@ -148,9 +148,9 @@ void IAndSolver::checkFullRefine()
       // ************* additional lemma schemas go here
       if (options::iandMode() == options::IandMode::SUM)
       {
-	Node lem = bitwiseLemma(i);	        // add lemmas based on sum mode
-        Trace("iand-lemma")	
-            << "IAndSolver::Lemma: " << lem << " ; BITWISE_REFINE" << std::endl;	
+        Node lem = sumBasedLemma(i);  // add lemmas based on sum mode
+        Trace("iand-lemma")
+            << "IAndSolver::Lemma: " << lem << " ; SUM_REFINE" << std::endl;
         d_im.addPendingArithLemma(lem, InferenceId::NL_IAND_SUM_REFINE, true);
       }
       else if (options::iandMode() == options::IandMode::BITWISE)
@@ -267,6 +267,7 @@ Node IAndSolver::sumBasedLemma(Node i)
 }
 
 Node IAndSolver::bitwiseLemma(Node i)
+
 {
   Assert(i.getKind() == IAND);
   Node x = i[0];
@@ -302,7 +303,6 @@ Node IAndSolver::bitwiseLemma(Node i)
       lem = nm->mkNode(AND, lem, iextract(j, j, i).eqNode(bitIAnd));
     }
   }
-
   return lem;
 }
 
