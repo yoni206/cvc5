@@ -97,17 +97,6 @@ void TheoryArith::preRegisterTerm(TNode n)
   d_internal->preRegisterTerm(n);
 }
 
-TrustNode TheoryArith::expandDefinition(Node node)
-{
-  // do not eliminate based on the mode
-  if (options::arithPreprocess() != options::ArithPreprocessMode::EXPAND)
-  {
-    return TrustNode::null();
-  }
-  // call eliminate operators
-  return d_arithPreproc.eliminate(node);
-}
-
 void TheoryArith::notifySharedTerm(TNode n)
 {
   if (options::arithPreprocess() == options::ArithPreprocessMode::EAGER)

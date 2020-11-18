@@ -251,7 +251,7 @@ TheoryEngine::TheoryEngine(context::Context* context,
       d_propagatedLiterals(context),
       d_propagatedLiteralsIndex(context, 0),
       d_atomRequests(context),
-      d_tpp(*this, iteRemover, d_pnm),
+      d_tpp(*this, iteRemover, userContext, d_pnm),
       d_combineTheoriesTime("TheoryEngine::combineTheoriesTime"),
       d_true(),
       d_false(),
@@ -824,8 +824,6 @@ void TheoryEngine::shutdown() {
       theoryOf(theoryId)->shutdown();
     }
   }
-
-  d_tpp.clearCache();
 }
 
 theory::Theory::PPAssertStatus TheoryEngine::solve(
@@ -855,18 +853,9 @@ theory::Theory::PPAssertStatus TheoryEngine::solve(
   return solveStatus;
 }
 
-void TheoryEngine::preprocessStart() { d_tpp.clearCache(); }
-
-Node TheoryEngine::preprocess(TNode assertion)
+TrustNode TheoryEngine::preprocess(TNode assertion)
 {
-  TrustNode trn = d_tpp.theoryPreprocess(assertion);
-  if (trn.isNull())
-  {
-    // no change
-    return assertion;
-  }
-  // notice that we could alternatively return the trust node here.
-  return trn.getNode();
+  return d_tpp.theoryPreprocess(assertion);
 }
 
 void TheoryEngine::notifyPreprocessedAssertions(
@@ -1127,6 +1116,42 @@ bool TheoryEngine::propagate(TNode literal, theory::TheoryId theory) {
 
 const LogicInfo& TheoryEngine::getLogicInfo() const { return d_logicInfo; }
 
+bool TheoryEngine::getSepHeapTypes(TypeNode& locType, TypeNode& dataType) const
+{
+  if (d_sepLocType.isNull())
+  {
+    return false;
+  }
+  locType = d_sepLocType;
+  dataType = d_sepDataType;
+  return true;
+}
+
+void TheoryEngine::declareSepHeap(TypeNode locT, TypeNode dataT)
+{
+  Theory* tsep = theoryOf(THEORY_SEP);
+  if (tsep == nullptr)
+  {
+    Assert(false) << "TheoryEngine::declareSepHeap called without the "
+                     "separation logic theory enabled";
+    return;
+  }
+
+  // Definition of the statement that is to be run by every theory
+#ifdef CVC4_FOR_EACH_THEORY_STATEMENT
+#undef CVC4_FOR_EACH_THEORY_STATEMENT
+#endif
+#define CVC4_FOR_EACH_THEORY_STATEMENT(THEORY) \
+  theoryOf(THEORY)->declareSepHeap(locT, dataT);
+
+  // notify each theory using the statement above
+  CVC4_FOR_EACH_THEORY;
+
+  // remember the types we have set
+  d_sepLocType = locT;
+  d_sepDataType = dataT;
+}
+
 theory::EqualityStatus TheoryEngine::getEqualityStatus(TNode a, TNode b) {
   Assert(a.getType().isComparableTo(b.getType()));
   return d_sharedSolver->getEqualityStatus(a, b);
@@ -1147,7 +1172,8 @@ Node TheoryEngine::ensureLiteral(TNode n) {
   Debug("ensureLiteral") << "rewriting: " << n << std::endl;
   Node rewritten = Rewriter::rewrite(n);
   Debug("ensureLiteral") << "      got: " << rewritten << std::endl;
-  Node preprocessed = preprocess(rewritten);
+  TrustNode tp = preprocess(rewritten);
+  Node preprocessed = tp.isNull() ? rewritten : tp.getNode();
   Debug("ensureLiteral") << "preprocessed: " << preprocessed << std::endl;
   d_propEngine->ensureLiteral(preprocessed);
   return preprocessed;
@@ -1462,21 +1488,17 @@ theory::LemmaStatus TheoryEngine::lemma(theory::TrustNode tlemma,
         {
           d_lazyProof->addLazyStep(tplemma.getProven(),
                                    tplemma.getGenerator(),
+                                   PfRule::PREPROCESS_LEMMA,
                                    true,
-                                   "TheoryEngine::lemma_pp",
-                                   false,
-                                   PfRule::PREPROCESS_LEMMA);
+                                   "TheoryEngine::lemma_pp");
           // ---------- from d_lazyProof -------------- from theory preprocess
           // lemma                       lemma = lemmap
-          // ------------------------------------------ MACRO_SR_PRED_TRANSFORM
+          // ------------------------------------------ EQ_RESOLVE
           // lemmap
           std::vector<Node> pfChildren;
           pfChildren.push_back(lemma);
           pfChildren.push_back(tplemma.getProven());
-          std::vector<Node> pfArgs;
-          pfArgs.push_back(lemmap);
-          d_lazyProof->addStep(
-              lemmap, PfRule::MACRO_SR_PRED_TRANSFORM, pfChildren, pfArgs);
+          d_lazyProof->addStep(lemmap, PfRule::EQ_RESOLVE, pfChildren, {});
         }
       }
       tlemma = TrustNode::mkTrustLemma(lemmap, d_lazyProof.get());
@@ -1630,8 +1652,8 @@ void TheoryEngine::conflict(theory::TrustNode tconflict, TheoryId theoryId)
         {
           // ------------------------- explained  ---------- from theory
           // fullConflict => conflict              ~conflict
-          // --------------------------------------------
-          // MACRO_SR_PRED_TRANSFORM ~fullConflict
+          // ------------------------------------------ MACRO_SR_PRED_TRANSFORM
+          // ~fullConflict
           children.push_back(conflict.notNode());
           args.push_back(mkMethodId(MethodId::SB_LITERAL));
           d_lazyProof->addStep(
@@ -1928,9 +1950,9 @@ theory::TrustNode TheoryEngine::getExplanation(
         Trace("te-proof-exp") << "...trivial" << std::endl;
         continue;
       }
-      // ------------- Via theory
-      // tExp => tConc              tExp
-      // ---------------------------------MACRO_SR_PRED_TRANSFORM
+      //       ------------- Via theory
+      // tExp  tExp => tConc
+      // ---------------------------------MODUS_PONENS
       // tConc
       if (trn.getGenerator() != nullptr)
       {
@@ -1945,12 +1967,9 @@ theory::TrustNode TheoryEngine::getExplanation(
         lcp->addStep(proven, PfRule::THEORY_LEMMA, {}, {proven, tidn});
       }
       std::vector<Node> pfChildren;
-      pfChildren.push_back(proven);
       pfChildren.push_back(trn.getNode());
-      std::vector<Node> pfArgs;
-      pfArgs.push_back(tConc);
-      pfArgs.push_back(mkMethodId(MethodId::SB_FORMULA));
-      lcp->addStep(tConc, PfRule::MACRO_SR_PRED_TRANSFORM, pfChildren, pfArgs);
+      pfChildren.push_back(proven);
+      lcp->addStep(tConc, PfRule::MODUS_PONENS, pfChildren, {});
     }
     // store in the proof generator
     TrustNode trn = d_tepg->mkTrustExplain(conclusion, expNode, lcp);

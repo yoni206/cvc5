@@ -23,6 +23,7 @@
 #include "printer/cvc/cvc_printer.h"
 #include "printer/smt2/smt2_printer.h"
 #include "printer/tptp/tptp_printer.h"
+#include "proof/unsat_core.h"
 #include "smt/command.h"
 #include "smt/node_command.h"
 
@@ -71,13 +72,13 @@ unique_ptr<Printer> Printer::makePrinter(OutputLanguage lang)
   }
 }
 
-void Printer::toStream(std::ostream& out, const Model& m) const
+void Printer::toStream(std::ostream& out, const smt::Model& m) const
 {
   for(size_t i = 0; i < m.getNumCommands(); ++i) {
     const NodeCommand* cmd = m.getCommand(i);
     const DeclareFunctionNodeCommand* dfc =
         dynamic_cast<const DeclareFunctionNodeCommand*>(cmd);
-    if (dfc != NULL && !m.isModelCoreSymbol(dfc->getFunction().toExpr()))
+    if (dfc != NULL && !m.isModelCoreSymbol(dfc->getFunction()))
     {
       continue;
     }
@@ -88,7 +89,7 @@ void Printer::toStream(std::ostream& out, const Model& m) const
 void Printer::toStream(std::ostream& out, const UnsatCore& core) const
 {
   for(UnsatCore::iterator i = core.begin(); i != core.end(); ++i) {
-    toStreamCmdAssert(out, Node::fromExpr(*i));
+    toStreamCmdAssert(out, *i);
     out << std::endl;
   }
 }/* Printer::toStream(UnsatCore) */
@@ -183,15 +184,6 @@ void Printer::toStreamCmdDefineFunction(std::ostream& out,
   printUnknownCommand(out, "define-fun");
 }
 
-void Printer::toStreamCmdDefineNamedFunction(std::ostream& out,
-                                             const std::string& id,
-                                             const std::vector<Node>& formals,
-                                             TypeNode range,
-                                             Node formula) const
-{
-  printUnknownCommand(out, "define-named-function");
-}
-
 void Printer::toStreamCmdDefineFunctionRec(
     std::ostream& out,
     const std::vector<Node>& funcs,
@@ -260,11 +252,6 @@ void Printer::toStreamCmdCheckSynth(std::ostream& out) const
 void Printer::toStreamCmdSimplify(std::ostream& out, Node n) const
 {
   printUnknownCommand(out, "simplify");
-}
-
-void Printer::toStreamCmdExpandDefinitions(std::ostream& out, Node n) const
-{
-  printUnknownCommand(out, "expand-definitions");
 }
 
 void Printer::toStreamCmdGetValue(std::ostream& out,
@@ -417,6 +404,13 @@ void Printer::toStreamCmdComment(std::ostream& out,
                                  const std::string& comment) const
 {
   printUnknownCommand(out, "comment");
+}
+
+void Printer::toStreamCmdDeclareHeap(std::ostream& out,
+                                     TypeNode locType,
+                                     TypeNode dataType) const
+{
+  printUnknownCommand(out, "declare-heap");
 }
 
 void Printer::toStreamCmdCommandSequence(

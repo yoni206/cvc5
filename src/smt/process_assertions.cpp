@@ -117,9 +117,6 @@ bool ProcessAssertions::apply(Assertions& as)
     return true;
   }
 
-  SubstitutionMap& top_level_substs =
-      d_preprocessingPassContext->getTopLevelSubstitutions();
-
   if (options::bvGaussElim())
   {
     d_passes["bv-gauss"]->apply(&assertions);
@@ -350,6 +347,8 @@ bool ProcessAssertions::apply(Assertions& as)
       // First, find all skolems that appear in the substitution map - their
       // associated iteExpr will need to be moved to the main assertion set
       set<TNode> skolemSet;
+      SubstitutionMap& top_level_substs =
+          d_preprocessingPassContext->getTopLevelSubstitutions().get();
       SubstitutionMap::iterator pos = top_level_substs.begin();
       for (; pos != top_level_substs.end(); ++pos)
       {
@@ -432,6 +431,11 @@ bool ProcessAssertions::apply(Assertions& as)
   Debug("smt") << " assertions     : " << assertions.size() << endl;
 
   d_passes["theory-preprocess"]->apply(&assertions);
+  // Must remove ITEs again since theory preprocessing may introduce them.
+  // Notice that we alternatively could ensure that the theory-preprocess
+  // pass above calls TheoryPreprocess::preprocess instead of
+  // TheoryPreprocess::theoryPreprocess, as the former also does ITE removal.
+  d_passes["ite-removal"]->apply(&assertions);
 
   if (options::bitblastMode() == options::BitblastMode::EAGER)
   {

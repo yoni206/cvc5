@@ -68,6 +68,13 @@ TheoryDatatypes::TheoryDatatypes(Context* c,
   // indicate we are using the default theory state object
   d_theoryState = &d_state;
   d_inferManager = &d_im;
+
+  ProofChecker* pc = pnm != nullptr ? pnm->getChecker() : nullptr;
+  if (pc != nullptr)
+  {
+    // add checkers
+    d_pchecker.registerTo(pc);
+  }
 }
 
 TheoryDatatypes::~TheoryDatatypes() {
@@ -300,7 +307,7 @@ void TheoryDatatypes::postCheck(Effort level)
                   //this may not be necessary?
                   //if only one constructor, then this term must be this constructor
                   Node t = utils::mkTester(n, 0, dt);
-                  d_im.addPendingInference(t, d_true);
+                  d_im.addPendingInference(t, d_true, false, InferId::SPLIT);
                   Trace("datatypes-infer") << "DtInfer : 1-cons (full) : " << t << std::endl;
                 }else{
                   Assert(consIndex != -1 || dt.isSygus());
@@ -317,7 +324,10 @@ void TheoryDatatypes::postCheck(Effort level)
                     Trace("dt-split") << "*************Split for constructors on " << n <<  endl;
                     Node lemma = utils::mkSplit(n, dt);
                     Trace("dt-split-debug") << "Split lemma is : " << lemma << std::endl;
-                    d_im.lemma(lemma, LemmaProperty::SEND_ATOMS, false);
+                    d_im.sendDtLemma(lemma,
+                                     InferId::SPLIT,
+                                     LemmaProperty::SEND_ATOMS,
+                                     false);
                   }
                   if( !options::dtBlastSplits() ){
                     break;
@@ -419,8 +429,33 @@ void TheoryDatatypes::notifyFact(TNode atom,
 
 void TheoryDatatypes::preRegisterTerm(TNode n)
 {
-  Debug("datatypes-prereg")
+  Trace("datatypes-prereg")
       << "TheoryDatatypes::preRegisterTerm() " << n << endl;
+  // must ensure the type is well founded and has no nested recursion if
+  // the option dtNestedRec is not set to true.
+  TypeNode tn = n.getType();
+  if (tn.isDatatype())
+  {
+    const DType& dt = tn.getDType();
+    Trace("dt-expand") << "Check properties of " << dt.getName() << std::endl;
+    if (!dt.isWellFounded())
+    {
+      std::stringstream ss;
+      ss << "Cannot handle non-well-founded datatype " << dt.getName();
+      throw LogicException(ss.str());
+    }
+    Trace("dt-expand") << "...well-founded ok" << std::endl;
+    if (!options::dtNestedRec())
+    {
+      if (dt.hasNestedRecursion())
+      {
+        std::stringstream ss;
+        ss << "Cannot handle nested-recursive datatype " << dt.getName();
+        throw LogicException(ss.str());
+      }
+      Trace("dt-expand") << "...nested recursion ok" << std::endl;
+    }
+  }
   collectTerms( n );
   switch (n.getKind()) {
   case kind::EQUAL:
@@ -446,28 +481,7 @@ void TheoryDatatypes::preRegisterTerm(TNode n)
 TrustNode TheoryDatatypes::expandDefinition(Node n)
 {
   NodeManager* nm = NodeManager::currentNM();
-  // must ensure the type is well founded and has no nested recursion if
-  // the option dtNestedRec is not set to true.
   TypeNode tn = n.getType();
-  if (tn.isDatatype())
-  {
-    const DType& dt = tn.getDType();
-    if (!dt.isWellFounded())
-    {
-      std::stringstream ss;
-      ss << "Cannot handle non-well-founded datatype " << dt.getName();
-      throw LogicException(ss.str());
-    }
-    if (!options::dtNestedRec())
-    {
-      if (dt.hasNestedRecursion())
-      {
-        std::stringstream ss;
-        ss << "Cannot handle nested-recursive datatype " << dt.getName();
-        throw LogicException(ss.str());
-      }
-    }
-  }
   Node ret;
   switch (n.getKind())
   {
@@ -658,7 +672,7 @@ void TheoryDatatypes::merge( Node t1, Node t2 ){
             conf.push_back(unifEq);
             Trace("dt-conflict")
                 << "CONFLICT: Clash conflict : " << conf << std::endl;
-            d_im.conflictExp(conf, nullptr);
+            d_im.sendDtConflict(conf, InferId::CLASH_CONFLICT);
             return;
           }
           else
@@ -667,7 +681,7 @@ void TheoryDatatypes::merge( Node t1, Node t2 ){
             for( int i=0; i<(int)cons1.getNumChildren(); i++ ) {
               if( !areEqual( cons1[i], cons2[i] ) ){
                 Node eq = cons1[i].eqNode( cons2[i] );
-                d_im.addPendingInference(eq, unifEq);
+                d_im.addPendingInference(eq, unifEq, false, InferId::UNIF);
                 Trace("datatypes-infer") << "DtInfer : cons-inj : " << eq << " by " << unifEq << std::endl;
               }
             }
@@ -859,10 +873,10 @@ void TheoryDatatypes::addTester(
         //conflict because equivalence class contains a constructor
         std::vector<Node> conf;
         conf.push_back(t);
-        conf.push_back(eqc->d_constructor.get().eqNode(t_arg));
+        conf.push_back(t_arg.eqNode(eqc->d_constructor.get()));
         Trace("dt-conflict")
             << "CONFLICT: Tester eq conflict " << conf << std::endl;
-        d_im.conflictExp(conf, nullptr);
+        d_im.sendDtConflict(conf, InferId::TESTER_CONFLICT);
         return;
       }else{
         makeConflict = true;
@@ -953,7 +967,8 @@ void TheoryDatatypes::addTester(
                              ? NodeManager::currentNM()->mkConst(false)
                              : utils::mkTester(t_arg, testerIndex, dt);
           Node t_concl_exp = ( nb.getNumChildren() == 1 ) ? nb.getChild( 0 ) : nb;
-          d_im.addPendingInference(t_concl, t_concl_exp);
+          d_im.addPendingInference(
+              t_concl, t_concl_exp, false, InferId::LABEL_EXH);
           Trace("datatypes-infer") << "DtInfer : label : " << t_concl << " by " << t_concl_exp << std::endl;
           return;
         }
@@ -967,7 +982,7 @@ void TheoryDatatypes::addTester(
     conf.push_back(t);
     conf.push_back(jt[0].eqNode(t_arg));
     Trace("dt-conflict") << "CONFLICT: Tester conflict : " << conf << std::endl;
-    d_im.conflictExp(conf, nullptr);
+    d_im.sendDtConflict(conf, InferId::TESTER_MERGE_CONFLICT);
   }
 }
 
@@ -1025,7 +1040,7 @@ void TheoryDatatypes::addConstructor( Node c, EqcInfo* eqc, Node n ){
           conf.push_back(c.eqNode(t[0][0]));
           Trace("dt-conflict")
               << "CONFLICT: Tester merge eq conflict : " << conf << std::endl;
-          d_im.conflictExp(conf, nullptr);
+          d_im.sendDtConflict(conf, InferId::TESTER_CONFLICT);
           return;
         }
       }
@@ -1050,7 +1065,7 @@ void TheoryDatatypes::collapseSelector( Node s, Node c ) {
   Trace("dt-collapse-sel") << "collapse selector : " << s << " " << c << std::endl;
   Node r;
   bool wrong = false;
-  Node eq_exp = c.eqNode(s[0]);
+  Node eq_exp = s[0].eqNode(c);
   if( s.getKind()==kind::APPLY_SELECTOR_TOTAL ){
     Node selector = s.getOperator();
     size_t constructorIndex = utils::indexOf(c.getOperator());
@@ -1082,11 +1097,14 @@ void TheoryDatatypes::collapseSelector( Node s, Node c ) {
     if (s != rrs)
     {
       Node eq = s.eqNode(rrs);
-      Node peq = c.eqNode(s[0]);
+      // Since collapsing selectors may generate new terms, we must send
+      // this out as a lemma if it is of an external type, or otherwise we
+      // may ask for the equality status of terms that only datatypes knows
+      // about, see issue #5344.
+      bool forceLemma = !s.getType().isDatatype();
       Trace("datatypes-infer") << "DtInfer : collapse sel";
-      //Trace("datatypes-infer") << ( wrong ? " wrong" : "");
-      Trace("datatypes-infer") << " : " << eq << " by " << peq << std::endl;
-      d_im.addPendingInference(eq, peq);
+      Trace("datatypes-infer") << " : " << eq << " by " << eq_exp << std::endl;
+      d_im.addPendingInference(eq, eq_exp, forceLemma, InferId::COLLAPSE_SEL);
     }
   }
 }
@@ -1542,7 +1560,7 @@ void TheoryDatatypes::instantiate( EqcInfo* eqc, Node n ){
   bool forceLemma = dt[index].hasFiniteExternalArgType(ttn);
   Trace("datatypes-infer-debug") << "DtInstantiate : " << eqc << " " << eq
                                  << " forceLemma = " << forceLemma << std::endl;
-  d_im.addPendingInference(eq, exp, nullptr, forceLemma);
+  d_im.addPendingInference(eq, exp, forceLemma, InferId::INST);
   Trace("datatypes-infer") << "DtInfer : instantiate : " << eq << " by " << exp
                            << std::endl;
 }
@@ -1578,7 +1596,7 @@ void TheoryDatatypes::checkCycles() {
             Assert(expl.size() > 0);
             Trace("dt-conflict")
                 << "CONFLICT: Cycle conflict : " << expl << std::endl;
-            d_im.conflictExp(expl, nullptr);
+            d_im.sendDtConflict(expl, InferId::CYCLE);
             return;
           }
         }
@@ -1628,7 +1646,7 @@ void TheoryDatatypes::checkCycles() {
           Trace("dt-cdt") << std::endl;
           Node eq = part_out[i][0].eqNode( part_out[i][j] );
           Node eqExp = NodeManager::currentNM()->mkAnd(exp);
-          d_im.addPendingInference(eq, eqExp);
+          d_im.addPendingInference(eq, eqExp, false, InferId::BISIMILAR);
           Trace("datatypes-infer") << "DtInfer : cdt-bisimilar : " << eq << " by " << eqExp << std::endl;
         }
       }
@@ -1671,7 +1689,8 @@ void TheoryDatatypes::separateBisimilar(
         if( ncons.getKind()==APPLY_CONSTRUCTOR ) {
           Node cc = ncons.getOperator();
           cn_cons[part[j]] = ncons;
-          if( mkExp ){
+          if (mkExp && c != ncons)
+          {
             exp.push_back(c.eqNode(ncons));
           }
           new_part[cc].push_back( part[j] );
@@ -1730,9 +1749,12 @@ void TheoryDatatypes::separateBisimilar(
           //set current node
           for( unsigned k=0; k<split_new_part[j].size(); k++ ){
             Node n = split_new_part[j][k];
-            cn[n] = getRepresentative( cn_cons[n][cindex] );
-            if( mkExp ){
-              exp.push_back(cn[n].eqNode(cn_cons[n][cindex]));
+            Node cnc = cn_cons[n][cindex];
+            Node nr = getRepresentative(cnc);
+            cn[n] = nr;
+            if (mkExp && cnc != nr)
+            {
+              exp.push_back(nr.eqNode(cnc));
             }
           }
           std::vector< std::vector< Node > > c_part_out;
@@ -1840,6 +1862,7 @@ bool TheoryDatatypes::areDisequal( TNode a, TNode b ){
 }
 
 bool TheoryDatatypes::areCareDisequal( TNode x, TNode y ) {
+  Trace("datatypes-cg") << "areCareDisequal: " << x << " " << y << std::endl;
   Assert(d_equalityEngine->hasTerm(x));
   Assert(d_equalityEngine->hasTerm(y));
   if (d_equalityEngine->isTriggerTerm(x, THEORY_DATATYPES)

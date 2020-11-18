@@ -1412,6 +1412,13 @@ void TheoryArithPrivate::releaseArithVar(ArithVar v){
 ArithVar TheoryArithPrivate::requestArithVar(TNode x, bool aux, bool internal){
   //TODO : The VarList trick is good enough?
   Assert(isLeaf(x) || VarList::isMember(x) || x.getKind() == PLUS || internal);
+  if(getLogicInfo().isLinear() && Variable::isDivMember(x)){
+    stringstream ss;
+    ss << "A non-linear fact (involving div/mod/divisibility) was asserted to "
+          "arithmetic in a linear logic: "
+       << x << std::endl;
+    throw LogicException(ss.str());
+  }
   Assert(!d_partialModel.hasArithVar(x));
   Assert(x.getType().isReal());  // real or integer
 
@@ -3414,6 +3421,13 @@ bool TheoryArithPrivate::postCheck(Theory::Effort effortLevel)
   }
   d_statistics.d_avgUnknownsInARow.addEntry(d_unknownsInARow);
 
+  size_t nPivots = options::useFC() ? d_fcSimplex.getPivots() : d_dualSimplex.getPivots();
+  for (std::size_t i = 0; i < d_fcSimplex.getPivots(); ++i)
+  {
+    d_containing.d_out->spendResource(
+        ResourceManager::Resource::ArithPivotStep);
+  }
+
   Debug("arith::ems") << "ems: " << emmittedConflictOrSplit
                       << "pre approx cuts" << endl;
   if(!d_approxCuts.empty()){
@@ -4476,23 +4490,40 @@ bool TheoryArithPrivate::tryToPropagate(RowIndex ridx, bool rowUp, ArithVar v, b
 
 Node flattenImplication(Node imp){
   NodeBuilder<> nb(kind::OR);
+  std::unordered_set<Node, NodeHashFunction> included;
   Node left = imp[0];
   Node right = imp[1];
 
   if(left.getKind() == kind::AND){
     for(Node::iterator i = left.begin(), iend = left.end(); i != iend; ++i) {
-      nb << (*i).negate();
+      if (!included.count((*i).negate()))
+      {
+        nb << (*i).negate();
+        included.insert((*i).negate());
+      }
     }
   }else{
-    nb << left.negate();
+    if (!included.count(left.negate()))
+    {
+      nb << left.negate();
+      included.insert(left.negate());
+    }
   }
 
   if(right.getKind() == kind::OR){
     for(Node::iterator i = right.begin(), iend = right.end(); i != iend; ++i) {
-      nb << *i;
+      if (!included.count(*i))
+      {
+        nb << *i;
+        included.insert(*i);
+      }
     }
   }else{
-    nb << right;
+    if (!included.count(right))
+    {
+      nb << right;
+      included.insert(right);
+    }
   }
 
   return nb;
@@ -4531,7 +4562,63 @@ bool TheoryArithPrivate::rowImplicationCanBeApplied(RowIndex ridx, bool rowUp, C
       }
       Node implication = implied->externalImplication(explain);
       Node clause = flattenImplication(implication);
-      outputLemma(clause);
+      std::shared_ptr<ProofNode> clausePf{nullptr};
+
+      if (isProofEnabled())
+      {
+        // We can prove this lemma from Farkas...
+        std::vector<std::shared_ptr<ProofNode>> conflictPfs;
+        // Assume the negated getLiteral version of the implied constaint
+        // then rewrite it into proof normal form.
+        conflictPfs.push_back(
+            d_pnm->mkNode(PfRule::MACRO_SR_PRED_TRANSFORM,
+                          {d_pnm->mkAssume(implied->getLiteral().negate())},
+                          {implied->getNegation()->getProofLiteral()}));
+        // Add the explaination proofs.
+        for (const auto constraint : explain)
+        {
+          NodeBuilder<> nb;
+          conflictPfs.push_back(constraint->externalExplainByAssertions(nb));
+        }
+        // Collect the farkas coefficients, as nodes.
+        std::vector<Node> farkasCoefficients;
+        farkasCoefficients.reserve(coeffs->size());
+        auto nm = NodeManager::currentNM();
+        std::transform(
+            coeffs->begin(),
+            coeffs->end(),
+            std::back_inserter(farkasCoefficients),
+            [nm](const Rational& r) { return nm->mkConst<Rational>(r); });
+
+        // Prove bottom.
+        auto sumPf = d_pnm->mkNode(PfRule::ARITH_SCALE_SUM_UPPER_BOUNDS,
+                                   conflictPfs,
+                                   farkasCoefficients);
+        auto botPf = d_pnm->mkNode(
+            PfRule::MACRO_SR_PRED_TRANSFORM, {sumPf}, {nm->mkConst(false)});
+
+        // Prove the conflict
+        std::vector<Node> assumptions;
+        assumptions.reserve(clause.getNumChildren());
+        std::transform(clause.begin(),
+                       clause.end(),
+                       std::back_inserter(assumptions),
+                       [](TNode r) { return r.negate(); });
+        auto notAndNotPf = d_pnm->mkScope(botPf, assumptions);
+
+        // Convert it to a clause
+        auto orNotNotPf = d_pnm->mkNode(PfRule::NOT_AND, {notAndNotPf}, {});
+        clausePf = d_pnm->mkNode(
+            PfRule::MACRO_SR_PRED_TRANSFORM, {orNotNotPf}, {clause});
+
+        // Output it
+        TrustNode trustedClause = d_pfGen->mkTrustNode(clause, clausePf);
+        outputTrustedLemma(trustedClause);
+      }
+      else
+      {
+        outputLemma(clause);
+      }
     }else{
       Assert(!implied->negationHasProof());
       implied->impliedByFarkas(explain, coeffs, false);

@@ -385,7 +385,7 @@ public:
    * @param language the language in which to output
    */
   inline void toStream(std::ostream& out, OutputLanguage language = language::output::LANG_AUTO) const {
-    d_nv->toStream(out, -1, false, 0, language);
+    d_nv->toStream(out, -1, 0, language);
   }
 
   /**
@@ -538,6 +538,9 @@ public:
 
   /** Get the return type (for selector types) */
   TypeNode getSelectorRangeType() const;
+
+  /** Get the domain type (for tester types) */
+  TypeNode getTesterDomainType() const;
 
   /** Get the element type (for set types) */
   TypeNode getSetElementType() const;
@@ -693,6 +696,11 @@ public:
 
   /** Get sort constructor arity */
   uint64_t getSortConstructorArity() const;
+
+  /**
+   * Get name, for uninterpreted sorts and uninterpreted sort constructors.
+   */
+  std::string getName() const;
 
   /**
    * Instantiate a sort constructor type. The type on which this method is
@@ -1065,10 +1073,9 @@ inline bool TypeNode::isTester() const {
 /** Is this a floating-point type of with <code>exp</code> exponent bits
     and <code>sig</code> significand bits */
 inline bool TypeNode::isFloatingPoint(unsigned exp, unsigned sig) const {
-  return
-    ( getKind() == kind::FLOATINGPOINT_TYPE &&
-      getConst<FloatingPointSize>().exponent() == exp &&
-      getConst<FloatingPointSize>().significand() == sig );
+  return (getKind() == kind::FLOATINGPOINT_TYPE
+          && getConst<FloatingPointSize>().exponentWidth() == exp
+          && getConst<FloatingPointSize>().significandWidth() == sig);
 }
 
 /** Is this a bit-vector type of size <code>size</code> */
@@ -1080,13 +1087,13 @@ inline bool TypeNode::isBitVector(unsigned size) const {
 /** Get the exponent size of this floating-point type */
 inline unsigned TypeNode::getFloatingPointExponentSize() const {
   Assert(isFloatingPoint());
-  return getConst<FloatingPointSize>().exponent();
+  return getConst<FloatingPointSize>().exponentWidth();
 }
 
 /** Get the significand size of this floating-point type */
 inline unsigned TypeNode::getFloatingPointSignificandSize() const {
   Assert(isFloatingPoint());
-  return getConst<FloatingPointSize>().significand();
+  return getConst<FloatingPointSize>().significandWidth();
 }
 
 /** Get the size of this bit-vector type */
@@ -1113,7 +1120,6 @@ inline unsigned TypeNode::getBitVectorSize() const {
  */
 static void __attribute__((used)) debugPrintTypeNode(const TypeNode& n) {
   Warning() << Node::setdepth(-1)
-            << Node::printtypes(false)
             << Node::dag(true)
             << Node::setlanguage(language::output::LANG_AST)
             << n << std::endl;
@@ -1121,7 +1127,6 @@ static void __attribute__((used)) debugPrintTypeNode(const TypeNode& n) {
 }
 static void __attribute__((used)) debugPrintTypeNodeNoDag(const TypeNode& n) {
   Warning() << Node::setdepth(-1)
-            << Node::printtypes(false)
             << Node::dag(false)
             << Node::setlanguage(language::output::LANG_AST)
             << n << std::endl;

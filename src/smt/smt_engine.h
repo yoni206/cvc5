@@ -29,7 +29,6 @@
 #include "expr/expr.h"
 #include "expr/expr_manager.h"
 #include "options/options.h"
-#include "proof/unsat_core.h"
 #include "smt/logic_exception.h"
 #include "smt/output_manager.h"
 #include "smt/smt_mode.h"
@@ -59,8 +58,8 @@ class DecisionEngine;
 class TheoryEngine;
 
 class ProofManager;
+class UnsatCore;
 
-class Model;
 class LogicRequest;
 class StatisticsRegistry;
 
@@ -95,6 +94,7 @@ namespace prop {
 
 namespace smt {
 /** Utilities */
+class Model;
 class SmtEngineState;
 class AbstractValues;
 class Assertions;
@@ -104,6 +104,7 @@ class ResourceOutListener;
 class SmtNodeManagerListener;
 class OptionsManager;
 class Preprocessor;
+class CheckModels;
 /** Subsolvers */
 class SmtSolver;
 class SygusSolver;
@@ -205,6 +206,12 @@ class CVC4_PUBLIC SmtEngine
   /** Return the current mode of the solver. */
   SmtMode getSmtMode() const;
   /**
+   * Whether the SmtMode allows for get-value, get-model, get-assignment, etc.
+   * This is equivalent to:
+   * getSmtMode()==SmtMode::SAT || getSmtMode()==SmtMode::SAT_UNKNOWN
+   */
+  bool isSmtModeSat() const;
+  /**
    * Returns the most recent result of checkSat/checkEntailed or
    * (set-info :status).
    */
@@ -280,7 +287,7 @@ class CVC4_PUBLIC SmtEngine
    * Get the model (only if immediately preceded by a SAT or NOT_ENTAILED
    * query).  Only permitted if produce-models is on.
    */
-  Model* getModel();
+  smt::Model* getModel();
 
   /**
    * Block the current model. Can be called only if immediately preceded by
@@ -307,6 +314,23 @@ class CVC4_PUBLIC SmtEngine
    * The return value has the same meaning as that of assertFormula.
    */
   Result blockModelValues(const std::vector<Node>& exprs);
+
+  /**
+   * Declare heap. For smt2 inputs, this is called when the command
+   * (declare-heap (locT datat)) is invoked by the user. This sets locT as the
+   * location type and dataT is the data type for the heap. This command should
+   * be executed only once, and must be invoked before solving separation logic
+   * inputs.
+   */
+  void declareSepHeap(TypeNode locT, TypeNode dataT);
+
+  /**
+   * Get the separation heap types, which extracts which types were passed to
+   * the method above.
+   *
+   * @return true if the separation logic heap types have been declared.
+   */
+  bool getSepHeapTypes(TypeNode& locT, TypeNode& dataT);
 
   /** When using separation logic, obtain the expression for the heap.  */
   Node getSepHeapExpr();
@@ -529,24 +553,6 @@ class CVC4_PUBLIC SmtEngine
    * Same as getValue but for a vector of expressions
    */
   std::vector<Node> getValues(const std::vector<Node>& exprs);
-
-  /**
-   * Add a function to the set of expressions whose value is to be
-   * later returned by a call to getAssignment().  The expression
-   * should be a Boolean zero-ary defined function or a Boolean
-   * variable.  Rather than throwing a ModalException on modal
-   * failures (not in interactive mode or not producing assignments),
-   * this function returns true if the expression was added and false
-   * if this request was ignored.
-   */
-  bool addToAssignment(const Expr& e);
-
-  /**
-   * Get the assignment (only if immediately preceded by a SAT or
-   * NOT_ENTAILED query).  Only permitted if the SmtEngine is set to
-   * operate interactively and produce-assignments is on.
-   */
-  std::vector<std::pair<Expr, Expr> > getAssignment();
 
   /** Print all instantiations made by the quantifiers module.  */
   void printInstantiations(std::ostream& out);
@@ -889,8 +895,6 @@ class CVC4_PUBLIC SmtEngine
       DefinedFunctionMap;
   /** The type of our internal assertion list */
   typedef context::CDList<Node> AssertionList;
-  /** The type of our internal assignment set */
-  typedef context::CDHashSet<Node, NodeHashFunction> AssignmentSet;
 
   // disallow copy/assignment
   SmtEngine(const SmtEngine&) = delete;
@@ -969,16 +973,17 @@ class CVC4_PUBLIC SmtEngine
   Result quickCheck();
 
   /**
-   * Get the model, if it is available and return a pointer to it
+   * Get the (SMT-level) model pointer, if we are in SAT mode. Otherwise,
+   * return nullptr.
    *
-   * This ensures that the model is currently available, which means that
-   * CVC4 is producing models, and is in "SAT mode", otherwise an exception
-   * is thrown.
+   * This ensures that the underlying theory model of the SmtSolver maintained
+   * by this class is currently available, which means that CVC4 is producing
+   * models, and is in "SAT mode", otherwise a recoverable exception is thrown.
    *
    * The flag c is used for giving an error message to indicate the context
    * this method was called.
    */
-  theory::TheoryModel* getAvailableModel(const char* c) const;
+  smt::Model* getAvailableModel(const char* c) const;
 
   // --------------------------------------- callbacks from the state
   /**
@@ -1088,6 +1093,17 @@ class CVC4_PUBLIC SmtEngine
 
   /** The (old) proof manager TODO (project #37): delete this */
   std::unique_ptr<ProofManager> d_proofManager;
+  /**
+   * The SMT-level model object, which contains information about how to
+   * print the model, as well as a pointer to the underlying TheoryModel
+   * implementation maintained by the SmtSolver.
+   */
+  std::unique_ptr<smt::Model> d_model;
+
+  /**
+   * The utility used for checking models
+   */
+  std::unique_ptr<smt::CheckModels> d_checkModels;
 
   /**
    * The proof manager, which manages all things related to checking,
@@ -1115,11 +1131,6 @@ class CVC4_PUBLIC SmtEngine
   std::unique_ptr<smt::InterpolationSolver> d_interpolSolver;
   /** The solver for quantifier elimination queries */
   std::unique_ptr<smt::QuantElimSolver> d_quantElimSolver;
-  /**
-   * List of items for which to retrieve values using getAssignment().
-   */
-  AssignmentSet* d_assignments;
-
   /**
    * The logic we're in. This logic may be an extension of the logic set by the
    * user.

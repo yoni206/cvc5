@@ -51,14 +51,13 @@ class Printer
   virtual void toStream(std::ostream& out,
                         TNode n,
                         int toDepth,
-                        bool types,
                         size_t dag) const = 0;
 
   /** Write a CommandStatus out to a stream with this Printer. */
   virtual void toStream(std::ostream& out, const CommandStatus* s) const = 0;
 
   /** Write a Model out to a stream with this Printer. */
-  virtual void toStream(std::ostream& out, const Model& m) const;
+  virtual void toStream(std::ostream& out, const smt::Model& m) const;
 
   /** Write an UnsatCore out to a stream with this Printer. */
   virtual void toStream(std::ostream& out, const UnsatCore& core) const;
@@ -103,13 +102,6 @@ class Printer
                                          const std::vector<Node>& formals,
                                          TypeNode range,
                                          Node formula) const;
-
-  /** Print define-named-fun command */
-  virtual void toStreamCmdDefineNamedFunction(std::ostream& out,
-                                              const std::string& id,
-                                              const std::vector<Node>& formals,
-                                              TypeNode range,
-                                              Node formula) const;
 
   /** Print define-fun-rec command */
   virtual void toStreamCmdDefineFunctionRec(
@@ -159,9 +151,6 @@ class Printer
 
   /** Print simplify command */
   virtual void toStreamCmdSimplify(std::ostream& out, Node n) const;
-
-  /** Print expand-definitions command */
-  void toStreamCmdExpandDefinitions(std::ostream& out, Node n) const;
 
   /** Print get-value command */
   virtual void toStreamCmdGetValue(std::ostream& out,
@@ -260,6 +249,10 @@ class Printer
   /** Print comment command */
   virtual void toStreamCmdComment(std::ostream& out,
                                   const std::string& comment) const;
+  /** Declare heap command */
+  virtual void toStreamCmdDeclareHeap(std::ostream& out,
+                                      TypeNode locType,
+                                      TypeNode dataType) const;
 
   /** Print command sequence command */
   virtual void toStreamCmdCommandSequence(
@@ -275,13 +268,13 @@ class Printer
 
   /** write model response to command */
   virtual void toStream(std::ostream& out,
-                        const Model& m,
+                        const smt::Model& m,
                         const NodeCommand* c) const = 0;
 
   /** write model response to command using another language printer */
   void toStreamUsing(OutputLanguage lang,
                      std::ostream& out,
-                     const Model& m,
+                     const smt::Model& m,
                      const NodeCommand* c) const
   {
     getPrinter(lang)->toStream(out, m, c);

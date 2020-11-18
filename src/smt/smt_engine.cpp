@@ -16,19 +16,6 @@
 
 #include "smt/smt_engine.h"
 
-#include <algorithm>
-#include <cctype>
-#include <iterator>
-#include <memory>
-#include <sstream>
-#include <stack>
-#include <string>
-#include <tuple>
-#include <unordered_map>
-#include <unordered_set>
-#include <utility>
-#include <vector>
-
 #include "api/cvc4cpp.h"
 #include "base/check.h"
 #include "base/configuration.h"
@@ -36,41 +23,25 @@
 #include "base/exception.h"
 #include "base/modal_exception.h"
 #include "base/output.h"
-#include "context/cdhashmap.h"
-#include "context/cdhashset.h"
-#include "context/cdlist.h"
-#include "context/context.h"
 #include "decision/decision_engine.h"
-#include "expr/attribute.h"
-#include "expr/expr.h"
-#include "expr/kind.h"
-#include "expr/metakind.h"
 #include "expr/node.h"
-#include "expr/node_algorithm.h"
-#include "expr/node_builder.h"
 #include "expr/node_self_iterator.h"
 #include "expr/node_visitor.h"
 #include "options/base_options.h"
-#include "options/decision_options.h"
 #include "options/language.h"
 #include "options/main_options.h"
-#include "options/open_ostream.h"
 #include "options/option_exception.h"
 #include "options/printer_options.h"
-#include "options/prop_options.h"
-#include "options/quantifiers_options.h"
 #include "options/set_language.h"
 #include "options/smt_options.h"
 #include "options/theory_options.h"
-#include "preprocessing/preprocessing_pass.h"
-#include "preprocessing/preprocessing_pass_context.h"
-#include "preprocessing/preprocessing_pass_registry.h"
 #include "printer/printer.h"
 #include "proof/proof_manager.h"
 #include "proof/unsat_core.h"
 #include "smt/abduction_solver.h"
 #include "smt/abstract_values.h"
 #include "smt/assertions.h"
+#include "smt/check_models.h"
 #include "smt/defined_function.h"
 #include "smt/dump_manager.h"
 #include "smt/expr_names.h"
@@ -91,16 +62,11 @@
 #include "smt/sygus_solver.h"
 #include "smt/term_formula_removal.h"
 #include "smt/update_ostream.h"
-#include "smt_util/boolean_simplification.h"
-#include "smt_util/nary_builder.h"
 #include "theory/logic_info.h"
 #include "theory/quantifiers/quantifiers_attributes.h"
 #include "theory/rewriter.h"
-#include "theory/sort_inference.h"
-#include "theory/substitutions.h"
+#include "theory/smt_engine_subsolver.h"
 #include "theory/theory_engine.h"
-#include "theory/theory_model.h"
-#include "theory/theory_traits.h"
 #include "util/hash.h"
 #include "util/random.h"
 #include "util/resource_manager.h"
@@ -127,6 +93,8 @@ SmtEngine::SmtEngine(ExprManager* em, Options* optr)
       d_snmListener(new SmtNodeManagerListener(*d_dumpm.get(), d_outMgr)),
       d_smtSolver(nullptr),
       d_proofManager(nullptr),
+      d_model(nullptr),
+      d_checkModels(nullptr),
       d_pfManager(nullptr),
       d_rewriter(new theory::Rewriter()),
       d_definedFunctions(nullptr),
@@ -134,7 +102,6 @@ SmtEngine::SmtEngine(ExprManager* em, Options* optr)
       d_abductSolver(nullptr),
       d_interpolSolver(nullptr),
       d_quantElimSolver(nullptr),
-      d_assignments(nullptr),
       d_logic(),
       d_originalOptions(),
       d_isInternalSubsolver(false),
@@ -208,6 +175,11 @@ size_t SmtEngine::getNumUserLevels() const
   return d_state->getNumUserLevels();
 }
 SmtMode SmtEngine::getSmtMode() const { return d_state->getMode(); }
+bool SmtEngine::isSmtModeSat() const
+{
+  SmtMode mode = getSmtMode();
+  return mode == SmtMode::SAT || mode == SmtMode::SAT_UNKNOWN;
+}
 Result SmtEngine::getStatusOfLastCommand() const
 {
   return d_state->getStatus();
@@ -258,18 +230,32 @@ void SmtEngine::finishInit()
   if (options::proofNew())
   {
     d_pfManager.reset(new PfManager(getUserContext(), this));
+    PreprocessProofGenerator* pppg = d_pfManager->getPreprocessProofGenerator();
     // use this proof node manager
     pnm = d_pfManager->getProofNodeManager();
     // enable proof support in the rewriter
     d_rewriter->setProofNodeManager(pnm);
     // enable it in the assertions pipeline
-    d_asserts->setProofGenerator(d_pfManager->getPreprocessProofGenerator());
+    d_asserts->setProofGenerator(pppg);
     // enable it in the SmtSolver
     d_smtSolver->setProofNodeManager(pnm);
+    // enabled proofs in the preprocessor
+    d_pp->setProofGenerator(pppg);
   }
 
   Trace("smt-debug") << "SmtEngine::finishInit" << std::endl;
   d_smtSolver->finishInit(const_cast<const LogicInfo&>(d_logic));
+
+  // now can construct the SMT-level model object
+  TheoryEngine* te = d_smtSolver->getTheoryEngine();
+  Assert(te != nullptr);
+  TheoryModel* tm = te->getModel();
+  if (tm != nullptr)
+  {
+    d_model.reset(new Model(*this, tm));
+    // make the check models utility
+    d_checkModels.reset(new CheckModels(*d_smtSolver.get()));
+  }
 
   // global push/pop around everything, to ensure proper destruction
   // of context-dependent data structures
@@ -335,10 +321,6 @@ SmtEngine::~SmtEngine()
     // global push/pop around everything, to ensure proper destruction
     // of context-dependent data structures
     d_state->cleanup();
-
-    if(d_assignments != NULL) {
-      d_assignments->deleteSelf();
-    }
 
     d_definedFunctions->deleteSelf();
 
@@ -839,7 +821,7 @@ Result SmtEngine::quickCheck() {
       Result::ENTAILMENT_UNKNOWN, Result::REQUIRES_FULL_CHECK, filename);
 }
 
-theory::TheoryModel* SmtEngine::getAvailableModel(const char* c) const
+Model* SmtEngine::getAvailableModel(const char* c) const
 {
   if (!options::assignFunctionValues())
   {
@@ -878,7 +860,7 @@ theory::TheoryModel* SmtEngine::getAvailableModel(const char* c) const
     throw RecoverableModalException(ss.str().c_str());
   }
 
-  return m;
+  return d_model.get();
 }
 
 void SmtEngine::notifyPushPre() { d_smtSolver->processAssertions(*d_asserts); }
@@ -1047,7 +1029,7 @@ std::vector<Node> SmtEngine::getUnsatAssumptions(void)
   std::vector<Node>& assumps = d_asserts->getAssumptions();
   for (const Node& e : assumps)
   {
-    if (std::find(core.begin(), core.end(), e.toExpr()) != core.end())
+    if (std::find(core.begin(), core.end(), e) != core.end())
     {
       res.push_back(e);
     }
@@ -1084,7 +1066,6 @@ Result SmtEngine::assertFormula(const Node& formula, bool inUnsatCore)
 void SmtEngine::declareSygusVar(const std::string& id, Node var, TypeNode type)
 {
   SmtScope smts(this);
-  finishInit();
   d_sygusSolver->declareSygusVar(id, var, type);
   if (Dump.isOn("raw-benchmark"))
   {
@@ -1101,7 +1082,6 @@ void SmtEngine::declareSynthFun(const std::string& id,
                                 const std::vector<Node>& vars)
 {
   SmtScope smts(this);
-  finishInit();
   d_state->doPendingPops();
   d_sygusSolver->declareSynthFun(id, func, sygusType, isInv, vars);
 
@@ -1210,11 +1190,9 @@ Node SmtEngine::getValue(const Node& ex) const
   }
 
   Trace("smt") << "--- getting value of " << n << endl;
-  TheoryModel* m = getAvailableModel("get-value");
-  Node resultNode;
-  if(m != NULL) {
-    resultNode = m->getValue(n);
-  }
+  Model* m = getAvailableModel("get-value");
+  Assert(m != nullptr);
+  Node resultNode = m->getValue(n);
   Trace("smt") << "--- got value " << n << " = " << resultNode << endl;
   Trace("smt") << "--- type " << resultNode.getType() << endl;
   Trace("smt") << "--- expected type " << expectedType << endl;
@@ -1249,99 +1227,6 @@ std::vector<Node> SmtEngine::getValues(const std::vector<Node>& exprs)
   return result;
 }
 
-bool SmtEngine::addToAssignment(const Expr& ex) {
-  SmtScope smts(this);
-  finishInit();
-  d_state->doPendingPops();
-  // Substitute out any abstract values in ex
-  Node n = d_absValues->substituteAbstractValues(Node::fromExpr(ex));
-  TypeNode type = n.getType(options::typeChecking());
-  // must be Boolean
-  PrettyCheckArgument(type.isBoolean(),
-                      n,
-                      "expected Boolean-typed variable or function application "
-                      "in addToAssignment()");
-  // must be a defined constant, or a variable
-  PrettyCheckArgument(
-      (((d_definedFunctions->find(n) != d_definedFunctions->end())
-        && n.getNumChildren() == 0)
-       || n.isVar()),
-      n,
-      "expected variable or defined-function application "
-      "in addToAssignment(),\ngot %s",
-      n.toString().c_str());
-  if(!options::produceAssignments()) {
-    return false;
-  }
-  if(d_assignments == NULL) {
-    d_assignments = new (true) AssignmentSet(getContext());
-  }
-  d_assignments->insert(n);
-
-  return true;
-}
-
-// TODO(#1108): Simplify the error reporting of this method.
-vector<pair<Expr, Expr>> SmtEngine::getAssignment()
-{
-  Trace("smt") << "SMT getAssignment()" << endl;
-  SmtScope smts(this);
-  finishInit();
-  if(Dump.isOn("benchmark")) {
-    getOutputManager().getPrinter().toStreamCmdGetAssignment(
-        getOutputManager().getDumpOut());
-  }
-  if(!options::produceAssignments()) {
-    const char* msg =
-      "Cannot get the current assignment when "
-      "produce-assignments option is off.";
-    throw ModalException(msg);
-  }
-
-  // Get the model here, regardless of whether d_assignments is null, since
-  // we should throw errors related to model availability whether or not
-  // assignments is null.
-  TheoryModel* m = getAvailableModel("get assignment");
-
-  vector<pair<Expr,Expr>> res;
-  if (d_assignments != nullptr)
-  {
-    TypeNode boolType = d_nodeManager->booleanType();
-    for (AssignmentSet::key_iterator i = d_assignments->key_begin(),
-                                     iend = d_assignments->key_end();
-         i != iend;
-         ++i)
-    {
-      Node as = *i;
-      Assert(as.getType() == boolType);
-
-      Trace("smt") << "--- getting value of " << as << endl;
-
-      // Expand, then normalize
-      std::unordered_map<Node, Node, NodeHashFunction> cache;
-      Node n = d_pp->expandDefinitions(as, cache);
-      n = Rewriter::rewrite(n);
-
-      Trace("smt") << "--- getting value of " << n << endl;
-      Node resultNode;
-      if (m != nullptr)
-      {
-        resultNode = m->getValue(n);
-      }
-
-      // type-check the result we got
-      Assert(resultNode.isNull() || resultNode.getType() == boolType);
-
-      // ensure it's a constant
-      Assert(resultNode.isConst());
-
-      Assert(as.isVar());
-      res.emplace_back(as.toExpr(), resultNode.toExpr());
-    }
-  }
-  return res;
-}
-
 // TODO(#1108): Simplify the error reporting of this method.
 Model* SmtEngine::getModel() {
   Trace("smt") << "SMT getModel()" << endl;
@@ -1354,7 +1239,7 @@ Model* SmtEngine::getModel() {
         getOutputManager().getDumpOut());
   }
 
-  TheoryModel* m = getAvailableModel("get model");
+  Model* m = getAvailableModel("get model");
 
   // Since model m is being returned to the user, we must ensure that this
   // model object remains valid with future check-sat calls. Hence, we set
@@ -1368,8 +1253,11 @@ Model* SmtEngine::getModel() {
     // If we enabled model cores, we compute a model core for m based on our
     // (expanded) assertions using the model core builder utility
     std::vector<Node> eassertsProc = getExpandedAssertions();
-    ModelCoreBuilder::setModelCore(eassertsProc, m, options::modelCoresMode());
+    ModelCoreBuilder::setModelCore(
+        eassertsProc, m->getTheoryModel(), options::modelCoresMode());
   }
+  // set the information on the SMT-level model
+  Assert(m != nullptr);
   m->d_inputName = d_state->getFilename();
   m->d_isKnownSat = (d_state->getMode() == SmtMode::SAT);
   return m;
@@ -1388,19 +1276,19 @@ Result SmtEngine::blockModel()
         getOutputManager().getDumpOut());
   }
 
-  TheoryModel* m = getAvailableModel("block model");
+  Model* m = getAvailableModel("block model");
 
   if (options::blockModelsMode() == options::BlockModelsMode::NONE)
   {
     std::stringstream ss;
     ss << "Cannot block model when block-models is set to none.";
-    throw ModalException(ss.str().c_str());
+    throw RecoverableModalException(ss.str().c_str());
   }
 
   // get expanded assertions
   std::vector<Node> eassertsProc = getExpandedAssertions();
   Node eblocker = ModelBlocker::getModelBlocker(
-      eassertsProc, m, options::blockModelsMode());
+      eassertsProc, m->getTheoryModel(), options::blockModelsMode());
   return assertFormula(eblocker);
 }
 
@@ -1417,13 +1305,16 @@ Result SmtEngine::blockModelValues(const std::vector<Node>& exprs)
         getOutputManager().getDumpOut(), exprs);
   }
 
-  TheoryModel* m = getAvailableModel("block model values");
+  Model* m = getAvailableModel("block model values");
 
   // get expanded assertions
   std::vector<Node> eassertsProc = getExpandedAssertions();
   // we always do block model values mode here
-  Node eblocker = ModelBlocker::getModelBlocker(
-      eassertsProc, m, options::BlockModelsMode::VALUES, exprs);
+  Node eblocker =
+      ModelBlocker::getModelBlocker(eassertsProc,
+                                    m->getTheoryModel(),
+                                    options::BlockModelsMode::VALUES,
+                                    exprs);
   return assertFormula(eblocker);
 }
 
@@ -1437,16 +1328,18 @@ std::pair<Node, Node> SmtEngine::getSepHeapAndNilExpr(void)
     throw RecoverableModalException(msg);
   }
   NodeManagerScope nms(d_nodeManager);
-  Expr heap;
-  Expr nil;
+  Node heap;
+  Node nil;
   Model* m = getAvailableModel("get separation logic heap and nil");
-  if (!m->getHeapModel(heap, nil))
+  TheoryModel* tm = m->getTheoryModel();
+  if (!tm->getHeapModel(heap, nil))
   {
-    InternalError()
-        << "SmtEngine::getSepHeapAndNilExpr(): failed to obtain heap/nil "
-           "expressions from theory model.";
+    const char* msg =
+        "Failed to obtain heap/nil "
+        "expressions from theory model.";
+    throw RecoverableModalException(msg);
   }
-  return std::make_pair(Node::fromExpr(heap), Node::fromExpr(nil));
+  return std::make_pair(heap, nil);
 }
 
 std::vector<Node> SmtEngine::getExpandedAssertions()
@@ -1461,6 +1354,28 @@ std::vector<Node> SmtEngine::getExpandedAssertions()
     eassertsProc.push_back(eae);
   }
   return eassertsProc;
+}
+
+void SmtEngine::declareSepHeap(TypeNode locT, TypeNode dataT)
+{
+  if (!d_logic.isTheoryEnabled(THEORY_SEP))
+  {
+    const char* msg =
+        "Cannot declare heap if not using the separation logic theory.";
+    throw RecoverableModalException(msg);
+  }
+  SmtScope smts(this);
+  finishInit();
+  TheoryEngine* te = getTheoryEngine();
+  te->declareSepHeap(locT, dataT);
+}
+
+bool SmtEngine::getSepHeapTypes(TypeNode& locT, TypeNode& dataT)
+{
+  SmtScope smts(this);
+  finishInit();
+  TheoryEngine* te = getTheoryEngine();
+  return te->getSepHeapTypes(locT, dataT);
 }
 
 Node SmtEngine::getSepHeapExpr() { return getSepHeapAndNilExpr().first; }
@@ -1498,21 +1413,28 @@ void SmtEngine::checkUnsatCore() {
   Notice() << "SmtEngine::checkUnsatCore(): generating unsat core" << endl;
   UnsatCore core = getUnsatCore();
 
-  SmtEngine coreChecker(d_exprManager, &d_options);
-  coreChecker.setIsInternalSubsolver();
-  coreChecker.setLogic(getLogicInfo());
-  coreChecker.getOptions().set(options::checkUnsatCores, false);
+  // initialize the core checker
+  std::unique_ptr<SmtEngine> coreChecker;
+  initializeSubsolver(coreChecker);
+  coreChecker->getOptions().set(options::checkUnsatCores, false);
+
+  // set up separation logic heap if necessary
+  TypeNode sepLocType, sepDataType;
+  if (getSepHeapTypes(sepLocType, sepDataType))
+  {
+    coreChecker->declareSepHeap(sepLocType, sepDataType);
+  }
 
   Notice() << "SmtEngine::checkUnsatCore(): pushing core assertions (size == " << core.size() << ")" << endl;
   for(UnsatCore::iterator i = core.begin(); i != core.end(); ++i) {
-    Node assertionAfterExpansion = expandDefinitions(Node::fromExpr(*i));
+    Node assertionAfterExpansion = expandDefinitions(*i);
     Notice() << "SmtEngine::checkUnsatCore(): pushing core member " << *i
              << ", expanded to " << assertionAfterExpansion << "\n";
-    coreChecker.assertFormula(assertionAfterExpansion);
+    coreChecker->assertFormula(assertionAfterExpansion);
   }
   Result r;
   try {
-    r = coreChecker.checkSat();
+    r = coreChecker->checkSat();
   } catch(...) {
     throw;
   }
@@ -1538,231 +1460,13 @@ void SmtEngine::checkModel(bool hardFailure) {
 
   TimerStat::CodeTimer checkModelTimer(d_stats->d_checkModelTime);
 
-  // Throughout, we use Notice() to give diagnostic output.
-  //
-  // If this function is running, the user gave --check-model (or equivalent),
-  // and if Notice() is on, the user gave --verbose (or equivalent).
-
   Notice() << "SmtEngine::checkModel(): generating model" << endl;
-  TheoryModel* m = getAvailableModel("check model");
+  Model* m = getAvailableModel("check model");
+  Assert(m != nullptr);
 
-  // check-model is not guaranteed to succeed if approximate values were used.
-  // Thus, we intentionally abort here.
-  if (m->hasApproximations())
-  {
-    throw RecoverableModalException(
-        "Cannot run check-model on a model with approximate values.");
-  }
-
-  // Check individual theory assertions
-  if (options::debugCheckModels())
-  {
-    TheoryEngine* te = getTheoryEngine();
-    Assert(te != nullptr);
-    te->checkTheoryAssertionsWithModel(hardFailure);
-  }
-
-  // Output the model
-  Notice() << *m;
-
-  // are we check the result of formulas after expand definitions?
-  bool checkWithExpand = true;  // false;
-
-  // We have a "fake context" for the substitution map (we don't need it
-  // to be context-dependent)
-  context::Context fakeContext;
-  SubstitutionMap substitutions(&fakeContext, /* substituteUnderQuantifiers = */ false);
-
-  for(size_t k = 0; k < m->getNumCommands(); ++k) {
-    const DeclareFunctionNodeCommand* c =
-        dynamic_cast<const DeclareFunctionNodeCommand*>(m->getCommand(k));
-    Notice() << "SmtEngine::checkModel(): model command " << k << " : "
-             << m->getCommand(k)->toString() << endl;
-    if(c == NULL) {
-      // we don't care about DECLARE-DATATYPES, DECLARE-SORT, ...
-      Notice() << "SmtEngine::checkModel(): skipping..." << endl;
-    } else {
-      // We have a DECLARE-FUN:
-      //
-      // We'll first do some checks, then add to our substitution map
-      // the mapping: function symbol |-> value
-
-      Node func = c->getFunction();
-      Node val = m->getValue(func);
-
-      Notice() << "SmtEngine::checkModel(): adding substitution: " << func << " |-> " << val << endl;
-
-      // (1) if the value is a lambda, ensure the lambda doesn't contain the
-      // function symbol (since then the definition is recursive)
-      if (val.getKind() == kind::LAMBDA) {
-        // first apply the model substitutions we have so far
-        Debug("boolean-terms") << "applying subses to " << val[1] << endl;
-        Node n = substitutions.apply(val[1]);
-        Debug("boolean-terms") << "++ got " << n << endl;
-        // now check if n contains func by doing a substitution
-        // [func->func2] and checking equality of the Nodes.
-        // (this just a way to check if func is in n.)
-        SubstitutionMap subs(&fakeContext);
-        Node func2 = NodeManager::currentNM()->mkSkolem(
-            "", func.getType(), "", NodeManager::SKOLEM_NO_NOTIFY);
-        subs.addSubstitution(func, func2);
-        if(subs.apply(n) != n) {
-          Notice() << "SmtEngine::checkModel(): *** PROBLEM: MODEL VALUE DEFINED IN TERMS OF ITSELF ***" << endl;
-          stringstream ss;
-          ss << "SmtEngine::checkModel(): ERRORS SATISFYING ASSERTIONS WITH MODEL:" << endl
-             << "considering model value for " << func << endl
-             << "body of lambda is:   " << val << endl;
-          if(n != val[1]) {
-            ss << "body substitutes to: " << n << endl;
-          }
-          ss << "so " << func << " is defined in terms of itself." << endl
-             << "Run with `--check-models -v' for additional diagnostics.";
-          InternalError() << ss.str();
-        }
-      }
-
-      // (2) check that the value is actually a value
-      else if (!val.isConst())
-      {
-        // This is only a warning since it could have been assigned an
-        // unevaluable term (e.g. an application of a transcendental function).
-        // This parallels the behavior (warnings for non-constant expressions)
-        // when checking whether assertions are satisfied below.
-        Warning() << "Warning : SmtEngine::checkModel(): "
-                  << "model value for " << func << endl
-                  << "             is " << val << endl
-                  << "and that is not a constant (.isConst() == false)."
-                  << std::endl
-                  << "Run with `--check-models -v' for additional diagnostics."
-                  << std::endl;
-      }
-
-      // (3) check that it's the correct (sub)type
-      // This was intended to be a more general check, but for now we can't do that because
-      // e.g. "1" is an INT, which isn't a subrange type [1..10] (etc.).
-      else if(func.getType().isInteger() && !val.getType().isInteger()) {
-        Notice() << "SmtEngine::checkModel(): *** PROBLEM: MODEL VALUE NOT CORRECT TYPE ***" << endl;
-        InternalError()
-            << "SmtEngine::checkModel(): ERRORS SATISFYING ASSERTIONS WITH "
-               "MODEL:"
-            << endl
-            << "model value for " << func << endl
-            << "             is " << val << endl
-            << "value type is     " << val.getType() << endl
-            << "should be of type " << func.getType() << endl
-            << "Run with `--check-models -v' for additional diagnostics.";
-      }
-
-      // (4) checks complete, add the substitution
-      Debug("boolean-terms") << "cm: adding subs " << func << " :=> " << val << endl;
-      substitutions.addSubstitution(func, val);
-    }
-  }
-
-  // Now go through all our user assertions checking if they're satisfied.
-  for (const Node& assertion : *al)
-  {
-    Notice() << "SmtEngine::checkModel(): checking assertion " << assertion
-             << endl;
-    Node n = assertion;
-    Node nr = Rewriter::rewrite(substitutions.apply(n));
-    Trace("boolean-terms") << "n: " << n << endl;
-    Trace("boolean-terms") << "nr: " << nr << endl;
-    if (nr.isConst() && nr.getConst<bool>())
-    {
-      continue;
-    }
-    // Apply any define-funs from the problem.
-    {
-      unordered_map<Node, Node, NodeHashFunction> cache;
-      n = d_pp->expandDefinitions(n, cache, !checkWithExpand);
-    }
-    Notice() << "SmtEngine::checkModel(): -- expands to " << n << endl;
-
-    // Apply our model value substitutions.
-    Debug("boolean-terms") << "applying subses to " << n << endl;
-    n = substitutions.apply(n);
-    Debug("boolean-terms") << "++ got " << n << endl;
-    Notice() << "SmtEngine::checkModel(): -- substitutes to " << n << endl;
-
-    // We look up the value before simplifying. If n contains quantifiers,
-    // this may increases the chance of finding its value before the node is
-    // altered by simplification below.
-    n = m->getValue(n);
-    Notice() << "SmtEngine::checkModel(): -- get value : " << n << std::endl;
-
-    // Simplify the result and replace the already-known ITEs (this is important
-    // for ground ITEs under quantifiers).
-    n = d_pp->simplify(n, true, !checkWithExpand);
-    Notice()
-        << "SmtEngine::checkModel(): -- simplifies with ite replacement to  "
-        << n << endl;
-
-    // Apply our model value substitutions (again), as things may have been simplified.
-    Debug("boolean-terms") << "applying subses to " << n << endl;
-    n = substitutions.apply(n);
-    Debug("boolean-terms") << "++ got " << n << endl;
-    Notice() << "SmtEngine::checkModel(): -- re-substitutes to " << n << endl;
-
-    // As a last-ditch effort, ask model to simplify it.
-    // Presently, this is only an issue for quantifiers, which can have a value
-    // but don't show up in our substitution map above.
-    n = m->getValue(n);
-    Notice() << "SmtEngine::checkModel(): -- model-substitutes to " << n << endl;
-
-    if (n.isConst())
-    {
-      if (n.getConst<bool>())
-      {
-        // assertion is true, everything is fine
-        continue;
-      }
-    }
-
-    // Otherwise, we did not succeed in showing the current assertion to be
-    // true. This may either indicate that our model is wrong, or that we cannot
-    // check it. The latter may be the case for several reasons.
-    // For example, quantified formulas are not checkable, although we assign
-    // them to true/false based on the satisfying assignment. However,
-    // quantified formulas can be modified during preprocess, so they may not
-    // correspond to those in the satisfying assignment. Hence we throw
-    // warnings for assertions that do not simplify to either true or false.
-    // Other theories such as non-linear arithmetic (in particular,
-    // transcendental functions) also have the property of not being able to
-    // be checked precisely here.
-    // Note that warnings like these can be avoided for quantified formulas
-    // by making preprocessing passes explicitly record how they
-    // rewrite quantified formulas (see cvc4-wishues#43).
-    if (!n.isConst())
-    {
-      // Not constant, print a less severe warning message here.
-      Warning() << "Warning : SmtEngine::checkModel(): cannot check simplified "
-                   "assertion : "
-                << n << endl;
-      continue;
-    }
-    // Assertions that simplify to false result in an InternalError or
-    // Warning being thrown below (when hardFailure is false).
-    Notice() << "SmtEngine::checkModel(): *** PROBLEM: EXPECTED `TRUE' ***"
-             << endl;
-    stringstream ss;
-    ss << "SmtEngine::checkModel(): "
-       << "ERRORS SATISFYING ASSERTIONS WITH MODEL:" << endl
-       << "assertion:     " << assertion << endl
-       << "simplifies to: " << n << endl
-       << "expected `true'." << endl
-       << "Run with `--check-models -v' for additional diagnostics.";
-    if (hardFailure)
-    {
-      // internal error if hardFailure is true
-      InternalError() << ss.str();
-    }
-    else
-    {
-      Warning() << ss.str() << endl;
-    }
-  }
-  Notice() << "SmtEngine::checkModel(): all assertions checked out OK !" << endl;
+  // check the model with the check models utility
+  Assert(d_checkModels != nullptr);
+  d_checkModels->checkModel(m, al, hardFailure);
 }
 
 // TODO(#1108): Simplify the error reporting of this method.
@@ -1824,6 +1528,7 @@ bool SmtEngine::getInterpol(const Node& conj,
                             Node& interpol)
 {
   SmtScope smts(this);
+  finishInit();
   bool success = d_interpolSolver->getInterpol(conj, grammarType, interpol);
   // notify the state of whether the get-interpol call was successfuly, which
   // impacts the SMT mode.
@@ -1842,6 +1547,7 @@ bool SmtEngine::getAbduct(const Node& conj,
                           Node& abd)
 {
   SmtScope smts(this);
+  finishInit();
   bool success = d_abductSolver->getAbduct(conj, grammarType, abd);
   // notify the state of whether the get-abduct call was successfuly, which
   // impacts the SMT mode.
@@ -1875,7 +1581,6 @@ void SmtEngine::getInstantiationTermVectors(
     Node q, std::vector<std::vector<Node>>& tvecs)
 {
   SmtScope smts(this);
-  Assert(options::trackInstLemmas());
   TheoryEngine* te = getTheoryEngine();
   Assert(te != nullptr);
   te->getInstantiationTermVectors(q, tvecs);
