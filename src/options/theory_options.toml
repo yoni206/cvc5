@@ -68,10 +68,10 @@ header = "options/theory_options.h"
   help = "Use care graphs for theory combination."
 
 [[option]]
-  name       = "delayExpandDef"
+  name       = "learnedRewrite"
   category   = "regular"
-  long       = "delay-exp-def"
+  long       = "learned-rewrite"
   type       = "bool"
   default    = "false"
-  help       = "delay the expansion of certain functions"
+  help       = "rewrite the input based on learned literals"
 

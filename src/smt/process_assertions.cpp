@@ -306,7 +306,7 @@ bool ProcessAssertions::apply(Assertions& as)
   }
   Debug("smt") << " assertions     : " << assertions.size() << endl;
 
-  if (options::delayExpandDef())
+  if (options::learnedRewrite())
   {
     d_passes["learned-rewrite"]->apply(&assertions);
     // now apply theory preprocessing so that ite-removal below is complete
