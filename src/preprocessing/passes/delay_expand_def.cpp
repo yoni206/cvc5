@@ -142,13 +142,13 @@ Node DelayExpandDefs::rewriteDelayed(Node n,
     {
       arith::Bounds db = binfer.get(den);
       Trace("delay-exp-def-rr-debug")
-          << "Bounds for " << den << " : " << db.lower << " " << db.upper
+          << "Bounds for " << den << " : " << db.lower_bound << " " << db.upper_bound
           << std::endl;
-      if (!db.lower.isNull() && db.lower.getConst<Rational>().sgn() == 1)
+      if (!db.lower_bound.isNull() && db.lower_bound.getConst<Rational>().sgn() == 1)
       {
         isNonZeroDen = true;
       }
-      else if (!db.upper.isNull() && db.upper.getConst<Rational>().sgn() == -1)
+      else if (!db.upper_bound.isNull() && db.upper_bound.getConst<Rational>().sgn() == -1)
       {
         isNonZeroDen = true;
       }
