@@ -32,7 +32,7 @@
 #include "preprocessing/passes/bv_intro_pow2.h"
 #include "preprocessing/passes/bv_to_bool.h"
 #include "preprocessing/passes/bv_to_int.h"
-#include "preprocessing/passes/delay_expand_def.h"
+#include "preprocessing/passes/learned_rewrite.h"
 #include "preprocessing/passes/extended_rewriter_pass.h"
 #include "preprocessing/passes/fun_def_fmf.h"
 #include "preprocessing/passes/global_negate.h"
@@ -124,7 +124,7 @@ PreprocessingPassRegistry::PreprocessingPassRegistry()
   registerPassInfo("global-negate", callCtor<GlobalNegate>);
   registerPassInfo("int-to-bv", callCtor<IntToBV>);
   registerPassInfo("bv-to-int", callCtor<BVToInt>);
-  registerPassInfo("delay-expand-def", callCtor<DelayExpandDefs>);
+  registerPassInfo("learned-rewrite", callCtor<LearnedRewrite>);
   registerPassInfo("synth-rr", callCtor<SynthRewRulesPass>);
   registerPassInfo("real-to-int", callCtor<RealToInt>);
   registerPassInfo("sygus-infer", callCtor<SygusInference>);

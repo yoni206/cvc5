@@ -9,13 +9,13 @@
  ** All rights reserved.  See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** \brief Delayed expand definitions
+ ** \brief Rewriting based on learned literals
  **/
 
 #include "cvc4_private.h"
 
-#ifndef CVC4__PREPROCESSING__PASSES__DELAY_EXPAND_DEF_H
-#define CVC4__PREPROCESSING__PASSES__DELAY_EXPAND_DEF_H
+#ifndef CVC4__PREPROCESSING__PASSES__LEARNED_REWRITE_H
+#define CVC4__PREPROCESSING__PASSES__LEARNED_REWRITE_H
 
 #include "preprocessing/preprocessing_pass.h"
 #include "preprocessing/preprocessing_pass_context.h"
@@ -30,27 +30,22 @@ namespace passes {
  * Applies "delayed expand definitions", which eliminates purification UF
  * for kinds.
  */
-class DelayExpandDefs : public PreprocessingPass
+class LearnedRewrite : public PreprocessingPass
 {
  public:
-  DelayExpandDefs(PreprocessingPassContext* preprocContext);
+  LearnedRewrite(PreprocessingPassContext* preprocContext);
 
  protected:
-  typedef std::unordered_set<
-      std::pair<Node, uint32_t>,
-      PairHashFunction<Node, uint32_t, NodeHashFunction> >
-      ExtPolNodeCache;
   PreprocessingPassResult applyInternal(
       AssertionPipeline* assertionsToPreprocess) override;
   /**
-   * Apply expand delayed definitions, which replaces APPLY_UF that purify
-   * builtin kinds with their original operators.
+   * Apply rewrite with learned literals.
    */
-  Node rewriteDelayedRec(Node n, theory::arith::BoundInference& binfer);
+  Node rewriteLearnedRec(Node n, theory::arith::BoundInference& binfer);
   /**
-   * Delayed rewrite
+   * Learned rewrite
    */
-  Node rewriteDelayed(Node n, theory::arith::BoundInference& binfer);
+  Node rewriteLearned(Node n, theory::arith::BoundInference& binfer);
   /** static upper/lower bounds */
   std::map<Node, std::pair<Node, Node> > d_bounds;
 };
@@ -59,4 +54,4 @@ class DelayExpandDefs : public PreprocessingPass
 }  // namespace preprocessing
 }  // namespace CVC4
 
-#endif /* CVC4__PREPROCESSING__PASSES__DELAY_EXPAND_DEF_H */
+#endif /* CVC4__PREPROCESSING__PASSES__LEARNED_REWRITE_H */

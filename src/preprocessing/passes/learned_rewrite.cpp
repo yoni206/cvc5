@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file delay_expand_def.cpp
+/*! \file learned_rewrite.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Caleb Donovick
@@ -9,10 +9,10 @@
  ** All rights reserved.  See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** \brief Delayed expand definitions
+ ** \brief Rewriting based on learned literals
  **/
 
-#include "preprocessing/passes/delay_expand_def.h"
+#include "preprocessing/passes/learned_rewrite.h"
 
 #include "expr/skolem_manager.h"
 #include "expr/term_context_stack.h"
@@ -25,43 +25,43 @@ namespace CVC4 {
 namespace preprocessing {
 namespace passes {
 
-DelayExpandDefs::DelayExpandDefs(PreprocessingPassContext* preprocContext)
+LearnedRewrite::LearnedRewrite(PreprocessingPassContext* preprocContext)
     : PreprocessingPass(preprocContext, "delay-expand-def"){};
 
-PreprocessingPassResult DelayExpandDefs::applyInternal(
+PreprocessingPassResult LearnedRewrite::applyInternal(
     AssertionPipeline* assertionsToPreprocess)
 {
   arith::BoundInference binfer;
   std::vector<Node>& learnedLits = d_preprocContext->getLearnedLiterals();
   if (learnedLits.empty())
   {
-    Trace("delay-exp-def-ll") << "No learned literals" << std::endl;
+    Trace("learned-rewrite-ll") << "No learned literals" << std::endl;
   }
   else
   {
-    Trace("delay-exp-def-ll") << "Learned literals:" << std::endl;
+    Trace("learned-rewrite-ll") << "Learned literals:" << std::endl;
     for (const Node& l : learnedLits)
     {
-      Node e = rewriteDelayedRec(l, binfer);
+      Node e = rewriteLearnedRec(l, binfer);
       // maybe for bound inference?
       Kind k = e.getKind();
       if (k == EQUAL || k == GEQ)
       {
         binfer.add(e);
       }
-      Trace("delay-exp-def-ll") << "- " << e << std::endl;
+      Trace("learned-rewrite-ll") << "- " << e << std::endl;
     }
   }
   size_t size = assertionsToPreprocess->size();
   for (size_t i = 0; i < size; ++i)
   {
     Node prev = (*assertionsToPreprocess)[i];
-    Trace("delay-exp-def-assert")
-        << "DelayExpandDefs: assert: " << prev << std::endl;
-    Node e = rewriteDelayedRec(prev, binfer);
+    Trace("learned-rewrite-assert")
+        << "LearnedRewrite: assert: " << prev << std::endl;
+    Node e = rewriteLearnedRec(prev, binfer);
     if (e != prev)
     {
-      Trace("delay-exp-def-assert")
+      Trace("learned-rewrite-assert")
           << ".......................: " << e << std::endl;
       assertionsToPreprocess->replace(i, e);
     }
@@ -70,7 +70,7 @@ PreprocessingPassResult DelayExpandDefs::applyInternal(
   return PreprocessingPassResult::NO_CONFLICT;
 }
 
-Node DelayExpandDefs::rewriteDelayedRec(Node n, arith::BoundInference& binfer)
+Node LearnedRewrite::rewriteLearnedRec(Node n, arith::BoundInference& binfer)
 {
   NodeManager* nm = NodeManager::currentNM();
   std::unordered_map<TNode, Node, TNodeHashFunction> visited;
@@ -112,7 +112,7 @@ Node DelayExpandDefs::rewriteDelayedRec(Node n, arith::BoundInference& binfer)
         ret = nm->mkNode(cur.getKind(), children);
       }
       // rewrite here
-      ret = rewriteDelayed(ret, binfer);
+      ret = rewriteLearned(ret, binfer);
       visited[cur] = ret;
     }
   } while (!visit.empty());
@@ -121,11 +121,11 @@ Node DelayExpandDefs::rewriteDelayedRec(Node n, arith::BoundInference& binfer)
   return visited[n];
 }
 
-Node DelayExpandDefs::rewriteDelayed(Node n,
+Node LearnedRewrite::rewriteLearned(Node n,
                                      theory::arith::BoundInference& binfer)
 {
   NodeManager* nm = NodeManager::currentNM();
-  Trace("delay-exp-def-rr-debug") << "Rewrite " << n << std::endl;
+  Trace("learned-rewrite-rr-debug") << "Rewrite " << n << std::endl;
   Node nr = Rewriter::rewrite(n);
   Kind k = nr.getKind();
   if (k == INTS_DIVISION || k == INTS_MODULUS || k == DIVISION)
@@ -141,7 +141,7 @@ Node DelayExpandDefs::rewriteDelayed(Node n,
     else
     {
       arith::Bounds db = binfer.get(den);
-      Trace("delay-exp-def-rr-debug")
+      Trace("learned-rewrite-rr-debug")
           << "Bounds for " << den << " : " << db.lower_bound << " " << db.upper_bound
           << std::endl;
       if (!db.lower_bound.isNull() && db.lower_bound.getConst<Rational>().sgn() == 1)
@@ -155,7 +155,7 @@ Node DelayExpandDefs::rewriteDelayed(Node n,
     }
     if (isNonZeroDen)
     {
-      Trace("delay-exp-def-rr-debug") << "...non-zero denominator" << std::endl;
+      Trace("learned-rewrite-rr-debug") << "...non-zero denominator" << std::endl;
       Kind nk = k;
       switch (k)
       {
@@ -167,8 +167,8 @@ Node DelayExpandDefs::rewriteDelayed(Node n,
       std::vector<Node> children;
       children.insert(children.end(), n.begin(), n.end());
       nr = nm->mkNode(nk, children);
-      Trace("delay-exp-def-rr")
-          << "DelayExpandDefs::Rewrite : " << n << " == " << nr << std::endl;
+      Trace("learned-rewrite-rr")
+          << "LearnedRewrite::Rewrite : " << n << " == " << nr << std::endl;
       nr = Rewriter::rewrite(nr);
     }
   }
