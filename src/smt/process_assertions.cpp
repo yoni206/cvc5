@@ -78,17 +78,6 @@ void ProcessAssertions::finishInit(PreprocessingPassContext* pc)
     d_passes[passName].reset(
         ppReg.createPass(d_preprocessingPassContext, passName));
   }
-
-  if (options::delayExpandDef())
-  {
-    d_delayExpKinds.insert(INTS_MODULUS);
-    d_delayExpKinds.insert(INTS_DIVISION);
-    d_delayExpKinds.insert(DIVISION);
-    d_delayExpKinds.insert(TO_INTEGER);
-    d_delayExpKinds.insert(IS_INTEGER);
-    d_delayExpKinds.insert(ABS);
-    // could do other syntax sugar transcendental functions
-  }
 }
 
 void ProcessAssertions::cleanup() { d_passes.clear(); }
@@ -144,7 +133,7 @@ bool ProcessAssertions::apply(Assertions& as)
     for (size_t i = 0, nasserts = assertions.size(); i < nasserts; ++i)
     {
       Node expd = expandDefinitions(
-          assertions[i], cache, false, options::delayExpandDef());
+          assertions[i], cache, false);
       if (expd != assertions[i])
       {
         assertions.replace(i, expd);
@@ -561,8 +550,7 @@ void ProcessAssertions::dumpAssertions(const char* key,
 Node ProcessAssertions::expandDefinitions(
     TNode n,
     unordered_map<Node, Node, NodeHashFunction>& cache,
-    bool expandOnly,
-    bool delay)
+    bool expandOnly)
 {
   NodeManager* nm = d_smt.d_nodeManager;
   std::stack<std::tuple<Node, Node, bool>> worklist;
@@ -597,7 +585,7 @@ Node ProcessAssertions::expandDefinitions(
         {
           Node f = (*i).second.getFormula();
           // must expand its definition
-          Node fe = expandDefinitions(f, cache, expandOnly, delay);
+          Node fe = expandDefinitions(f, cache, expandOnly);
           // replacement must be closed
           if ((*i).second.getFormals().size() > 0)
           {
@@ -708,7 +696,7 @@ Node ProcessAssertions::expandDefinitions(
                                       n.begin() + formals.size());
         Debug("expand") << "made : " << instance << endl;
 
-        Node expanded = expandDefinitions(instance, cache, expandOnly, delay);
+        Node expanded = expandDefinitions(instance, cache, expandOnly);
         cache[n] = (n == expanded ? Node::null() : expanded);
         result.push(expanded);
         continue;
@@ -716,18 +704,10 @@ Node ProcessAssertions::expandDefinitions(
       else if (!expandOnly)
       {
         // do not do any theory stuff if expandOnly is true
-        Kind nk = node.getKind();
-        if (delay && d_delayExpKinds.find(nk) != d_delayExpKinds.end())
-        {
-          // node = sm->mkPurifyKindApp(node);
-        }
-        else
-        {
-          theory::Theory* t = d_smt.getTheoryEngine()->theoryOf(node);
-          Assert(t != NULL);
-          TrustNode trn = t->expandDefinition(n);
-          node = trn.isNull() ? Node(n) : trn.getNode();
-        }
+        theory::Theory* t = d_smt.getTheoryEngine()->theoryOf(node);
+        Assert(t != NULL);
+        TrustNode trn = t->expandDefinition(n);
+        node = trn.isNull() ? Node(n) : trn.getNode();
       }
 
       // the partial functions can fall through, in which case we still

@@ -85,8 +85,7 @@ class ProcessAssertions
    */
   Node expandDefinitions(TNode n,
                          NodeToNodeHashMap& cache,
-                         bool expandOnly = false,
-                         bool delay = false);
+                         bool expandOnly = false);
 
  private:
   /** Reference to the SMT engine */
