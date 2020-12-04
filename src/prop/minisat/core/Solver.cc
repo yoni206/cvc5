@@ -295,7 +295,7 @@ void Solver::resizeVars(int newSize) {
     seen.shrink(shrinkSize);
     polarity.shrink(shrinkSize);
     decision.shrink(shrinkSize);
-    theory.shrink(shrinkSize);
+    d_theory.shrink(shrinkSize);
 
   }
 
@@ -1102,7 +1102,7 @@ void Solver::uncheckedEnqueue(Lit p, CRef from)
     assigns[var(p)] = lbool(!sign(p));
     vardata[var(p)] = VarData(from, decisionLevel(), assertionLevel, intro_level(var(p)), trail.size());
     trail.push_(p);
-    if (theory[var(p)]) {
+    if (d_theory[var(p)]) {
       // Enqueue to the theory
       d_proxy->enqueueTheoryLiteral(MinisatSatSolver::toSatLiteral(p));
     }
