@@ -74,7 +74,7 @@ EagerBitblaster::EagerBitblaster(BVSolverLazy* theory_bv, context::Context* c)
                                         d_nullContext.get(),
                                         nullptr,
                                         rm,
-                                        false,
+                                        prop::FormulaLitPolicy::INTERNAL,
                                         "EagerBitblaster"));
 }
 

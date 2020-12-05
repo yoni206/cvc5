@@ -32,6 +32,7 @@
 #include "theory/theory.h"
 #include "util/resource_manager.h"
 #include "util/statistics_registry.h"
+#include "prop/sat_relevancy.h"
 
 namespace CVC4 {
 
@@ -53,7 +54,8 @@ class TheoryProxy
               TheoryEngine* theoryEngine,
               DecisionEngine* decisionEngine,
               context::Context* context,
-              CnfStream* cnfStream);
+              CnfStream* cnfStream,
+              bool useSatTheoryRlv = false);
 
   ~TheoryProxy();
 
@@ -111,6 +113,9 @@ class TheoryProxy
    * all imported and exported lemmas.
    */
   std::unordered_set<Node, NodeHashFunction> d_shared;
+  
+  /** Are we using SAT/theory relevancy? */
+  bool d_usingSatRlv;
 }; /* class TheoryProxy */
 
 }/* CVC4::prop namespace */

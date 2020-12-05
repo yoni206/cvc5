@@ -35,12 +35,14 @@ TheoryProxy::TheoryProxy(PropEngine* propEngine,
                          TheoryEngine* theoryEngine,
                          DecisionEngine* decisionEngine,
                          context::Context* context,
-                         CnfStream* cnfStream)
+                         CnfStream* cnfStream,
+              bool useSatTheoryRlv)
     : d_propEngine(propEngine),
       d_cnfStream(cnfStream),
       d_decisionEngine(decisionEngine),
       d_theoryEngine(theoryEngine),
-      d_queue(context)
+      d_queue(context),
+      d_usingSatRlv(useSatTheoryRlv)
 {
 }
 
