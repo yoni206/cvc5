@@ -224,7 +224,11 @@ void LfscPrinter::printProofInternal(
         {
           // a normal rule application, compute the proof arguments
           std::vector<PExpr> args;
-
+          Trace("proofs-debug") << std::endl << " ; proves: " << d_tproc.toInternal(cur->getResult()) << std::endl;
+          Trace("proofs-debug") << " ; assumes: " << std::endl;
+          for (auto dpn : cur->getChildren()) {
+            Trace("proofs-debug") << " ;   " << d_tproc.toInternal(dpn->getResult()) << std::endl;
+          }
           if (computeProofArgs(cur, args))
           {
             processedChildren[cur] = false;
