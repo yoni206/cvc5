@@ -28,11 +28,11 @@
 
 #include "context/cdqueue.h"
 #include "expr/node.h"
+#include "prop/sat_relevancy.h"
 #include "prop/sat_solver.h"
 #include "theory/theory.h"
 #include "util/resource_manager.h"
 #include "util/statistics_registry.h"
-#include "prop/sat_relevancy.h"
 
 namespace CVC4 {
 
@@ -113,10 +113,10 @@ class TheoryProxy
    * all imported and exported lemmas.
    */
   std::unordered_set<Node, NodeHashFunction> d_shared;
-  
+
   /** Are we using SAT/theory relevancy? */
   bool d_usingSatRlv;
-  
+
   std::unique_ptr<SatRelevancy> d_satRlv;
 }; /* class TheoryProxy */
 

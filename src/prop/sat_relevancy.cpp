@@ -17,22 +17,14 @@
 namespace CVC4 {
 namespace prop {
 
-SatRelevancy::SatRelevancy(context::Context* context,
-            CnfStream* cnfStream)
+SatRelevancy::SatRelevancy(context::Context* context, CnfStream* cnfStream) {}
+
+SatRelevancy::~SatRelevancy() {}
+
+void SatRelevancy::enqueueTheoryLiterals(const SatLiteral& l,
+                                         context::CDQueue<TNode>& queue)
 {
-  
 }
 
-SatRelevancy::~SatRelevancy()
-{
-
-}
-
-void SatRelevancy::enqueueTheoryLiterals(const SatLiteral& l, context::CDQueue<TNode>& queue)
-{
-  
-}
-
-}/* CVC4::prop namespace */
-}/* CVC4 namespace */
-
+}  // namespace prop
+}  // namespace CVC4

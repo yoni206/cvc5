@@ -17,12 +17,11 @@
 #ifndef CVC4__PROP__SAT_RELEVANCY_H
 #define CVC4__PROP__SAT_RELEVANCY_H
 
-
 #include "context/cdhashmap.h"
-#include "expr/node.h"
-#include "util/statistics_registry.h"
 #include "context/cdqueue.h"
+#include "expr/node.h"
 #include "prop/sat_solver.h"
+#include "util/statistics_registry.h"
 
 namespace CVC4 {
 
@@ -39,18 +38,18 @@ class CnfStream;
 class SatRelevancy
 {
  public:
-  SatRelevancy(context::Context* context,
-              CnfStream* cnfStream);
+  SatRelevancy(context::Context* context, CnfStream* cnfStream);
 
   ~SatRelevancy();
-  
+
   /**
    * Enqueue theory literals
    */
-  void enqueueTheoryLiterals(const SatLiteral& l, context::CDQueue<TNode>& queue);
+  void enqueueTheoryLiterals(const SatLiteral& l,
+                             context::CDQueue<TNode>& queue);
 };
 
-}/* CVC4::prop namespace */
-}/* CVC4 namespace */
+}  // namespace prop
+}  // namespace CVC4
 
 #endif /* CVC4__PROP__SAT_RELEVANCY_H */

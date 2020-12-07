@@ -203,9 +203,9 @@ SatLiteral CnfStream::newLiteral(TNode node, bool isTheoryAtom, bool preRegister
                << ")\n"
                << push;
   Assert(node.getKind() != kind::NOT);
-  
+
   // if we are tracking formulas, everything is a theory atom
-  if (!isTheoryAtom && d_flitPolicy==FormulaLitPolicy::TRACK_AND_NOTIFY)
+  if (!isTheoryAtom && d_flitPolicy == FormulaLitPolicy::TRACK_AND_NOTIFY)
   {
     isTheoryAtom = true;
     d_notifyFormulas.insert(node);
@@ -234,7 +234,9 @@ SatLiteral CnfStream::newLiteral(TNode node, bool isTheoryAtom, bool preRegister
   }
 
   // If it's a theory literal, need to store it for back queries
-  if ( isTheoryAtom || d_flitPolicy==FormulaLitPolicy::TRACK || (Dump.isOn("clauses")) ) {
+  if (isTheoryAtom || d_flitPolicy == FormulaLitPolicy::TRACK
+      || (Dump.isOn("clauses")))
+  {
     d_literalToNodeMap.insert_safe(lit, node);
     d_literalToNodeMap.insert_safe(~lit, node.notNode());
   }
@@ -278,7 +280,7 @@ void CnfStream::getBooleanVariables(std::vector<TNode>& outputVariables) const {
 
 bool CnfStream::isNotifyFormula(TNode node) const
 {
-  return d_notifyFormulas.find(node)!=d_notifyFormulas.end();
+  return d_notifyFormulas.find(node) != d_notifyFormulas.end();
 }
 
 void CnfStream::setProof(CnfProof* proof) {

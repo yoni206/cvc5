@@ -93,12 +93,17 @@ PropEngine::PropEngine(TheoryEngine* te,
   d_registrar = new theory::TheoryRegistrar(d_theoryEngine);
   // track and notify formulas if we are using SAT/Theory relevancy
   bool useSatTheoryRlv = options::satTheoryRelevancy();
-  FormulaLitPolicy flp = useSatTheoryRlv ? FormulaLitPolicy::TRACK_AND_NOTIFY : FormulaLitPolicy::TRACK;
+  FormulaLitPolicy flp = useSatTheoryRlv ? FormulaLitPolicy::TRACK_AND_NOTIFY
+                                         : FormulaLitPolicy::TRACK;
   d_cnfStream = new CVC4::prop::CnfStream(
       d_satSolver, d_registrar, userContext, &d_outMgr, rm, flp);
 
-  d_theoryProxy = new TheoryProxy(
-      this, d_theoryEngine, d_decisionEngine.get(), d_context, d_cnfStream, useSatTheoryRlv);
+  d_theoryProxy = new TheoryProxy(this,
+                                  d_theoryEngine,
+                                  d_decisionEngine.get(),
+                                  d_context,
+                                  d_cnfStream,
+                                  useSatTheoryRlv);
   d_satSolver->initialize(d_context, d_theoryProxy);
 
   d_decisionEngine->setSatSolver(d_satSolver);

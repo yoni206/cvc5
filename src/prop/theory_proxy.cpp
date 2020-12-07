@@ -36,7 +36,7 @@ TheoryProxy::TheoryProxy(PropEngine* propEngine,
                          DecisionEngine* decisionEngine,
                          context::Context* context,
                          CnfStream* cnfStream,
-              bool useSatTheoryRlv)
+                         bool useSatTheoryRlv)
     : d_propEngine(propEngine),
       d_cnfStream(cnfStream),
       d_decisionEngine(decisionEngine),
@@ -104,7 +104,7 @@ void TheoryProxy::explainPropagation(SatLiteral l, SatClause& explanation) {
 }
 
 void TheoryProxy::enqueueTheoryLiteral(const SatLiteral& l) {
-  if (d_satRlv!=nullptr)
+  if (d_satRlv != nullptr)
   {
     d_satRlv->enqueueTheoryLiterals(l, d_queue);
     return;

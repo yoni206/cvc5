@@ -25,9 +25,9 @@
 #ifndef CVC4__PROP__CNF_STREAM_H
 #define CVC4__PROP__CNF_STREAM_H
 
+#include "context/cdhashset.h"
 #include "context/cdinsert_hashmap.h"
 #include "context/cdlist.h"
-#include "context/cdhashset.h"
 #include "expr/node.h"
 #include "proof/proof_manager.h"
 #include "prop/proof_cnf_stream.h"
@@ -45,11 +45,11 @@ class ProofCnfStream;
 /** A policy for how literals for formulas steps are handled in cnf_stream */
 enum class FormulaLitPolicy : uint32_t
 {
-  // literals for formulas are notified 
+  // literals for formulas are notified
   TRACK_AND_NOTIFY,
-  // literals for formulas are added to node map 
+  // literals for formulas are added to node map
   TRACK,
-  // literals for formulas are kept internal (default) 
+  // literals for formulas are kept internal (default)
   INTERNAL,
 };
 
@@ -67,7 +67,6 @@ class CnfStream {
   friend ProofCnfStream;
 
  public:
-   
   /** Cache of what nodes have been registered to a literal. */
   typedef context::CDInsertHashMap<SatLiteral, TNode, SatLiteralHashFunction>
       LiteralToNodeMap;
@@ -150,8 +149,8 @@ class CnfStream {
   /**
    * For SAT/theory relevancy. Returns true if node is a "notify formula".
    * Returns true if node is formula that we are being notified about that
-   * is not a theory atom. 
-   * 
+   * is not a theory atom.
+   *
    * Note this is only ever true when the policy passed to this class is
    * FormulaLitPolicy::TRACK_AND_NOTIFY.
    */
@@ -212,7 +211,7 @@ class CnfStream {
 
   /** Boolean variables that we translated */
   context::CDList<TNode> d_booleanVariables;
-  
+
   /** Formulas that we translated that we are notifying */
   context::CDHashSet<Node, NodeHashFunction> d_notifyFormulas;
 
