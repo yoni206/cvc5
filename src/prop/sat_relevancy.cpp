@@ -27,7 +27,11 @@ SatRelevancy::~SatRelevancy()
 {
 
 }
+
+void SatRelevancy::enqueueTheoryLiterals(const SatLiteral& l, context::CDQueue<TNode>& queue)
+{
   
+}
 
 }/* CVC4::prop namespace */
 }/* CVC4 namespace */

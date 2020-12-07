@@ -44,6 +44,10 @@ TheoryProxy::TheoryProxy(PropEngine* propEngine,
       d_queue(context),
       d_usingSatRlv(useSatTheoryRlv)
 {
+  if (d_usingSatRlv)
+  {
+    d_satRlv.reset(new SatRelevancy(context, cnfStream));
+  }
 }
 
 TheoryProxy::~TheoryProxy() {
@@ -100,6 +104,11 @@ void TheoryProxy::explainPropagation(SatLiteral l, SatClause& explanation) {
 }
 
 void TheoryProxy::enqueueTheoryLiteral(const SatLiteral& l) {
+  if (d_satRlv!=nullptr)
+  {
+    d_satRlv->enqueueTheoryLiterals(l, d_queue);
+    return;
+  }
   Node literalNode = d_cnfStream->getNode(l);
   Debug("prop") << "enqueueing theory literal " << l << " " << literalNode << std::endl;
   Assert(!literalNode.isNull());

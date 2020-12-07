@@ -21,6 +21,8 @@
 #include "context/cdhashmap.h"
 #include "expr/node.h"
 #include "util/statistics_registry.h"
+#include "context/cdqueue.h"
+#include "prop/sat_solver.h"
 
 namespace CVC4 {
 
@@ -42,6 +44,10 @@ class SatRelevancy
 
   ~SatRelevancy();
   
+  /**
+   * Enqueue theory literals
+   */
+  void enqueueTheoryLiterals(const SatLiteral& l, context::CDQueue<TNode>& queue);
 };
 
 }/* CVC4::prop namespace */

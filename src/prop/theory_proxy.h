@@ -116,6 +116,8 @@ class TheoryProxy
   
   /** Are we using SAT/theory relevancy? */
   bool d_usingSatRlv;
+  
+  std::unique_ptr<SatRelevancy> d_satRlv;
 }; /* class TheoryProxy */
 
 }/* CVC4::prop namespace */

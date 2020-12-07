@@ -214,7 +214,7 @@ class CnfStream {
   context::CDList<TNode> d_booleanVariables;
   
   /** Formulas that we translated that we are notifying */
-  context::CDHashSet<TNode, TNodeHashFunction> d_notifyFormulas;
+  context::CDHashSet<Node, NodeHashFunction> d_notifyFormulas;
 
   /** Map from nodes to literals */
   NodeToLiteralMap d_nodeToLiteralMap;
