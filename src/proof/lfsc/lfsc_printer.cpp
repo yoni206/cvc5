@@ -254,7 +254,7 @@ void LfscPrinter::printProofInternal(
       else if (!pit->second)
       {
         processedChildren[cur] = true;
-        out << ")";
+        out << ") ";
       }
     }
     // case 2: printing a node
@@ -294,6 +294,7 @@ bool LfscPrinter::computeProofArgs(const ProofNode* pn,
     case PfRule::TRUE_ELIM:
     case PfRule::FALSE_ELIM: pf << h << cs[0]; break;
     case PfRule::CONTRA: pf << h << cs[0] << cs[1]; break;
+    case PfRule::RESOLUTION: pf << h << h << cs[0] << cs[1] << as[0] << as[1]; break;
     // ---------- arguments of non-translated rules go here
     case PfRule::LFSC_RULE:
     {
