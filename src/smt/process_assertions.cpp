@@ -315,6 +315,9 @@ bool ProcessAssertions::apply(Assertions& as)
                << endl;
   Debug("smt") << " assertions     : " << assertions.size() << endl;
 
+  // ensure rewritten
+  d_passes["rewrite"]->apply(&assertions);
+  // apply theory preprocess
   d_passes["theory-preprocess"]->apply(&assertions);
   // Must remove ITEs again since theory preprocessing may introduce them.
   // Notice that we alternatively could ensure that the theory-preprocess
@@ -381,13 +384,6 @@ bool ProcessAssertions::simplifyAssertions(AssertionPipeline& assertions)
     }
 
     Debug("smt") << " assertions     : " << assertions.size() << endl;
-
-    // Theory preprocessing
-    bool doEarlyTheoryPp = !options::arithRewriteEq();
-    if (doEarlyTheoryPp)
-    {
-      d_passes["theory-preprocess"]->apply(&assertions);
-    }
 
     // ITE simplification
     if (options::doITESimp()
