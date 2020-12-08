@@ -31,9 +31,8 @@ class TheoryEngine;
 namespace prop {
 
 class CnfStream;
-
 /**
- * The proxy class that allows the SatSolver to communicate with the theories
+ * SAT relevancy management
  */
 class SatRelevancy
 {
@@ -41,12 +40,35 @@ class SatRelevancy
   SatRelevancy(context::Context* context, CnfStream* cnfStream);
 
   ~SatRelevancy();
-
+  /** 
+   * Notify preprocessed assertions, should be called before any calls to
+   * notifyAsserted are made in the current SAT context.
+   */
+  void notifyPreprocessedAssertions(const std::vector<Node>& assertions);
+  /** 
+   * Notify that lem is a new lemma
+   */
+  void notifyNewLemma(TNode lem, context::CDQueue<TNode>& queue);
   /**
    * Enqueue theory literals
    */
-  void enqueueTheoryLiterals(const SatLiteral& l,
+  void notifyAsserted(const SatLiteral& l,
                              context::CDQueue<TNode>& queue);
+private:
+  /** Set relevant */
+  void setRelevant(TNode n, context::CDQueue<TNode>& queue);
+  /** pointer to the CNF stream */
+  CnfStream* d_cnfStream;
+  /** A status for nodes */
+  enum class RelevancyStatus : uint32_t
+  {
+    ASSERTED,
+    RELEVANT,
+    ASSERTED_AND_RELEVANT,
+    NONE,
+  };
+  /** Mapping to the status */
+  context::CDHashMap<Node, RelevancyStatus, NodeHashFunction> d_status;
 };
 
 }  // namespace prop

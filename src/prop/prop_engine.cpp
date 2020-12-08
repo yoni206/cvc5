@@ -98,12 +98,18 @@ PropEngine::PropEngine(TheoryEngine* te,
   d_cnfStream = new CVC4::prop::CnfStream(
       d_satSolver, d_registrar, userContext, &d_outMgr, rm, flp);
 
+  if (useSatTheoryRlv)
+  {
+    // make the sat relevancy module if it is required
+    d_satRlv.reset(new SatRelevancy(d_context, d_cnfStream));
+  }
+  
   d_theoryProxy = new TheoryProxy(this,
                                   d_theoryEngine,
                                   d_decisionEngine.get(),
                                   d_context,
                                   d_cnfStream,
-                                  useSatTheoryRlv);
+                                  d_satRlv.get());
   d_satSolver->initialize(d_context, d_theoryProxy);
 
   d_decisionEngine->setSatSolver(d_satSolver);
@@ -131,6 +137,34 @@ PropEngine::~PropEngine() {
   delete d_theoryProxy;
 }
 
+void PropEngine::notifyPreprocessedAssertions(
+    const preprocessing::AssertionPipeline& ap)
+{
+  // notify the theory engine of preprocessed assertions
+  d_theoryEngine->notifyPreprocessedAssertions(ap.ref());
+
+  // Add assertions to decision engine, which manually extracts what assertions
+  // corresponded to term formula removal. Note that alternatively we could
+  // delay all theory preprocessing and term formula removal to this point, in
+  // which case this method could simply take a vector of Node and not rely on
+  // assertion pipeline or its ITE skolem map.
+  std::vector<Node> ppLemmas;
+  std::vector<Node> ppSkolems;
+  for (const std::pair<const Node, unsigned>& i : ap.getIteSkolemMap())
+  {
+    Assert(i.second >= ap.getRealAssertionsEnd() && i.second < ap.size());
+    ppSkolems.push_back(i.first);
+    ppLemmas.push_back(ap[i.second]);
+  }
+  d_decisionEngine->addAssertions(ap.ref(), ppLemmas, ppSkolems);
+  
+  // notify the SAT relevancy if it exists
+  if (d_satRlv!=nullptr)
+  {
+    d_satRlv->notifyPreprocessedAssertions(ap.ref());
+  }
+}
+
 void PropEngine::assertFormula(TNode node) {
   Assert(!d_inCheckSat) << "Sat solver in solve()!";
   Debug("prop") << "assertFormula(" << node << ")" << endl;
@@ -138,18 +172,42 @@ void PropEngine::assertFormula(TNode node) {
   d_cnfStream->convertAndAssert(node, false, false, true);
 }
 
-void PropEngine::assertLemma(TNode node, bool negated, bool removable)
+void PropEngine::assertLemma(theory::TrustNode trn, bool removable)
 {
+  Node node = trn.getNode();
+  bool negated = trn.getKind() == theory::TrustNodeKind::CONFLICT;
   Debug("prop::lemmas") << "assertLemma(" << node << ")" << endl;
 
   // Assert as (possibly) removable
   d_cnfStream->convertAndAssert(node, removable, negated);
 }
 
-void PropEngine::addAssertionsToDecisionEngine(
-    const preprocessing::AssertionPipeline& assertions)
+void PropEngine::assertLemmas(theory::TrustNode lem,
+                              std::vector<theory::TrustNode>& ppLemmas,
+                              std::vector<Node>& ppSkolems,
+                              bool removable)
 {
-  d_decisionEngine->addAssertions(assertions);
+  Assert(ppSkolems.size() == ppLemmas.size());
+  // assert the lemmas
+  assertLemma(lem, removable);
+  for (size_t i = 0, lsize = ppLemmas.size(); i < lsize; ++i)
+  {
+    assertLemma(ppLemmas[i], removable);
+  }
+
+  // assert to decision engine
+  if (!removable)
+  {
+    // also add to the decision engine, where notice we don't need proofs
+    std::vector<Node> assertions;
+    assertions.push_back(lem.getProven());
+    std::vector<Node> ppLemmasF;
+    for (const theory::TrustNode& tnl : ppLemmas)
+    {
+      ppLemmasF.push_back(tnl.getProven());
+    }
+    d_decisionEngine->addAssertions(assertions, ppLemmasF, ppSkolems);
+  }
 }
 
 void PropEngine::requirePhase(TNode n, bool phase) {

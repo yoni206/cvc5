@@ -26,7 +26,7 @@
 #include "theory/rewriter.h"
 #include "theory/theory_engine.h"
 #include "util/statistics_registry.h"
-
+#include "prop/sat_relevancy.h"
 
 namespace CVC4 {
 namespace prop {
@@ -36,18 +36,14 @@ TheoryProxy::TheoryProxy(PropEngine* propEngine,
                          DecisionEngine* decisionEngine,
                          context::Context* context,
                          CnfStream* cnfStream,
-                         bool useSatTheoryRlv)
+                         SatRelevancy* satRlv)
     : d_propEngine(propEngine),
       d_cnfStream(cnfStream),
       d_decisionEngine(decisionEngine),
       d_theoryEngine(theoryEngine),
       d_queue(context),
-      d_usingSatRlv(useSatTheoryRlv)
+      d_satRlv(satRlv)
 {
-  if (d_usingSatRlv)
-  {
-    d_satRlv.reset(new SatRelevancy(context, cnfStream));
-  }
 }
 
 TheoryProxy::~TheoryProxy() {
@@ -106,7 +102,8 @@ void TheoryProxy::explainPropagation(SatLiteral l, SatClause& explanation) {
 void TheoryProxy::enqueueTheoryLiteral(const SatLiteral& l) {
   if (d_satRlv != nullptr)
   {
-    d_satRlv->enqueueTheoryLiterals(l, d_queue);
+    // use the sat relevancy
+    d_satRlv->notifyAsserted(l, d_queue);
     return;
   }
   Node literalNode = d_cnfStream->getNode(l);

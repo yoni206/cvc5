@@ -31,6 +31,7 @@
 #include "util/resource_manager.h"
 #include "util/result.h"
 #include "util/unsafe_interrupt_exception.h"
+#include "prop/sat_relevancy.h"
 
 namespace CVC4 {
 
@@ -86,6 +87,13 @@ class PropEngine
    * the PropEngine.
    */
   void shutdown() {}
+  
+  /**
+   * Notify preprocessed assertions. This method is called just before the
+   * assertions are asserted to this prop engine. This method notifies the
+   * decision engine and the theory engine of the assertions in ap.
+   */
+  void notifyPreprocessedAssertions(const preprocessing::AssertionPipeline& ap);
 
   /**
    * Converts the given formula to CNF and assert the CNF to the SAT solver.
@@ -99,19 +107,28 @@ class PropEngine
    * The formula can be removed by the SAT solver after backtracking lower
    * than the (SAT and SMT) level at which it was asserted.
    *
-   * @param node the formula to assert
-   * @param negated whether the node should be considered to be negated
-   * at the top level (or not)
+   * @param trn the trust node storing the formula to assert
    * @param removable whether this lemma can be quietly removed based
    * on an activity heuristic (or not)
    */
-  void assertLemma(TNode node, bool negated, bool removable);
+  void assertLemma(theory::TrustNode trn, bool removable);
 
   /**
-   * Pass a list of assertions from an AssertionPipeline to the decision engine.
+   * Assert lemma trn with preprocessing lemmas newLemmas which corresponding
+   * to lemmas for skolems in newSkolems.
+   *
+   * @param trn the trust node storing the formula to assert
+   * @param ppLemmas the lemmas from preprocessing and term formula removal on
+   * the proven node of trn
+   * @param ppSkolem the skolem that each lemma in ppLemma constrains. It should
+   * be the case that ppLemmas.size()==ppSkolems.size().
+   * @param removable whether this lemma can be quietly removed based
+   * on an activity heuristic (or not)
    */
-  void addAssertionsToDecisionEngine(
-      const preprocessing::AssertionPipeline& assertions);
+  void assertLemmas(theory::TrustNode trn,
+                    std::vector<theory::TrustNode>& ppLemmas,
+                    std::vector<Node>& ppSkolems,
+                    bool removable);
 
   /**
    * If ever n is decided upon, it must be in the given phase.  This
@@ -244,6 +261,9 @@ class PropEngine
   /** The context */
   context::Context* d_context;
 
+  /** The SAT relevancy module we will use */
+  std::unique_ptr<SatRelevancy> d_satRlv;
+  
   /** SAT solver's proxy back to theories; kept around for dtor cleanup */
   TheoryProxy* d_theoryProxy;
 

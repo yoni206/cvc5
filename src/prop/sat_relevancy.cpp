@@ -14,17 +14,47 @@
 
 #include "prop/sat_relevancy.h"
 
+#include "prop/cnf_stream.h"
+
 namespace CVC4 {
 namespace prop {
 
-SatRelevancy::SatRelevancy(context::Context* context, CnfStream* cnfStream) {}
+SatRelevancy::SatRelevancy(context::Context* context, CnfStream* cnfStream) : d_cnfStream(cnfStream), d_status(context) {}
 
 SatRelevancy::~SatRelevancy() {}
 
-void SatRelevancy::enqueueTheoryLiterals(const SatLiteral& l,
-                                         context::CDQueue<TNode>& queue)
+void SatRelevancy::notifyPreprocessedAssertions(const std::vector<Node>& assertions)
+{
+  // mark everything as relevant
+  for (const Node& a : assertions)
+  {
+    //notifyNewFormula(a);
+  }
+}
+
+void SatRelevancy::notifyNewLemma(TNode n, context::CDQueue<TNode>& queue)
 {
 }
+
+void SatRelevancy::notifyAsserted(const SatLiteral& l,
+                                         context::CDQueue<TNode>& queue)
+{
+  Node literalNode = d_cnfStream->getNode(l);
+  if (!d_cnfStream->isNotifyFormula(literalNode))
+  {
+    // updates relevancy
+  }
+  else
+  {
+    // if also relevant, 
+  }
+}
+
+void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>& queue)
+{
+  
+}
+
 
 }  // namespace prop
 }  // namespace CVC4

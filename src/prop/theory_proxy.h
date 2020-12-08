@@ -28,7 +28,6 @@
 
 #include "context/cdqueue.h"
 #include "expr/node.h"
-#include "prop/sat_relevancy.h"
 #include "prop/sat_solver.h"
 #include "theory/theory.h"
 #include "util/resource_manager.h"
@@ -43,6 +42,7 @@ namespace prop {
 
 class PropEngine;
 class CnfStream;
+class SatRelevancy;
 
 /**
  * The proxy class that allows the SatSolver to communicate with the theories
@@ -55,7 +55,7 @@ class TheoryProxy
               DecisionEngine* decisionEngine,
               context::Context* context,
               CnfStream* cnfStream,
-              bool useSatTheoryRlv = false);
+              SatRelevancy* satRlv = nullptr);
 
   ~TheoryProxy();
 
@@ -114,10 +114,8 @@ class TheoryProxy
    */
   std::unordered_set<Node, NodeHashFunction> d_shared;
 
-  /** Are we using SAT/theory relevancy? */
-  bool d_usingSatRlv;
-
-  std::unique_ptr<SatRelevancy> d_satRlv;
+  /** Pointer to the SAT relevancy module, if it exists */
+  SatRelevancy* d_satRlv;
 }; /* class TheoryProxy */
 
 }/* CVC4::prop namespace */
