@@ -28,10 +28,10 @@
 #include "options/options.h"
 #include "preprocessing/assertion_pipeline.h"
 #include "proof/proof_manager.h"
+#include "prop/sat_relevancy.h"
 #include "util/resource_manager.h"
 #include "util/result.h"
 #include "util/unsafe_interrupt_exception.h"
-#include "prop/sat_relevancy.h"
 
 namespace CVC4 {
 
@@ -87,7 +87,7 @@ class PropEngine
    * the PropEngine.
    */
   void shutdown() {}
-  
+
   /**
    * Notify preprocessed assertions. This method is called just before the
    * assertions are asserted to this prop engine. This method notifies the
@@ -263,7 +263,7 @@ class PropEngine
 
   /** The SAT relevancy module we will use */
   std::unique_ptr<SatRelevancy> d_satRlv;
-  
+
   /** SAT solver's proxy back to theories; kept around for dtor cleanup */
   TheoryProxy* d_theoryProxy;
 

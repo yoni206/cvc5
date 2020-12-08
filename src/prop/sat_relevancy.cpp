@@ -19,25 +19,27 @@
 namespace CVC4 {
 namespace prop {
 
-SatRelevancy::SatRelevancy(context::Context* context, CnfStream* cnfStream) : d_cnfStream(cnfStream), d_status(context) {}
+SatRelevancy::SatRelevancy(context::Context* context, CnfStream* cnfStream)
+    : d_cnfStream(cnfStream), d_status(context)
+{
+}
 
 SatRelevancy::~SatRelevancy() {}
 
-void SatRelevancy::notifyPreprocessedAssertions(const std::vector<Node>& assertions)
+void SatRelevancy::notifyPreprocessedAssertions(
+    const std::vector<Node>& assertions)
 {
   // mark everything as relevant
   for (const Node& a : assertions)
   {
-    //notifyNewFormula(a);
+    // notifyNewFormula(a);
   }
 }
 
-void SatRelevancy::notifyNewLemma(TNode n, context::CDQueue<TNode>& queue)
-{
-}
+void SatRelevancy::notifyNewLemma(TNode n, context::CDQueue<TNode>& queue) {}
 
 void SatRelevancy::notifyAsserted(const SatLiteral& l,
-                                         context::CDQueue<TNode>& queue)
+                                  context::CDQueue<TNode>& queue)
 {
   Node literalNode = d_cnfStream->getNode(l);
   if (!d_cnfStream->isNotifyFormula(literalNode))
@@ -46,15 +48,11 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
   }
   else
   {
-    // if also relevant, 
+    // if also relevant,
   }
 }
 
-void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>& queue)
-{
-  
-}
-
+void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>& queue) {}
 
 }  // namespace prop
 }  // namespace CVC4

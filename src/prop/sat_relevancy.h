@@ -40,21 +40,21 @@ class SatRelevancy
   SatRelevancy(context::Context* context, CnfStream* cnfStream);
 
   ~SatRelevancy();
-  /** 
+  /**
    * Notify preprocessed assertions, should be called before any calls to
    * notifyAsserted are made in the current SAT context.
    */
   void notifyPreprocessedAssertions(const std::vector<Node>& assertions);
-  /** 
+  /**
    * Notify that lem is a new lemma
    */
   void notifyNewLemma(TNode lem, context::CDQueue<TNode>& queue);
   /**
    * Enqueue theory literals
    */
-  void notifyAsserted(const SatLiteral& l,
-                             context::CDQueue<TNode>& queue);
-private:
+  void notifyAsserted(const SatLiteral& l, context::CDQueue<TNode>& queue);
+
+ private:
   /** Set relevant */
   void setRelevant(TNode n, context::CDQueue<TNode>& queue);
   /** pointer to the CNF stream */

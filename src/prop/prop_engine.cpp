@@ -103,7 +103,7 @@ PropEngine::PropEngine(TheoryEngine* te,
     // make the sat relevancy module if it is required
     d_satRlv.reset(new SatRelevancy(d_context, d_cnfStream));
   }
-  
+
   d_theoryProxy = new TheoryProxy(this,
                                   d_theoryEngine,
                                   d_decisionEngine.get(),
@@ -157,9 +157,9 @@ void PropEngine::notifyPreprocessedAssertions(
     ppLemmas.push_back(ap[i.second]);
   }
   d_decisionEngine->addAssertions(ap.ref(), ppLemmas, ppSkolems);
-  
+
   // notify the SAT relevancy if it exists
-  if (d_satRlv!=nullptr)
+  if (d_satRlv != nullptr)
   {
     d_satRlv->notifyPreprocessedAssertions(ap.ref());
   }
