@@ -41,7 +41,8 @@ class SatRelevancy
 {
  public:
   SatRelevancy(DPLLSatSolverInterface* satSolver,
-              context::Context* context, CnfStream* cnfStream);
+               context::Context* context,
+               CnfStream* cnfStream);
 
   ~SatRelevancy();
   /**
@@ -59,7 +60,7 @@ class SatRelevancy
   void notifyAsserted(const SatLiteral& l, context::CDQueue<TNode>& queue);
 
  private:
-  /** 
+  /**
    * Set that n is relevant, add new theory literals to assert to TheoryEngine
    * in queue.
    */
@@ -67,7 +68,7 @@ class SatRelevancy
   /** has SAT value, if node has a value, return true and set value */
   bool hasValue(TNode node, bool& value) const;
   /** Reference to the parent prop engine */
-  DPLLSatSolverInterface * d_propEngine;
+  DPLLSatSolverInterface* d_propEngine;
   /** pointer to the CNF stream */
   CnfStream* d_cnfStream;
   /** A status for nodes */
