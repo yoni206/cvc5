@@ -18,6 +18,7 @@
 #define CVC4__PROP__SAT_RELEVANCY_H
 
 #include "context/cdhashmap.h"
+#include "context/cdhashset.h"
 #include "context/cdqueue.h"
 #include "expr/node.h"
 #include "prop/sat_solver.h"
@@ -31,13 +32,16 @@ class TheoryEngine;
 namespace prop {
 
 class CnfStream;
+class DPLLSatSolverInterface;
+
 /**
  * SAT relevancy management
  */
 class SatRelevancy
 {
  public:
-  SatRelevancy(context::Context* context, CnfStream* cnfStream);
+  SatRelevancy(DPLLSatSolverInterface* satSolver,
+              context::Context* context, CnfStream* cnfStream);
 
   ~SatRelevancy();
   /**
@@ -55,8 +59,15 @@ class SatRelevancy
   void notifyAsserted(const SatLiteral& l, context::CDQueue<TNode>& queue);
 
  private:
-  /** Set relevant */
-  void setRelevant(TNode n, context::CDQueue<TNode>& queue);
+  /** 
+   * Set that n is relevant, add new theory literals to assert to TheoryEngine
+   * in queue.
+   */
+  void setRelevant(TNode n, context::CDQueue<TNode>* queue);
+  /** has SAT value, if node has a value, return true and set value */
+  bool hasValue(TNode node, bool& value) const;
+  /** Reference to the parent prop engine */
+  DPLLSatSolverInterface * d_propEngine;
   /** pointer to the CNF stream */
   CnfStream* d_cnfStream;
   /** A status for nodes */
@@ -69,6 +80,8 @@ class SatRelevancy
   };
   /** Mapping to the status */
   context::CDHashMap<Node, RelevancyStatus, NodeHashFunction> d_status;
+  /** Mapping to the status */
+  context::CDHashSet<Node, NodeHashFunction> d_rlv;
 };
 
 }  // namespace prop

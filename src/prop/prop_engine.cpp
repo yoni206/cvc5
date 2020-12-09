@@ -101,7 +101,7 @@ PropEngine::PropEngine(TheoryEngine* te,
   if (useSatTheoryRlv)
   {
     // make the sat relevancy module if it is required
-    d_satRlv.reset(new SatRelevancy(d_context, d_cnfStream));
+    d_satRlv.reset(new SatRelevancy(d_satSolver, d_context, d_cnfStream));
   }
 
   d_theoryProxy = new TheoryProxy(this,
