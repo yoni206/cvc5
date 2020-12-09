@@ -227,7 +227,7 @@ void SmtSolver::processAssertions(Assertions& as)
   // Push the formula to decision engine
   if (noConflict)
   {
-    Chat() << "pushing to decision engine..." << std::endl;
+    Chat() << "notifying theory engine and decision engine..." << std::endl;
     d_propEngine->notifyPreprocessedAssertions(ap);
   }
 
