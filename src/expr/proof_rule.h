@@ -271,16 +271,17 @@ enum class PfRule : uint32_t
   // ======== Resolution
   // Children:
   //  (P1:C1, P2:C2)
-  // Arguments: (id, L)
+  // Arguments: (pol, L)
   // ---------------------
   // Conclusion: C
   // where
   //   - C1 and C2 are nodes viewed as clauses, i.e., either an OR node with
   //     each children viewed as a literal or a node viewed as a literal. Note
   //     that an OR node could also be a literal.
-  //   - id is either true or false
+  //   - pol is either true or false, representing the polarity of the pivot on
+  //     the first clause
   //   - L is the pivot of the resolution, which occurs as is (resp. under a
-  //     NOT) in C1 and negatively (as is) in C2 if id = true (id = false).
+  //     NOT) in C1 and negatively (as is) in C2 if pol = true (pol = false).
   //   C is a clause resulting from collecting all the literals in C1, minus the
   //   first occurrence of the pivot or its negation, and C2, minus the first
   //   occurrence of the pivot or its negation, according to the policy above.
@@ -295,15 +296,15 @@ enum class PfRule : uint32_t
   RESOLUTION,
   // ======== N-ary Resolution
   // Children: (P1:C_1, ..., Pm:C_n)
-  // Arguments: (id_1, L_1, ..., id_{n-1}, L_{n-1})
+  // Arguments: (pol_1, L_1, ..., pol_{n-1}, L_{n-1})
   // ---------------------
   // Conclusion: C
   // where
   //   - let C_1 ... C_n be nodes viewed as clauses, as defined above
-  //   - let "C_1 <>_{L,id} C_2" represent the resolution of C_1 with C_2 with
-  //     pivot L and policy id, as defined above
+  //   - let "C_1 <>_{L,pol} C_2" represent the resolution of C_1 with C_2 with
+  //     pivot L and polarity pol, as defined above
   //   - let C_1' = C_1 (from P1),
-  //   - for each i > 1, let C_i' = C_{i-1} <>_{L_{i-1}, id_{i-1}} C_i'
+  //   - for each i > 1, let C_i' = C_{i-1} <>_{L_{i-1}, pol_{i-1}} C_i'
   //   The result of the chain resolution is C = C_n'
   CHAIN_RESOLUTION,
   // ======== Factoring
@@ -326,16 +327,16 @@ enum class PfRule : uint32_t
   REORDERING,
   // ======== N-ary Resolution + Factoring + Reordering
   // Children: (P1:C_1, ..., Pm:C_n)
-  // Arguments: (C, id_1, L_1, ..., id_{n-1}, L_{n-1})
+  // Arguments: (C, pol_1, L_1, ..., pol_{n-1}, L_{n-1})
   // ---------------------
   // Conclusion: C
   // where
   //   - let C_1 ... C_n be nodes viewed as clauses, as defined in RESOLUTION
-  //   - let "C_1 <>_{L,id} C_2" represent the resolution of C_1 with C_2 with
-  //     pivot L and policy id, as defined in RESOLUTION
+  //   - let "C_1 <>_{L,pol} C_2" represent the resolution of C_1 with C_2 with
+  //     pivot L and polarity pol, as defined in RESOLUTION
   //   - let C_1' be equal, in its set representation, to C_1 (from P1),
   //   - for each i > 1, let C_i' be equal, it its set representation, to
-  //     C_{i-1} <>_{L_{i-1}, id_{i-1}} C_i'
+  //     C_{i-1} <>_{L_{i-1}, pol_{i-1}} C_i'
   //   The result of the chain resolution is C, which is equal, in its set
   //   representation, to C_n'
   MACRO_RESOLUTION,
@@ -1126,6 +1127,50 @@ enum class PfRule : uint32_t
   // Conclusion: (and (>= real.pi l) (<= real.pi u))
   // Where l (u) is a valid lower (upper) bound on pi.
   ARITH_TRANS_PI,
+
+  //======== Sine is always between -1 and 1
+  // Children: none
+  // Arguments: (t)
+  // ---------------------
+  // Conclusion: (and (<= (sin t) 1) (>= (sin t) (- 1)))
+  ARITH_TRANS_SINE_BOUNDS,
+  //======== Sine arg shifted to -pi..pi
+  // Children: none
+  // Arguments: (x, y, s)
+  // ---------------------
+  // Conclusion: (and
+  //   (<= -pi y pi)
+  //   (= (sin y) (sin x))
+  //   (ite (<= -pi x pi) (= x y) (= x (+ y (* 2 pi s))))
+  // )
+  // Where x is the argument to sine, y is a new real skolem that is x shifted
+  // into -pi..pi and s is a new integer skolem that is the number of phases y
+  // is shifted.
+  ARITH_TRANS_SINE_SHIFT,
+  //======== Sine is symmetric with respect to negation of the argument
+  // Children: none
+  // Arguments: (t)
+  // ---------------------
+  // Conclusion: (= (- (sin t) (sin (- t))) 0)
+  ARITH_TRANS_SINE_SYMMETRY,
+  //======== Sine is bounded by the tangent at zero
+  // Children: none
+  // Arguments: (t)
+  // ---------------------
+  // Conclusion: (and
+  //   (=> (> t 0) (< (sin t) t))
+  //   (=> (< t 0) (> (sin t) t))
+  // )
+  ARITH_TRANS_SINE_TANGENT_ZERO,
+  //======== Sine is bounded by the tangents at -pi and pi
+  // Children: none
+  // Arguments: (t)
+  // ---------------------
+  // Conclusion: (and
+  //   (=> (> t -pi) (> (sin t) (- -pi t)))
+  //   (=> (< t pi) (< (sin t) (- pi t)))
+  // )
+  ARITH_TRANS_SINE_TANGENT_PI,
 
   // ================ CAD Lemmas
   // We use IRP for IndexedRootPredicate.

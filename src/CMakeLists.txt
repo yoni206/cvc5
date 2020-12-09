@@ -397,8 +397,8 @@ libcvc4_add_sources(
   theory/arith/nl/icp/icp_solver.h
   theory/arith/nl/icp/intersection.cpp
   theory/arith/nl/icp/intersection.h
-  theory/arith/nl/iand_table.cpp
-  theory/arith/nl/iand_table.h
+  theory/arith/nl/iand_utils.cpp
+  theory/arith/nl/iand_utils.h
   theory/arith/nl/nl_lemma_utils.cpp
   theory/arith/nl/nl_lemma_utils.h
   theory/arith/nl/nl_model.cpp
@@ -413,6 +413,8 @@ libcvc4_add_sources(
   theory/arith/nl/strategy.h
   theory/arith/nl/transcendental/exponential_solver.cpp
   theory/arith/nl/transcendental/exponential_solver.h
+  theory/arith/nl/transcendental/proof_checker.cpp
+  theory/arith/nl/transcendental/proof_checker.h
   theory/arith/nl/transcendental/sine_solver.cpp
   theory/arith/nl/transcendental/sine_solver.h
   theory/arith/nl/transcendental/taylor_generator.cpp
