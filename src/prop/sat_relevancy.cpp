@@ -47,7 +47,7 @@ void SatRelevancy::notifyPreprocessedAssertions(
   }
 }
 
-void SatRelevancy::notifyNewLemma(TNode n, context::CDQueue<TNode>& queue) 
+void SatRelevancy::notifyNewLemma(TNode n, context::CDQueue<TNode>& queue)
 {
   // set the lemma is relevant
   setRelevant(n, &queue);
@@ -63,7 +63,7 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
   if (!d_cnfStream->isNotifyFormula(atom))
   {
     // if already relevant, enqueue
-    if (d_rlv.find(n)!=d_rlv.end())
+    if (d_rlv.find(n) != d_rlv.end())
     {
       queue.push(n);
     }
@@ -71,14 +71,14 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
   }
   // now, look at wait lists
   RlvWaitMap::const_iterator it = d_rlvWaitMap.find(atom);
-  if (it==d_rlvWaitMap.end())
+  if (it == d_rlvWaitMap.end())
   {
     // nothing is waiting on its value, we are done.
     return;
   }
   // otherwise, we are going to iterate through each parent that is waiting
   // on its value and possibly update relevancy
-  RlvWaitInfo * rwi = it->second.get();
+  RlvWaitInfo* rwi = it->second.get();
   for (const Node& parent : rwi->d_parents)
   {
     setAssertedChild(atom, pol, parent, queue);
@@ -96,7 +96,7 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
   d_rlv.insert(n);
   bool pol = n.getKind() != NOT;
   TNode atom = pol ? n : n[0];
-  Assert (atom.getKind()!=NOT);
+  Assert(atom.getKind() != NOT);
   // notify formulas are in terms of atoms
   // NOTE this could be avoided by simply looking at the kind?
   if (d_cnfStream->isNotifyFormula(atom))
@@ -148,7 +148,7 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
             // for all children that do not yet have values
             for (const Node& ac : acb)
             {
-              RlvWaitInfo * rwi = getOrMkRlvWaitInfo(ac);
+              RlvWaitInfo* rwi = getOrMkRlvWaitInfo(ac);
               rwi->d_parents.push_back(n);
             }
           }
@@ -170,7 +170,7 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
         else
         {
           // otherwise, we are waiting for the value of the condition
-          RlvWaitInfo * rwi = getOrMkRlvWaitInfo(atom[0]);
+          RlvWaitInfo* rwi = getOrMkRlvWaitInfo(atom[0]);
           rwi->d_parents.push_back(n);
         }
       }
@@ -185,20 +185,20 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
         {
           setRelevant(atom[0], value, queue);
           // atom[1] is also relevant with the proper polarity
-          setRelevant(atom[1], value==pol, queue);
+          setRelevant(atom[1], value == pol, queue);
         }
         else if (hasSatValue(atom[1], value))
         {
           setRelevant(atom[1], value, queue);
           // atom[0] is also relevant with the proper polarity
-          setRelevant(atom[0], value==pol, queue);
+          setRelevant(atom[0], value == pol, queue);
         }
         else
         {
           // neither have values, we are waiting
-          for (size_t i=0; i<2; i++)
+          for (size_t i = 0; i < 2; i++)
           {
-            RlvWaitInfo * rwi = getOrMkRlvWaitInfo(atom[i]);
+            RlvWaitInfo* rwi = getOrMkRlvWaitInfo(atom[i]);
             rwi->d_parents.push_back(n);
           }
         }
@@ -227,7 +227,9 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
   }
 }
 
-void SatRelevancy::setRelevant(TNode n, bool pol, context::CDQueue<TNode>* queue)
+void SatRelevancy::setRelevant(TNode n,
+                               bool pol,
+                               context::CDQueue<TNode>* queue)
 {
   Node np = pol ? Node(n) : n.negate();
   setRelevant(np, queue);
@@ -251,11 +253,11 @@ bool SatRelevancy::hasSatValue(TNode node, bool& value) const
   return false;
 }
 
-RlvWaitInfo * SatRelevancy::getOrMkRlvWaitInfo(TNode n)
+RlvWaitInfo* SatRelevancy::getOrMkRlvWaitInfo(TNode n)
 {
-  TNode atom = n.getKind()==NOT ? n[0] : n;
+  TNode atom = n.getKind() == NOT ? n[0] : n;
   RlvWaitMap::const_iterator it = d_rlvWaitMap.find(atom);
-  if (it!=d_rlvWaitMap.end())
+  if (it != d_rlvWaitMap.end())
   {
     return it->second.get();
   }
@@ -264,7 +266,10 @@ RlvWaitInfo * SatRelevancy::getOrMkRlvWaitInfo(TNode n)
   return rwi.get();
 }
 
-void SatRelevancy::setAssertedChild(TNode atom, bool pol, Node parent, context::CDQueue<TNode>& queue)
+void SatRelevancy::setAssertedChild(TNode atom,
+                                    bool pol,
+                                    Node parent,
+                                    context::CDQueue<TNode>& queue)
 {
   // TODO
 }
