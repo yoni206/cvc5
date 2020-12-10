@@ -335,11 +335,11 @@ bool SatRelevancy::setAssertedChild(TNode atom,
       // the value of the other side is now relevant
       for (size_t i = 0; i < 2; i++)
       {
-        TNode pc = parent[i];
+        TNode pc = parentAtom[i];
         TNode pcatom = pc.getKind() == NOT ? pc[0] : pc;
         if (pcatom == atom)
         {
-          setRelevant(parent[1 - i],
+          setRelevant(parentAtom[1 - i],
                       pol == (ppol == (parentAtom.getKind() == EQUAL)),
                       &queue);
           break;
