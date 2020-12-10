@@ -39,8 +39,7 @@ SatRelevancy::SatRelevancy(DPLLSatSolverInterface* satSolver,
 
 SatRelevancy::~SatRelevancy() {}
 
-void SatRelevancy::notifyPreprocessedAssertion(
-    TNode a)
+void SatRelevancy::notifyPreprocessedAssertion(TNode a)
 {
   // Mark each assertion as relevant. Notice we use a null queue since nothing
   // should have SAT values yet.
@@ -305,7 +304,8 @@ void SatRelevancy::addParentRlvWait(TNode n, TNode parent)
   }
   rwi->d_parents.push_back(parent);
   rwi->d_childPol.push_back(pol);
-  Trace("sat-rlv") << "- add parent rlv wait: " << n << " -> " << parent << std::endl;
+  Trace("sat-rlv") << "- add parent rlv wait: " << n << " -> " << parent
+                   << std::endl;
 }
 
 bool SatRelevancy::setAssertedChild(TNode atom,
@@ -313,7 +313,8 @@ bool SatRelevancy::setAssertedChild(TNode atom,
                                     TNode parent,
                                     context::CDQueue<TNode>& queue)
 {
-  Trace("sat-rlv-debug") << "setAssertedChild " << pol << " in " << parent << ", from " << atom << std::endl;
+  Trace("sat-rlv-debug") << "setAssertedChild " << pol << " in " << parent
+                         << ", from " << atom << std::endl;
   bool ppol = parent.getKind() == NOT;
   TNode parentAtom = ppol ? parent : parent[0];
   switch (parentAtom.getKind())
