@@ -38,7 +38,10 @@ class DPLLSatSolverInterface;
 class RlvWaitInfo
 {
  public:
-  RlvWaitInfo(context::Context* context) : d_parents(context), d_childPol(context) {}
+  RlvWaitInfo(context::Context* context)
+      : d_parents(context), d_childPol(context)
+  {
+  }
   ~RlvWaitInfo() {}
   /** The parents that we impact */
   context::CDList<Node> d_parents;
@@ -87,7 +90,7 @@ class SatRelevancy
    * to "pol", where parent is a term that was waiting for the value of atom.
    *
    * Adds relevant literals to be asserted to queue.
-   * 
+   *
    * Return true if the assignment to atom that led to this method being
    * called is relevant.
    */
@@ -97,7 +100,7 @@ class SatRelevancy
                         context::CDQueue<TNode>& queue);
   /** has SAT value, if node has a value, return true and set value */
   bool hasSatValue(TNode node, bool& value) const;
-  /** 
+  /**
    * Add parent to the relevant waiting parents of n.
    */
   void addParentRlvWait(TNode n, TNode parent);
@@ -115,7 +118,7 @@ class SatRelevancy
   /**
    * The set of formulas that have been justified that are in the range of
    * d_rlvWaitMap.
-   * 
+   *
    * Polarity matters, no double negations.
    */
   context::CDHashSet<Node, NodeHashFunction> d_justify;

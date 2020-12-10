@@ -71,8 +71,8 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
   // on its value and possibly update relevancy
   RlvWaitInfo* rwi = it->second.get();
   bool nrlv = false;
-  Assert (rwi->d_parents.size()==rwi->d_childPol.size());
-  for (size_t i=0, nparents = rwi->d_parents.size(); i<nparents; i++)
+  Assert(rwi->d_parents.size() == rwi->d_childPol.size());
+  for (size_t i = 0, nparents = rwi->d_parents.size(); i < nparents; i++)
   {
     TNode parent = rwi->d_parents[i];
     bool cpol = rwi->d_childPol[i];
@@ -81,7 +81,7 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
     // parent. For instance, (and (not A) B), when A is assigned true, we
     // get that pol=true, cpol = false, and hence we notify that a child of
     // AND is false.
-    if (setAssertedChild(atom, pol==cpol, parent, queue))
+    if (setAssertedChild(atom, pol == cpol, parent, queue))
     {
       // due to the above call, n is now relevant
       nrlv = true;
@@ -97,7 +97,7 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
       queue.push(n);
     }
     // otherwise we will assert if the literal gets marked as relevant
-  } 
+  }
   else if (nrlv)
   {
     // this formula is now relevant and is not a theory atom
@@ -179,7 +179,7 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
         // Based on the asserted value of the condition, one branch becomes
         // relevant. Maybe the condition is already asserted?
         bool value;
-        Assert (atom[0].getKind()!=NOT);
+        Assert(atom[0].getKind() != NOT);
         if (hasSatValue(atom[0], value))
         {
           // the condition's value is relevant
@@ -204,13 +204,15 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
         {
           setRelevant(atom[0], value, queue);
           // atom[1] is also relevant with the proper polarity
-          setRelevant(atom[1], value == (pol==(atom.getKind()==EQUAL)), queue);
+          setRelevant(
+              atom[1], value == (pol == (atom.getKind() == EQUAL)), queue);
         }
         else if (hasSatValue(atom[1], value))
         {
           setRelevant(atom[1], value, queue);
           // atom[0] is also relevant with the proper polarity
-          setRelevant(atom[0], value == (pol==(atom.getKind()==EQUAL)), queue);
+          setRelevant(
+              atom[0], value == (pol == (atom.getKind() == EQUAL)), queue);
         }
         else
         {
@@ -273,7 +275,7 @@ bool SatRelevancy::hasSatValue(TNode node, bool& value) const
 
 void SatRelevancy::addParentRlvWait(TNode n, TNode parent)
 {
-  bool pol = n.getKind()!=NOT;
+  bool pol = n.getKind() != NOT;
   TNode atom = pol ? n : n[0];
   RlvWaitMap::const_iterator it = d_rlvWaitMap.find(atom);
   std::shared_ptr<RlvWaitInfo> rwi;
@@ -295,21 +297,21 @@ bool SatRelevancy::setAssertedChild(TNode atom,
                                     TNode parent,
                                     context::CDQueue<TNode>& queue)
 {
-  bool ppol = parent.getKind()==NOT;
+  bool ppol = parent.getKind() == NOT;
   TNode parentAtom = ppol ? parent : parent[0];
   switch (parentAtom.getKind())
   {
     case AND:
     case OR:
     {
-      Assert (ppol==(parentAtom.getKind()==OR));
-      if (d_justify.find(parent)!=d_justify.end())
+      Assert(ppol == (parentAtom.getKind() == OR));
+      if (d_justify.find(parent) != d_justify.end())
       {
         // the parent was already justified by another child, nothing to do
         return false;
       }
       // does it make the parent true?
-      if (pol==ppol)
+      if (pol == ppol)
       {
         // we've justified the parent
         d_justify.insert(parent);
@@ -318,7 +320,7 @@ bool SatRelevancy::setAssertedChild(TNode atom,
       }
       // otherwise the value of this is not relevant
     }
-      break;
+    break;
     case ITE:
     {
       // now set the proper branch to be relevant with the parent's polarity
@@ -331,13 +333,15 @@ bool SatRelevancy::setAssertedChild(TNode atom,
     case XOR:
     {
       // the value of the other side is now relevant
-      for (size_t i=0; i<2; i++)
+      for (size_t i = 0; i < 2; i++)
       {
         TNode pc = parent[i];
-        TNode pcatom = pc.getKind()==NOT ? pc[0] : pc;
-        if (pcatom==atom)
+        TNode pcatom = pc.getKind() == NOT ? pc[0] : pc;
+        if (pcatom == atom)
         {
-          setRelevant(parent[1-i], pol==(ppol==(parentAtom.getKind()==EQUAL)), &queue);
+          setRelevant(parent[1 - i],
+                      pol == (ppol == (parentAtom.getKind() == EQUAL)),
+                      &queue);
           break;
         }
       }
@@ -348,7 +352,8 @@ bool SatRelevancy::setAssertedChild(TNode atom,
     default:
     {
       Unhandled()
-          << "SatRelevancy::setAssertedChild: unexpected parent formula " << parent;
+          << "SatRelevancy::setAssertedChild: unexpected parent formula "
+          << parent;
     }
     break;
   }
