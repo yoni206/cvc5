@@ -68,7 +68,7 @@ class SatRelevancy
    * Notify preprocessed assertions, should be called before any calls to
    * notifyAsserted are made in the current SAT context.
    */
-  void notifyPreprocessedAssertions(const std::vector<Node>& assertions);
+  void notifyPreprocessedAssertion(TNode assertion);
   /**
    * Notify that lem is a new lemma
    */

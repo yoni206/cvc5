@@ -70,7 +70,7 @@ header = "options/theory_options.h"
 [[option]]
   name       = "satTheoryRelevancy"
   category   = "regular"
-  long       = "sat-relevancy"
+  long       = "sat-rlv"
   type       = "bool"
   default    = "false"
   help       = "enable filtering of literals from the SAT solver to the theory engine based on relevancy"

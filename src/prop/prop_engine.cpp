@@ -157,12 +157,6 @@ void PropEngine::notifyPreprocessedAssertions(
     ppLemmas.push_back(ap[i.second]);
   }
   d_decisionEngine->addAssertions(ap.ref(), ppLemmas, ppSkolems);
-
-  // notify the SAT relevancy if it exists
-  if (d_satRlv != nullptr)
-  {
-    d_satRlv->notifyPreprocessedAssertions(ap.ref());
-  }
 }
 
 void PropEngine::assertFormula(TNode node) {
@@ -170,6 +164,11 @@ void PropEngine::assertFormula(TNode node) {
   Debug("prop") << "assertFormula(" << node << ")" << endl;
   // Assert as non-removable
   d_cnfStream->convertAndAssert(node, false, false, true);
+  // notify the SAT relevancy if it exists
+  if (d_satRlv != nullptr)
+  {
+    d_satRlv->notifyPreprocessedAssertion(node);
+  }
 }
 
 void PropEngine::assertLemma(theory::TrustNode trn, bool removable)

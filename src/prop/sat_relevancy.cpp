@@ -39,16 +39,13 @@ SatRelevancy::SatRelevancy(DPLLSatSolverInterface* satSolver,
 
 SatRelevancy::~SatRelevancy() {}
 
-void SatRelevancy::notifyPreprocessedAssertions(
-    const std::vector<Node>& assertions)
+void SatRelevancy::notifyPreprocessedAssertion(
+    TNode a)
 {
   // Mark each assertion as relevant. Notice we use a null queue since nothing
   // should have SAT values yet.
-  for (const Node& a : assertions)
-  {
-    Trace("sat-rlv") << "notifyPreprocessedAssertions: " << a << std::endl;
-    setRelevant(a, nullptr);
-  }
+  Trace("sat-rlv") << "notifyPreprocessedAssertion: " << a << std::endl;
+  setRelevant(a, nullptr);
 }
 
 void SatRelevancy::notifyNewLemma(TNode n, context::CDQueue<TNode>& queue)
