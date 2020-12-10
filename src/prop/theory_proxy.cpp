@@ -102,7 +102,7 @@ void TheoryProxy::explainPropagation(SatLiteral l, SatClause& explanation) {
 void TheoryProxy::enqueueTheoryLiteral(const SatLiteral& l) {
   if (d_satRlv != nullptr)
   {
-    // use the sat relevancy
+    // use the sat relevancy to enqueue literals that are relevant
     d_satRlv->notifyAsserted(l, d_queue);
     return;
   }

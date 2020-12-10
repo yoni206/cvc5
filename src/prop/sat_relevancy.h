@@ -126,6 +126,8 @@ class SatRelevancy
    * The relevancy waiting map, for each (non-negated) formula.
    */
   RlvWaitMap d_rlvWaitMap;
+  // debugging
+  bool d_isActive;
 };
 
 }  // namespace prop
