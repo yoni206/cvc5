@@ -38,10 +38,12 @@ class DPLLSatSolverInterface;
 class RlvWaitInfo
 {
  public:
-  RlvWaitInfo(context::Context* context) : d_parents(context) {}
+  RlvWaitInfo(context::Context* context) : d_parents(context), d_childPol(context) {}
   ~RlvWaitInfo() {}
   /** The parents that we impact */
   context::CDList<Node> d_parents;
+  /** The child polarity in the parent */
+  context::CDList<bool> d_childPol;
 };
 
 /**
@@ -81,19 +83,24 @@ class SatRelevancy
   void setRelevant(TNode n, context::CDQueue<TNode>* queue);
   void setRelevant(TNode n, bool pol, context::CDQueue<TNode>* queue);
   /**
-   * Set that atom has been assigned pol, where parent is a term that was
-   * waiting for the value of atom.
+   * Set that atom has been assigned a value that makes a child of parent equal
+   * to "pol", where parent is a term that was waiting for the value of atom.
    *
    * Adds relevant literals to be asserted to queue.
+   * 
+   * Return true if the assignment to atom that led to this method being
+   * called is relevant.
    */
-  void setAssertedChild(TNode atom,
+  bool setAssertedChild(TNode atom,
                         bool pol,
-                        Node parent,
+                        TNode parent,
                         context::CDQueue<TNode>& queue);
   /** has SAT value, if node has a value, return true and set value */
   bool hasSatValue(TNode node, bool& value) const;
-  /** Get or make relevancy wait info */
-  RlvWaitInfo* getOrMkRlvWaitInfo(TNode n);
+  /** 
+   * Add parent to the relevant waiting parents of n.
+   */
+  void addParentRlvWait(TNode n, TNode parent);
   /** Pointer to the SAT solver */
   DPLLSatSolverInterface* d_satSolver;
   /** Pointer to the SAT context */
@@ -105,6 +112,13 @@ class SatRelevancy
    * negations.
    */
   context::CDHashSet<Node, NodeHashFunction> d_rlv;
+  /**
+   * The set of formulas that have been justified that are in the range of
+   * d_rlvWaitMap.
+   * 
+   * Polarity matters, no double negations.
+   */
+  context::CDHashSet<Node, NodeHashFunction> d_justify;
   /**
    * The relevancy waiting map, for each (non-negated) formula.
    */

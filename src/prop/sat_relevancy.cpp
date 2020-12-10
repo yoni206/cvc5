@@ -30,6 +30,7 @@ SatRelevancy::SatRelevancy(DPLLSatSolverInterface* satSolver,
       d_context(context),
       d_cnfStream(cnfStream),
       d_rlv(context),
+      d_justify(context),
       d_rlvWaitMap(context)
 {
 }
@@ -59,17 +60,7 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
   Node n = d_cnfStream->getNode(l);
   bool pol = n.getKind() != NOT;
   TNode atom = pol ? n : n[0];
-  // notify formulas are in terms of atoms
-  if (!d_cnfStream->isNotifyFormula(atom))
-  {
-    // if already relevant, enqueue
-    if (d_rlv.find(n) != d_rlv.end())
-    {
-      queue.push(n);
-    }
-    // otherwise we will assert if the literal gets marked as relevant
-  }
-  // now, look at wait lists
+  // first, look at wait lists
   RlvWaitMap::const_iterator it = d_rlvWaitMap.find(atom);
   if (it == d_rlvWaitMap.end())
   {
@@ -79,9 +70,38 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
   // otherwise, we are going to iterate through each parent that is waiting
   // on its value and possibly update relevancy
   RlvWaitInfo* rwi = it->second.get();
-  for (const Node& parent : rwi->d_parents)
+  bool nrlv = false;
+  Assert (rwi->d_parents.size()==rwi->d_childPol.size());
+  for (size_t i=0, nparents = rwi->d_parents.size(); i<nparents; i++)
   {
-    setAssertedChild(atom, pol, parent, queue);
+    TNode parent = rwi->d_parents[i];
+    bool cpol = rwi->d_childPol[i];
+    // n makes a child of parent have value equal to (pol==cpol), where pol
+    // is the assigned value of the atom, and cpol is its polarity in the
+    // parent. For instance, (and (not A) B), when A is assigned true, we
+    // get that pol=true, cpol = false, and hence we notify that a child of
+    // AND is false.
+    if (setAssertedChild(atom, pol==cpol, parent, queue))
+    {
+      // due to the above call, n is now relevant
+      nrlv = true;
+    }
+  }
+  // note that notify formulas are in terms of atoms
+  if (!d_cnfStream->isNotifyFormula(atom))
+  {
+    // we are a theory literal
+    // if we became relevant due to a parent, or are already relevant, enqueue
+    if (nrlv || d_rlv.find(n) != d_rlv.end())
+    {
+      queue.push(n);
+    }
+    // otherwise we will assert if the literal gets marked as relevant
+  } 
+  else if (nrlv)
+  {
+    // this formula is now relevant and is not a theory atom
+    setRelevant(n, &queue);
   }
 }
 
@@ -118,7 +138,7 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
         {
           // The first asserted child is relevant. Maybe a child is already
           // asserted?
-          bool waiting = true;
+          bool justified = false;
           bool value;
           std::vector<Node> acb;
           for (const Node& ac : atom)
@@ -132,7 +152,7 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
                 //   ac = false justifies an AND parent being false,
                 //   ac = true justifies an OR parent being true.
                 setRelevant(ac, pol, queue);
-                waiting = false;
+                justified = true;
                 break;
               }
             }
@@ -143,13 +163,12 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
           }
           // no children are asserted with the desired value, we are waiting for
           // the values for those that do no yet have values
-          if (waiting)
+          if (!justified)
           {
             // for all children that do not yet have values
             for (const Node& ac : acb)
             {
-              RlvWaitInfo* rwi = getOrMkRlvWaitInfo(ac);
-              rwi->d_parents.push_back(n);
+              addParentRlvWait(ac, n);
             }
           }
         }
@@ -160,6 +179,7 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
         // Based on the asserted value of the condition, one branch becomes
         // relevant. Maybe the condition is already asserted?
         bool value;
+        Assert (atom[0].getKind()!=NOT);
         if (hasSatValue(atom[0], value))
         {
           // the condition's value is relevant
@@ -170,8 +190,7 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
         else
         {
           // otherwise, we are waiting for the value of the condition
-          RlvWaitInfo* rwi = getOrMkRlvWaitInfo(atom[0]);
-          rwi->d_parents.push_back(n);
+          addParentRlvWait(atom[0], n);
         }
       }
       break;
@@ -185,21 +204,20 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
         {
           setRelevant(atom[0], value, queue);
           // atom[1] is also relevant with the proper polarity
-          setRelevant(atom[1], value == pol, queue);
+          setRelevant(atom[1], value == (pol==(atom.getKind()==EQUAL)), queue);
         }
         else if (hasSatValue(atom[1], value))
         {
           setRelevant(atom[1], value, queue);
           // atom[0] is also relevant with the proper polarity
-          setRelevant(atom[0], value == pol, queue);
+          setRelevant(atom[0], value == (pol==(atom.getKind()==EQUAL)), queue);
         }
         else
         {
           // neither have values, we are waiting
           for (size_t i = 0; i < 2; i++)
           {
-            RlvWaitInfo* rwi = getOrMkRlvWaitInfo(atom[i]);
-            rwi->d_parents.push_back(n);
+            addParentRlvWait(atom[i], n);
           }
         }
       }
@@ -253,25 +271,88 @@ bool SatRelevancy::hasSatValue(TNode node, bool& value) const
   return false;
 }
 
-RlvWaitInfo* SatRelevancy::getOrMkRlvWaitInfo(TNode n)
+void SatRelevancy::addParentRlvWait(TNode n, TNode parent)
 {
-  TNode atom = n.getKind() == NOT ? n[0] : n;
+  bool pol = n.getKind()!=NOT;
+  TNode atom = pol ? n : n[0];
   RlvWaitMap::const_iterator it = d_rlvWaitMap.find(atom);
+  std::shared_ptr<RlvWaitInfo> rwi;
   if (it != d_rlvWaitMap.end())
   {
-    return it->second.get();
+    rwi = it->second;
   }
-  std::shared_ptr<RlvWaitInfo> rwi = std::make_shared<RlvWaitInfo>(d_context);
-  d_rlvWaitMap.insert(atom, rwi);
-  return rwi.get();
+  else
+  {
+    rwi = std::make_shared<RlvWaitInfo>(d_context);
+    d_rlvWaitMap.insert(n, rwi);
+  }
+  rwi->d_parents.push_back(parent);
+  rwi->d_childPol.push_back(pol);
 }
 
-void SatRelevancy::setAssertedChild(TNode atom,
+bool SatRelevancy::setAssertedChild(TNode atom,
                                     bool pol,
-                                    Node parent,
+                                    TNode parent,
                                     context::CDQueue<TNode>& queue)
 {
-  // TODO
+  bool ppol = parent.getKind()==NOT;
+  TNode parentAtom = ppol ? parent : parent[0];
+  switch (parentAtom.getKind())
+  {
+    case AND:
+    case OR:
+    {
+      Assert (ppol==(parentAtom.getKind()==OR));
+      if (d_justify.find(parent)!=d_justify.end())
+      {
+        // the parent was already justified by another child, nothing to do
+        return false;
+      }
+      // does it make the parent true?
+      if (pol==ppol)
+      {
+        // we've justified the parent
+        d_justify.insert(parent);
+        // the value of this is relevant
+        return true;
+      }
+      // otherwise the value of this is not relevant
+    }
+      break;
+    case ITE:
+    {
+      // now set the proper branch to be relevant with the parent's polarity
+      setRelevant(parentAtom[pol ? 1 : 2], ppol, &queue);
+      // the value of this is now also relevant
+      return true;
+    }
+    break;
+    case EQUAL:
+    case XOR:
+    {
+      // the value of the other side is now relevant
+      for (size_t i=0; i<2; i++)
+      {
+        TNode pc = parent[i];
+        TNode pcatom = pc.getKind()==NOT ? pc[0] : pc;
+        if (pcatom==atom)
+        {
+          setRelevant(parent[1-i], pol==(ppol==(parentAtom.getKind()==EQUAL)), &queue);
+          break;
+        }
+      }
+      // the value of this is now also relevant
+      return true;
+    }
+    break;
+    default:
+    {
+      Unhandled()
+          << "SatRelevancy::setAssertedChild: unexpected parent formula " << parent;
+    }
+    break;
+  }
+  return false;
 }
 
 }  // namespace prop
