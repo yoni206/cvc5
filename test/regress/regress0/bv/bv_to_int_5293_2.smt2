@@ -1,4 +1,5 @@
 ; EXPECT: sat
+(set-logic ALL)
 (set-option :solve-bv-as-int sum)
 (declare-const v4 Bool)
 (declare-const bv_34-0 (_ BitVec 34))
