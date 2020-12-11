@@ -347,6 +347,12 @@ bool TypeNode::isComparableTo(TypeNode t) const {
   return false;
 }
 
+TypeNode TypeNode::getTesterDomainType() const
+{
+  Assert(isTester());
+  return (*this)[0];
+}
+
 TypeNode TypeNode::getSequenceElementType() const
 {
   Assert(isSequence());
@@ -469,6 +475,12 @@ uint64_t TypeNode::getSortConstructorArity() const
   return getAttribute(expr::SortArityAttr());
 }
 
+std::string TypeNode::getName() const
+{
+  Assert(isSort() || isSortConstructor());
+  return getAttribute(expr::VarNameAttr());
+}
+
 TypeNode TypeNode::instantiateSortConstructor(
     const std::vector<TypeNode>& params) const
 {
@@ -574,15 +586,14 @@ TypeNode TypeNode::commonTypeNode(TypeNode t0, TypeNode t1, bool isLeast) {
     case kind::ARRAY_TYPE:
     case kind::DATATYPE_TYPE:
     case kind::PARAMETRIC_DATATYPE:
-    case kind::SEQUENCE_TYPE: return TypeNode();
+    case kind::SEQUENCE_TYPE:
     case kind::SET_TYPE:
-    {
-      // we don't support subtyping for sets
-      return TypeNode(); // return null type
-    }
+    case kind::BAG_TYPE:
     case kind::SEXPR_TYPE:
-      Unimplemented()
-          << "haven't implemented leastCommonType for symbolic expressions yet";
+    {
+      // we don't support subtyping except for built in types Int and Real.
+      return TypeNode();  // return null type
+    }
     default:
       Unimplemented() << "don't have a commonType for types `" << t0
                       << "' and `" << t1 << "'";
@@ -662,7 +673,7 @@ bool TypeNode::isSygusDatatype() const
 std::string TypeNode::toString() const {
   std::stringstream ss;
   OutputLanguage outlang = (this == &s_null) ? language::output::LANG_AUTO : options::outputLanguage();
-  d_nv->toStream(ss, -1, false, 0, outlang);
+  d_nv->toStream(ss, -1, 0, outlang);
   return ss.str();
 }
 

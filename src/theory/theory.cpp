@@ -2,7 +2,7 @@
 /*! \file theory.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Andrew Reynolds, Tim King, Dejan Jovanovic
+ **   Andrew Reynolds, Tim King, Mathias Preiner
  ** This file is part of the CVC4 project.
  ** Copyright (c) 2009-2020 by the authors listed in the file AUTHORS
  ** in the top-level source directory and their institutional affiliations.
@@ -437,6 +437,7 @@ EqualityStatus Theory::getEqualityStatus(TNode a, TNode b)
   {
     return EQUALITY_UNKNOWN;
   }
+  Trace("sharing") << "Theory<" << getId() << ">::getEqualityStatus(" << a << ", " << b << ")" << std::endl;
   Assert(d_equalityEngine->hasTerm(a) && d_equalityEngine->hasTerm(b));
 
   // Check for equality (simplest)

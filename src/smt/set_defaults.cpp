@@ -2,7 +2,7 @@
 /*! \file set_defaults.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Andrew Reynolds, Andres Noetzli, Haniel Barbosa
+ **   Andrew Reynolds, Andres Noetzli, Gereon Kremer
  ** This file is part of the CVC4 project.
  ** Copyright (c) 2009-2020 by the authors listed in the file AUTHORS
  ** in the top-level source directory and their institutional affiliations.
@@ -238,14 +238,6 @@ void setDefaults(LogicInfo& logic, bool isInternalSubsolver)
     {
       options::fmfBound.set(true);
       Trace("smt") << "turning on fmf-bound-int, for strings-exp" << std::endl;
-    }
-    // Do not eliminate extended arithmetic symbols from quantified formulas,
-    // since some strategies, e.g. --re-elim-agg, introduce them.
-    if (!options::elimExtArithQuant.wasSetByUser())
-    {
-      options::elimExtArithQuant.set(false);
-      Trace("smt") << "turning off elim-ext-arith-quant, for strings-exp"
-                   << std::endl;
     }
     // Note we allow E-matching by default to support combinations of sequences
     // and quantifiers.
@@ -604,7 +596,9 @@ void setDefaults(LogicInfo& logic, bool isInternalSubsolver)
     if (logic.isSharingEnabled() && !logic.isTheoryEnabled(THEORY_BV)
         && !logic.isTheoryEnabled(THEORY_STRINGS)
         && !logic.isTheoryEnabled(THEORY_SETS)
-        && !logic.isTheoryEnabled(THEORY_BAGS))
+        && !logic.isTheoryEnabled(THEORY_BAGS)
+        && !(logic.isTheoryEnabled(THEORY_ARITH) && !logic.isLinear()
+             && !logic.isQuantified()))
     {
       Trace("smt") << "setting theoryof-mode to term-based" << std::endl;
       options::theoryOfMode.set(options::TheoryOfMode::THEORY_OF_TERM_BASED);
@@ -836,10 +830,7 @@ void setDefaults(LogicInfo& logic, bool isInternalSubsolver)
     options::cegqi.set(false);
   }
   // Do we need to track instantiations?
-  // Needed for sygus due to single invocation techniques.
-  if (options::cegqiNestedQE()
-      || (options::unsatCores() && !options::trackInstLemmas.wasSetByUser())
-      || is_sygus)
+  if (options::unsatCores() && !options::trackInstLemmas.wasSetByUser())
   {
     options::trackInstLemmas.set(true);
   }
@@ -935,11 +926,6 @@ void setDefaults(LogicInfo& logic, bool isInternalSubsolver)
     if (!options::quantDynamicSplit.wasSetByUser())
     {
       options::quantDynamicSplit.set(options::QuantDSplitMode::DEFAULT);
-    }
-    // do not eliminate extended arithmetic symbols from quantified formulas
-    if (!options::elimExtArithQuant.wasSetByUser())
-    {
-      options::elimExtArithQuant.set(false);
     }
     if (!options::eMatching.wasSetByUser())
     {
@@ -1186,13 +1172,7 @@ void setDefaults(LogicInfo& logic, bool isInternalSubsolver)
       // only supported in pure arithmetic or pure BV
       options::cegqiNestedQE.set(false);
     }
-    // prenexing
-    if (options::cegqiNestedQE())
-    {
-      // only complete with prenex = normal
-      options::prenexQuant.set(options::PrenexQuantMode::NORMAL);
-    }
-    else if (options::globalNegate())
+    if (options::globalNegate())
     {
       if (!options::prenexQuant.wasSetByUser())
       {
@@ -1435,6 +1415,42 @@ void setDefaults(LogicInfo& logic, bool isInternalSubsolver)
   {
     throw OptionException("--proof-new is not yet supported.");
   }
+
+  if (logic == LogicInfo("QF_UFNRA"))
+  {
+#ifdef CVC4_USE_POLY
+    if (!options::nlCad() && !options::nlCad.wasSetByUser())
+    {
+      options::nlCad.set(true);
+      if (!options::nlExt.wasSetByUser())
+      {
+        options::nlExt.set(false);
+      }
+      if (!options::nlRlvMode.wasSetByUser())
+      {
+        options::nlRlvMode.set(options::NlRlvMode::INTERLEAVE);
+      }
+    }
+#endif
+  }
+#ifndef CVC4_USE_POLY
+  if (options::nlCad())
+  {
+    if (options::nlCad.wasSetByUser())
+    {
+      std::stringstream ss;
+      ss << "Cannot use " << options::nlCad.getName() << " without configuring with --poly.";
+      throw OptionException(ss.str());
+    }
+    else
+    {
+      Notice() << "Cannot use --" << options::nlCad.getName()
+               << " without configuring with --poly." << std::endl;
+      options::nlCad.set(false);
+      options::nlExt.set(true);
+    }
+  }
+#endif
 }
 
 }  // namespace smt

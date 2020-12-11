@@ -2,7 +2,7 @@
 /*! \file assertion_pipeline.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Andres Noetzli, Andrew Reynolds, Haniel Barbosa
+ **   Andrew Reynolds, Andres Noetzli, Haniel Barbosa
  ** This file is part of the CVC4 project.
  ** Copyright (c) 2009-2020 by the authors listed in the file AUTHORS
  ** in the top-level source directory and their institutional affiliations.
@@ -177,7 +177,7 @@ void AssertionPipeline::conjoin(size_t i, Node n, ProofGenerator* pg)
       //   rewrite( d_nodes[i] ^ n )
       // allocate a fresh proof which will act as the proof generator
       LazyCDProof* lcp = d_pppg->allocateHelperProof();
-      lcp->addLazyStep(n, pg, false);
+      lcp->addLazyStep(n, pg, PfRule::PREPROCESS);
       if (d_nodes[i].isConst() && d_nodes[i].getConst<bool>())
       {
         // skip the AND_INTRO if the previous d_nodes[i] was true

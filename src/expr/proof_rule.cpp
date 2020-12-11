@@ -40,6 +40,7 @@ const char* toString(PfRule id)
     case PfRule::PREPROCESS_LEMMA: return "PREPROCESS_LEMMA";
     case PfRule::THEORY_PREPROCESS: return "THEORY_PREPROCESS";
     case PfRule::THEORY_PREPROCESS_LEMMA: return "THEORY_PREPROCESS_LEMMA";
+    case PfRule::THEORY_EXPAND_DEF: return "THEORY_EXPAND_DEF";
     case PfRule::WITNESS_AXIOM: return "WITNESS_AXIOM";
     case PfRule::TRUST_REWRITE: return "TRUST_REWRITE";
     case PfRule::TRUST_SUBS: return "TRUST_SUBS";
@@ -114,6 +115,16 @@ const char* toString(PfRule id)
     case PfRule::ARRAYS_READ_OVER_WRITE_1: return "ARRAYS_READ_OVER_WRITE_1";
     case PfRule::ARRAYS_EXT: return "ARRAYS_EXT";
     case PfRule::ARRAYS_TRUST: return "ARRAYS_TRUST";
+    //================================================= Bit-Vector rules
+    case PfRule::BV_BITBLAST: return "BV_BITBLAST";
+    case PfRule::BV_EAGER_ATOM: return "BV_EAGER_ATOM";
+    //================================================= Datatype rules
+    case PfRule::DT_UNIF: return "DT_UNIF";
+    case PfRule::DT_INST: return "DT_INST";
+    case PfRule::DT_COLLAPSE: return "DT_COLLAPSE";
+    case PfRule::DT_SPLIT: return "DT_SPLIT";
+    case PfRule::DT_CLASH: return "DT_CLASH";
+    case PfRule::DT_TRUST: return "DT_TRUST";
     //================================================= Quantifiers rules
     case PfRule::WITNESS_INTRO: return "WITNESS_INTRO";
     case PfRule::EXISTS_INTRO: return "EXISTS_INTRO";
