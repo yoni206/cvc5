@@ -87,7 +87,8 @@ Node TheoryConverter::convertLemmaToPropInternal(Node lem) const
       Node ret = cur;
       bool childChanged = false;
       std::vector<Node> children;
-      Assert(cur.getMetaKind() != metakind::PARAMETERIZED);
+      // only Boolean connectives, should not be parameterized
+      Assert(cur.getMetaKind() != kind::metakind::PARAMETERIZED);
       for (const Node& cn : cur)
       {
         it = visited.find(cn);
