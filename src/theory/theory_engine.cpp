@@ -218,7 +218,6 @@ ProofNodeManager* TheoryEngine::getProofNodeManager() const { return d_pnm; }
 TheoryEngine::TheoryEngine(context::Context* context,
                            context::UserContext* userContext,
                            ResourceManager* rm,
-                           RemoveTermFormulas& iteRemover,
                            const LogicInfo& logicInfo,
                            OutputManager& outMgr,
                            ProofNodeManager* pnm)
@@ -250,7 +249,7 @@ TheoryEngine::TheoryEngine(context::Context* context,
       d_propagatedLiterals(context),
       d_propagatedLiteralsIndex(context, 0),
       d_atomRequests(context),
-      d_tpp(*this, iteRemover, userContext, d_pnm),
+      d_tpp(nullptr),
       d_combineTheoriesTime("TheoryEngine::combineTheoriesTime"),
       d_true(),
       d_false(),
@@ -856,7 +855,7 @@ theory::Theory::PPAssertStatus TheoryEngine::solve(
 
 TrustNode TheoryEngine::preprocess(TNode assertion)
 {
-  return d_tpp.theoryPreprocess(assertion);
+  return d_tpp->theoryPreprocess(assertion);
 }
 
 void TheoryEngine::notifyPreprocessedAssertions(
@@ -1175,7 +1174,7 @@ Node TheoryEngine::ensureLiteral(TNode n) {
   Trace("ensureLiteral") << "  got: " << rewritten << std::endl;
   std::vector<TrustNode> newLemmas;
   std::vector<Node> newSkolems;
-  TrustNode tpn = d_tpp.preprocess(n, newLemmas, newSkolems, true);
+  TrustNode tpn = d_tpp->preprocess(n, newLemmas, newSkolems, true);
   // send lemmas corresponding to the skolems introduced by preprocessing n
   for (const TrustNode& tnl : newLemmas)
   {
@@ -1451,7 +1450,7 @@ theory::LemmaStatus TheoryEngine::lemma(theory::TrustNode tlemma,
   std::vector<TrustNode> newLemmas;
   std::vector<Node> newSkolems;
   TrustNode tplemma =
-      d_tpp.preprocessLemma(tlemma, newLemmas, newSkolems, preprocess);
+      d_tpp->preprocessLemma(tlemma, newLemmas, newSkolems, preprocess);
 
   Assert(newSkolems.size() == newLemmas.size());
 

@@ -74,6 +74,7 @@ PropEngine::PropEngine(TheoryEngine* te,
     : d_inCheckSat(false),
       d_theoryEngine(te),
       d_context(satContext),
+      d_tconv(*te, userContext, nullptr), // TODO: pass pnm
       d_theoryProxy(NULL),
       d_satSolver(NULL),
       d_registrar(NULL),
@@ -136,6 +137,15 @@ PropEngine::~PropEngine() {
   delete d_registrar;
   delete d_satSolver;
   delete d_theoryProxy;
+}
+
+
+TrustNode PropEngine::preprocess(TNode node,
+                      std::vector<TrustNode>& newLemmas,
+                      std::vector<Node>& newSkolems,
+                      bool doTheoryPreprocess)
+{
+  return d_tconv.preprocess(node, newLemmas, newSkolems, doTheoryPreprocess);
 }
 
 void PropEngine::notifyPreprocessedAssertions(

@@ -49,7 +49,6 @@ class PreprocessingPassContext
   prop::PropEngine* getPropEngine() { return d_smt->getPropEngine(); }
   context::Context* getUserContext() { return d_smt->getUserContext(); }
   context::Context* getDecisionContext() { return d_smt->getContext(); }
-  RemoveTermFormulas* getIteRemover() { return d_iteRemover; }
 
   theory::booleans::CircuitPropagator* getCircuitPropagator()
   {

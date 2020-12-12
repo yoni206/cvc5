@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file theory_preprocess_manager.h
+/*! \file theory_converter.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Andrew Reynolds
@@ -12,24 +12,25 @@
  ** \brief Theory preprocess manager
  **/
 
-#include "prop/theory_preprocess_manager.h"
+#include "prop/theory_converter.h"
 
 
 namespace CVC4 {
 namespace prop {
 
-TheoryPreprocessManager::TheoryPreprocessManager(TheoryEngine& engine,
-                    RemoveTermFormulas& tfr,
+TheoryConverter::TheoryConverter(TheoryEngine& engine,
                     context::UserContext* userContext,
-                    ProofNodeManager* pnm) : d_tpp(engine, tfr, userContext, pnm),d_ppLitMap(userContext)
+                    ProofNodeManager* pnm) : d_tpp(engine, userContext, pnm),d_ppLitMap(userContext)
+{
+  // TODO: remove
+  engine.d_tpp = &d_tpp;
+}
+
+TheoryConverter::~TheoryConverter()
 {
 }
 
-TheoryPreprocessManager::~TheoryPreprocessManager()
-{
-}
-
-TrustNode TheoryPreprocessManager::preprocess(TNode node,
+TrustNode TheoryConverter::preprocess(TNode node,
                       std::vector<TrustNode>& newLemmas,
                       std::vector<Node>& newSkolems,
                       bool doTheoryPreprocess)
@@ -44,13 +45,13 @@ TrustNode TheoryPreprocessManager::preprocess(TNode node,
   return pnode;
 }
 
-TrustNode TheoryPreprocessManager::convertLemmaToProp(TrustNode lem)
+TrustNode TheoryConverter::convertLemmaToProp(TrustNode lem)
 {
   Node clem = convertLemmaToPropInternal(lem.getProven());
   return TrustNode::mkTrustLemma(clem);
 }
 
-Node TheoryPreprocessManager::convertLemmaToPropInternal(Node lem) const
+Node TheoryConverter::convertLemmaToPropInternal(Node lem) const
 {
   NodeManager * nm = NodeManager::currentNM();
   std::unordered_map<TNode, Node, TNodeHashFunction> visited;

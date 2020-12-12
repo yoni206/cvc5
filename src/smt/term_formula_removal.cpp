@@ -26,13 +26,26 @@ using namespace std;
 
 namespace CVC4 {
 
-RemoveTermFormulas::RemoveTermFormulas(context::UserContext* u)
+RemoveTermFormulas::RemoveTermFormulas(context::UserContext* u, ProofNodeManager* pnm)
     : d_tfCache(u),
       d_skolem_cache(u),
-      d_pnm(nullptr),
+      d_pnm(pnm),
       d_tpg(nullptr),
       d_lp(nullptr)
 {
+  // enable proofs if necessary
+  if (d_pnm != nullptr)
+  {
+    d_tpg.reset(
+        new TConvProofGenerator(d_pnm,
+                                nullptr,
+                                TConvPolicy::FIXPOINT,
+                                TConvCachePolicy::NEVER,
+                                "RemoveTermFormulas::TConvProofGenerator",
+                                &d_rtfc));
+    d_lp.reset(new LazyCDProof(
+        d_pnm, nullptr, nullptr, "RemoveTermFormulas::LazyCDProof"));
+  }
 }
 
 RemoveTermFormulas::~RemoveTermFormulas() {}
@@ -534,23 +547,6 @@ Node RemoveTermFormulas::getAxiomFor(Node n)
     return nm->mkNode(kind::ITE, n[0], n.eqNode(n[1]), n.eqNode(n[2]));
   }
   return Node::null();
-}
-
-void RemoveTermFormulas::setProofNodeManager(ProofNodeManager* pnm)
-{
-  if (d_tpg == nullptr)
-  {
-    d_pnm = pnm;
-    d_tpg.reset(
-        new TConvProofGenerator(d_pnm,
-                                nullptr,
-                                TConvPolicy::FIXPOINT,
-                                TConvCachePolicy::NEVER,
-                                "RemoveTermFormulas::TConvProofGenerator",
-                                &d_rtfc));
-    d_lp.reset(new LazyCDProof(
-        d_pnm, nullptr, nullptr, "RemoveTermFormulas::LazyCDProof"));
-  }
 }
 
 ProofGenerator* RemoveTermFormulas::getTConvProofGenerator()

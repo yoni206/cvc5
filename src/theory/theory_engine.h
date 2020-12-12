@@ -100,8 +100,6 @@ class EntailmentCheckParameters;
 class EntailmentCheckSideEffects;
 }/* CVC4::theory namespace */
 
-class RemoveTermFormulas;
-
 /**
  * This is essentially an abstraction for a collection of theories.  A
  * TheoryEngine provides services to a PropEngine, making various
@@ -295,8 +293,10 @@ class TheoryEngine {
   /** sort inference module */
   SortInference d_sortInfer;
 
-  /** The theory preprocessor */
-  theory::TheoryPreprocessor d_tpp;
+public:
+  /** The theory preprocessor TODO: remove */
+  theory::TheoryPreprocessor* d_tpp;
+private:
 
   /** Time spent in theory combination */
   TimerStat d_combineTheoriesTime;
@@ -313,7 +313,6 @@ class TheoryEngine {
   TheoryEngine(context::Context* context,
                context::UserContext* userContext,
                ResourceManager* rm,
-               RemoveTermFormulas& iteRemover,
                const LogicInfo& logic,
                OutputManager& outMgr,
                ProofNodeManager* pnm);

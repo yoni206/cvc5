@@ -26,13 +26,12 @@ namespace CVC4 {
 namespace theory {
 
 TheoryPreprocessor::TheoryPreprocessor(TheoryEngine& engine,
-                                       RemoveTermFormulas& tfr,
                                        context::UserContext* userContext,
                                        ProofNodeManager* pnm)
     : d_engine(engine),
       d_logicInfo(engine.getLogicInfo()),
       d_ppCache(userContext),
-      d_tfr(tfr),
+      d_tfr(userContext, pnm),
       d_tpg(pnm ? new TConvProofGenerator(
                       pnm,
                       userContext,

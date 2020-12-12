@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file theory_preprocess_manager.h
+/*! \file theory_converter.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Andrew Reynolds
@@ -9,13 +9,13 @@
  ** All rights reserved.  See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** \brief Theory preprocess manager
+ ** \brief Theory converter
  **/
 
 #include "cvc4_private.h"
 
-#ifndef CVC4__PROP__THEORY_PREPROCESS_MANAGER_H
-#define CVC4__PROP__THEORY_PREPROCESS_MANAGER_H
+#ifndef CVC4__PROP__THEORY_CONVERTER_H
+#define CVC4__PROP__THEORY_CONVERTER_H
 
 #include "theory/theory_preprocessor.h"
 #include "expr/node.h"
@@ -26,16 +26,15 @@ namespace CVC4 {
 namespace prop {
 
 /**
- * Manages theory preprocessing between TheoryEngine and PropEngine.
+ * Manages theory preprocessing conversions between TheoryEngine and PropEngine.
  */
-class TheoryPreprocessManager
+class TheoryConverter
 {
  public:
-  TheoryPreprocessManager(TheoryEngine& engine,
-                     RemoveTermFormulas& tfr,
+  TheoryConverter(TheoryEngine& engine,
                      context::UserContext* userContext,
                      ProofNodeManager* pnm = nullptr);
-  ~TheoryPreprocessManager();
+  ~TheoryConverter();
   
   /** 
    * Call the preprocessor on node, return trust node corresponding to the

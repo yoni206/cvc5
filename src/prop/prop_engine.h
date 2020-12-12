@@ -30,6 +30,7 @@
 #include "proof/proof_manager.h"
 #include "prop/sat_relevancy.h"
 #include "prop/proof_cnf_stream.h"
+#include "prop/theory_converter.h"
 #include "util/resource_manager.h"
 #include "util/result.h"
 #include "util/unsafe_interrupt_exception.h"
@@ -89,6 +90,14 @@ class PropEngine
    */
   void shutdown() {}
 
+  /**
+   * Preprocess 
+   */
+  TrustNode preprocess(TNode node,
+                       std::vector<TrustNode>& newLemmas,
+                       std::vector<Node>& newSkolems,
+                       bool doTheoryPreprocess);
+  
   /**
    * Notify preprocessed assertions. This method is called just before the
    * assertions are asserted to this prop engine. This method notifies the
@@ -268,6 +277,9 @@ class PropEngine
   /** The SAT relevancy module we will use */
   std::unique_ptr<SatRelevancy> d_satRlv;
 
+  /** The theory converter */
+  TheoryConverter d_tconv;
+  
   /** SAT solver's proxy back to theories; kept around for dtor cleanup */
   TheoryProxy* d_theoryProxy;
 

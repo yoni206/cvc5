@@ -40,8 +40,8 @@ PreprocessingPassResult IteRemoval::applyInternal(AssertionPipeline* assertions)
   {
     std::vector<theory::TrustNode> newAsserts;
     std::vector<Node> newSkolems;
-    TrustNode trn = d_preprocContext->getIteRemover()->run(
-        (*assertions)[i], newAsserts, newSkolems, true);
+    TrustNode trn = d_preprocContext->getPropEngine()->preprocess(
+        (*assertions)[i], newAsserts, newSkolems, false);
     // process
     assertions->replaceTrusted(i, trn);
     Assert(newSkolems.size() == newAsserts.size());

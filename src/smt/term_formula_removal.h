@@ -38,7 +38,7 @@ typedef std::unordered_map<Node, unsigned, NodeHashFunction> IteSkolemMap;
 
 class RemoveTermFormulas {
  public:
-  RemoveTermFormulas(context::UserContext* u);
+  RemoveTermFormulas(context::UserContext* u, ProofNodeManager* pnm = nullptr);
   ~RemoveTermFormulas();
 
   /**
@@ -104,12 +104,6 @@ class RemoveTermFormulas {
 
   /** Garbage collects non-context dependent data-structures. */
   void garbageCollect();
-
-  /**
-   * Set proof node manager, which signals this class to enable proofs using the
-   * given proof node manager.
-   */
-  void setProofNodeManager(ProofNodeManager* pnm);
 
   /**
    * Get proof generator that is responsible for all proofs for removing term
