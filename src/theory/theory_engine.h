@@ -293,11 +293,11 @@ class TheoryEngine {
   /** sort inference module */
   SortInference d_sortInfer;
 
-public:
+ public:
   /** The theory preprocessor TODO: remove */
   theory::TheoryPreprocessor* d_tpp;
-private:
 
+ private:
   /** Time spent in theory combination */
   TimerStat d_combineTheoriesTime;
 

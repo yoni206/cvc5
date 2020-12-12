@@ -25,8 +25,8 @@
 #include "expr/node.h"
 #include "expr/tconv_seq_proof_generator.h"
 #include "expr/term_conversion_proof_generator.h"
-#include "theory/trust_node.h"
 #include "smt/term_formula_removal.h"
+#include "theory/trust_node.h"
 
 namespace CVC4 {
 
