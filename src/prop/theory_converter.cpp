@@ -14,6 +14,8 @@
 
 #include "prop/theory_converter.h"
 
+#include "theory/theory_engine.h"
+
 
 namespace CVC4 {
 namespace prop {
@@ -30,12 +32,12 @@ TheoryConverter::~TheoryConverter()
 {
 }
 
-TrustNode TheoryConverter::preprocess(TNode node,
-                      std::vector<TrustNode>& newLemmas,
+theory::TrustNode TheoryConverter::preprocess(TNode node,
+                      std::vector<theory::TrustNode>& newLemmas,
                       std::vector<Node>& newSkolems,
                       bool doTheoryPreprocess)
 {
-  TrustNode pnode = d_tpp.preprocess(node, newLemmas, newSkolems, doTheoryPreprocess);
+  theory::TrustNode pnode = d_tpp.preprocess(node, newLemmas, newSkolems, doTheoryPreprocess);
   // if we changed node by preprocessing
   if (!pnode.isNull())
   {
@@ -45,10 +47,10 @@ TrustNode TheoryConverter::preprocess(TNode node,
   return pnode;
 }
 
-TrustNode TheoryConverter::convertLemmaToProp(TrustNode lem)
+theory::TrustNode TheoryConverter::convertLemmaToProp(theory::TrustNode lem)
 {
   Node clem = convertLemmaToPropInternal(lem.getProven());
-  return TrustNode::mkTrustLemma(clem);
+  return theory::TrustNode::mkTrustLemma(clem);
 }
 
 Node TheoryConverter::convertLemmaToPropInternal(Node lem) const

@@ -17,6 +17,7 @@
 #ifndef CVC4__PROP__THEORY_CONVERTER_H
 #define CVC4__PROP__THEORY_CONVERTER_H
 
+#include "context/cdhashmap.h"
 #include "theory/theory_preprocessor.h"
 #include "expr/node.h"
 #include "util/statistics_registry.h"
@@ -30,6 +31,7 @@ namespace prop {
  */
 class TheoryConverter
 {
+  using NodeNodeMap = context::CDHashMap<Node, Node, NodeHashFunction>;
  public:
   TheoryConverter(TheoryEngine& engine,
                      context::UserContext* userContext,
@@ -40,8 +42,8 @@ class TheoryConverter
    * Call the preprocessor on node, return trust node corresponding to the
    * rewrite.
    */
-  TrustNode preprocess(TNode node,
-                       std::vector<TrustNode>& newLemmas,
+  theory::TrustNode preprocess(TNode node,
+                       std::vector<theory::TrustNode>& newLemmas,
                        std::vector<Node>& newSkolems,
                        bool doTheoryPreprocess);
   
@@ -51,7 +53,7 @@ class TheoryConverter
    * 
    * It should be the case that convertLemmaToProp(preprocess(n)) = n.
    */
-  TrustNode convertLemmaToProp(TrustNode lem);
+  theory::TrustNode convertLemmaToProp(theory::TrustNode lem);
 private:
   /** 
    * Convert lemma to the form to send to the CNF stream.

@@ -140,8 +140,8 @@ PropEngine::~PropEngine() {
 }
 
 
-TrustNode PropEngine::preprocess(TNode node,
-                      std::vector<TrustNode>& newLemmas,
+theory::TrustNode PropEngine::preprocess(TNode node,
+                      std::vector<theory::TrustNode>& newLemmas,
                       std::vector<Node>& newSkolems,
                       bool doTheoryPreprocess)
 {
