@@ -38,7 +38,8 @@ class TheoryPreprocessManager
   ~TheoryPreprocessManager();
   
   /** 
-   * Call the preprocessor on node.
+   * Call the preprocessor on node, return trust node corresponding to the
+   * rewrite.
    */
   TrustNode preprocess(TNode node,
                        std::vector<TrustNode>& newLemmas,
