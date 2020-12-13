@@ -30,13 +30,12 @@ TheoryConverter::TheoryConverter(TheoryEngine& engine,
 
 TheoryConverter::~TheoryConverter() {}
 
-
-theory::TrustNode TheoryConverter::preprocessLemma(theory::TrustNode trn,
-                              std::vector<theory::TrustNode>& newLemmas,
-                              std::vector<Node>& newSkolems,
-                              bool doTheoryPreprocess)
+theory::TrustNode TheoryConverter::preprocessLemma(
+    theory::TrustNode trn,
+    std::vector<theory::TrustNode>& newLemmas,
+    std::vector<Node>& newSkolems,
+    bool doTheoryPreprocess)
 {
-  
 }
 
 theory::TrustNode TheoryConverter::preprocess(

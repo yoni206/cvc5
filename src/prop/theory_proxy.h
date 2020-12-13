@@ -31,10 +31,10 @@
 #include "expr/node.h"
 #include "prop/sat_solver.h"
 #include "theory/theory.h"
-#include "util/resource_manager.h"
-#include "util/statistics_registry.h"
 #include "theory/theory_preprocessor.h"
 #include "theory/trust_node.h"
+#include "util/resource_manager.h"
+#include "util/statistics_registry.h"
 
 namespace CVC4 {
 
@@ -53,6 +53,7 @@ class SatRelevancy;
 class TheoryProxy
 {
   using NodeNodeMap = context::CDHashMap<Node, Node, NodeHashFunction>;
+
  public:
   TheoryProxy(PropEngine* propEngine,
               TheoryEngine* theoryEngine,
@@ -97,15 +98,14 @@ class TheoryProxy
 
   CnfStream* getCnfStream();
 
-
   /**
    * Call the preprocessor on node, return trust node corresponding to the
    * rewrite.
    */
   theory::TrustNode preprocessLemma(theory::TrustNode trn,
-                               std::vector<theory::TrustNode>& newLemmas,
-                               std::vector<Node>& newSkolems,
-                               bool doTheoryPreprocess);
+                                    std::vector<theory::TrustNode>& newLemmas,
+                                    std::vector<Node>& newSkolems,
+                                    bool doTheoryPreprocess);
   /**
    * Call the preprocessor on node, return trust node corresponding to the
    * rewrite.
@@ -122,7 +122,7 @@ class TheoryProxy
    * It should be the case that convertLemmaToProp(preprocess(n)) = n.
    */
   theory::TrustNode convertLemmaToProp(theory::TrustNode lem);
-  
+
  private:
   /**
    * Convert lemma to the form to send to the CNF stream.
@@ -151,7 +151,7 @@ class TheoryProxy
 
   /** Pointer to the SAT relevancy module, if it exists */
   SatRelevancy* d_satRlv;
-  
+
   /** The theory preprocessor */
   theory::TheoryPreprocessor d_tpp;
   /** Map from preprocessed atoms to their unpreprocessed form */

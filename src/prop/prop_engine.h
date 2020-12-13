@@ -121,7 +121,7 @@ class PropEngine
    * on an activity heuristic
    */
   Node assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p);
-  
+
   /**
    * Converts the given formula to CNF and assert the CNF to the SAT solver.
    * The formula can be removed by the SAT solver after backtracking lower
@@ -300,7 +300,7 @@ class PropEngine
 
   /** Theory registrar; kept around for destructor cleanup */
   theory::TheoryRegistrar* d_registrar;
-  
+
   /** The proof node manager */
   ProofNodeManager* d_pnm;
 

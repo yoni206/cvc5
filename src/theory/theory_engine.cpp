@@ -1420,11 +1420,9 @@ theory::LemmaStatus TheoryEngine::lemma(theory::TrustNode tlemma,
     printer.toStreamCmdComment(out, "theory lemma: expect valid");
     printer.toStreamCmdCheckSat(out, n);
   }
-  
-  
+
   Node retLemma = d_propEngine->assertLemma(tlemma, p);
-  
-  
+
   // If specified, we must add this lemma to the set of those that need to be
   // justified, where note we pass all auxiliary lemmas in lemmas, since these
   // by extension must be justified as well.
@@ -1432,7 +1430,7 @@ theory::LemmaStatus TheoryEngine::lemma(theory::TrustNode tlemma,
   {
     d_relManager->notifyPreprocessedAssertion(retLemma);
   }
-  
+
   // Mark that we added some lemmas
   d_lemmasAdded = true;
 

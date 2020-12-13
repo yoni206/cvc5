@@ -44,7 +44,7 @@ TheoryProxy::TheoryProxy(PropEngine* propEngine,
       d_theoryEngine(theoryEngine),
       d_queue(context),
       d_satRlv(satRlv),
-      d_tpp(*theoryEngine, userContext, nullptr),  // TODO: pass pnm 
+      d_tpp(*theoryEngine, userContext, nullptr),  // TODO: pass pnm
       d_ppLitMap(userContext)
 {
 }
@@ -176,11 +176,11 @@ SatValue TheoryProxy::getDecisionPolarity(SatVariable var) {
 
 CnfStream* TheoryProxy::getCnfStream() { return d_cnfStream; }
 
-
-theory::TrustNode TheoryProxy::preprocessLemma(theory::TrustNode trn,
-                              std::vector<theory::TrustNode>& newLemmas,
-                              std::vector<Node>& newSkolems,
-                              bool doTheoryPreprocess)
+theory::TrustNode TheoryProxy::preprocessLemma(
+    theory::TrustNode trn,
+    std::vector<theory::TrustNode>& newLemmas,
+    std::vector<Node>& newSkolems,
+    bool doTheoryPreprocess)
 {
   return d_tpp.preprocessLemma(trn, newLemmas, newSkolems, doTheoryPreprocess);
 }

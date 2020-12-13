@@ -35,9 +35,9 @@
 #include "prop/sat_solver_factory.h"
 #include "prop/theory_proxy.h"
 #include "smt/smt_statistics_registry.h"
+#include "theory/output_channel.h"
 #include "theory/theory_engine.h"
 #include "theory/theory_registrar.h"
-#include "theory/output_channel.h"
 #include "util/resource_manager.h"
 #include "util/result.h"
 
@@ -147,7 +147,8 @@ theory::TrustNode PropEngine::preprocess(
     std::vector<Node>& newSkolems,
     bool doTheoryPreprocess)
 {
-  return d_theoryProxy->preprocess(node, newLemmas, newSkolems, doTheoryPreprocess);
+  return d_theoryProxy->preprocess(
+      node, newLemmas, newSkolems, doTheoryPreprocess);
 }
 
 void PropEngine::notifyPreprocessedAssertions(
@@ -197,7 +198,6 @@ Node PropEngine::assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p)
 
   Assert(newSkolems.size() == newLemmas.size());
 
-
   // do final checks on the lemmas we are about to send
   if (isProofEnabled())
   {
@@ -224,7 +224,7 @@ Node PropEngine::assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p)
 
   // now, send the lemmas to the prop engine
   assertLemmas(tplemma, newLemmas, newSkolems, removable);
-  
+
   // make the return lemma, which the theory engine will use
   Node retLemma = tplemma.getNode();
   if (!newLemmas.empty())
@@ -239,7 +239,6 @@ Node PropEngine::assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p)
   }
   return retLemma;
 }
-
 
 void PropEngine::assertLemmaInternal(theory::TrustNode trn, bool removable)
 {
@@ -312,10 +311,7 @@ void PropEngine::printSatisfyingAssignment(){
   }
 }
 
-bool PropEngine::isProofEnabled() const
-{
-  return d_pnm!=nullptr;
-}
+bool PropEngine::isProofEnabled() const { return d_pnm != nullptr; }
 
 Result PropEngine::checkSat() {
   Assert(!d_inCheckSat) << "Sat solver in solve()!";
@@ -404,11 +400,13 @@ void PropEngine::getBooleanVariables(std::vector<TNode>& outputVariables) const 
   d_cnfStream->getBooleanVariables(outputVariables);
 }
 
-Node PropEngine::ensureLiteral(TNode n) {
+Node PropEngine::ensureLiteral(TNode n)
+{
   // must preprocess
   std::vector<theory::TrustNode> newLemmas;
   std::vector<Node> newSkolems;
-  theory::TrustNode tpn = d_theoryProxy->preprocess(n, newLemmas, newSkolems, true);
+  theory::TrustNode tpn =
+      d_theoryProxy->preprocess(n, newLemmas, newSkolems, true);
   // send lemmas corresponding to the skolems introduced by preprocessing n
   for (const theory::TrustNode& tnl : newLemmas)
   {

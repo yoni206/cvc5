@@ -34,15 +34,15 @@ PreprocessingPassResult TheoryPreprocess::applyInternal(
   d_preprocContext->spendResource(ResourceManager::Resource::PreprocessStep);
 
   IteSkolemMap& imap = assertions->getIteSkolemMap();
-  PropEngine * propEngine = d_preprocContext->getPropEngine();
+  PropEngine* propEngine = d_preprocContext->getPropEngine();
   // Remove all of the ITE occurrences and normalize
   for (unsigned i = 0, size = assertions->size(); i < size; ++i)
   {
     Node assertion = (*assertions)[i];
     std::vector<theory::TrustNode> newAsserts;
     std::vector<Node> newSkolems;
-    TrustNode trn = propEngine->preprocess(
-        assertion, newAsserts, newSkolems, true);
+    TrustNode trn =
+        propEngine->preprocess(assertion, newAsserts, newSkolems, true);
     if (!trn.isNull())
     {
       // process
