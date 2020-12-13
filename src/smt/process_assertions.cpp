@@ -330,11 +330,6 @@ bool ProcessAssertions::apply(Assertions& as)
   d_passes["rewrite"]->apply(&assertions);
   // apply theory preprocess
   d_passes["theory-preprocess"]->apply(&assertions);
-  // Must remove ITEs again since theory preprocessing may introduce them.
-  // Notice that we alternatively could ensure that the theory-preprocess
-  // pass above calls TheoryPreprocess::preprocess instead of
-  // TheoryPreprocess::theoryPreprocess, as the former also does ITE removal.
-  d_passes["ite-removal"]->apply(&assertions);
   // This is needed because when solving incrementally, removeITEs may
   // introduce skolems that were solved for earlier and thus appear in the
   // substitution map.
