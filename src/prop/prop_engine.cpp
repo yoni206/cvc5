@@ -37,6 +37,7 @@
 #include "smt/smt_statistics_registry.h"
 #include "theory/theory_engine.h"
 #include "theory/theory_registrar.h"
+#include "theory/output_channel.h"
 #include "util/resource_manager.h"
 #include "util/result.h"
 
@@ -74,10 +75,10 @@ PropEngine::PropEngine(TheoryEngine* te,
     : d_inCheckSat(false),
       d_theoryEngine(te),
       d_context(satContext),
-      d_tconv(*te, userContext, nullptr),  // TODO: pass pnm
       d_theoryProxy(NULL),
       d_satSolver(NULL),
       d_registrar(NULL),
+      d_pnm(nullptr),
       d_cnfStream(NULL),
       d_pfCnfStream(nullptr),
       d_interrupted(false),
@@ -110,6 +111,7 @@ PropEngine::PropEngine(TheoryEngine* te,
                                   d_theoryEngine,
                                   d_decisionEngine.get(),
                                   d_context,
+                                  userContext,
                                   d_cnfStream,
                                   d_satRlv.get());
   d_satSolver->initialize(d_context, d_theoryProxy);
@@ -145,7 +147,7 @@ theory::TrustNode PropEngine::preprocess(
     std::vector<Node>& newSkolems,
     bool doTheoryPreprocess)
 {
-  return d_tconv.preprocess(node, newLemmas, newSkolems, doTheoryPreprocess);
+  return d_theoryProxy->preprocess(node, newLemmas, newSkolems, doTheoryPreprocess);
 }
 
 void PropEngine::notifyPreprocessedAssertions(
@@ -182,7 +184,64 @@ void PropEngine::assertFormula(TNode node) {
   }
 }
 
-void PropEngine::assertLemma(theory::TrustNode trn, bool removable)
+Node PropEngine::assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p)
+{
+  bool removable = isLemmaPropertyRemovable(p);
+  bool preprocess = isLemmaPropertyPreprocess(p);
+
+  // call preprocessor
+  std::vector<theory::TrustNode> newLemmas;
+  std::vector<Node> newSkolems;
+  theory::TrustNode tplemma =
+      d_theoryProxy->preprocessLemma(tlemma, newLemmas, newSkolems, preprocess);
+
+  Assert(newSkolems.size() == newLemmas.size());
+
+
+  // do final checks on the lemmas we are about to send
+  if (isProofEnabled())
+  {
+    Assert(tplemma.getGenerator() != nullptr);
+    // ensure closed, make the proof node eagerly here to debug
+    tplemma.debugCheckClosed("te-proof-debug", "TheoryEngine::lemma");
+    for (size_t i = 0, lsize = newLemmas.size(); i < lsize; ++i)
+    {
+      Assert(newLemmas[i].getGenerator() != nullptr);
+      newLemmas[i].debugCheckClosed("te-proof-debug",
+                                    "TheoryEngine::lemma_new");
+    }
+  }
+
+  if (Trace.isOn("te-lemma"))
+  {
+    Trace("te-lemma") << "Lemma, output: " << tplemma.getProven() << std::endl;
+    for (size_t i = 0, lsize = newLemmas.size(); i < lsize; ++i)
+    {
+      Trace("te-lemma") << "Lemma, new lemma: " << newLemmas[i].getProven()
+                        << " (skolem is " << newSkolems[i] << ")" << std::endl;
+    }
+  }
+
+  // now, send the lemmas to the prop engine
+  assertLemmas(tplemma, newLemmas, newSkolems, removable);
+  
+  // make the return lemma, which the theory engine will use
+  Node retLemma = tplemma.getNode();
+  if (!newLemmas.empty())
+  {
+    std::vector<Node> lemmas{retLemma};
+    for (const theory::TrustNode& tnl : newLemmas)
+    {
+      lemmas.push_back(tnl.getProven());
+    }
+    // the returned lemma is the conjunction of all additional lemmas.
+    retLemma = NodeManager::currentNM()->mkNode(kind::AND, lemmas);
+  }
+  return retLemma;
+}
+
+
+void PropEngine::assertLemmaInternal(theory::TrustNode trn, bool removable)
 {
   Node node = trn.getNode();
   bool negated = trn.getKind() == theory::TrustNodeKind::CONFLICT;
@@ -199,10 +258,10 @@ void PropEngine::assertLemmas(theory::TrustNode lem,
 {
   Assert(ppSkolems.size() == ppLemmas.size());
   // assert the lemmas
-  assertLemma(lem, removable);
+  assertLemmaInternal(lem, removable);
   for (size_t i = 0, lsize = ppLemmas.size(); i < lsize; ++i)
   {
-    assertLemma(ppLemmas[i], removable);
+    assertLemmaInternal(ppLemmas[i], removable);
   }
 
   // assert to decision engine
@@ -251,6 +310,11 @@ void PropEngine::printSatisfyingAssignment(){
       Debug("prop-value") << "'" << l << "' " << value << " " << n << endl;
     }
   }
+}
+
+bool PropEngine::isProofEnabled() const
+{
+  return d_pnm!=nullptr;
 }
 
 Result PropEngine::checkSat() {
@@ -340,8 +404,22 @@ void PropEngine::getBooleanVariables(std::vector<TNode>& outputVariables) const 
   d_cnfStream->getBooleanVariables(outputVariables);
 }
 
-void PropEngine::ensureLiteral(TNode n) {
-  d_cnfStream->ensureLiteral(n);
+Node PropEngine::ensureLiteral(TNode n) {
+  // must preprocess
+  std::vector<theory::TrustNode> newLemmas;
+  std::vector<Node> newSkolems;
+  theory::TrustNode tpn = d_theoryProxy->preprocess(n, newLemmas, newSkolems, true);
+  // send lemmas corresponding to the skolems introduced by preprocessing n
+  for (const theory::TrustNode& tnl : newLemmas)
+  {
+    Trace("ensureLiteral") << "  lemma: " << tnl.getNode() << std::endl;
+    assertLemma(tnl, theory::LemmaProperty::NONE);
+  }
+  Node preprocessed = tpn.isNull() ? Node(n) : tpn.getNode();
+  Trace("ensureLiteral") << "ensureLiteral preprocessed: " << preprocessed
+                         << std::endl;
+  d_cnfStream->ensureLiteral(preprocessed);
+  return preprocessed;
 }
 
 void PropEngine::push() {

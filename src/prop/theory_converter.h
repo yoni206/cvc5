@@ -43,6 +43,14 @@ class TheoryConverter
    * Call the preprocessor on node, return trust node corresponding to the
    * rewrite.
    */
+  theory::TrustNode preprocessLemma(theory::TrustNode trn,
+                               std::vector<theory::TrustNode>& newLemmas,
+                               std::vector<Node>& newSkolems,
+                               bool doTheoryPreprocess);
+  /**
+   * Call the preprocessor on node, return trust node corresponding to the
+   * rewrite.
+   */
   theory::TrustNode preprocess(TNode node,
                                std::vector<theory::TrustNode>& newLemmas,
                                std::vector<Node>& newSkolems,

@@ -30,7 +30,6 @@
 #include "proof/proof_manager.h"
 #include "prop/proof_cnf_stream.h"
 #include "prop/sat_relevancy.h"
-#include "prop/theory_converter.h"
 #include "util/resource_manager.h"
 #include "util/result.h"
 #include "util/unsafe_interrupt_exception.h"
@@ -121,7 +120,18 @@ class PropEngine
    * @param removable whether this lemma can be quietly removed based
    * on an activity heuristic
    */
-  void assertLemma(theory::TrustNode trn, bool removable);
+  Node assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p);
+  
+  /**
+   * Converts the given formula to CNF and assert the CNF to the SAT solver.
+   * The formula can be removed by the SAT solver after backtracking lower
+   * than the (SAT and SMT) level at which it was asserted.
+   *
+   * @param trn the trust node storing the formula to assert
+   * @param removable whether this lemma can be quietly removed based
+   * on an activity heuristic
+   */
+  void assertLemmaInternal(theory::TrustNode trn, bool removable);
 
   /**
    * Assert lemma trn with preprocessing lemmas ppLemmas which correspond
@@ -192,7 +202,7 @@ class PropEngine
    * that is definitionally equal to it.  The result of this function
    * is that the Node can be queried via getSatValue().
    */
-  void ensureLiteral(TNode n);
+  Node ensureLiteral(TNode n);
 
   /**
    * Push the context level.
@@ -259,6 +269,8 @@ class PropEngine
  private:
   /** Dump out the satisfying assignment (after SAT result) */
   void printSatisfyingAssignment();
+  /** is proof enabled */
+  bool isProofEnabled() const;
   /**
    * Indicates that the SAT solver is currently solving something and we should
    * not mess with it's internal state.
@@ -277,9 +289,6 @@ class PropEngine
   /** The SAT relevancy module we will use */
   std::unique_ptr<SatRelevancy> d_satRlv;
 
-  /** The theory converter */
-  TheoryConverter d_tconv;
-
   /** SAT solver's proxy back to theories; kept around for dtor cleanup */
   TheoryProxy* d_theoryProxy;
 
@@ -291,6 +300,9 @@ class PropEngine
 
   /** Theory registrar; kept around for destructor cleanup */
   theory::TheoryRegistrar* d_registrar;
+  
+  /** The proof node manager */
+  ProofNodeManager* d_pnm;
 
   /** The CNF converter in use */
   CnfStream* d_cnfStream;

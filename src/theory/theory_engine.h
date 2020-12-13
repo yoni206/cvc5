@@ -293,11 +293,6 @@ class TheoryEngine {
   /** sort inference module */
   SortInference d_sortInfer;
 
- public:
-  /** The theory preprocessor TODO: remove */
-  theory::TheoryPreprocessor* d_tpp;
-
- private:
   /** Time spent in theory combination */
   TimerStat d_combineTheoriesTime;
 
@@ -447,12 +442,6 @@ class TheoryEngine {
   bool isProofEnabled() const;
 
  public:
-  /**
-   * Runs theory specific preprocessing on the non-Boolean parts of
-   * the formula.  This is only called on input assertions, after ITEs
-   * have been removed.
-   */
-  theory::TrustNode preprocess(TNode node);
 
   /** Notify (preprocessed) assertions. */
   void notifyPreprocessedAssertions(const std::vector<Node>& assertions);

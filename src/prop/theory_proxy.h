@@ -26,12 +26,15 @@
 #include <iosfwd>
 #include <unordered_set>
 
+#include "context/cdhashmap.h"
 #include "context/cdqueue.h"
 #include "expr/node.h"
 #include "prop/sat_solver.h"
 #include "theory/theory.h"
 #include "util/resource_manager.h"
 #include "util/statistics_registry.h"
+#include "theory/theory_preprocessor.h"
+#include "theory/trust_node.h"
 
 namespace CVC4 {
 
@@ -49,11 +52,13 @@ class SatRelevancy;
  */
 class TheoryProxy
 {
+  using NodeNodeMap = context::CDHashMap<Node, Node, NodeHashFunction>;
  public:
   TheoryProxy(PropEngine* propEngine,
               TheoryEngine* theoryEngine,
               DecisionEngine* decisionEngine,
               context::Context* context,
+              context::UserContext* userContext,
               CnfStream* cnfStream,
               SatRelevancy* satRlv = nullptr);
 
@@ -92,7 +97,37 @@ class TheoryProxy
 
   CnfStream* getCnfStream();
 
+
+  /**
+   * Call the preprocessor on node, return trust node corresponding to the
+   * rewrite.
+   */
+  theory::TrustNode preprocessLemma(theory::TrustNode trn,
+                               std::vector<theory::TrustNode>& newLemmas,
+                               std::vector<Node>& newSkolems,
+                               bool doTheoryPreprocess);
+  /**
+   * Call the preprocessor on node, return trust node corresponding to the
+   * rewrite.
+   */
+  theory::TrustNode preprocess(TNode node,
+                               std::vector<theory::TrustNode>& newLemmas,
+                               std::vector<Node>& newSkolems,
+                               bool doTheoryPreprocess);
+
+  /**
+   * Convert lemma to the form to send to the CNF stream. This means mapping
+   * back to unpreprocessed form.
+   *
+   * It should be the case that convertLemmaToProp(preprocess(n)) = n.
+   */
+  theory::TrustNode convertLemmaToProp(theory::TrustNode lem);
+  
  private:
+  /**
+   * Convert lemma to the form to send to the CNF stream.
+   */
+  Node convertLemmaToPropInternal(Node lem) const;
   /** The prop engine we are using. */
   PropEngine* d_propEngine;
 
@@ -116,6 +151,11 @@ class TheoryProxy
 
   /** Pointer to the SAT relevancy module, if it exists */
   SatRelevancy* d_satRlv;
+  
+  /** The theory preprocessor */
+  theory::TheoryPreprocessor d_tpp;
+  /** Map from preprocessed atoms to their unpreprocessed form */
+  NodeNodeMap d_ppLitMap;
 }; /* class TheoryProxy */
 
 }/* CVC4::prop namespace */
