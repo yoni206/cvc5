@@ -101,7 +101,7 @@ TrustNode TheoryPreprocessor::preprocess(TNode node,
   }
 
   // Remove the ITEs
-  TrustNode ttfr = d_tfr.run(ppNode, newLemmas, newSkolems, false);
+  TrustNode ttfr = d_tfr.run(ppNode, newLemmas, newSkolems);
   Node rtfNode = ttfr.getNode();
 
   if (Debug.isOn("lemma-ites"))

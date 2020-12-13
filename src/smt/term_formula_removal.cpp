@@ -50,29 +50,9 @@ RemoveTermFormulas::~RemoveTermFormulas() {}
 theory::TrustNode RemoveTermFormulas::run(
     Node assertion,
     std::vector<theory::TrustNode>& newAsserts,
-    std::vector<Node>& newSkolems,
-    bool reportDeps)
+    std::vector<Node>& newSkolems)
 {
   Node itesRemoved = runInternal(assertion, newAsserts, newSkolems);
-  // In some calling contexts, not necessary to report dependence information.
-  if (reportDeps && options::unsatCores())
-  {
-    // new assertions have a dependence on the node
-    if (options::unsatCores())
-    {
-      ProofManager::currentPM()->addDependence(itesRemoved, assertion);
-    }
-    unsigned n = 0;
-    while (n < newAsserts.size())
-    {
-      if (options::unsatCores())
-      {
-        ProofManager::currentPM()->addDependence(newAsserts[n].getProven(),
-                                                 assertion);
-      }
-      ++n;
-    }
-  }
   // The rewriting of assertion can be justified by the term conversion proof
   // generator d_tpg.
   return theory::TrustNode::mkTrustRewrite(assertion, itesRemoved, d_tpg.get());
