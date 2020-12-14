@@ -23,7 +23,7 @@ using namespace CVC4::kind;
 namespace CVC4 {
 namespace prop {
 
-SatRelevancy::SatRelevancy(DPLLSatSolverInterface* satSolver,
+SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
                            context::Context* context,
                            CnfStream* cnfStream)
     : d_satSolver(satSolver),

@@ -33,7 +33,7 @@ class TheoryEngine;
 namespace prop {
 
 class CnfStream;
-class DPLLSatSolverInterface;
+class CDCLTSatSolverInterface;
 
 class RlvWaitInfo
 {
@@ -59,7 +59,7 @@ class SatRelevancy
           RlvWaitMap;
 
  public:
-  SatRelevancy(DPLLSatSolverInterface* satSolver,
+  SatRelevancy(CDCLTSatSolverInterface* satSolver,
                context::Context* context,
                CnfStream* cnfStream);
 
@@ -105,7 +105,7 @@ class SatRelevancy
    */
   void addParentRlvWait(TNode n, TNode parent);
   /** Pointer to the SAT solver */
-  DPLLSatSolverInterface* d_satSolver;
+  CDCLTSatSolverInterface* d_satSolver;
   /** Pointer to the SAT context */
   context::Context* d_context;
   /** pointer to the CNF stream */

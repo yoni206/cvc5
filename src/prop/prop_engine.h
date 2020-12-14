@@ -28,8 +28,13 @@
 #include "options/options.h"
 #include "preprocessing/assertion_pipeline.h"
 #include "proof/proof_manager.h"
+#include "prop/minisat/core/Solver.h"
+#include "prop/minisat/minisat.h"
 #include "prop/proof_cnf_stream.h"
 #include "prop/sat_relevancy.h"
+#include "prop/prop_proof_manager.h"
+#include "prop/sat_solver_types.h"
+#include "theory/trust_node.h"
 #include "util/resource_manager.h"
 #include "util/result.h"
 #include "util/unsafe_interrupt_exception.h"
@@ -48,7 +53,7 @@ namespace theory {
 namespace prop {
 
 class CnfStream;
-class DPLLSatSolverInterface;
+class CDCLTSatSolverInterface;
 
 class PropEngine;
 
@@ -66,7 +71,8 @@ class PropEngine
              context::Context* satContext,
              context::UserContext* userContext,
              ResourceManager* rm,
-             OutputManager& outMgr);
+             OutputManager& outMgr,
+             ProofNodeManager* pnm);
 
   /**
    * Destructor.
@@ -259,6 +265,10 @@ class PropEngine
   /** Retrieve this modules proof CNF stream. */
   ProofCnfStream* getProofCnfStream();
 
+  /** Checks that the proof is closed w.r.t. asserted formulas to this engine as
+   * well as to the given assertions. */
+  void checkProof(context::CDList<Node>* assertions);
+
   /**
    * Return the prop engine proof. This should be called only when proofs are
    * enabled. Returns a proof of false whose free assumptions are the
@@ -266,6 +276,8 @@ class PropEngine
    */
   std::shared_ptr<ProofNode> getProof();
 
+  /** Is proof enabled? */
+  bool isProofEnabled() const;
  private:
   /** Dump out the satisfying assignment (after SAT result) */
   void printSatisfyingAssignment();
@@ -293,7 +305,7 @@ class PropEngine
   TheoryProxy* d_theoryProxy;
 
   /** The SAT solver proxy */
-  DPLLSatSolverInterface* d_satSolver;
+  CDCLTSatSolverInterface* d_satSolver;
 
   /** List of all of the assertions that need to be made */
   std::vector<Node> d_assertionList;
@@ -301,13 +313,16 @@ class PropEngine
   /** Theory registrar; kept around for destructor cleanup */
   theory::TheoryRegistrar* d_registrar;
 
-  /** The proof node manager */
+  /** A pointer to the proof node maneger to be used by this engine. */
   ProofNodeManager* d_pnm;
 
   /** The CNF converter in use */
   CnfStream* d_cnfStream;
   /** Proof-producing CNF converter */
   std::unique_ptr<ProofCnfStream> d_pfCnfStream;
+
+  /** The proof manager for prop engine */
+  std::unique_ptr<PropPfManager> d_ppm;
 
   /** Whether we were just interrupted (or not) */
   bool d_interrupted;
