@@ -346,8 +346,6 @@ void PropEngine::printSatisfyingAssignment(){
   }
 }
 
-bool PropEngine::isProofEnabled() const { return d_pnm != nullptr; }
-
 Result PropEngine::checkSat() {
   Assert(!d_inCheckSat) << "Sat solver in solve()!";
   Debug("prop") << "PropEngine::checkSat()" << endl;

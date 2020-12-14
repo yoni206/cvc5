@@ -281,8 +281,6 @@ class PropEngine
  private:
   /** Dump out the satisfying assignment (after SAT result) */
   void printSatisfyingAssignment();
-  /** is proof enabled */
-  bool isProofEnabled() const;
   /**
    * Indicates that the SAT solver is currently solving something and we should
    * not mess with it's internal state.
