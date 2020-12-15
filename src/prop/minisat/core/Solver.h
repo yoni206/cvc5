@@ -158,6 +158,9 @@ public:
  /** Retrive the refutation proof */
  std::shared_ptr<ProofNode> getProof();
 
+ /** Is proof enabled? */
+ bool isProofEnabled() const;
+
  // Less than for literals in a lemma
  struct lemma_lt
  {
@@ -388,7 +391,7 @@ protected:
 
     // CVC4 Stuff
     /** A vector determining whether each variable represents a theory atom */
-    vec<bool> d_theory;
+    vec<bool> theory;
 
     enum TheoryCheckType {
       // Quick check, but don't perform theory reasoning
