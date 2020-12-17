@@ -90,12 +90,12 @@ class RemoveTermFormulas {
   theory::TrustNode run(Node assertion,
                         std::vector<theory::TrustNode>& newAsserts,
                         std::vector<Node>& newSkolems);
-  /** 
+  /**
    * Same as above, but transforms a lemma.
    */
   theory::TrustNode runLemma(theory::TrustNode lem,
-                        std::vector<theory::TrustNode>& newAsserts,
-                        std::vector<Node>& newSkolems);
+                             std::vector<theory::TrustNode>& newAsserts,
+                             std::vector<Node>& newSkolems);
 
   /**
    * Get proof generator that is responsible for all proofs for removing term
