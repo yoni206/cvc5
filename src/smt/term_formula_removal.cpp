@@ -53,9 +53,51 @@ theory::TrustNode RemoveTermFormulas::run(
     std::vector<Node>& newSkolems)
 {
   Node itesRemoved = runInternal(assertion, newAsserts, newSkolems);
+  if (itesRemoved==assertion)
+  {
+    return theory::TrustNode::null();
+  }
   // The rewriting of assertion can be justified by the term conversion proof
   // generator d_tpg.
   return theory::TrustNode::mkTrustRewrite(assertion, itesRemoved, d_tpg.get());
+}
+
+
+theory::TrustNode RemoveTermFormulas::runLemma(theory::TrustNode lem,
+                      std::vector<theory::TrustNode>& newAsserts,
+                      std::vector<Node>& newSkolems)
+{
+  theory::TrustNode trn = run(lem.getProven(), newAsserts, newSkolems);
+  if (trn.isNull())
+  {
+    // no change
+    return lem;
+  }
+  Assert (trn.getKind()==TrustNodeKind::REWRITE);
+  Node newAssertion = trn.getNode();
+  if (!isProofEnabled())
+  {
+    // proofs not enabled, just take result
+    return theory::TrustNode::mkTrustLemma(newAssertion, nullptr);
+  }
+  Trace("rtf-proof-debug")
+      << "RemoveTermFormulas::run: setup proof for processed new lemma"
+      << std::endl;
+  Node assertionPre = lem.getProven();
+  Node naEq = trn.getProven();
+  // Can skip adding to d_lp if it was already added. The common use case of
+  // this method is using the 
+  if (trn.getGenerator()!=d_lp.get())
+  {
+    d_lp->addLazyStep(naEq, trn.getGenerator());
+  }
+  // ---------------- from input  ------------------------------- from trn
+  // assertionPre                 assertionPre = newAssertion
+  // ------------------------------------------------------- EQ_RESOLVE
+  // newAssertion
+  d_lp->addStep(
+      newAssertion, PfRule::EQ_RESOLVE, {assertionPre, naEq}, {});
+  return theory::TrustNode::mkTrustLemma(newAssertion, d_lp.get());
 }
 
 Node RemoveTermFormulas::runInternal(Node assertion,
