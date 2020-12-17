@@ -89,7 +89,8 @@ class RemoveTermFormulas {
    */
   theory::TrustNode run(Node assertion,
                         std::vector<theory::TrustNode>& newAsserts,
-                        std::vector<Node>& newSkolems);
+                        std::vector<Node>& newSkolems,
+                        bool fixedPoint = false);
   /**
    * Same as above, but transforms a lemma.
    */

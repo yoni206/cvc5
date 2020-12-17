@@ -100,8 +100,8 @@ TrustNode TheoryPreprocessor::preprocess(TNode node,
     ppNode = tpp.getNode();
   }
 
-  // Remove the ITEs
-  TrustNode ttfr = d_tfr.run(ppNode, newLemmas, newSkolems);
+  // Remove the ITEs, fixed point
+  TrustNode ttfr = d_tfr.run(ppNode, newLemmas, newSkolems, true);
   Node rtfNode = ttfr.isNull() ? ppNode : ttfr.getNode();
 
   if (Debug.isOn("lemma-ites"))
