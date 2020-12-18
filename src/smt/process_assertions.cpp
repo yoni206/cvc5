@@ -24,6 +24,7 @@
 #include "options/quantifiers_options.h"
 #include "options/sep_options.h"
 #include "options/smt_options.h"
+#include "options/prop_options.h"
 #include "options/uf_options.h"
 #include "preprocessing/assertion_pipeline.h"
 #include "preprocessing/preprocessing_pass_registry.h"
