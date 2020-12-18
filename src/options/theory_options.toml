@@ -74,11 +74,3 @@ header = "options/theory_options.h"
   type       = "bool"
   default    = "false"
   help       = "enable filtering of literals from the SAT solver to the theory engine based on relevancy"
-
-[[option]]
-  name       = "theoryPpOnAssert"
-  category   = "regular"
-  long       = "tpp-on-assert"
-  type       = "bool"
-  default    = "false"
-  help       = "do theory preprocessing when literals are asserted, not at preprocessing"
