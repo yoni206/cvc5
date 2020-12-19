@@ -92,7 +92,8 @@ theory::TrustNode RemoveTermFormulas::runLemma(
     std::vector<Node>& newSkolems,
     bool fixedPoint)
 {
-  theory::TrustNode trn = run(lem.getProven(), newAsserts, newSkolems, fixedPoint);
+  theory::TrustNode trn =
+      run(lem.getProven(), newAsserts, newSkolems, fixedPoint);
   if (trn.isNull())
   {
     // no change
