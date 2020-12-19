@@ -204,6 +204,8 @@ libcvc4_add_sources(
   prop/sat_solver_types.h
   prop/theory_proxy.cpp
   prop/theory_proxy.h
+  prop/theory_preprocess_solver.cpp
+  prop/theory_preprocess_solver.h
   smt/abduction_solver.cpp
   smt/abduction_solver.h
   smt/abstract_values.cpp

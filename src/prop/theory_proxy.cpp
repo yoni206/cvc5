@@ -61,6 +61,9 @@ void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
   while (!d_queue.empty()) {
     TNode assertion = d_queue.front();
     d_queue.pop();
+    if (options::theoryPpOnAssert())
+    {
+    }
     d_theoryEngine->assertFact(assertion);
   }
   d_theoryEngine->check(effort);
@@ -205,7 +208,8 @@ theory::TrustNode TheoryProxy::preprocess(
 theory::TrustNode TheoryProxy::convertLemmaToProp(theory::TrustNode lem)
 {
   Node clem = convertLemmaToPropInternal(lem.getProven());
-  return theory::TrustNode::mkTrustLemma(clem);
+  // TODO: make proof producing
+  return theory::TrustNode::mkTrustLemma(clem, nullptr);
 }
 
 Node TheoryProxy::convertLemmaToPropInternal(Node lem) const
