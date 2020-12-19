@@ -25,6 +25,7 @@
 #include "prop/cnf_stream.h"
 #include "prop/prop_engine.h"
 #include "prop/theory_proxy.h"
+#include "prop/theory_registrar.h"
 #include "smt/smt_engine.h"
 #include "smt/smt_engine_scope.h"
 #include "theory/arith/theory_arith.h"
@@ -32,7 +33,6 @@
 #include "theory/builtin/theory_builtin.h"
 #include "theory/theory.h"
 #include "theory/theory_engine.h"
-#include "prop/theory_registrar.h"
 
 using namespace CVC4;
 using namespace CVC4::context;

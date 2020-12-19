@@ -261,7 +261,7 @@ class PropEngine
    * on an activity heuristic
    */
   void assertLemmaInternal(theory::TrustNode trn, bool removable);
-  
+
   /**
    * Indicates that the SAT solver is currently solving something and we should
    * not mess with it's internal state.
