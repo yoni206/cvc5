@@ -37,22 +37,29 @@ TheoryProxy::TheoryProxy(PropEngine* propEngine,
                          DecisionEngine* decisionEngine,
                          context::Context* context,
                          context::UserContext* userContext,
-                         CnfStream* cnfStream,
-                         SatRelevancy* satRlv,
                          ProofNodeManager* pnm)
     : d_propEngine(propEngine),
-      d_cnfStream(cnfStream),
+      d_cnfStream(nullptr),
       d_decisionEngine(decisionEngine),
       d_theoryEngine(theoryEngine),
       d_queue(context),
-      d_satRlv(satRlv),
-      d_tpp(*theoryEngine, userContext, pnm),
-      d_ppLitMap(userContext)
+      d_satRlv(nullptr),
+      d_tppSlv(nullptr)
 {
+  // TODO: based on option?
+  d_tppSlv.reset(new TheoryPreprocessSolver(*theoryEngine, userContext, pnm));
 }
 
 TheoryProxy::~TheoryProxy() {
   /* nothing to do for now */
+}
+
+void TheoryProxy::finishInit(
+          CnfStream* cnfStream,
+          SatRelevancy* satRlv)
+{
+  d_cnfStream = cnfStream;
+  d_satRlv = satRlv;
 }
 
 void TheoryProxy::variableNotify(SatVariable var) {
@@ -63,9 +70,7 @@ void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
   while (!d_queue.empty()) {
     TNode assertion = d_queue.front();
     d_queue.pop();
-    if (options::theoryPpOnAssert())
-    {
-    }
+    //TODO: Node passert = tppSlv->assertFact(assertion
     d_theoryEngine->assertFact(assertion);
   }
   d_theoryEngine->check(effort);
@@ -75,6 +80,7 @@ void TheoryProxy::theoryPropagate(std::vector<SatLiteral>& output) {
   // Get the propagated literals
   std::vector<TNode> outputNodes;
   d_theoryEngine->getPropagatedLiterals(outputNodes);
+  // TODO: convert via tppSolv
   for (unsigned i = 0, i_end = outputNodes.size(); i < i_end; ++ i) {
     Debug("prop-explain") << "theoryPropagate() => " << outputNodes[i] << std::endl;
     output.push_back(d_cnfStream->getLiteral(outputNodes[i]));
@@ -84,6 +90,7 @@ void TheoryProxy::theoryPropagate(std::vector<SatLiteral>& output) {
 void TheoryProxy::explainPropagation(SatLiteral l, SatClause& explanation) {
   TNode lNode = d_cnfStream->getNode(l);
   Debug("prop-explain") << "explainPropagation(" << lNode << ")" << std::endl;
+  // TODO: convert via tppSolv
 
   theory::TrustNode tte = d_theoryEngine->getExplanation(lNode);
   Node theoryExplanation = tte.getNode();
@@ -136,6 +143,7 @@ void TheoryProxy::enqueueTheoryLiteral(const SatLiteral& l) {
 
 SatLiteral TheoryProxy::getNextTheoryDecisionRequest() {
   TNode n = d_theoryEngine->getNextDecisionRequest();
+  // TODO: convert via tppSolv
   return n.isNull() ? undefSatLiteral : d_cnfStream->getLiteral(n);
 }
 
@@ -187,7 +195,7 @@ theory::TrustNode TheoryProxy::preprocessLemma(
     std::vector<Node>& newSkolems,
     bool doTheoryPreprocess)
 {
-  return d_tpp.preprocessLemma(trn, newLemmas, newSkolems, doTheoryPreprocess);
+  return d_tppSlv->preprocessLemma(trn, newLemmas, newSkolems, doTheoryPreprocess);
 }
 
 theory::TrustNode TheoryProxy::preprocess(
@@ -196,78 +204,13 @@ theory::TrustNode TheoryProxy::preprocess(
     std::vector<Node>& newSkolems,
     bool doTheoryPreprocess)
 {
-  theory::TrustNode pnode =
-      d_tpp.preprocess(node, newLemmas, newSkolems, doTheoryPreprocess);
-  // if we changed node by preprocessing
-  if (!pnode.isNull())
-  {
-    // map the preprocessed formula to the original
-    d_ppLitMap[pnode.getNode()] = node;
-  }
-  return pnode;
+  return d_tppSlv->preprocess(node, newLemmas, newSkolems, doTheoryPreprocess);
 }
 
-theory::TrustNode TheoryProxy::convertLemmaToProp(theory::TrustNode lem)
+void TheoryProxy::preRegister(Node n)
 {
-  Node clem = convertLemmaToPropInternal(lem.getProven());
-  // TODO: make proof producing
-  return theory::TrustNode::mkTrustLemma(clem, nullptr);
-}
-
-Node TheoryProxy::convertLemmaToPropInternal(Node lem) const
-{
-  NodeManager* nm = NodeManager::currentNM();
-  std::unordered_map<TNode, Node, TNodeHashFunction> visited;
-  std::unordered_map<TNode, Node, TNodeHashFunction>::iterator it;
-  std::vector<TNode> visit;
-  NodeNodeMap::const_iterator itp;
-  TNode cur;
-  visit.push_back(lem);
-  do
-  {
-    cur = visit.back();
-    visit.pop_back();
-    it = visited.find(cur);
-    if (it == visited.end())
-    {
-      // if it was the result of preprocessing something else
-      itp = d_ppLitMap.find(cur);
-      if (itp != d_ppLitMap.end())
-      {
-        visited[cur] = itp->second;
-      }
-      else
-      {
-        visited[cur] = Node::null();
-        visit.push_back(cur);
-        visit.insert(visit.end(), cur.begin(), cur.end());
-      }
-    }
-    else if (it->second.isNull())
-    {
-      Node ret = cur;
-      bool childChanged = false;
-      std::vector<Node> children;
-      // only Boolean connectives, should not be parameterized
-      Assert(cur.getMetaKind() != kind::metakind::PARAMETERIZED);
-      for (const Node& cn : cur)
-      {
-        it = visited.find(cn);
-        Assert(it != visited.end());
-        Assert(!it->second.isNull());
-        childChanged = childChanged || cn != it->second;
-        children.push_back(it->second);
-      }
-      if (childChanged)
-      {
-        ret = nm->mkNode(cur.getKind(), children);
-      }
-      visited[cur] = ret;
-    }
-  } while (!visit.empty());
-  Assert(visited.find(lem) != visited.end());
-  Assert(!visited.find(lem)->second.isNull());
-  return visited[lem];
+  // TODO: convert via tppSolv
+  d_theoryEngine->preRegister(n);
 }
 
 }/* CVC4::prop namespace */

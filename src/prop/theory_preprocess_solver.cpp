@@ -17,10 +17,10 @@ namespace CVC4 {
 namespace prop {
 
 TheoryPreprocessSolver::TheoryPreprocessSolver(
-    TheoryEngine* theoryEngine,
+    TheoryEngine& theoryEngine,
     context::UserContext* userContext,
     ProofNodeManager* pnm)
-    : d_tpp(*theoryEngine, userContext, pnm), d_ppLitMap(userContext)
+    : d_tpp(theoryEngine, userContext, pnm), d_ppLitMap(userContext)
 {
 }
 

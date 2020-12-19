@@ -34,6 +34,7 @@
 #include "prop/prop_proof_manager.h"
 #include "prop/sat_relevancy.h"
 #include "prop/sat_solver_types.h"
+#include "prop/theory_proxy.h"
 #include "theory/trust_node.h"
 #include "util/resource_manager.h"
 #include "util/result.h"
@@ -45,10 +46,6 @@ class ResourceManager;
 class DecisionEngine;
 class OutputManager;
 class TheoryEngine;
-
-namespace theory {
-  class TheoryRegistrar;
-}/* CVC4::theory namespace */
 
 namespace prop {
 
@@ -307,9 +304,6 @@ class PropEngine
 
   /** List of all of the assertions that need to be made */
   std::vector<Node> d_assertionList;
-
-  /** Theory registrar; kept around for destructor cleanup */
-  theory::TheoryRegistrar* d_registrar;
 
   /** A pointer to the proof node maneger to be used by this engine. */
   ProofNodeManager* d_pnm;

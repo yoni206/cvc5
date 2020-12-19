@@ -39,14 +39,15 @@ class TheoryPreprocessSolver
   using NodeNodeMap = context::CDHashMap<Node, Node, NodeHashFunction>;
 
  public:
-  TheoryPreprocessSolver(TheoryEngine* theoryEngine,
+  TheoryPreprocessSolver(TheoryEngine& theoryEngine,
                          context::UserContext* userContext,
                          ProofNodeManager* pnm = nullptr);
 
   ~TheoryPreprocessSolver();
 
   /**
-   * Assert fact
+   * Assert fact, returns the (possibly preprocessed) version of the assertion,
+   * as well as indicating any new lemmas that should be asserted.
    */
   Node assertFact(TNode assertion,
                   std::vector<theory::TrustNode>& newLemmas,
@@ -61,8 +62,8 @@ class TheoryPreprocessSolver
                                     std::vector<Node>& newSkolems,
                                     bool doTheoryPreprocess);
   /**
-   * Call the preprocessor on node, return trust node corresponding to the
-   * rewrite.
+   * Call the preprocessor on node, return REWRITE trust node corresponding to
+   * the rewrite.
    */
   theory::TrustNode preprocess(TNode node,
                                std::vector<theory::TrustNode>& newLemmas,

@@ -77,7 +77,6 @@ PropEngine::PropEngine(TheoryEngine* te,
       d_context(satContext),
       d_theoryProxy(nullptr),
       d_satSolver(nullptr),
-      d_registrar(nullptr),
       d_pnm(pnm),
       d_cnfStream(nullptr),
       d_pfCnfStream(nullptr),
@@ -93,28 +92,30 @@ PropEngine::PropEngine(TheoryEngine* te,
 
   d_satSolver = SatSolverFactory::createCDCLTMinisat(smtStatisticsRegistry());
 
-  d_registrar = new theory::TheoryRegistrar(d_theoryEngine);
+  // make the theory proxy first
+  d_theoryProxy = new TheoryProxy(this,
+                                  d_theoryEngine,
+                                  d_decisionEngine.get(),
+                                  satContext,
+                                  userContext,
+                                  pnm);
   // track and notify formulas if we are using SAT/Theory relevancy
   bool useSatTheoryRlv = options::satTheoryRelevancy();
   FormulaLitPolicy flp = useSatTheoryRlv ? FormulaLitPolicy::TRACK_AND_NOTIFY
                                          : FormulaLitPolicy::TRACK;
   d_cnfStream = new CVC4::prop::CnfStream(
-      d_satSolver, d_registrar, userContext, &d_outMgr, rm, flp);
+      d_satSolver, d_theoryProxy, userContext, &d_outMgr, rm, flp);
 
   if (useSatTheoryRlv)
   {
     // make the sat relevancy module if it is required
     d_satRlv.reset(new SatRelevancy(d_satSolver, d_context, d_cnfStream));
   }
-
-  d_theoryProxy = new TheoryProxy(this,
-                                  d_theoryEngine,
-                                  d_decisionEngine.get(),
-                                  d_context,
-                                  userContext,
+  // connect theory proxy
+  d_theoryProxy->finishInit(
                                   d_cnfStream,
-                                  d_satRlv.get(),
-                                  pnm);
+                                  d_satRlv.get());
+  // connect SAT solver
   d_satSolver->initialize(d_context, d_theoryProxy, userContext, pnm);
 
   d_decisionEngine->setSatSolver(d_satSolver);
@@ -157,7 +158,6 @@ PropEngine::~PropEngine() {
   d_decisionEngine->shutdown();
   d_decisionEngine.reset(nullptr);
   delete d_cnfStream;
-  delete d_registrar;
   delete d_satSolver;
   delete d_theoryProxy;
 }
