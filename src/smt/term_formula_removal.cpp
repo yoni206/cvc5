@@ -28,7 +28,7 @@ namespace CVC4 {
 
 RemoveTermFormulas::RemoveTermFormulas(context::UserContext* u,
                                        ProofNodeManager* pnm)
-    : d_tfCache(u), d_skolem_cache(u), d_pnm(pnm), d_tpg(nullptr), d_lp(nullptr)
+    : d_tfCache(u), d_skolem_cache(u), d_lemmaCache(u), d_pnm(pnm), d_tpg(nullptr), d_lp(nullptr)
 {
   // enable proofs if necessary
   if (d_pnm != nullptr)
@@ -150,7 +150,14 @@ Node RemoveTermFormulas::runInternal(Node assertion,
     if (!processedChildren.back())
     {
       // check if we should replace the current node
-      Node currt = runCurrent(curr, output, newSkolems);
+      theory::TrustNode newLem;
+      Node currt = runCurrent(curr, newLem);
+      if (!newLem.isNull())
+      {
+        Assert (!currt.isNull());
+        output.push_back(newLem);
+        newSkolems.push_back(currt);
+      }
       // if null, we need to recurse
       if (!currt.isNull())
       {
@@ -224,14 +231,9 @@ Node RemoveTermFormulas::runInternal(Node assertion,
 }
 
 Node RemoveTermFormulas::runCurrent(std::pair<Node, uint32_t>& curr,
-                                    std::vector<theory::TrustNode>& output,
-                                    std::vector<Node>& newSkolems)
+                                    theory::TrustNode& newLem)
 {
   TNode node = curr.first;
-  if (node.getKind() == kind::INST_PATTERN_LIST)
-  {
-    return Node(node);
-  }
   uint32_t cval = curr.second;
   bool inQuant, inTerm;
   RtfTermContext::getFlags(curr.second, inQuant, inTerm);
@@ -472,15 +474,14 @@ Node RemoveTermFormulas::runCurrent(std::pair<Node, uint32_t>& curr,
       Trace("rtf-debug") << "*** term formula removal introduced " << skolem
                          << " for " << node << std::endl;
 
-      theory::TrustNode trna =
-          theory::TrustNode::mkTrustLemma(newAssertion, d_lp.get());
+      newLem = theory::TrustNode::mkTrustLemma(newAssertion, d_lp.get());
+      
+      // store in the lemma cache
+      d_lemmaCache.insert(skolem, newLem);
 
       Trace("rtf-proof-debug") << "Checking closed..." << std::endl;
-      trna.debugCheckClosed("rtf-proof-debug",
+      newLem.debugCheckClosed("rtf-proof-debug",
                             "RemoveTermFormulas::run:new_assert");
-
-      output.push_back(trna);
-      newSkolems.push_back(skolem);
     }
 
     // The representation is now the skolem
@@ -511,6 +512,16 @@ Node RemoveTermFormulas::getAxiomFor(Node n)
     return nm->mkNode(kind::ITE, n[0], n.eqNode(n[1]), n.eqNode(n[2]));
   }
   return Node::null();
+}
+
+theory::TrustNode RemoveTermFormulas::getLemmaForSkolem(Node n) const
+{
+  context::CDInsertHashMap<Node, theory::TrustNode, NodeHashFunction>::const_iterator it = d_lemmaCache.find(n);
+  if( it==d_lemmaCache.end())
+  {
+    return theory::TrustNode::null();
+  }
+  return (*it).second;
 }
 
 ProofGenerator* RemoveTermFormulas::getTConvProofGenerator()

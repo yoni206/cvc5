@@ -113,6 +113,9 @@ class RemoveTermFormulas {
    *   (ite n1 (= (ite n1 n2 n3) n2) (= (ite n1 n2 n3) n3))
    */
   static Node getAxiomFor(Node n);
+  
+  /** Get the lemma for the skolem */
+  theory::TrustNode getLemmaForSkolem(Node n) const;
 
  private:
   typedef context::CDInsertHashMap<
@@ -147,6 +150,10 @@ class RemoveTermFormulas {
    *   d_tfCache[<ite( G, a, b ),0>] = d_tfCache[<ite( G, a, b ),1>] = k.
    */
   context::CDInsertHashMap<Node, Node, NodeHashFunction> d_skolem_cache;
+  /**
+   * Mapping from skolems to their corresponding lemma.
+   */
+  context::CDInsertHashMap<Node, theory::TrustNode, NodeHashFunction> d_lemmaCache;
 
   /** gets the skolem for node
    *
@@ -192,8 +199,7 @@ class RemoveTermFormulas {
    * null node.
    */
   Node runCurrent(std::pair<Node, uint32_t>& curr,
-                  std::vector<theory::TrustNode>& newAsserts,
-                  std::vector<Node>& newSkolems);
+                  theory::TrustNode& newLem);
 
   /** Whether proofs are enabled */
   bool isProofEnabled() const;

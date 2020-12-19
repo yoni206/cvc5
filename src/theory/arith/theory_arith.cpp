@@ -18,6 +18,7 @@
 #include "theory/arith/theory_arith.h"
 
 #include "options/smt_options.h"
+#include "options/prop_options.h"
 #include "smt/smt_statistics_registry.h"
 #include "theory/arith/arith_rewriter.h"
 #include "theory/arith/infer_bounds.h"
@@ -110,7 +111,9 @@ TrustNode TheoryArith::ppRewrite(TNode atom)
   CodeTimer timer(d_ppRewriteTimer, /* allow_reentrant = */ true);
   Debug("arith::preprocess") << "arith::preprocess() : " << atom << endl;
 
-  if (options::arithRewriteEq())
+  // TODO: this should be a preprocessing pass, which would enable theory
+  // preprocessing to be mandatory on all lemmas
+  if (!options::theoryPpOnAssert() && options::arithRewriteEq())
   {
     if (atom.getKind() == kind::EQUAL && atom[0].getType().isReal())
     {

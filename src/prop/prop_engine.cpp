@@ -27,6 +27,7 @@
 #include "options/base_options.h"
 #include "options/decision_options.h"
 #include "options/main_options.h"
+#include "options/prop_options.h"
 #include "options/options.h"
 #include "options/smt_options.h"
 #include "proof/proof_manager.h"
@@ -215,7 +216,7 @@ void PropEngine::assertFormula(TNode node) {
 Node PropEngine::assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p)
 {
   bool removable = isLemmaPropertyRemovable(p);
-  bool preprocess = isLemmaPropertyPreprocess(p);
+  bool preprocess = options::theoryPpOnAssert() || isLemmaPropertyPreprocess(p);
 
   // call preprocessor
   std::vector<theory::TrustNode> newLemmas;
