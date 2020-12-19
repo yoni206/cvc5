@@ -54,9 +54,7 @@ TheoryProxy::~TheoryProxy() {
   /* nothing to do for now */
 }
 
-void TheoryProxy::finishInit(
-          CnfStream* cnfStream,
-          SatRelevancy* satRlv)
+void TheoryProxy::finishInit(CnfStream* cnfStream, SatRelevancy* satRlv)
 {
   d_cnfStream = cnfStream;
   d_satRlv = satRlv;
@@ -70,7 +68,7 @@ void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
   while (!d_queue.empty()) {
     TNode assertion = d_queue.front();
     d_queue.pop();
-    //TODO: Node passert = tppSlv->assertFact(assertion
+    // TODO: Node passert = tppSlv->assertFact(assertion
     d_theoryEngine->assertFact(assertion);
   }
   d_theoryEngine->check(effort);
@@ -195,7 +193,8 @@ theory::TrustNode TheoryProxy::preprocessLemma(
     std::vector<Node>& newSkolems,
     bool doTheoryPreprocess)
 {
-  return d_tppSlv->preprocessLemma(trn, newLemmas, newSkolems, doTheoryPreprocess);
+  return d_tppSlv->preprocessLemma(
+      trn, newLemmas, newSkolems, doTheoryPreprocess);
 }
 
 theory::TrustNode TheoryProxy::preprocess(

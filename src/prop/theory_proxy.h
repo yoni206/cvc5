@@ -29,13 +29,13 @@
 #include "context/cdhashmap.h"
 #include "context/cdqueue.h"
 #include "expr/node.h"
+#include "prop/registrar.h"
 #include "prop/sat_solver.h"
-#include "theory/theory.h"
 #include "prop/theory_preprocess_solver.h"
+#include "theory/theory.h"
 #include "theory/trust_node.h"
 #include "util/resource_manager.h"
 #include "util/statistics_registry.h"
-#include "prop/registrar.h"
 
 namespace CVC4 {
 
@@ -50,7 +50,7 @@ class SatRelevancy;
 
 /**
  * The proxy class that allows the SatSolver to communicate with the theories.
- * 
+ *
  * It is an instance of the Registrar class, since it implements
  * preregistration.
  */
@@ -67,11 +67,9 @@ class TheoryProxy : public Registrar
               ProofNodeManager* pnm = nullptr);
 
   ~TheoryProxy();
-  
+
   /** Finish initialize */
-  void finishInit(
-              CnfStream* cnfStream,
-              SatRelevancy* satRlv);
+  void finishInit(CnfStream* cnfStream, SatRelevancy* satRlv);
 
   void theoryCheck(theory::Theory::Effort effort);
 
@@ -124,6 +122,7 @@ class TheoryProxy : public Registrar
                                bool doTheoryPreprocess);
   /** Preregister */
   void preRegister(Node n) override;
+
  private:
   /** The prop engine we are using. */
   PropEngine* d_propEngine;
@@ -152,7 +151,6 @@ class TheoryProxy : public Registrar
   /** The theory preprocess solver */
   std::unique_ptr<TheoryPreprocessSolver> d_tppSlv;
 };
-
 
 }/* CVC4::prop namespace */
 

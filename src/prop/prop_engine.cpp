@@ -112,9 +112,7 @@ PropEngine::PropEngine(TheoryEngine* te,
     d_satRlv.reset(new SatRelevancy(d_satSolver, d_context, d_cnfStream));
   }
   // connect theory proxy
-  d_theoryProxy->finishInit(
-                                  d_cnfStream,
-                                  d_satRlv.get());
+  d_theoryProxy->finishInit(d_cnfStream, d_satRlv.get());
   // connect SAT solver
   d_satSolver->initialize(d_context, d_theoryProxy, userContext, pnm);
 
