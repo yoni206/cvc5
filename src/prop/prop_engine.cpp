@@ -217,12 +217,12 @@ Node PropEngine::assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p)
   bool preprocess = options::theoryPpOnAssert() || isLemmaPropertyPreprocess(p);
 
   // call preprocessor
-  std::vector<theory::TrustNode> newLemmas;
-  std::vector<Node> newSkolems;
+  std::vector<theory::TrustNode> ppLemmas;
+  std::vector<Node> ppSkolems;
   theory::TrustNode tplemma =
-      d_theoryProxy->preprocessLemma(tlemma, newLemmas, newSkolems, preprocess);
+      d_theoryProxy->preprocessLemma(tlemma, ppLemmas, ppSkolems, preprocess);
 
-  Assert(newSkolems.size() == newLemmas.size());
+  Assert(ppSkolems.size() == ppLemmas.size());
 
   // do final checks on the lemmas we are about to send
   if (isProofEnabled())
@@ -230,33 +230,50 @@ Node PropEngine::assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p)
     Assert(tplemma.getGenerator() != nullptr);
     // ensure closed, make the proof node eagerly here to debug
     tplemma.debugCheckClosed("te-proof-debug", "TheoryEngine::lemma");
-    for (size_t i = 0, lsize = newLemmas.size(); i < lsize; ++i)
+    for (size_t i = 0, lsize = ppLemmas.size(); i < lsize; ++i)
     {
-      Assert(newLemmas[i].getGenerator() != nullptr);
-      newLemmas[i].debugCheckClosed("te-proof-debug",
-                                    "TheoryEngine::lemma_new");
+      Assert(ppLemmas[i].getGenerator() != nullptr);
+      ppLemmas[i].debugCheckClosed("te-proof-debug", "TheoryEngine::lemma_new");
     }
   }
 
   if (Trace.isOn("te-lemma"))
   {
     Trace("te-lemma") << "Lemma, output: " << tplemma.getProven() << std::endl;
-    for (size_t i = 0, lsize = newLemmas.size(); i < lsize; ++i)
+    for (size_t i = 0, lsize = ppLemmas.size(); i < lsize; ++i)
     {
-      Trace("te-lemma") << "Lemma, new lemma: " << newLemmas[i].getProven()
-                        << " (skolem is " << newSkolems[i] << ")" << std::endl;
+      Trace("te-lemma") << "Lemma, new lemma: " << ppLemmas[i].getProven()
+                        << " (skolem is " << ppSkolems[i] << ")" << std::endl;
     }
   }
 
-  // now, send the lemmas to the prop engine
-  assertLemmas(tplemma, newLemmas, newSkolems, removable);
+  // now, assert the lemmas
+  assertLemmaInternal(tplemma, removable);
+  for (size_t i = 0, lsize = ppLemmas.size(); i < lsize; ++i)
+  {
+    assertLemmaInternal(ppLemmas[i], removable);
+  }
+
+  // assert to decision engine
+  if (!removable)
+  {
+    // also add to the decision engine, where notice we don't need proofs
+    std::vector<Node> assertions;
+    assertions.push_back(tplemma.getProven());
+    std::vector<Node> ppLemmasF;
+    for (const theory::TrustNode& tnl : ppLemmas)
+    {
+      ppLemmasF.push_back(tnl.getProven());
+    }
+    d_decisionEngine->addAssertions(assertions, ppLemmasF, ppSkolems);
+  }
 
   // make the return lemma, which the theory engine will use
-  Node retLemma = tplemma.getNode();
-  if (!newLemmas.empty())
+  Node retLemma = tplemma.getProven();
+  if (!ppLemmas.empty())
   {
     std::vector<Node> lemmas{retLemma};
-    for (const theory::TrustNode& tnl : newLemmas)
+    for (const theory::TrustNode& tnl : ppLemmas)
     {
       lemmas.push_back(tnl.getProven());
     }
@@ -281,34 +298,6 @@ void PropEngine::assertLemmaInternal(theory::TrustNode trn, bool removable)
   else
   {
     d_cnfStream->convertAndAssert(node, removable, negated);
-  }
-}
-
-void PropEngine::assertLemmas(theory::TrustNode lem,
-                              std::vector<theory::TrustNode>& ppLemmas,
-                              std::vector<Node>& ppSkolems,
-                              bool removable)
-{
-  Assert(ppSkolems.size() == ppLemmas.size());
-  // assert the lemmas
-  assertLemmaInternal(lem, removable);
-  for (size_t i = 0, lsize = ppLemmas.size(); i < lsize; ++i)
-  {
-    assertLemmaInternal(ppLemmas[i], removable);
-  }
-
-  // assert to decision engine
-  if (!removable)
-  {
-    // also add to the decision engine, where notice we don't need proofs
-    std::vector<Node> assertions;
-    assertions.push_back(lem.getProven());
-    std::vector<Node> ppLemmasF;
-    for (const theory::TrustNode& tnl : ppLemmas)
-    {
-      ppLemmasF.push_back(tnl.getProven());
-    }
-    d_decisionEngine->addAssertions(assertions, ppLemmasF, ppSkolems);
   }
 }
 
