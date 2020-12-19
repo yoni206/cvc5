@@ -35,7 +35,7 @@ class ArithRewriteEq : public PreprocessingPass
  protected:
   PreprocessingPassResult applyInternal(
       AssertionPipeline* assertionsToPreprocess) override;
-  /** 
+  /**
    * Rewrite the assertion based on removing arithmetic equalities via:
    *   (= x y) ---> (and (>= x y) (<= x y))
    * Returns the trust node corresponding to the rewrite.

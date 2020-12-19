@@ -113,7 +113,7 @@ class RemoveTermFormulas {
    *   (ite n1 (= (ite n1 n2 n3) n2) (= (ite n1 n2 n3) n3))
    */
   static Node getAxiomFor(Node n);
-  
+
   /** Get the lemma for the skolem */
   theory::TrustNode getLemmaForSkolem(Node n) const;
 
@@ -153,7 +153,8 @@ class RemoveTermFormulas {
   /**
    * Mapping from skolems to their corresponding lemma.
    */
-  context::CDInsertHashMap<Node, theory::TrustNode, NodeHashFunction> d_lemmaCache;
+  context::CDInsertHashMap<Node, theory::TrustNode, NodeHashFunction>
+      d_lemmaCache;
 
   /** gets the skolem for node
    *
@@ -198,8 +199,7 @@ class RemoveTermFormulas {
    * runInternal is called on that axiom. Otherwise, this method returns the
    * null node.
    */
-  Node runCurrent(std::pair<Node, uint32_t>& curr,
-                  theory::TrustNode& newLem);
+  Node runCurrent(std::pair<Node, uint32_t>& curr, theory::TrustNode& newLem);
 
   /** Whether proofs are enabled */
   bool isProofEnabled() const;

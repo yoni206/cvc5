@@ -44,21 +44,21 @@ PreprocessingPassResult ArithRewriteEq::applyInternal(
 
 theory::TrustNode ArithRewriteEq::rewriteAssertion(TNode n)
 {
-  NodeManager * nm = NodeManager::currentNM();
+  NodeManager* nm = NodeManager::currentNM();
   std::unordered_map<TNode, Node, TNodeHashFunction> visited;
   std::unordered_map<TNode, Node, TNodeHashFunction>::iterator it;
   std::vector<TNode> visit;
   TNode cur;
   visit.push_back(n);
-  do 
+  do
   {
     cur = visit.back();
     visit.pop_back();
     it = visited.find(cur);
 
-    if (it == visited.end()) 
+    if (it == visited.end())
     {
-      if (cur.getKind()==kind::EQUAL && cur[0].getType().isReal())
+      if (cur.getKind() == kind::EQUAL && cur[0].getType().isReal())
       {
         // (= x y) ---> (and (>= x y) (<= x y))
         Node leq = nm->mkNode(kind::LEQ, cur[0], cur[1]);
@@ -70,18 +70,19 @@ theory::TrustNode ArithRewriteEq::rewriteAssertion(TNode n)
       {
         visited[cur] = Node::null();
         visit.push_back(cur);
-        visit.insert(visit.end(),cur.begin(),cur.end());
+        visit.insert(visit.end(), cur.begin(), cur.end());
       }
-    } 
-    else if (it->second.isNull()) 
+    }
+    else if (it->second.isNull())
     {
       Node ret = cur;
       bool childChanged = false;
       std::vector<Node> children;
-      if (cur.getMetaKind() == metakind::PARAMETERIZED) {
+      if (cur.getMetaKind() == metakind::PARAMETERIZED)
+      {
         children.push_back(cur.getOperator());
       }
-      for (const Node& cn : cur )
+      for (const Node& cn : cur)
       {
         it = visited.find(cn);
         Assert(it != visited.end());
@@ -89,7 +90,7 @@ theory::TrustNode ArithRewriteEq::rewriteAssertion(TNode n)
         childChanged = childChanged || cn != it->second;
         children.push_back(it->second);
       }
-      if (childChanged) 
+      if (childChanged)
       {
         ret = nm->mkNode(cur.getKind(), children);
       }
@@ -99,14 +100,13 @@ theory::TrustNode ArithRewriteEq::rewriteAssertion(TNode n)
   Assert(visited.find(n) != visited.end());
   Assert(!visited.find(n)->second.isNull());
   Node ret = visited[n];
-  if (ret==n)
+  if (ret == n)
   {
     return TrustNode::null();
   }
   // TODO: make proof producing
   return TrustNode::mkTrustRewrite(n, ret, nullptr);
 }
-
 
 }  // namespace passes
 }  // namespace preprocessing

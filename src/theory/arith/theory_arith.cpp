@@ -17,8 +17,8 @@
 
 #include "theory/arith/theory_arith.h"
 
-#include "options/smt_options.h"
 #include "options/prop_options.h"
+#include "options/smt_options.h"
 #include "smt/smt_statistics_registry.h"
 #include "theory/arith/arith_rewriter.h"
 #include "theory/arith/infer_bounds.h"

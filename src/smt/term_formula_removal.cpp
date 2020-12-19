@@ -28,7 +28,12 @@ namespace CVC4 {
 
 RemoveTermFormulas::RemoveTermFormulas(context::UserContext* u,
                                        ProofNodeManager* pnm)
-    : d_tfCache(u), d_skolem_cache(u), d_lemmaCache(u), d_pnm(pnm), d_tpg(nullptr), d_lp(nullptr)
+    : d_tfCache(u),
+      d_skolem_cache(u),
+      d_lemmaCache(u),
+      d_pnm(pnm),
+      d_tpg(nullptr),
+      d_lp(nullptr)
 {
   // enable proofs if necessary
   if (d_pnm != nullptr)
@@ -54,7 +59,7 @@ theory::TrustNode RemoveTermFormulas::run(
     bool fixedPoint)
 {
   Node itesRemoved = runInternal(assertion, newAsserts, newSkolems);
-  Assert (newAsserts.size()==newSkolems.size());
+  Assert(newAsserts.size() == newSkolems.size());
   if (itesRemoved == assertion)
   {
     return theory::TrustNode::null();
@@ -65,10 +70,10 @@ theory::TrustNode RemoveTermFormulas::run(
   {
     size_t i = 0;
     std::unordered_set<Node, NodeHashFunction> processed;
-    while (i<newAsserts.size())
+    while (i < newAsserts.size())
     {
       theory::TrustNode trn = newAsserts[i];
-      AlwaysAssert(processed.find(trn.getProven())==processed.end());
+      AlwaysAssert(processed.find(trn.getProven()) == processed.end());
       processed.insert(trn.getProven());
       newAsserts[i] = runLemma(trn, newAsserts, newSkolems);
       i++;
@@ -154,7 +159,7 @@ Node RemoveTermFormulas::runInternal(Node assertion,
       Node currt = runCurrent(curr, newLem);
       if (!newLem.isNull())
       {
-        Assert (!currt.isNull());
+        Assert(!currt.isNull());
         output.push_back(newLem);
         newSkolems.push_back(currt);
       }
@@ -475,13 +480,13 @@ Node RemoveTermFormulas::runCurrent(std::pair<Node, uint32_t>& curr,
                          << " for " << node << std::endl;
 
       newLem = theory::TrustNode::mkTrustLemma(newAssertion, d_lp.get());
-      
+
       // store in the lemma cache
       d_lemmaCache.insert(skolem, newLem);
 
       Trace("rtf-proof-debug") << "Checking closed..." << std::endl;
       newLem.debugCheckClosed("rtf-proof-debug",
-                            "RemoveTermFormulas::run:new_assert");
+                              "RemoveTermFormulas::run:new_assert");
     }
 
     // The representation is now the skolem
@@ -516,8 +521,9 @@ Node RemoveTermFormulas::getAxiomFor(Node n)
 
 theory::TrustNode RemoveTermFormulas::getLemmaForSkolem(Node n) const
 {
-  context::CDInsertHashMap<Node, theory::TrustNode, NodeHashFunction>::const_iterator it = d_lemmaCache.find(n);
-  if( it==d_lemmaCache.end())
+  context::CDInsertHashMap<Node, theory::TrustNode, NodeHashFunction>::
+      const_iterator it = d_lemmaCache.find(n);
+  if (it == d_lemmaCache.end())
   {
     return theory::TrustNode::null();
   }
