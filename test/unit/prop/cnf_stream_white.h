@@ -32,7 +32,7 @@
 #include "theory/builtin/theory_builtin.h"
 #include "theory/theory.h"
 #include "theory/theory_engine.h"
-#include "theory/theory_registrar.h"
+#include "prop/theory_registrar.h"
 
 using namespace CVC4;
 using namespace CVC4::context;
@@ -119,7 +119,7 @@ class CnfStreamWhite : public CxxTest::TestSuite {
   Context* d_cnfContext;
 
   /** The registrar used by the CnfStream. */
-  theory::TheoryRegistrar* d_cnfRegistrar;
+  prop::NullRegistrar* d_cnfRegistrar;
 
   /** The node manager */
   NodeManager* d_nodeManager;
@@ -144,7 +144,7 @@ class CnfStreamWhite : public CxxTest::TestSuite {
 
     d_satSolver = new FakeSatSolver();
     d_cnfContext = new context::Context();
-    d_cnfRegistrar = new theory::TheoryRegistrar(d_theoryEngine);
+    d_cnfRegistrar = new prop::NullRegistrar;
     ResourceManager* rm = d_smt->getResourceManager();
     d_cnfStream = new CVC4::prop::CnfStream(d_satSolver,
                                             d_cnfRegistrar,
