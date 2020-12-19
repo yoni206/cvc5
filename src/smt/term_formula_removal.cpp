@@ -502,15 +502,56 @@ Node RemoveTermFormulas::runCurrent(std::pair<Node, uint32_t>& curr,
   return Node::null();
 }
 
-Node RemoveTermFormulas::getSkolemForNode(Node node) const
+Node RemoveTermFormulas::getSkolemForNode(Node k) const
 {
   context::CDInsertHashMap<Node, Node, NodeHashFunction>::const_iterator itk =
-      d_skolem_cache.find(node);
+      d_skolem_cache.find(k);
   if (itk != d_skolem_cache.end())
   {
     return itk->second;
   }
   return Node::null();
+}
+
+bool RemoveTermFormulas::getSkolems(TNode n, std::unordered_set<Node, NodeHashFunction>& skolems) const
+{
+  // if n was unchanged by term formula removal, just return immediately
+  std::pair<Node, uint32_t> initial(n, d_rtfc.initialValue());
+  TermFormulaCache::const_iterator itc = d_tfCache.find(initial);
+  if (itc!=d_tfCache.end())
+  {
+    if (itc->second==n)
+    {
+      return false;
+    }
+  }
+  // otherwise, traverse it
+  bool ret = false;
+  std::unordered_set<TNode, TNodeHashFunction> visited;
+  std::unordered_set<TNode, TNodeHashFunction>::iterator it;
+  std::vector<TNode> visit;
+  TNode cur;
+  visit.push_back(n);
+  do {
+    cur = visit.back();
+    visit.pop_back();
+    it = visited.find(cur);
+    if (it == visited.end()) {
+      visited.insert(cur);
+      if (cur.getKind()==kind::SKOLEM)
+      {
+        if (d_lemmaCache.find(cur)!=d_lemmaCache.end())
+        {
+          // technically could already be in skolems if skolems was non-empty,
+          // regardless set return value to true.
+          skolems.insert(cur);
+          ret = true;
+        }
+      }
+      visit.insert(visit.end(),cur.begin(),cur.end());
+    }
+  } while (!visit.empty());
+  return ret;
 }
 
 Node RemoveTermFormulas::getAxiomFor(Node n)
@@ -524,7 +565,7 @@ Node RemoveTermFormulas::getAxiomFor(Node n)
   return Node::null();
 }
 
-theory::TrustNode RemoveTermFormulas::getLemmaForSkolem(Node n) const
+theory::TrustNode RemoveTermFormulas::getLemmaForSkolem(TNode n) const
 {
   context::CDInsertHashMap<Node, theory::TrustNode, NodeHashFunction>::
       const_iterator it = d_lemmaCache.find(n);
