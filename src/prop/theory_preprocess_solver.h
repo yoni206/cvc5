@@ -25,7 +25,7 @@
 #include "theory/trust_node.h"
 
 namespace CVC4 {
-  
+
 class TheoryEngine;
 
 namespace prop {
@@ -40,18 +40,18 @@ class TheoryPreprocessSolver
 
  public:
   TheoryPreprocessSolver(PropEngine* propEngine,
-              TheoryEngine* theoryEngine,
-              context::UserContext* userContext,
-                     ProofNodeManager* pnm = nullptr);
+                         TheoryEngine* theoryEngine,
+                         context::UserContext* userContext,
+                         ProofNodeManager* pnm = nullptr);
 
   ~TheoryPreprocessSolver();
-  
+
   /**
    * Assert fact
    */
   Node assertFact(TNode assertion,
-                                    std::vector<theory::TrustNode>& newLemmas,
-                                    std::vector<Node>& newSkolems);
+                  std::vector<theory::TrustNode>& newLemmas,
+                  std::vector<Node>& newSkolems);
 
   /**
    * Call the preprocessor on node, return trust node corresponding to the
@@ -88,7 +88,7 @@ class TheoryPreprocessSolver
   NodeNodeMap d_ppLitMap;
 }; /* class TheoryPreprocessSolver */
 
-}/* CVC4::prop namespace */
-}/* CVC4 namespace */
+}  // namespace prop
+}  // namespace CVC4
 
 #endif /* CVC4__PROP__THEORY_PREPROCESS_SOLVER_H */

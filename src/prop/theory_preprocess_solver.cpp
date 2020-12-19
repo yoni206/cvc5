@@ -17,21 +17,19 @@ namespace CVC4 {
 namespace prop {
 
 TheoryPreprocessSolver::TheoryPreprocessSolver(
-                         TheoryEngine* theoryEngine,
-                         context::UserContext* userContext,
-                         ProofNodeManager* pnm 
-                                              )
-    : d_tpp(*theoryEngine, userContext, pnm),
-      d_ppLitMap(userContext)
+    TheoryEngine* theoryEngine,
+    context::UserContext* userContext,
+    ProofNodeManager* pnm)
+    : d_tpp(*theoryEngine, userContext, pnm), d_ppLitMap(userContext)
 {
 }
 
-TheoryPreprocessSolver::~TheoryPreprocessSolver() {
-}
+TheoryPreprocessSolver::~TheoryPreprocessSolver() {}
 
-Node TheoryPreprocessSolver::assertFact(TNode assertion,
-                                  std::vector<theory::TrustNode>& newLemmas,
-                                  std::vector<Node>& newSkolems)
+Node TheoryPreprocessSolver::assertFact(
+    TNode assertion,
+    std::vector<theory::TrustNode>& newLemmas,
+    std::vector<Node>& newSkolems)
 {
   // TODO
   return assertion;
@@ -63,7 +61,8 @@ theory::TrustNode TheoryPreprocessSolver::preprocess(
   return pnode;
 }
 
-theory::TrustNode TheoryPreprocessSolver::convertLemmaToProp(theory::TrustNode lem)
+theory::TrustNode TheoryPreprocessSolver::convertLemmaToProp(
+    theory::TrustNode lem)
 {
   Node clem = convertLemmaToPropInternal(lem.getProven());
   // TODO: make proof producing
@@ -126,5 +125,5 @@ Node TheoryPreprocessSolver::convertLemmaToPropInternal(Node lem) const
   return visited[lem];
 }
 
-}/* CVC4::prop namespace */
-}/* CVC4 namespace */
+}  // namespace prop
+}  // namespace CVC4

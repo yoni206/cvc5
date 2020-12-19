@@ -85,6 +85,7 @@ class TheoryPreprocessor
                             std::vector<TrustNode>& newLemmas,
                             std::vector<Node>& newSkolems,
                             bool doTheoryPreprocess);
+
  private:
   /**
    * Runs theory specific preprocessing on the non-Boolean parts of
