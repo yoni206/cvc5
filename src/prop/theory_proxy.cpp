@@ -19,6 +19,7 @@
 #include "context/context.h"
 #include "decision/decision_engine.h"
 #include "options/decision_options.h"
+#include "options/prop_options.h"
 #include "proof/cnf_proof.h"
 #include "prop/cnf_stream.h"
 #include "prop/prop_engine.h"
@@ -37,14 +38,15 @@ TheoryProxy::TheoryProxy(PropEngine* propEngine,
                          context::Context* context,
                          context::UserContext* userContext,
                          CnfStream* cnfStream,
-                         SatRelevancy* satRlv)
+                         SatRelevancy* satRlv,
+                         ProofNodeManager* pnm)
     : d_propEngine(propEngine),
       d_cnfStream(cnfStream),
       d_decisionEngine(decisionEngine),
       d_theoryEngine(theoryEngine),
       d_queue(context),
       d_satRlv(satRlv),
-      d_tpp(*theoryEngine, userContext, nullptr),  // TODO: pass pnm
+      d_tpp(*theoryEngine, userContext, pnm),
       d_ppLitMap(userContext)
 {
 }

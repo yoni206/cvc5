@@ -113,7 +113,9 @@ PropEngine::PropEngine(TheoryEngine* te,
                                   d_context,
                                   userContext,
                                   d_cnfStream,
-                                  d_satRlv.get());
+                                  d_satRlv.get(),
+                                  pnm
+                                 );
   d_satSolver->initialize(d_context, d_theoryProxy, userContext, pnm);
 
   d_decisionEngine->setSatSolver(d_satSolver);

@@ -39,8 +39,7 @@ class TheoryPreprocessSolver
   using NodeNodeMap = context::CDHashMap<Node, Node, NodeHashFunction>;
 
  public:
-  TheoryPreprocessSolver(PropEngine* propEngine,
-                         TheoryEngine* theoryEngine,
+  TheoryPreprocessSolver(TheoryEngine* theoryEngine,
                          context::UserContext* userContext,
                          ProofNodeManager* pnm = nullptr);
 

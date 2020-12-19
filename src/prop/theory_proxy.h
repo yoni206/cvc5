@@ -61,7 +61,8 @@ class TheoryProxy
               context::Context* context,
               context::UserContext* userContext,
               CnfStream* cnfStream,
-              SatRelevancy* satRlv = nullptr);
+              SatRelevancy* satRlv = nullptr,
+                         ProofNodeManager* pnm = nullptr);
 
   ~TheoryProxy();
 
