@@ -75,7 +75,9 @@ theory::TrustNode RemoveTermFormulas::run(
       theory::TrustNode trn = newAsserts[i];
       AlwaysAssert(processed.find(trn.getProven()) == processed.end());
       processed.insert(trn.getProven());
-      newAsserts[i] = runLemma(trn, newAsserts, newSkolems);
+      // do not run to fixed point on subcall, since we are processing all
+      // lemmas in this loop
+      newAsserts[i] = runLemma(trn, newAsserts, newSkolems, false);
       i++;
     }
   }
@@ -87,10 +89,10 @@ theory::TrustNode RemoveTermFormulas::run(
 theory::TrustNode RemoveTermFormulas::runLemma(
     theory::TrustNode lem,
     std::vector<theory::TrustNode>& newAsserts,
-    std::vector<Node>& newSkolems)
+    std::vector<Node>& newSkolems,
+    bool fixedPoint)
 {
-  // do not run to fixed point
-  theory::TrustNode trn = run(lem.getProven(), newAsserts, newSkolems, false);
+  theory::TrustNode trn = run(lem.getProven(), newAsserts, newSkolems, fixedPoint);
   if (trn.isNull())
   {
     // no change
@@ -108,8 +110,9 @@ theory::TrustNode RemoveTermFormulas::runLemma(
       << std::endl;
   Node assertionPre = lem.getProven();
   Node naEq = trn.getProven();
-  // Can skip adding to d_lp if it was already added. The common use case of
-  // this method is using the
+  // this method is applying this method to TrustNode whose generator is
+  // already d_lp (from the run method above), in which case this link is
+  // not necessary.
   if (trn.getGenerator() != d_lp.get())
   {
     d_lp->addLazyStep(naEq, trn.getGenerator());
