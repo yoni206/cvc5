@@ -30,6 +30,7 @@
 #include "smt/smt_engine_scope.h"
 #include "theory/bv/bitblast/bitblast_strategies_template.h"
 #include "prop/registrar.h"
+#include "prop/cnf_stream.h"
 #include "theory/valuation.h"
 #include "util/resource_manager.h"
 

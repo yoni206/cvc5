@@ -19,6 +19,7 @@
 #include "options/bv_options.h"
 #include "theory/bv/bitblast/aig_bitblaster.h"
 #include "theory/bv/bitblast/eager_bitblaster.h"
+#include "options/smt_options.h"
 
 using namespace std;
 

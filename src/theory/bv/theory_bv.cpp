@@ -19,6 +19,7 @@
 #include "theory/bv/bv_solver_lazy.h"
 #include "theory/bv/bv_solver_simple.h"
 #include "theory/bv/theory_bv_utils.h"
+#include "options/smt_options.h"
 
 namespace CVC4 {
 namespace theory {
@@ -129,7 +130,6 @@ TrustNode TheoryBV::expandDefinition(Node node)
     case kind::BITVECTOR_UREM:
     {
       NodeManager* nm = NodeManager::currentNM();
-      unsigned width = node.getType().getBitVectorSize();
 
       Kind kind = node.getKind() == kind::BITVECTOR_UDIV
                       ? kind::BITVECTOR_UDIV_TOTAL
