@@ -19,7 +19,8 @@ namespace prop {
 LazyTppSolver::LazyTppSolver(TheoryEngine& theoryEngine,
                              context::UserContext* userContext,
                              ProofNodeManager* pnm)
-    : TheoryPreprocessSolver(theoryEngine, userContext, pnm), d_ppLitMap(userContext)
+    : TheoryPreprocessSolver(theoryEngine, userContext, pnm),
+      d_ppLitMap(userContext)
 {
 }
 
