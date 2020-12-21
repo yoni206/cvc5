@@ -110,7 +110,7 @@ TrustNode TheoryArith::ppRewrite(TNode n)
 {
   CodeTimer timer(d_ppRewriteTimer, /* allow_reentrant = */ true);
   Debug("arith::preprocess") << "arith::preprocess() : " << n << endl;
-  Assert (Theory::theoryOf(n) == THEORY_ARITH);
+  Assert(Theory::theoryOf(n) == THEORY_ARITH);
   // Eliminate operators recursively. Notice we must do this here since other
   // theories may generate lemmas that involve non-standard operators. For
   // example, quantifier instantiation may use TO_INTEGER terms; SyGuS may

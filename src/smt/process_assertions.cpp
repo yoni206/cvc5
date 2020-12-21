@@ -331,7 +331,7 @@ bool ProcessAssertions::apply(Assertions& as)
   {
     d_passes["arith-rewrite-eq"]->apply(&assertions);
   }
-  
+
   // ensure rewritten
   d_passes["rewrite"]->apply(&assertions);
   if (!options::theoryPpOnAssert())
