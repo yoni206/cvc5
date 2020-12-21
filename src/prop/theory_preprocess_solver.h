@@ -53,7 +53,7 @@ class TheoryPreprocessSolver
   /**
    * Call the preprocessor on node, return trust node corresponding to the
    * rewrite.
-   * 
+   *
    * This is called when a new lemma is about to be added to the CNF stream.
    */
   virtual theory::TrustNode preprocessLemma(
@@ -64,7 +64,7 @@ class TheoryPreprocessSolver
   /**
    * Call the preprocessor on node, return REWRITE trust node corresponding to
    * the rewrite.
-   * 
+   *
    * This is called on input assertions, before being added to PropEngine.
    */
   virtual theory::TrustNode preprocess(

@@ -151,7 +151,7 @@ class TheoryProxy : public Registrar
   /** Pointer to the SAT relevancy module, if it exists */
   SatRelevancy* d_satRlv;
 
-  /** 
+  /**
    * The theory preprocess solver, which is responsible for managing the
    * communication between the TheoryEngine and PropEngine, in particular,
    * that the TheoryEngine gets only literals that are theory-preprocessed.

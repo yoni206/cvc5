@@ -32,10 +32,9 @@ Node LazyTppSolver::assertFact(TNode assertion,
 {
   Node tassertion = convertToTheoryInternal(assertion);
   // TODO: determine which skolems become activated
-  
-  
+
   // TODO: add lemmas for each skolem if not done so already
-  
+
   return tassertion;
 }
 
@@ -77,8 +76,8 @@ theory::TrustNode LazyTppSolver::convertToProp(TNode n)
 
 Node LazyTppSolver::convertToTheoryInternal(TNode lit)
 {
-    std::vector<theory::TrustNode> newLemmas;
-    std::vector<Node> newSkolems;
+  std::vector<theory::TrustNode> newLemmas;
+  std::vector<Node> newSkolems;
   theory::TrustNode pnode =
       d_tpp.preprocess(lit, newLemmas, newSkolems, true, false);
   // if we changed node by preprocessing
@@ -86,14 +85,14 @@ Node LazyTppSolver::convertToTheoryInternal(TNode lit)
   {
     TNode plit = pnode.getNode();
     // map the atom of the preprocessed literal to the original
-    if (plit.getKind()==kind::NOT)
+    if (plit.getKind() == kind::NOT)
     {
-      Assert (lit.getKind()==kind::NOT);
+      Assert(lit.getKind() == kind::NOT);
       d_ppLitMap[plit[0]] = lit[0];
     }
     else
     {
-      Assert (lit.getKind()!=kind::NOT);
+      Assert(lit.getKind() != kind::NOT);
       d_ppLitMap[plit] = lit;
     }
     return pnode.getNode();

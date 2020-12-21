@@ -21,7 +21,7 @@ TheoryPreprocessSolver::TheoryPreprocessSolver(
     context::UserContext* userContext,
     ProofNodeManager* pnm)
     : d_tpp(theoryEngine, userContext, pnm),
-    d_rtf(d_tpp.getRemoveTermFormulas())
+      d_rtf(d_tpp.getRemoveTermFormulas())
 {
 }
 
@@ -43,7 +43,8 @@ theory::TrustNode TheoryPreprocessSolver::preprocessLemma(
     bool doTheoryPreprocess)
 {
   // use fixed point
-  return d_tpp.preprocessLemma(trn, newLemmas, newSkolems, doTheoryPreprocess, true);
+  return d_tpp.preprocessLemma(
+      trn, newLemmas, newSkolems, doTheoryPreprocess, true);
 }
 
 theory::TrustNode TheoryPreprocessSolver::preprocess(
@@ -53,7 +54,8 @@ theory::TrustNode TheoryPreprocessSolver::preprocess(
     bool doTheoryPreprocess)
 {
   // use fixed point
-  return d_tpp.preprocess(node, newLemmas, newSkolems, doTheoryPreprocess, true);
+  return d_tpp.preprocess(
+      node, newLemmas, newSkolems, doTheoryPreprocess, true);
 }
 
 theory::TrustNode TheoryPreprocessSolver::convertToPropLemma(

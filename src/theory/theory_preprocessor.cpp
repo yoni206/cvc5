@@ -85,8 +85,7 @@ TrustNode TheoryPreprocessor::preprocess(TNode node,
                                          std::vector<TrustNode>& newLemmas,
                                          std::vector<Node>& newSkolems,
                                          bool doTheoryPreprocess,
-                                         bool fixedPoint
-                                        )
+                                         bool fixedPoint)
 {
   // In this method, all rewriting steps of node are stored in d_tpg.
 
@@ -228,7 +227,7 @@ TrustNode TheoryPreprocessor::preprocessLemma(TrustNode node,
                                               std::vector<TrustNode>& newLemmas,
                                               std::vector<Node>& newSkolems,
                                               bool doTheoryPreprocess,
-                                         bool fixedPoint)
+                                              bool fixedPoint)
 {
   // what was originally proven
   Node lemma = node.getProven();
