@@ -25,7 +25,7 @@
 #include "prop/cnf_stream.h"
 #include "prop/prop_engine.h"
 #include "prop/theory_proxy.h"
-#include "prop/theory_registrar.h"
+#include "prop/registrar.h"
 #include "smt/smt_engine.h"
 #include "smt/smt_engine_scope.h"
 #include "theory/arith/theory_arith.h"
