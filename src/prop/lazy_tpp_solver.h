@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file theory_preprocess_solver.h
+/*! \file lazy_tpp_solver.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Andrew Reynolds
@@ -9,47 +9,42 @@
  ** All rights reserved.  See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** \brief Theory preprocess solver
+ ** \brief The lazy theory preprocess solver
  **/
 
 #include "cvc4_private.h"
 
-#ifndef CVC4__PROP__THEORY_PREPROCESS_SOLVER_H
-#define CVC4__PROP__THEORY_PREPROCESS_SOLVER_H
+#ifndef CVC4__PROP__LAZY_TPP_SOLVER_H
+#define CVC4__PROP__LAZY_TPP_SOLVER_H
 
 #include <vector>
 
 #include "context/cdhashmap.h"
 #include "expr/node.h"
-#include "theory/theory_preprocessor.h"
+#include "prop/theory_preprocess_solver.h"
 #include "theory/trust_node.h"
 
 namespace CVC4 {
-
-class TheoryEngine;
-
 namespace prop {
 
 /**
- * The class that manages theory preprocessing and how it relates to lemma
- * generation.
  */
-class TheoryPreprocessSolver
+class LazyTppSolver : public TheoryPreprocessSolver
 {
   using NodeNodeMap = context::CDHashMap<Node, Node, NodeHashFunction>;
 
  public:
-  TheoryPreprocessSolver(TheoryEngine& theoryEngine,
+  LazyTppSolver(TheoryEngine& theoryEngine,
                          context::UserContext* userContext,
                          ProofNodeManager* pnm = nullptr);
 
-  ~TheoryPreprocessSolver();
+  ~LazyTppSolver();
 
   /**
    * Assert fact, returns the (possibly preprocessed) version of the assertion,
    * as well as indicating any new lemmas that should be asserted.
    */
-  virtual Node assertFact(TNode assertion,
+  Node assertFact(TNode assertion,
                   std::vector<theory::TrustNode>& newLemmas,
                   std::vector<Node>& newSkolems);
 
@@ -57,7 +52,7 @@ class TheoryPreprocessSolver
    * Call the preprocessor on node, return trust node corresponding to the
    * rewrite.
    */
-  virtual theory::TrustNode preprocessLemma(theory::TrustNode trn,
+  theory::TrustNode preprocessLemma(theory::TrustNode trn,
                                     std::vector<theory::TrustNode>& newLemmas,
                                     std::vector<Node>& newSkolems,
                                     bool doTheoryPreprocess);
@@ -65,7 +60,7 @@ class TheoryPreprocessSolver
    * Call the preprocessor on node, return REWRITE trust node corresponding to
    * the rewrite.
    */
-  virtual theory::TrustNode preprocess(TNode node,
+  theory::TrustNode preprocess(TNode node,
                                std::vector<theory::TrustNode>& newLemmas,
                                std::vector<Node>& newSkolems,
                                bool doTheoryPreprocess);
@@ -76,17 +71,21 @@ class TheoryPreprocessSolver
    *
    * It should be the case that convertLemmaToProp(preprocess(n)) = n.
    */
-  virtual theory::TrustNode convertToPropLemma(theory::TrustNode lem);
+  theory::TrustNode convertToPropLemma(theory::TrustNode lem);
   /**
    * Convert to prop
    */
-  virtual theory::TrustNode convertToProp(TNode n);
+  theory::TrustNode convertToProp(TNode n);
  private:
-  /** The theory preprocessor */
-  theory::TheoryPreprocessor d_tpp;
-}; /* class TheoryPreprocessSolver */
+  /**
+   * Convert lemma to the form to send to the CNF stream.
+   */
+  Node convertToPropInternal(TNode lem) const;
+  /** Map from preprocessed atoms to their unpreprocessed form */
+  NodeNodeMap d_ppLitMap;
+};
 
 }  // namespace prop
 }  // namespace CVC4
 
-#endif /* CVC4__PROP__THEORY_PREPROCESS_SOLVER_H */
+#endif /* CVC4__PROP__LAZY_TPP_SOLVER_H */

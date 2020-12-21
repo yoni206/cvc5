@@ -168,6 +168,8 @@ libcvc4_add_sources(
   prop/cryptominisat.h
   prop/kissat.cpp
   prop/kissat.h
+  prop/lazy_tpp_solver.cpp
+  prop/lazy_tpp_solver.h
   prop/proof_cnf_stream.cpp
   prop/proof_cnf_stream.h
   prop/minisat/core/Dimacs.h
