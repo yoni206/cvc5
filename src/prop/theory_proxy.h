@@ -33,6 +33,10 @@
 #include "prop/sat_solver.h"
 #include "prop/theory_preprocess_solver.h"
 #include "theory/theory.h"
+<<<<<<< HEAD
+=======
+#include "theory/theory_preprocessor.h"
+>>>>>>> ccda071a9605baa42602d580affa296cbc674807
 #include "theory/trust_node.h"
 #include "util/resource_manager.h"
 #include "util/statistics_registry.h"
@@ -64,7 +68,7 @@ class TheoryProxy : public Registrar
               DecisionEngine* decisionEngine,
               context::Context* context,
               context::UserContext* userContext,
-              ProofNodeManager* pnm = nullptr);
+              ProofNodeManager* pnm);
 
   ~TheoryProxy();
 

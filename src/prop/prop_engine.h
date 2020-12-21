@@ -93,11 +93,20 @@ class PropEngine
   void shutdown() {}
 
   /**
-   * Preprocess
+   * Preprocess the given node. Return the REWRITE trust node corresponding to
+   * rewriting node. New lemmas and skolems are added to ppLemmas and
+   * ppSkolems respectively.
+   *
+   * @param node The assertion to preprocess,
+   * @param ppLemmas The lemmas to add to the set of assertions,
+   * @param ppSkolems The skolems that newLemmas correspond to,
+   * @param doTheoryPreprocess whether to run theory-specific preprocessing.
+   * @return The (REWRITE) trust node corresponding to rewritten node via
+   * preprocessing.
    */
   theory::TrustNode preprocess(TNode node,
-                               std::vector<theory::TrustNode>& newLemmas,
-                               std::vector<Node>& newSkolems,
+                               std::vector<theory::TrustNode>& ppLemmas,
+                               std::vector<Node>& ppSkolems,
                                bool doTheoryPreprocess);
 
   /**
@@ -174,8 +183,9 @@ class PropEngine
 
   /**
    * Ensure that the given node will have a designated SAT literal
-   * that is definitionally equal to it.  The result of this function
-   * is that the Node can be queried via getSatValue().
+   * that is definitionally equal to it. Note that theory preprocessing is
+   * applied to n. The node returned by this method can be subsequently queried
+   * via getSatValue().
    */
   Node ensureLiteral(TNode n);
 
@@ -252,7 +262,7 @@ class PropEngine
   void printSatisfyingAssignment();
 
   /**
-   * Converts the given formula to CNF and assert the CNF to the SAT solver.
+   * Converts the given formula to CNF and asserts the CNF to the SAT solver.
    * The formula can be removed by the SAT solver after backtracking lower
    * than the (SAT and SMT) level at which it was asserted.
    *
