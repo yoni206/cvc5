@@ -71,8 +71,7 @@ class TheoryPreprocessor
                        std::vector<Node>& newSkolems,
                        bool doTheoryPreprocess,
                        bool fixedPoint);
-  TrustNode preprocess(TNode node,
-                       bool doTheoryPreprocess);
+  TrustNode preprocess(TNode node, bool doTheoryPreprocess);
   /**
    * Same as above, but transforms the proof of node into a proof of the
    * preprocessed node and returns the LEMMA trust node.
@@ -89,8 +88,7 @@ class TheoryPreprocessor
                             std::vector<Node>& newSkolems,
                             bool doTheoryPreprocess,
                             bool fixedPoint);
-  TrustNode preprocessLemma(TrustNode node,
-                       bool doTheoryPreprocess);
+  TrustNode preprocessLemma(TrustNode node, bool doTheoryPreprocess);
 
   /** Get term formula removal utility */
   RemoveTermFormulas& getRemoveTermFormulas();

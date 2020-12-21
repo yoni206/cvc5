@@ -215,10 +215,7 @@ theory::TrustNode TheoryProxy::preprocess(
   return d_tppSlv->preprocess(node, newLemmas, newSkolems, doTheoryPreprocess);
 }
 
-void TheoryProxy::preRegister(Node n)
-{
-  d_theoryEngine->preRegister(n);
-}
+void TheoryProxy::preRegister(Node n) { d_theoryEngine->preRegister(n); }
 
 }/* CVC4::prop namespace */
 }/* CVC4 namespace */

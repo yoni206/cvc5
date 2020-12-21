@@ -223,14 +223,13 @@ TrustNode TheoryPreprocessor::preprocess(TNode node,
   return tret;
 }
 
-  TrustNode TheoryPreprocessor::preprocess(TNode node,
-                       bool doTheoryPreprocess)
-  {
-    // ignore lemmas, no fixed point
-                                              std::vector<TrustNode> newLemmas;
-                                              std::vector<Node> newSkolems;
-                                              return preprocess(node, newLemmas, newSkolems, doTheoryPreprocess, false);
-  }
+TrustNode TheoryPreprocessor::preprocess(TNode node, bool doTheoryPreprocess)
+{
+  // ignore lemmas, no fixed point
+  std::vector<TrustNode> newLemmas;
+  std::vector<Node> newSkolems;
+  return preprocess(node, newLemmas, newSkolems, doTheoryPreprocess, false);
+}
 
 TrustNode TheoryPreprocessor::preprocessLemma(TrustNode node,
                                               std::vector<TrustNode>& newLemmas,
@@ -278,14 +277,15 @@ TrustNode TheoryPreprocessor::preprocessLemma(TrustNode node,
   return TrustNode::mkTrustLemma(lemmap, d_lp.get());
 }
 
-  TrustNode TheoryPreprocessor::preprocessLemma(TrustNode node,
-                       bool doTheoryPreprocess)
-  {
-    // ignore lemmas, no fixed point
-                                              std::vector<TrustNode> newLemmas;
-                                              std::vector<Node> newSkolems;
-                                              return preprocessLemma(node, newLemmas, newSkolems, doTheoryPreprocess, false);
-  }
+TrustNode TheoryPreprocessor::preprocessLemma(TrustNode node,
+                                              bool doTheoryPreprocess)
+{
+  // ignore lemmas, no fixed point
+  std::vector<TrustNode> newLemmas;
+  std::vector<Node> newSkolems;
+  return preprocessLemma(
+      node, newLemmas, newSkolems, doTheoryPreprocess, false);
+}
 
 RemoveTermFormulas& TheoryPreprocessor::getRemoveTermFormulas()
 {

@@ -19,7 +19,8 @@ namespace prop {
 LazyTppSolver::LazyTppSolver(TheoryEngine& theoryEngine,
                              context::UserContext* userContext,
                              ProofNodeManager* pnm)
-    : TheoryPreprocessSolver(theoryEngine, userContext, pnm), d_processedSkolems(userContext)
+    : TheoryPreprocessSolver(theoryEngine, userContext, pnm),
+      d_processedSkolems(userContext)
 {
 }
 
@@ -52,13 +53,13 @@ theory::TrustNode LazyTppSolver::preprocess(
 }
 
 void LazyTppSolver::check(theory::Theory::Effort effort,
-                               std::vector<theory::TrustNode>& newLemmas,
-                               std::vector<Node>& newSkolems)
+                          std::vector<theory::TrustNode>& newLemmas,
+                          std::vector<Node>& newSkolems)
 {
   // add lemmas for each skolem
   for (const Node& k : d_activeSkolems)
   {
-    if (d_processedSkolems.find(k)!=d_processedSkolems.end())
+    if (d_processedSkolems.find(k) != d_processedSkolems.end())
     {
       continue;
     }

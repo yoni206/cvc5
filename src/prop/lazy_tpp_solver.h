@@ -64,10 +64,11 @@ class LazyTppSolver : public TheoryPreprocessSolver
 
   /** check method */
   void check(theory::Theory::Effort effort,
-                               std::vector<theory::TrustNode>& newLemmas,
-                               std::vector<Node>& newSkolems) override;
+             std::vector<theory::TrustNode>& newLemmas,
+             std::vector<Node>& newSkolems) override;
+
  private:
-  /** 
+  /**
    * Set of activated skolems, collected during calls to notifyAssertFact
    * and cleared during check.
    */

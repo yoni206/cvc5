@@ -27,8 +27,7 @@ TheoryPreprocessSolver::TheoryPreprocessSolver(
 
 TheoryPreprocessSolver::~TheoryPreprocessSolver() {}
 
-void TheoryPreprocessSolver::notifyAssertFact(
-    TNode assertion)
+void TheoryPreprocessSolver::notifyAssertFact(TNode assertion)
 {
   // do nothing
 }
@@ -56,8 +55,8 @@ theory::TrustNode TheoryPreprocessSolver::preprocess(
 }
 
 void TheoryPreprocessSolver::check(theory::Theory::Effort effort,
-                               std::vector<theory::TrustNode>& newLemmas,
-                               std::vector<Node>& newSkolems)
+                                   std::vector<theory::TrustNode>& newLemmas,
+                                   std::vector<Node>& newSkolems)
 {
   // do nothing
 }

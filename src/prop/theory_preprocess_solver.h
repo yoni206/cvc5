@@ -20,9 +20,9 @@
 #include <vector>
 
 #include "expr/node.h"
+#include "theory/theory.h"
 #include "theory/theory_preprocessor.h"
 #include "theory/trust_node.h"
-#include "theory/theory.h"
 
 namespace CVC4 {
 
@@ -33,7 +33,7 @@ namespace prop {
 /**
  * The class that manages theory preprocessing and how it relates to lemma
  * generation.
- * 
+ *
  * This is the basic version of this solver, where the literals of TheoryEngine
  * and PropEngine are both theory-preprocessed.
  */
@@ -76,8 +76,9 @@ class TheoryPreprocessSolver
 
   /** check method */
   virtual void check(theory::Theory::Effort effort,
-                               std::vector<theory::TrustNode>& newLemmas,
-                               std::vector<Node>& newSkolems);
+                     std::vector<theory::TrustNode>& newLemmas,
+                     std::vector<Node>& newSkolems);
+
  protected:
   /** The theory preprocessor */
   theory::TheoryPreprocessor d_tpp;
