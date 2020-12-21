@@ -173,7 +173,7 @@ void PropEngine::notifyPreprocessedAssertions(
     const preprocessing::AssertionPipeline& ap)
 {
   // notify the theory engine of preprocessed assertions
-  d_theoryEngine->notifyPreprocessedAssertions(ap.ref());
+  d_theoryProxy->notifyPreprocessedAssertions(ap.ref());
 
   // Add assertions to decision engine, which manually extracts what assertions
   // corresponded to term formula removal. Note that alternatively we could

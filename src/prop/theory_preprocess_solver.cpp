@@ -61,15 +61,22 @@ theory::TrustNode TheoryPreprocessSolver::preprocess(
   return pnode;
 }
 
-theory::TrustNode TheoryPreprocessSolver::convertLemmaToProp(
+theory::TrustNode TheoryPreprocessSolver::convertToPropLemma(
     theory::TrustNode lem)
 {
-  Node clem = convertLemmaToPropInternal(lem.getProven());
+  Node clem = convertToPropInternal(lem.getProven());
   // TODO: make proof producing
   return theory::TrustNode::mkTrustLemma(clem, nullptr);
 }
 
-Node TheoryPreprocessSolver::convertLemmaToPropInternal(Node lem) const
+theory::TrustNode TheoryPreprocessSolver::convertToProp(TNode n)
+{
+  Node cn = convertToPropInternal(n);
+  // TODO: make proof producing
+  return theory::TrustNode::mkTrustRewrite(n, cn, nullptr);
+}
+
+Node TheoryPreprocessSolver::convertToPropInternal(TNode lem) const
 {
   NodeManager* nm = NodeManager::currentNM();
   std::unordered_map<TNode, Node, TNodeHashFunction> visited;

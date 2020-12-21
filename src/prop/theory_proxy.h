@@ -71,6 +71,9 @@ class TheoryProxy : public Registrar
   /** Finish initialize */
   void finishInit(CnfStream* cnfStream, SatRelevancy* satRlv);
 
+  /** Notify (preprocessed) assertions. */
+  void notifyPreprocessedAssertions(const std::vector<Node>& assertions);
+
   void theoryCheck(theory::Theory::Effort effort);
 
   void explainPropagation(SatLiteral l, SatClause& explanation);

@@ -70,18 +70,22 @@ class TheoryPreprocessSolver
                                std::vector<Node>& newSkolems,
                                bool doTheoryPreprocess);
 
- private:
   /**
    * Convert lemma to the form to send to the CNF stream. This means mapping
    * back to unpreprocessed form.
    *
    * It should be the case that convertLemmaToProp(preprocess(n)) = n.
    */
-  theory::TrustNode convertLemmaToProp(theory::TrustNode lem);
+  theory::TrustNode convertToPropLemma(theory::TrustNode lem);
+  /**
+   * Convert to prop
+   */
+  theory::TrustNode convertToProp(TNode n);
+ private:
   /**
    * Convert lemma to the form to send to the CNF stream.
    */
-  Node convertLemmaToPropInternal(Node lem) const;
+  Node convertToPropInternal(TNode lem) const;
   /** The theory preprocessor */
   theory::TheoryPreprocessor d_tpp;
   /** Map from preprocessed atoms to their unpreprocessed form */

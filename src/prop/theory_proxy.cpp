@@ -60,6 +60,12 @@ void TheoryProxy::finishInit(CnfStream* cnfStream, SatRelevancy* satRlv)
   d_satRlv = satRlv;
 }
 
+void TheoryProxy::notifyPreprocessedAssertions(const std::vector<Node>& assertions)
+{
+  // TODO: preprocess here?
+  d_theoryEngine->notifyPreprocessedAssertions(assertions);
+}
+
 void TheoryProxy::variableNotify(SatVariable var) {
   d_theoryEngine->preRegister(getNode(SatLiteral(var)));
 }
