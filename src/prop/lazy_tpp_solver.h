@@ -34,7 +34,8 @@ class LazyTppSolver : public TheoryPreprocessSolver
   using NodeSet = context::CDHashSet<Node, NodeHashFunction>;
 
  public:
-  LazyTppSolver(TheoryEngine& theoryEngine,
+  LazyTppSolver(
+  PropEngine& propEngine, TheoryEngine& theoryEngine,
                 context::UserContext* userContext,
                 ProofNodeManager* pnm = nullptr);
 
@@ -42,6 +43,8 @@ class LazyTppSolver : public TheoryPreprocessSolver
 
   /**
    * Notify this module that assertion is being asserted to the theory engine.
+   * This adds the skolems of assertions to the set of active skolems
+   * (d_activeSkolems) which we ensure lemmas have been produced for.
    */
   void notifyAssertFact(TNode assertion) override;
 
@@ -63,9 +66,7 @@ class LazyTppSolver : public TheoryPreprocessSolver
                                bool doTheoryPreprocess) override;
 
   /** check method */
-  void check(theory::Theory::Effort effort,
-             std::vector<theory::TrustNode>& newLemmas,
-             std::vector<Node>& newSkolems) override;
+  void check(theory::Theory::Effort effort) override;
 
  private:
   /**

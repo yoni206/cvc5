@@ -13,13 +13,15 @@
  **/
 #include "prop/lazy_tpp_solver.h"
 
+#include "prop/prop_engine.h"
+
 namespace CVC4 {
 namespace prop {
 
-LazyTppSolver::LazyTppSolver(TheoryEngine& theoryEngine,
+LazyTppSolver::LazyTppSolver(PropEngine& propEngine, TheoryEngine& theoryEngine,
                              context::UserContext* userContext,
                              ProofNodeManager* pnm)
-    : TheoryPreprocessSolver(theoryEngine, userContext, pnm),
+    : TheoryPreprocessSolver(propEngine, theoryEngine, userContext, pnm),
       d_processedSkolems(userContext)
 {
 }
@@ -28,7 +30,8 @@ LazyTppSolver::~LazyTppSolver() {}
 
 void LazyTppSolver::notifyAssertFact(TNode assertion)
 {
-  // determine which skolems become activated
+  // determine which skolems become activated, these will be processed
+  // immediately after this call in check(...).
   d_rtf.getSkolems(assertion, d_activeSkolems);
 }
 
@@ -52,9 +55,7 @@ theory::TrustNode LazyTppSolver::preprocess(
   return d_tpp.preprocess(node, doTheoryPreprocess);
 }
 
-void LazyTppSolver::check(theory::Theory::Effort effort,
-                          std::vector<theory::TrustNode>& newLemmas,
-                          std::vector<Node>& newSkolems)
+void LazyTppSolver::check(theory::Theory::Effort effort)
 {
   // add lemmas for each skolem
   for (const Node& k : d_activeSkolems)
@@ -63,8 +64,11 @@ void LazyTppSolver::check(theory::Theory::Effort effort,
     {
       continue;
     }
-    newLemmas.push_back(d_rtf.getLemmaForSkolem(k));
-    newSkolems.push_back(k);
+    theory::TrustNode lem = d_rtf.getLemmaForSkolem(k);
+    
+    // TODO: add lemma to prop engine
+    
+    //newSkolems.push_back(k);
     d_processedSkolems.insert(k);
   }
   d_activeSkolems.clear();

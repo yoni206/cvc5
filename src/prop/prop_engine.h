@@ -52,8 +52,6 @@ namespace prop {
 class CnfStream;
 class CDCLTSatSolverInterface;
 
-class PropEngine;
-
 /**
  * PropEngine is the abstraction of a Sat Solver, providing methods for
  * solving the SAT problem and conversion to CNF (via the CnfStream).

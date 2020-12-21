@@ -30,6 +30,8 @@ class TheoryEngine;
 
 namespace prop {
 
+class PropEngine;
+
 /**
  * The class that manages theory preprocessing and how it relates to lemma
  * generation.
@@ -40,7 +42,8 @@ namespace prop {
 class TheoryPreprocessSolver
 {
  public:
-  TheoryPreprocessSolver(TheoryEngine& theoryEngine,
+  TheoryPreprocessSolver(PropEngine& propEngine,
+                         TheoryEngine& theoryEngine,
                          context::UserContext* userContext,
                          ProofNodeManager* pnm = nullptr);
 
@@ -75,11 +78,11 @@ class TheoryPreprocessSolver
       bool doTheoryPreprocess);
 
   /** check method */
-  virtual void check(theory::Theory::Effort effort,
-                     std::vector<theory::TrustNode>& newLemmas,
-                     std::vector<Node>& newSkolems);
+  virtual void check(theory::Theory::Effort effort);
 
  protected:
+  /** The prop engine */
+  PropEngine& d_propEngine;
   /** The theory preprocessor */
   theory::TheoryPreprocessor d_tpp;
   /** Reference to the term formula remover of the above class */

@@ -17,10 +17,12 @@ namespace CVC4 {
 namespace prop {
 
 TheoryPreprocessSolver::TheoryPreprocessSolver(
+  PropEngine& propEngine,
     TheoryEngine& theoryEngine,
     context::UserContext* userContext,
     ProofNodeManager* pnm)
-    : d_tpp(theoryEngine, userContext, pnm),
+    : d_propEngine(propEngine),
+      d_tpp(theoryEngine, userContext, pnm),
       d_rtf(d_tpp.getRemoveTermFormulas())
 {
 }
@@ -54,9 +56,7 @@ theory::TrustNode TheoryPreprocessSolver::preprocess(
       node, newLemmas, newSkolems, doTheoryPreprocess, true);
 }
 
-void TheoryPreprocessSolver::check(theory::Theory::Effort effort,
-                                   std::vector<theory::TrustNode>& newLemmas,
-                                   std::vector<Node>& newSkolems)
+void TheoryPreprocessSolver::check(theory::Theory::Effort effort)
 {
   // do nothing
 }

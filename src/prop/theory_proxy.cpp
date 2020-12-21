@@ -47,7 +47,7 @@ TheoryProxy::TheoryProxy(PropEngine* propEngine,
       d_tppSlv(nullptr)
 {
   // TODO: based on option?
-  d_tppSlv.reset(new TheoryPreprocessSolver(*theoryEngine, userContext, pnm));
+  d_tppSlv.reset(new TheoryPreprocessSolver(*propEngine, *theoryEngine, userContext, pnm));
 }
 
 TheoryProxy::~TheoryProxy() {
@@ -81,10 +81,8 @@ void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
     // now, assert to theory engine
     d_theoryEngine->assertFact(assertion);
   }
-  std::vector<theory::TrustNode> newLemmas;
-  std::vector<Node> newSkolems;
-  d_tppSlv->check(effort, newLemmas, newSkolems);
-  // TODO: send lemmas to prop engine
+  // check with the theory preprocess solver and the theory engine
+  d_tppSlv->check(effort);
   d_theoryEngine->check(effort);
 }
 
