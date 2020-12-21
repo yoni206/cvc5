@@ -75,8 +75,10 @@ void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
   while (!d_queue.empty()) {
     TNode assertion = d_queue.front();
     d_queue.pop();
-    // assert fact to the theory-preprocess solver
+    // assert fact to the theory-preprocess solver, which may impact what
+    // skolems are activated
     d_tppSlv->notifyAssertFact(assertion);
+    // now, assert to theory engine
     d_theoryEngine->assertFact(assertion);
   }
   std::vector<theory::TrustNode> newLemmas;
@@ -202,6 +204,7 @@ theory::TrustNode TheoryProxy::preprocessLemma(
     std::vector<Node>& newSkolems,
     bool doTheoryPreprocess)
 {
+  // preprocess lemma based on the theory-preprocess solver
   return d_tppSlv->preprocessLemma(
       trn, newLemmas, newSkolems, doTheoryPreprocess);
 }
@@ -212,6 +215,7 @@ theory::TrustNode TheoryProxy::preprocess(
     std::vector<Node>& newSkolems,
     bool doTheoryPreprocess)
 {
+  // preprocess based on the theory-preprocess solver
   return d_tppSlv->preprocess(node, newLemmas, newSkolems, doTheoryPreprocess);
 }
 
