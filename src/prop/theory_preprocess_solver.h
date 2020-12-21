@@ -53,6 +53,8 @@ class TheoryPreprocessSolver
   /**
    * Call the preprocessor on node, return trust node corresponding to the
    * rewrite.
+   * 
+   * This is called when a new lemma is about to be added to the CNF stream.
    */
   virtual theory::TrustNode preprocessLemma(
       theory::TrustNode trn,
@@ -62,6 +64,8 @@ class TheoryPreprocessSolver
   /**
    * Call the preprocessor on node, return REWRITE trust node corresponding to
    * the rewrite.
+   * 
+   * This is called on input assertions, before being added to PropEngine.
    */
   virtual theory::TrustNode preprocess(
       TNode node,
@@ -84,6 +88,8 @@ class TheoryPreprocessSolver
  protected:
   /** The theory preprocessor */
   theory::TheoryPreprocessor d_tpp;
+  /** Reference to the term formula remover of the above class */
+  RemoveTermFormulas& d_rtf;
 }; /* class TheoryPreprocessSolver */
 
 }  // namespace prop

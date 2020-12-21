@@ -78,10 +78,14 @@ class LazyTppSolver : public TheoryPreprocessSolver
   theory::TrustNode convertToProp(TNode n) override;
 
  private:
+  /** convert literal to theory internal */
+  Node convertToTheoryInternal(TNode assertion);
+  /** convert literal to prop internal */
+  Node convertToPropInternal(TNode assertion);
   /**
    * Convert lemma to the form to send to the CNF stream.
    */
-  Node convertToPropInternal(TNode lem) const;
+  Node convertFormulaToPropInternal(TNode lem) const;
   /** Map from preprocessed atoms to their unpreprocessed form */
   NodeNodeMap d_ppLitMap;
 };

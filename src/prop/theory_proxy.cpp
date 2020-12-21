@@ -68,7 +68,8 @@ void TheoryProxy::notifyPreprocessedAssertions(
 }
 
 void TheoryProxy::variableNotify(SatVariable var) {
-  d_theoryEngine->preRegister(getNode(SatLiteral(var)));
+  Node n = d_cnfStream->getNode(SatLiteral(var));
+  d_theoryEngine->preRegister(n);
 }
 
 void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {

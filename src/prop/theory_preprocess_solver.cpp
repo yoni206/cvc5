@@ -20,7 +20,8 @@ TheoryPreprocessSolver::TheoryPreprocessSolver(
     TheoryEngine& theoryEngine,
     context::UserContext* userContext,
     ProofNodeManager* pnm)
-    : d_tpp(theoryEngine, userContext, pnm)
+    : d_tpp(theoryEngine, userContext, pnm),
+    d_rtf(d_tpp.getRemoveTermFormulas())
 {
 }
 
@@ -31,6 +32,7 @@ Node TheoryPreprocessSolver::assertFact(
     std::vector<theory::TrustNode>& newLemmas,
     std::vector<Node>& newSkolems)
 {
+  // we do not change the assertion.
   return assertion;
 }
 
@@ -40,7 +42,8 @@ theory::TrustNode TheoryPreprocessSolver::preprocessLemma(
     std::vector<Node>& newSkolems,
     bool doTheoryPreprocess)
 {
-  return d_tpp.preprocessLemma(trn, newLemmas, newSkolems, doTheoryPreprocess);
+  // use fixed point
+  return d_tpp.preprocessLemma(trn, newLemmas, newSkolems, doTheoryPreprocess, true);
 }
 
 theory::TrustNode TheoryPreprocessSolver::preprocess(
@@ -49,19 +52,20 @@ theory::TrustNode TheoryPreprocessSolver::preprocess(
     std::vector<Node>& newSkolems,
     bool doTheoryPreprocess)
 {
-  return d_tpp.preprocess(node, newLemmas, newSkolems, doTheoryPreprocess);
+  // use fixed point
+  return d_tpp.preprocess(node, newLemmas, newSkolems, doTheoryPreprocess, true);
 }
 
 theory::TrustNode TheoryPreprocessSolver::convertToPropLemma(
     theory::TrustNode lem)
 {
-  // no change
+  // no change, since the PropEngine's literals are theory preprocessed.
   return lem;
 }
 
 theory::TrustNode TheoryPreprocessSolver::convertToProp(TNode n)
 {
-  // no change
+  // no change, since the PropEngine's literals are theory preprocessed.
   return theory::TrustNode::null();
 }
 

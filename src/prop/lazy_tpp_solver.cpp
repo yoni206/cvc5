@@ -30,8 +30,13 @@ Node LazyTppSolver::assertFact(TNode assertion,
                                std::vector<theory::TrustNode>& newLemmas,
                                std::vector<Node>& newSkolems)
 {
-  // TODO
-  return assertion;
+  Node tassertion = convertToTheoryInternal(assertion);
+  // TODO: determine which skolems become activated
+  
+  
+  // TODO: add lemmas for each skolem if not done so already
+  
+  return tassertion;
 }
 
 theory::TrustNode LazyTppSolver::preprocessLemma(
@@ -40,7 +45,10 @@ theory::TrustNode LazyTppSolver::preprocessLemma(
     std::vector<Node>& newSkolems,
     bool doTheoryPreprocess)
 {
-  return d_tpp.preprocessLemma(trn, newLemmas, newSkolems, doTheoryPreprocess);
+  // convert to prop, since the TheoryEngine is generating
+  Node clem = convertToPropInternal(lem.getProven());
+  // TODO: make proof producing
+  return theory::TrustNode::mkTrustLemma(clem, nullptr);
 }
 
 theory::TrustNode LazyTppSolver::preprocess(
@@ -49,15 +57,8 @@ theory::TrustNode LazyTppSolver::preprocess(
     std::vector<Node>& newSkolems,
     bool doTheoryPreprocess)
 {
-  theory::TrustNode pnode =
-      d_tpp.preprocess(node, newLemmas, newSkolems, doTheoryPreprocess);
-  // if we changed node by preprocessing
-  if (!pnode.isNull())
-  {
-    // map the preprocessed formula to the original
-    d_ppLitMap[pnode.getNode()] = node;
-  }
-  return pnode;
+  // no change, since we do not preprocess literals
+  return theory::TrustNode::null();
 }
 
 theory::TrustNode LazyTppSolver::convertToPropLemma(theory::TrustNode lem)
@@ -74,7 +75,43 @@ theory::TrustNode LazyTppSolver::convertToProp(TNode n)
   return theory::TrustNode::mkTrustRewrite(n, cn, nullptr);
 }
 
-Node LazyTppSolver::convertToPropInternal(TNode lem) const
+Node LazyTppSolver::convertToTheoryInternal(TNode lit)
+{
+    std::vector<theory::TrustNode> newLemmas;
+    std::vector<Node> newSkolems;
+  theory::TrustNode pnode =
+      d_tpp.preprocess(lit, newLemmas, newSkolems, true, false);
+  // if we changed node by preprocessing
+  if (!pnode.isNull())
+  {
+    TNode plit = pnode.getNode();
+    // map the atom of the preprocessed literal to the original
+    if (plit.getKind()==kind::NOT)
+    {
+      Assert (lit.getKind()==kind::NOT);
+      d_ppLitMap[plit[0]] = lit[0];
+    }
+    else
+    {
+      Assert (lit.getKind()!=kind::NOT);
+      d_ppLitMap[plit] = lit;
+    }
+    return pnode.getNode();
+  }
+  return lit;
+}
+
+Node LazyTppSolver::convertToPropInternal(TNode atom)
+{
+  NodeNodeMap::const_iterator itp = d_ppLitMap.find(atom);
+  if (itp != d_ppLitMap.end())
+  {
+    return itp->second;
+  }
+  return atom;
+}
+
+Node LazyTppSolver::convertFormulaToPropInternal(TNode lem) const
 {
   if (d_ppLitMap.empty())
   {
@@ -103,6 +140,7 @@ Node LazyTppSolver::convertToPropInternal(TNode lem) const
       }
       else
       {
+        // only recurse if we don't belong to a theory
         visited[cur] = Node::null();
         visit.push_back(cur);
         visit.insert(visit.end(), cur.begin(), cur.end());

@@ -84,7 +84,9 @@ TheoryPreprocessor::~TheoryPreprocessor() {}
 TrustNode TheoryPreprocessor::preprocess(TNode node,
                                          std::vector<TrustNode>& newLemmas,
                                          std::vector<Node>& newSkolems,
-                                         bool doTheoryPreprocess)
+                                         bool doTheoryPreprocess,
+                                         bool fixedPoint
+                                        )
 {
   // In this method, all rewriting steps of node are stored in d_tpg.
 
@@ -101,7 +103,7 @@ TrustNode TheoryPreprocessor::preprocess(TNode node,
   }
 
   // Remove the ITEs, fixed point
-  TrustNode ttfr = d_tfr.run(ppNode, newLemmas, newSkolems, true);
+  TrustNode ttfr = d_tfr.run(ppNode, newLemmas, newSkolems, fixedPoint);
   Node rtfNode = ttfr.isNull() ? ppNode : ttfr.getNode();
 
   if (Debug.isOn("lemma-ites"))
@@ -225,12 +227,13 @@ TrustNode TheoryPreprocessor::preprocess(TNode node,
 TrustNode TheoryPreprocessor::preprocessLemma(TrustNode node,
                                               std::vector<TrustNode>& newLemmas,
                                               std::vector<Node>& newSkolems,
-                                              bool doTheoryPreprocess)
+                                              bool doTheoryPreprocess,
+                                         bool fixedPoint)
 {
   // what was originally proven
   Node lemma = node.getProven();
   TrustNode tplemma =
-      preprocess(lemma, newLemmas, newSkolems, doTheoryPreprocess);
+      preprocess(lemma, newLemmas, newSkolems, doTheoryPreprocess, fixedPoint);
   if (tplemma.isNull())
   {
     // no change needed
@@ -265,6 +268,11 @@ TrustNode TheoryPreprocessor::preprocessLemma(TrustNode node,
     }
   }
   return TrustNode::mkTrustLemma(lemmap, d_lp.get());
+}
+
+RemoveTermFormulas& TheoryPreprocessor::getRemoveTermFormulas()
+{
+  return d_tfr;
 }
 
 struct preprocess_stack_element
