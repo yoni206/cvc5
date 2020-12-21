@@ -27,13 +27,10 @@ TheoryPreprocessSolver::TheoryPreprocessSolver(
 
 TheoryPreprocessSolver::~TheoryPreprocessSolver() {}
 
-Node TheoryPreprocessSolver::assertFact(
-    TNode assertion,
-    std::vector<theory::TrustNode>& newLemmas,
-    std::vector<Node>& newSkolems)
+void TheoryPreprocessSolver::notifyAssertFact(
+    TNode assertion)
 {
-  // we do not change the assertion.
-  return assertion;
+  // do nothing
 }
 
 theory::TrustNode TheoryPreprocessSolver::preprocessLemma(
@@ -42,7 +39,7 @@ theory::TrustNode TheoryPreprocessSolver::preprocessLemma(
     std::vector<Node>& newSkolems,
     bool doTheoryPreprocess)
 {
-  // use fixed point
+  // use version with lemmas, fixed point
   return d_tpp.preprocessLemma(
       trn, newLemmas, newSkolems, doTheoryPreprocess, true);
 }
@@ -53,22 +50,16 @@ theory::TrustNode TheoryPreprocessSolver::preprocess(
     std::vector<Node>& newSkolems,
     bool doTheoryPreprocess)
 {
-  // use fixed point
+  // use version with lemmas, fixed point
   return d_tpp.preprocess(
       node, newLemmas, newSkolems, doTheoryPreprocess, true);
 }
 
-theory::TrustNode TheoryPreprocessSolver::convertToPropLemma(
-    theory::TrustNode lem)
+void TheoryPreprocessSolver::check(theory::Theory::Effort effort,
+                               std::vector<theory::TrustNode>& newLemmas,
+                               std::vector<Node>& newSkolems)
 {
-  // no change, since the PropEngine's literals are theory preprocessed.
-  return lem;
-}
-
-theory::TrustNode TheoryPreprocessSolver::convertToProp(TNode n)
-{
-  // no change, since the PropEngine's literals are theory preprocessed.
-  return theory::TrustNode::null();
+  // do nothing
 }
 
 }  // namespace prop

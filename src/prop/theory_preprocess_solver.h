@@ -22,6 +22,7 @@
 #include "expr/node.h"
 #include "theory/theory_preprocessor.h"
 #include "theory/trust_node.h"
+#include "theory/theory.h"
 
 namespace CVC4 {
 
@@ -32,6 +33,9 @@ namespace prop {
 /**
  * The class that manages theory preprocessing and how it relates to lemma
  * generation.
+ * 
+ * This is the basic version of this solver, where the literals of TheoryEngine
+ * and PropEngine are both theory-preprocessed.
  */
 class TheoryPreprocessSolver
 {
@@ -43,12 +47,9 @@ class TheoryPreprocessSolver
   virtual ~TheoryPreprocessSolver();
 
   /**
-   * Assert fact, returns the (possibly preprocessed) version of the assertion,
-   * as well as indicating any new lemmas that should be asserted.
+   * Notify this module that assertion is being asserted to the theory engine.
    */
-  virtual Node assertFact(TNode assertion,
-                          std::vector<theory::TrustNode>& newLemmas,
-                          std::vector<Node>& newSkolems);
+  virtual void notifyAssertFact(TNode assertion);
 
   /**
    * Call the preprocessor on node, return trust node corresponding to the
@@ -73,18 +74,10 @@ class TheoryPreprocessSolver
       std::vector<Node>& newSkolems,
       bool doTheoryPreprocess);
 
-  /**
-   * Convert lemma to the form to send to the CNF stream. This means mapping
-   * back to unpreprocessed form.
-   *
-   * It should be the case that convertLemmaToProp(preprocess(n)) = n.
-   */
-  virtual theory::TrustNode convertToPropLemma(theory::TrustNode lem);
-  /**
-   * Convert to prop
-   */
-  virtual theory::TrustNode convertToProp(TNode n);
-
+  /** check method */
+  virtual void check(theory::Theory::Effort effort,
+                               std::vector<theory::TrustNode>& newLemmas,
+                               std::vector<Node>& newSkolems);
  protected:
   /** The theory preprocessor */
   theory::TheoryPreprocessor d_tpp;

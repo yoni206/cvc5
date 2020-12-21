@@ -31,7 +31,7 @@ namespace prop {
  */
 class LazyTppSolver : public TheoryPreprocessSolver
 {
-  using NodeNodeMap = context::CDHashMap<Node, Node, NodeHashFunction>;
+  using NodeSet = context::CDHashSet<Node, NodeHashFunction>;
 
  public:
   LazyTppSolver(TheoryEngine& theoryEngine,
@@ -41,16 +41,13 @@ class LazyTppSolver : public TheoryPreprocessSolver
   ~LazyTppSolver();
 
   /**
-   * Assert fact, returns the (possibly preprocessed) version of the assertion,
-   * as well as indicating any new lemmas that should be asserted.
+   * Notify this module that assertion is being asserted to the theory engine.
    */
-  Node assertFact(TNode assertion,
-                  std::vector<theory::TrustNode>& newLemmas,
-                  std::vector<Node>& newSkolems) override;
+  void notifyAssertFact(TNode assertion) override;
 
   /**
-   * Call the preprocessor on node, return trust node corresponding to the
-   * rewrite.
+   * Call the preprocessor on node, return LEMMA trust node corresponding to
+   * the preprocessed lemma.
    */
   theory::TrustNode preprocessLemma(theory::TrustNode trn,
                                     std::vector<theory::TrustNode>& newLemmas,
@@ -65,29 +62,18 @@ class LazyTppSolver : public TheoryPreprocessSolver
                                std::vector<Node>& newSkolems,
                                bool doTheoryPreprocess) override;
 
-  /**
-   * Convert lemma to the form to send to the CNF stream. This means mapping
-   * back to unpreprocessed form.
-   *
-   * It should be the case that convertLemmaToProp(preprocess(n)) = n.
-   */
-  theory::TrustNode convertToPropLemma(theory::TrustNode lem) override;
-  /**
-   * Convert to prop
-   */
-  theory::TrustNode convertToProp(TNode n) override;
-
+  /** check method */
+  void check(theory::Theory::Effort effort,
+                               std::vector<theory::TrustNode>& newLemmas,
+                               std::vector<Node>& newSkolems) override;
  private:
-  /** convert literal to theory internal */
-  Node convertToTheoryInternal(TNode assertion);
-  /** convert literal to prop internal */
-  Node convertToPropInternal(TNode assertion);
-  /**
-   * Convert lemma to the form to send to the CNF stream.
+  /** 
+   * Set of activated skolems, collected during calls to notifyAssertFact
+   * and cleared during check.
    */
-  Node convertFormulaToPropInternal(TNode lem) const;
-  /** Map from preprocessed atoms to their unpreprocessed form */
-  NodeNodeMap d_ppLitMap;
+  std::unordered_set<Node, NodeHashFunction> d_activeSkolems;
+  /** Set of skolems whose lemmas have been processed */
+  NodeSet d_processedSkolems;
 };
 
 }  // namespace prop

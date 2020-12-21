@@ -63,7 +63,6 @@ void TheoryProxy::finishInit(CnfStream* cnfStream, SatRelevancy* satRlv)
 void TheoryProxy::notifyPreprocessedAssertions(
     const std::vector<Node>& assertions)
 {
-  // TODO: preprocess here?
   d_theoryEngine->notifyPreprocessedAssertions(assertions);
 }
 
@@ -76,9 +75,14 @@ void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
   while (!d_queue.empty()) {
     TNode assertion = d_queue.front();
     d_queue.pop();
-    // TODO: Node passert = tppSlv->assertFact(assertion
+    // assert fact to the theory-preprocess solver
+    d_tppSlv->notifyAssertFact(assertion);
     d_theoryEngine->assertFact(assertion);
   }
+  std::vector<theory::TrustNode> newLemmas;
+  std::vector<Node> newSkolems;
+  d_tppSlv->check(effort, newLemmas, newSkolems);
+  // TODO: send lemmas to prop engine
   d_theoryEngine->check(effort);
 }
 
@@ -86,7 +90,6 @@ void TheoryProxy::theoryPropagate(std::vector<SatLiteral>& output) {
   // Get the propagated literals
   std::vector<TNode> outputNodes;
   d_theoryEngine->getPropagatedLiterals(outputNodes);
-  // TODO: convert via tppSolv
   for (unsigned i = 0, i_end = outputNodes.size(); i < i_end; ++ i) {
     Debug("prop-explain") << "theoryPropagate() => " << outputNodes[i] << std::endl;
     output.push_back(d_cnfStream->getLiteral(outputNodes[i]));
@@ -96,7 +99,6 @@ void TheoryProxy::theoryPropagate(std::vector<SatLiteral>& output) {
 void TheoryProxy::explainPropagation(SatLiteral l, SatClause& explanation) {
   TNode lNode = d_cnfStream->getNode(l);
   Debug("prop-explain") << "explainPropagation(" << lNode << ")" << std::endl;
-  // TODO: convert via tppSolv
 
   theory::TrustNode tte = d_theoryEngine->getExplanation(lNode);
   Node theoryExplanation = tte.getNode();
@@ -149,7 +151,6 @@ void TheoryProxy::enqueueTheoryLiteral(const SatLiteral& l) {
 
 SatLiteral TheoryProxy::getNextTheoryDecisionRequest() {
   TNode n = d_theoryEngine->getNextDecisionRequest();
-  // TODO: convert via tppSolv
   return n.isNull() ? undefSatLiteral : d_cnfStream->getLiteral(n);
 }
 
@@ -216,7 +217,6 @@ theory::TrustNode TheoryProxy::preprocess(
 
 void TheoryProxy::preRegister(Node n)
 {
-  // TODO: convert via tppSolv
   d_theoryEngine->preRegister(n);
 }
 
