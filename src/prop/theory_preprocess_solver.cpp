@@ -20,7 +20,7 @@ TheoryPreprocessSolver::TheoryPreprocessSolver(
     TheoryEngine& theoryEngine,
     context::UserContext* userContext,
     ProofNodeManager* pnm)
-    : d_tpp(theoryEngine, userContext, pnm), d_ppLitMap(userContext)
+    : d_tpp(theoryEngine, userContext, pnm)
 {
 }
 
@@ -55,11 +55,13 @@ theory::TrustNode TheoryPreprocessSolver::preprocess(
 theory::TrustNode TheoryPreprocessSolver::convertToPropLemma(
     theory::TrustNode lem)
 {
+  // no change
   return lem;
 }
 
 theory::TrustNode TheoryPreprocessSolver::convertToProp(TNode n)
 {
+  // no change
   return theory::TrustNode::null();
 }
 

@@ -46,7 +46,7 @@ class LazyTppSolver : public TheoryPreprocessSolver
    */
   Node assertFact(TNode assertion,
                   std::vector<theory::TrustNode>& newLemmas,
-                  std::vector<Node>& newSkolems);
+                  std::vector<Node>& newSkolems) override;
 
   /**
    * Call the preprocessor on node, return trust node corresponding to the
@@ -55,7 +55,7 @@ class LazyTppSolver : public TheoryPreprocessSolver
   theory::TrustNode preprocessLemma(theory::TrustNode trn,
                                     std::vector<theory::TrustNode>& newLemmas,
                                     std::vector<Node>& newSkolems,
-                                    bool doTheoryPreprocess);
+                                    bool doTheoryPreprocess) override;
   /**
    * Call the preprocessor on node, return REWRITE trust node corresponding to
    * the rewrite.
@@ -63,7 +63,7 @@ class LazyTppSolver : public TheoryPreprocessSolver
   theory::TrustNode preprocess(TNode node,
                                std::vector<theory::TrustNode>& newLemmas,
                                std::vector<Node>& newSkolems,
-                               bool doTheoryPreprocess);
+                               bool doTheoryPreprocess) override;
 
   /**
    * Convert lemma to the form to send to the CNF stream. This means mapping
@@ -71,11 +71,11 @@ class LazyTppSolver : public TheoryPreprocessSolver
    *
    * It should be the case that convertLemmaToProp(preprocess(n)) = n.
    */
-  theory::TrustNode convertToPropLemma(theory::TrustNode lem);
+  theory::TrustNode convertToPropLemma(theory::TrustNode lem) override;
   /**
    * Convert to prop
    */
-  theory::TrustNode convertToProp(TNode n);
+  theory::TrustNode convertToProp(TNode n) override;
 
  private:
   /**

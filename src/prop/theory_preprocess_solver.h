@@ -19,7 +19,6 @@
 
 #include <vector>
 
-#include "context/cdhashmap.h"
 #include "expr/node.h"
 #include "theory/theory_preprocessor.h"
 #include "theory/trust_node.h"
@@ -36,14 +35,12 @@ namespace prop {
  */
 class TheoryPreprocessSolver
 {
-  using NodeNodeMap = context::CDHashMap<Node, Node, NodeHashFunction>;
-
  public:
   TheoryPreprocessSolver(TheoryEngine& theoryEngine,
                          context::UserContext* userContext,
                          ProofNodeManager* pnm = nullptr);
 
-  ~TheoryPreprocessSolver();
+  virtual ~TheoryPreprocessSolver();
 
   /**
    * Assert fact, returns the (possibly preprocessed) version of the assertion,
@@ -84,7 +81,7 @@ class TheoryPreprocessSolver
    */
   virtual theory::TrustNode convertToProp(TNode n);
 
- private:
+ protected:
   /** The theory preprocessor */
   theory::TheoryPreprocessor d_tpp;
 }; /* class TheoryPreprocessSolver */
