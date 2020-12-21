@@ -18,7 +18,8 @@
 namespace CVC4 {
 namespace prop {
 
-LazyTppSolver::LazyTppSolver(PropEngine& propEngine, TheoryEngine& theoryEngine,
+LazyTppSolver::LazyTppSolver(PropEngine& propEngine,
+                             TheoryEngine& theoryEngine,
                              context::UserContext* userContext,
                              ProofNodeManager* pnm)
     : TheoryPreprocessSolver(propEngine, theoryEngine, userContext, pnm),
@@ -65,10 +66,10 @@ void LazyTppSolver::check(theory::Theory::Effort effort)
       continue;
     }
     theory::TrustNode lem = d_rtf.getLemmaForSkolem(k);
-    
+
     // TODO: add lemma to prop engine
-    
-    //newSkolems.push_back(k);
+
+    // newSkolems.push_back(k);
     d_processedSkolems.insert(k);
   }
   d_activeSkolems.clear();

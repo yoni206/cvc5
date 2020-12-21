@@ -34,8 +34,8 @@ class LazyTppSolver : public TheoryPreprocessSolver
   using NodeSet = context::CDHashSet<Node, NodeHashFunction>;
 
  public:
-  LazyTppSolver(
-  PropEngine& propEngine, TheoryEngine& theoryEngine,
+  LazyTppSolver(PropEngine& propEngine,
+                TheoryEngine& theoryEngine,
                 context::UserContext* userContext,
                 ProofNodeManager* pnm = nullptr);
 

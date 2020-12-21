@@ -17,7 +17,7 @@ namespace CVC4 {
 namespace prop {
 
 TheoryPreprocessSolver::TheoryPreprocessSolver(
-  PropEngine& propEngine,
+    PropEngine& propEngine,
     TheoryEngine& theoryEngine,
     context::UserContext* userContext,
     ProofNodeManager* pnm)

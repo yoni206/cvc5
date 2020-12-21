@@ -47,7 +47,8 @@ TheoryProxy::TheoryProxy(PropEngine* propEngine,
       d_tppSlv(nullptr)
 {
   // TODO: based on option?
-  d_tppSlv.reset(new TheoryPreprocessSolver(*propEngine, *theoryEngine, userContext, pnm));
+  d_tppSlv.reset(
+      new TheoryPreprocessSolver(*propEngine, *theoryEngine, userContext, pnm));
 }
 
 TheoryProxy::~TheoryProxy() {
