@@ -50,25 +50,27 @@ class TheoryPreprocessSolver
    * as well as indicating any new lemmas that should be asserted.
    */
   virtual Node assertFact(TNode assertion,
-                  std::vector<theory::TrustNode>& newLemmas,
-                  std::vector<Node>& newSkolems);
+                          std::vector<theory::TrustNode>& newLemmas,
+                          std::vector<Node>& newSkolems);
 
   /**
    * Call the preprocessor on node, return trust node corresponding to the
    * rewrite.
    */
-  virtual theory::TrustNode preprocessLemma(theory::TrustNode trn,
-                                    std::vector<theory::TrustNode>& newLemmas,
-                                    std::vector<Node>& newSkolems,
-                                    bool doTheoryPreprocess);
+  virtual theory::TrustNode preprocessLemma(
+      theory::TrustNode trn,
+      std::vector<theory::TrustNode>& newLemmas,
+      std::vector<Node>& newSkolems,
+      bool doTheoryPreprocess);
   /**
    * Call the preprocessor on node, return REWRITE trust node corresponding to
    * the rewrite.
    */
-  virtual theory::TrustNode preprocess(TNode node,
-                               std::vector<theory::TrustNode>& newLemmas,
-                               std::vector<Node>& newSkolems,
-                               bool doTheoryPreprocess);
+  virtual theory::TrustNode preprocess(
+      TNode node,
+      std::vector<theory::TrustNode>& newLemmas,
+      std::vector<Node>& newSkolems,
+      bool doTheoryPreprocess);
 
   /**
    * Convert lemma to the form to send to the CNF stream. This means mapping
@@ -81,6 +83,7 @@ class TheoryPreprocessSolver
    * Convert to prop
    */
   virtual theory::TrustNode convertToProp(TNode n);
+
  private:
   /** The theory preprocessor */
   theory::TheoryPreprocessor d_tpp;

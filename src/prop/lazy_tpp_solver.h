@@ -35,8 +35,8 @@ class LazyTppSolver : public TheoryPreprocessSolver
 
  public:
   LazyTppSolver(TheoryEngine& theoryEngine,
-                         context::UserContext* userContext,
-                         ProofNodeManager* pnm = nullptr);
+                context::UserContext* userContext,
+                ProofNodeManager* pnm = nullptr);
 
   ~LazyTppSolver();
 
@@ -76,6 +76,7 @@ class LazyTppSolver : public TheoryPreprocessSolver
    * Convert to prop
    */
   theory::TrustNode convertToProp(TNode n);
+
  private:
   /**
    * Convert lemma to the form to send to the CNF stream.

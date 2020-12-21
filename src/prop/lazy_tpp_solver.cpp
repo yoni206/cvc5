@@ -16,20 +16,18 @@
 namespace CVC4 {
 namespace prop {
 
-LazyTppSolver::LazyTppSolver(
-    TheoryEngine& theoryEngine,
-    context::UserContext* userContext,
-    ProofNodeManager* pnm)
+LazyTppSolver::LazyTppSolver(TheoryEngine& theoryEngine,
+                             context::UserContext* userContext,
+                             ProofNodeManager* pnm)
     : TheoryPreprocessSolver(theoryEngine, userContext, pnm)
 {
 }
 
 LazyTppSolver::~LazyTppSolver() {}
 
-Node LazyTppSolver::assertFact(
-    TNode assertion,
-    std::vector<theory::TrustNode>& newLemmas,
-    std::vector<Node>& newSkolems)
+Node LazyTppSolver::assertFact(TNode assertion,
+                               std::vector<theory::TrustNode>& newLemmas,
+                               std::vector<Node>& newSkolems)
 {
   // TODO
   return assertion;
@@ -61,8 +59,7 @@ theory::TrustNode LazyTppSolver::preprocess(
   return pnode;
 }
 
-theory::TrustNode LazyTppSolver::convertToPropLemma(
-    theory::TrustNode lem)
+theory::TrustNode LazyTppSolver::convertToPropLemma(theory::TrustNode lem)
 {
   Node clem = convertToPropInternal(lem.getProven());
   // TODO: make proof producing

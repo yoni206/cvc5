@@ -63,6 +63,5 @@ theory::TrustNode TheoryPreprocessSolver::convertToProp(TNode n)
   return theory::TrustNode::null();
 }
 
-
 }  // namespace prop
 }  // namespace CVC4
