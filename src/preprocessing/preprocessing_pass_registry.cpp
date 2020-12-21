@@ -55,6 +55,7 @@
 #include "preprocessing/passes/theory_preprocess.h"
 #include "preprocessing/passes/unconstrained_simplifier.h"
 #include "preprocessing/preprocessing_pass.h"
+#include "preprocessing/passes/arith_rewrite_eq.h"
 
 namespace CVC4 {
 namespace preprocessing {
@@ -149,6 +150,7 @@ PreprocessingPassRegistry::PreprocessingPassRegistry()
   registerPassInfo("bool-to-bv", callCtor<BoolToBV>);
   registerPassInfo("ho-elim", callCtor<HoElim>);
   registerPassInfo("fun-def-fmf", callCtor<FunDefFmf>);
+  registerPassInfo("arith-rewrite-eq", callCtor<ArithRewriteEq>);
 }
 
 }  // namespace preprocessing

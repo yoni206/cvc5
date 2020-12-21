@@ -23,7 +23,7 @@ namespace preprocessing {
 namespace passes {
 
 ArithRewriteEq::ArithRewriteEq(PreprocessingPassContext* preprocContext)
-    : PreprocessingPass(preprocContext, "theory-preprocess"){};
+    : PreprocessingPass(preprocContext, "arith-rewrite-eq"){};
 
 PreprocessingPassResult ArithRewriteEq::applyInternal(
     AssertionPipeline* assertions)
@@ -78,7 +78,7 @@ theory::TrustNode ArithRewriteEq::rewriteAssertion(TNode n)
       Node ret = cur;
       bool childChanged = false;
       std::vector<Node> children;
-      if (cur.getMetaKind() == metakind::PARAMETERIZED)
+      if (cur.getMetaKind() == kind::metakind::PARAMETERIZED)
       {
         children.push_back(cur.getOperator());
       }
@@ -104,7 +104,7 @@ theory::TrustNode ArithRewriteEq::rewriteAssertion(TNode n)
   {
     return TrustNode::null();
   }
-  // TODO: make proof producing
+  // can make proof producing by providing a term conversion generator here
   return TrustNode::mkTrustRewrite(n, ret, nullptr);
 }
 
