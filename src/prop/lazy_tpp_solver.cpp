@@ -54,7 +54,7 @@ theory::TrustNode LazyTppSolver::preprocess(
   return d_tpp.preprocess(node, true);
 }
 
-theory::TrustNode TheoryPreprocessSolver::removeItes(
+theory::TrustNode LazyTppSolver::removeItes(
     TNode node,
     std::vector<theory::TrustNode>& ppLemmas,
     std::vector<Node>& ppSkolems)
