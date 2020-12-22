@@ -84,7 +84,7 @@ class TheoryPreprocessSolver
    * @return The (REWRITE) trust node corresponding to rewritten node via
    * preprocessing.
    */
-  theory::TrustNode removeItes(TNode node,
+  virtual theory::TrustNode removeItes(TNode node,
                                std::vector<theory::TrustNode>& ppLemmas,
                                std::vector<Node>& ppSkolems);
 
