@@ -66,5 +66,10 @@ void TheoryPreprocessSolver::check(theory::Theory::Effort effort)
   // do nothing
 }
 
+bool TheoryPreprocessSolver::needCheck()
+{
+  return false;
+}
+
 }  // namespace prop
 }  // namespace CVC4

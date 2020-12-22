@@ -23,7 +23,7 @@ LazyTppSolver::LazyTppSolver(PropEngine& propEngine,
                              context::UserContext* userContext,
                              ProofNodeManager* pnm)
     : TheoryPreprocessSolver(propEngine, theoryEngine, userContext, pnm),
-      d_processedSkolems(userContext)
+      d_processedSkolems(userContext), d_lemmasAdded(false)
 {
 }
 
@@ -31,6 +31,7 @@ LazyTppSolver::~LazyTppSolver() {}
 
 void LazyTppSolver::notifyAssertFact(TNode assertion)
 {
+  Trace("lazy-tpp") << "notifyAssertFact: " << assertion << std::endl;
   // determine which skolems become activated, these will be processed
   // immediately after this call in check(...).
   d_rtf.getSkolems(assertion, d_activeSkolems);
@@ -66,6 +67,8 @@ theory::TrustNode LazyTppSolver::removeItes(
 
 void LazyTppSolver::check(theory::Theory::Effort effort)
 {
+  Trace("lazy-tpp") << "check: " << effort << std::endl;
+  d_lemmasAdded = false;
   // add lemmas for each skolem
   for (const Node& k : d_activeSkolems)
   {
@@ -73,16 +76,23 @@ void LazyTppSolver::check(theory::Theory::Effort effort)
     {
       continue;
     }
+    Trace("lazy-tpp") << "- process skolem " << k << std::endl;
     theory::TrustNode lem = d_rtf.getLemmaForSkolem(k);
+    Trace("lazy-tpp") << "...lemma is " << lem.getNode() << std::endl;
 
     // add lemma to prop engine
     // TODO: technically losing skolem connection here
     d_propEngine.assertLemma(lem);
+    d_lemmasAdded = true;
 
-    // newSkolems.push_back(k);
     d_processedSkolems.insert(k);
   }
   d_activeSkolems.clear();
+}
+
+bool LazyTppSolver::needCheck()
+{
+  return d_lemmasAdded;
 }
 
 }  // namespace prop

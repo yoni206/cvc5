@@ -73,7 +73,8 @@ class LazyTppSolver : public TheoryPreprocessSolver
 
   /** check method */
   void check(theory::Theory::Effort effort) override;
-
+  /** needs check method */
+  bool needCheck() override;
  private:
   /**
    * Set of activated skolems, collected during calls to notifyAssertFact
@@ -82,6 +83,8 @@ class LazyTppSolver : public TheoryPreprocessSolver
   std::unordered_set<Node, NodeHashFunction> d_activeSkolems;
   /** Set of skolems whose lemmas have been processed */
   NodeSet d_processedSkolems;
+  /** Have we added lemmas on the last call to check? */
+  bool d_lemmasAdded;
 };
 
 }  // namespace prop

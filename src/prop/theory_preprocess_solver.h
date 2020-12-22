@@ -90,7 +90,8 @@ class TheoryPreprocessSolver
 
   /** check method */
   virtual void check(theory::Theory::Effort effort);
-
+  /** needs check method */
+  virtual bool needCheck();
  protected:
   /** The prop engine */
   PropEngine& d_propEngine;

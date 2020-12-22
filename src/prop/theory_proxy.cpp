@@ -47,7 +47,6 @@ TheoryProxy::TheoryProxy(PropEngine* propEngine,
       d_satRlv(nullptr),
       d_tppSlv(nullptr)
 {
-  // TODO: based on option?
   if (options::theoryPpOnAssert())
   {
     d_tppSlv.reset(
@@ -175,7 +174,7 @@ SatLiteral TheoryProxy::getNextDecisionEngineRequest(bool &stopSearch) {
 }
 
 bool TheoryProxy::theoryNeedCheck() const {
-  return d_theoryEngine->needCheck();
+  return d_theoryEngine->needCheck() || d_tppSlv->needCheck();
 }
 
 TNode TheoryProxy::getNode(SatLiteral lit) {
