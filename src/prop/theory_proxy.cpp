@@ -22,13 +22,13 @@
 #include "options/prop_options.h"
 #include "proof/cnf_proof.h"
 #include "prop/cnf_stream.h"
+#include "prop/lazy_tpp_solver.h"
 #include "prop/prop_engine.h"
 #include "prop/sat_relevancy.h"
 #include "smt/smt_statistics_registry.h"
 #include "theory/rewriter.h"
 #include "theory/theory_engine.h"
 #include "util/statistics_registry.h"
-#include "prop/lazy_tpp_solver.h"
 
 namespace CVC4 {
 namespace prop {
@@ -55,8 +55,8 @@ TheoryProxy::TheoryProxy(PropEngine* propEngine,
   }
   else
   {
-    d_tppSlv.reset(
-        new TheoryPreprocessSolver(*propEngine, *theoryEngine, userContext, pnm));
+    d_tppSlv.reset(new TheoryPreprocessSolver(
+        *propEngine, *theoryEngine, userContext, pnm));
   }
 }
 
