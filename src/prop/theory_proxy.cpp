@@ -28,6 +28,7 @@
 #include "theory/rewriter.h"
 #include "theory/theory_engine.h"
 #include "util/statistics_registry.h"
+#include "prop/lazy_tpp_solver.h"
 
 namespace CVC4 {
 namespace prop {
@@ -47,8 +48,16 @@ TheoryProxy::TheoryProxy(PropEngine* propEngine,
       d_tppSlv(nullptr)
 {
   // TODO: based on option?
-  d_tppSlv.reset(
-      new TheoryPreprocessSolver(*propEngine, *theoryEngine, userContext, pnm));
+  if (options::theoryPpOnAssert())
+  {
+    d_tppSlv.reset(
+        new LazyTppSolver(*propEngine, *theoryEngine, userContext, pnm));
+  }
+  else
+  {
+    d_tppSlv.reset(
+        new TheoryPreprocessSolver(*propEngine, *theoryEngine, userContext, pnm));
+  }
 }
 
 TheoryProxy::~TheoryProxy() {
