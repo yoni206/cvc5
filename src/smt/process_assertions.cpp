@@ -21,7 +21,6 @@
 #include "options/arith_options.h"
 #include "options/base_options.h"
 #include "options/bv_options.h"
-#include "options/prop_options.h"
 #include "options/quantifiers_options.h"
 #include "options/sep_options.h"
 #include "options/smt_options.h"
@@ -318,6 +317,9 @@ bool ProcessAssertions::apply(Assertions& as)
     d_passes["ho-elim"]->apply(&assertions);
   }
 
+  // rewrite equalities based on theory-specific rewriting
+  d_passes["theory-rewrite-eq"]->apply(&assertions);
+
   // begin: INVARIANT to maintain: no reordering of assertions or
   // introducing new ones
 
@@ -327,14 +329,9 @@ bool ProcessAssertions::apply(Assertions& as)
                << endl;
   Debug("smt") << " assertions     : " << assertions.size() << endl;
 
-  if (options::arithRewriteEq())
-  {
-    d_passes["arith-rewrite-eq"]->apply(&assertions);
-  }
-
   // ensure rewritten
   d_passes["rewrite"]->apply(&assertions);
-  // apply theory preprocess
+  // apply theory preprocess, which includes ITE removal
   d_passes["theory-preprocess"]->apply(&assertions);
   // This is needed because when solving incrementally, removeITEs may
   // introduce skolems that were solved for earlier and thus appear in the
