@@ -85,8 +85,8 @@ class TheoryPreprocessSolver
    * preprocessing.
    */
   virtual theory::TrustNode removeItes(TNode node,
-                               std::vector<theory::TrustNode>& ppLemmas,
-                               std::vector<Node>& ppSkolems);
+                                       std::vector<theory::TrustNode>& ppLemmas,
+                                       std::vector<Node>& ppSkolems);
 
   /** check method */
   virtual void check(theory::Theory::Effort effort);
