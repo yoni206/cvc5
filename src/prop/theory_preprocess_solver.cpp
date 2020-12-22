@@ -52,9 +52,10 @@ theory::TrustNode TheoryPreprocessSolver::preprocess(
   return d_tpp.preprocess(node, ppLemmas, ppSkolems, true, true);
 }
 
-theory::TrustNode TheoryPreprocessSolver::removeItes(TNode node,
-                              std::vector<theory::TrustNode>& ppLemmas,
-                              std::vector<Node>& ppSkolems)
+theory::TrustNode TheoryPreprocessSolver::removeItes(
+    TNode node,
+    std::vector<theory::TrustNode>& ppLemmas,
+    std::vector<Node>& ppSkolems)
 {
   // run using the remove term formula utility directly, use fixed point true
   return d_rtf.run(node, ppLemmas, ppSkolems, true);

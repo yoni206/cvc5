@@ -215,9 +215,10 @@ theory::TrustNode TheoryProxy::preprocess(
   return d_tppSlv->preprocess(node, newLemmas, newSkolems);
 }
 
-theory::TrustNode TheoryProxy::removeItes(TNode node,
-                              std::vector<theory::TrustNode>& newLemmas,
-                              std::vector<Node>& newSkolems)
+theory::TrustNode TheoryProxy::removeItes(
+    TNode node,
+    std::vector<theory::TrustNode>& newLemmas,
+    std::vector<Node>& newSkolems)
 {
   return d_tppSlv->removeItes(node, newLemmas, newSkolems);
 }

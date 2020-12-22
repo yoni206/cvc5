@@ -142,7 +142,8 @@ class PropEngine
    * @param p the properties of the lemma
    * @return the (preprocessed) lemma
    */
-  Node assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p = theory::LemmaProperty::NONE);
+  Node assertLemma(theory::TrustNode tlemma,
+                   theory::LemmaProperty p = theory::LemmaProperty::NONE);
 
   /**
    * If ever n is decided upon, it must be in the given phase.  This

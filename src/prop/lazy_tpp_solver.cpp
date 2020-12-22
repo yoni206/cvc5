@@ -54,9 +54,10 @@ theory::TrustNode LazyTppSolver::preprocess(
   return d_tpp.preprocess(node, true);
 }
 
-theory::TrustNode TheoryPreprocessSolver::removeItes(TNode node,
-                              std::vector<theory::TrustNode>& ppLemmas,
-                              std::vector<Node>& ppSkolems)
+theory::TrustNode TheoryPreprocessSolver::removeItes(
+    TNode node,
+    std::vector<theory::TrustNode>& ppLemmas,
+    std::vector<Node>& ppSkolems)
 {
   // run the remove term formula utility directly, version without lemma
   // tracking or fixed point

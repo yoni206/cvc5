@@ -167,9 +167,10 @@ theory::TrustNode PropEngine::preprocess(
   return d_theoryProxy->preprocess(node, ppLemmas, ppSkolems);
 }
 
-theory::TrustNode PropEngine::removeItes(TNode node,
-                              std::vector<theory::TrustNode>& ppLemmas,
-                              std::vector<Node>& ppSkolems)
+theory::TrustNode PropEngine::removeItes(
+    TNode node,
+    std::vector<theory::TrustNode>& ppLemmas,
+    std::vector<Node>& ppSkolems)
 {
   return d_theoryProxy->removeItes(node, ppLemmas, ppSkolems);
 }
@@ -444,8 +445,7 @@ Node PropEngine::ensureLiteral(TNode n)
   // must preprocess
   std::vector<theory::TrustNode> newLemmas;
   std::vector<Node> newSkolems;
-  theory::TrustNode tpn =
-      d_theoryProxy->preprocess(n, newLemmas, newSkolems);
+  theory::TrustNode tpn = d_theoryProxy->preprocess(n, newLemmas, newSkolems);
   // send lemmas corresponding to the skolems introduced by preprocessing n
   for (const theory::TrustNode& tnl : newLemmas)
   {

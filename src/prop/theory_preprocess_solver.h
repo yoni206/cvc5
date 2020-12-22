@@ -70,10 +70,9 @@ class TheoryPreprocessSolver
    *
    * This is called on input assertions, before being added to PropEngine.
    */
-  virtual theory::TrustNode preprocess(
-      TNode node,
-      std::vector<theory::TrustNode>& ppLemmas,
-      std::vector<Node>& ppSkolems);
+  virtual theory::TrustNode preprocess(TNode node,
+                                       std::vector<theory::TrustNode>& ppLemmas,
+                                       std::vector<Node>& ppSkolems);
   /**
    * Remove term ITEs (and more generally, term formulas) from the given node.
    * Return the REWRITE trust node corresponding to rewriting node. New lemmas
@@ -91,6 +90,7 @@ class TheoryPreprocessSolver
 
   /** check method */
   virtual void check(theory::Theory::Effort effort);
+
  protected:
   /** The prop engine */
   PropEngine& d_propEngine;
