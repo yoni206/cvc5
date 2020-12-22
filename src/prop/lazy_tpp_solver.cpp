@@ -67,7 +67,9 @@ void LazyTppSolver::check(theory::Theory::Effort effort)
     }
     theory::TrustNode lem = d_rtf.getLemmaForSkolem(k);
 
-    // TODO: add lemma to prop engine
+    // add lemma to prop engine
+    // TODO: technically losing skolem connection here
+    d_propEngine.assertLemma(lem, theory::LemmaProperty::PREPROCESS);
 
     // newSkolems.push_back(k);
     d_processedSkolems.insert(k);
