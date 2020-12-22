@@ -62,6 +62,14 @@ class LazyTppSolver : public TheoryPreprocessSolver
   theory::TrustNode preprocess(TNode node,
                                std::vector<theory::TrustNode>& newLemmas,
                                std::vector<Node>& newSkolems) override;
+  /**
+   * Remove term ITEs (and more generally, term formulas) from the given node.
+   * Return the REWRITE trust node corresponding to rewriting node. New lemmas
+   * and skolems are added to ppLemmas and ppSkolems respectively.
+   */
+  theory::TrustNode removeItes(TNode node,
+                               std::vector<theory::TrustNode>& ppLemmas,
+                               std::vector<Node>& ppSkolems) override;
 
   /** check method */
   void check(theory::Theory::Effort effort) override;
