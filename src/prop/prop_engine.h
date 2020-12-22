@@ -98,14 +98,26 @@ class PropEngine
    * @param node The assertion to preprocess,
    * @param ppLemmas The lemmas to add to the set of assertions,
    * @param ppSkolems The skolems that newLemmas correspond to,
-   * @param doTheoryPreprocess whether to run theory-specific preprocessing.
    * @return The (REWRITE) trust node corresponding to rewritten node via
    * preprocessing.
    */
   theory::TrustNode preprocess(TNode node,
                                std::vector<theory::TrustNode>& ppLemmas,
-                               std::vector<Node>& ppSkolems,
-                               bool doTheoryPreprocess);
+                               std::vector<Node>& ppSkolems);
+  /**
+   * Remove term ITEs (and more generally, term formulas) from the given node.
+   * Return the REWRITE trust node corresponding to rewriting node. New lemmas
+   * and skolems are added to ppLemmas and ppSkolems respectively.
+   *
+   * @param node The assertion to preprocess,
+   * @param ppLemmas The lemmas to add to the set of assertions,
+   * @param ppSkolems The skolems that newLemmas correspond to,
+   * @return The (REWRITE) trust node corresponding to rewritten node via
+   * preprocessing.
+   */
+  theory::TrustNode removeItes(TNode node,
+                               std::vector<theory::TrustNode>& ppLemmas,
+                               std::vector<Node>& ppSkolems);
 
   /**
    * Notify preprocessed assertions. This method is called just before the
@@ -130,7 +142,7 @@ class PropEngine
    * @param p the properties of the lemma
    * @return the (preprocessed) lemma
    */
-  Node assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p);
+  Node assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p = theory::LemmaProperty::NONE);
 
   /**
    * If ever n is decided upon, it must be in the given phase.  This

@@ -90,7 +90,7 @@ class TheoryPreprocessor
                             bool fixedPoint);
   TrustNode preprocessLemma(TrustNode node, bool doTheoryPreprocess);
 
-  /** Get term formula removal utility */
+  /** Get the term formula removal utility */
   RemoveTermFormulas& getRemoveTermFormulas();
 
  private:

@@ -86,6 +86,13 @@ theory::TrustNode RemoveTermFormulas::run(
   return theory::TrustNode::mkTrustRewrite(assertion, itesRemoved, d_tpg.get());
 }
 
+theory::TrustNode RemoveTermFormulas::run(Node assertion)
+{
+  std::vector<theory::TrustNode> newAsserts;
+  std::vector<Node> newSkolems;
+  return run(assertion, newAsserts, newSkolems, false);
+}
+
 theory::TrustNode RemoveTermFormulas::runLemma(
     theory::TrustNode lem,
     std::vector<theory::TrustNode>& newAsserts,

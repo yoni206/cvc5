@@ -54,16 +54,14 @@ class LazyTppSolver : public TheoryPreprocessSolver
    */
   theory::TrustNode preprocessLemma(theory::TrustNode trn,
                                     std::vector<theory::TrustNode>& newLemmas,
-                                    std::vector<Node>& newSkolems,
-                                    bool doTheoryPreprocess) override;
+                                    std::vector<Node>& newSkolems) override;
   /**
    * Call the preprocessor on node, return REWRITE trust node corresponding to
    * the rewrite.
    */
   theory::TrustNode preprocess(TNode node,
                                std::vector<theory::TrustNode>& newLemmas,
-                               std::vector<Node>& newSkolems,
-                               bool doTheoryPreprocess) override;
+                               std::vector<Node>& newSkolems) override;
 
   /** check method */
   void check(theory::Theory::Effort effort) override;

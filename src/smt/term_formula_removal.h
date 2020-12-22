@@ -96,6 +96,12 @@ class RemoveTermFormulas {
                         std::vector<Node>& newSkolems,
                         bool fixedPoint = false);
   /**
+   * Same as above, but does not track lemmas, and does not run to fixed point.
+   * The relevant lemmas can be extracted by the caller later using getSkolems
+   * and getLemmaForSkolem.
+   */
+  theory::TrustNode run(Node assertion);
+  /**
    * Same as above, but transforms a lemma, returning a LEMMA trust node that
    * proves the same formula as lem with term formulas removed.
    */
@@ -121,12 +127,6 @@ class RemoveTermFormulas {
   static Node getAxiomFor(Node n);
 
   /**
-   * Get the lemma for the skolem, or the null node if k is not a skolem this
-   * class introduced.
-   */
-  theory::TrustNode getLemmaForSkolem(TNode k) const;
-
-  /**
    * Get the set of skolems introduced by this class that occur in node n,
    * add them to skolems.
    *
@@ -137,6 +137,12 @@ class RemoveTermFormulas {
    */
   bool getSkolems(TNode n,
                   std::unordered_set<Node, NodeHashFunction>& skolems) const;
+
+  /**
+   * Get the lemma for the skolem, or the null node if k is not a skolem this
+   * class introduced.
+   */
+  theory::TrustNode getLemmaForSkolem(TNode k) const;
 
  private:
   typedef context::CDInsertHashMap<

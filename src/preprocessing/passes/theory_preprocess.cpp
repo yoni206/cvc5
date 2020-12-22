@@ -42,7 +42,7 @@ PreprocessingPassResult TheoryPreprocess::applyInternal(
     std::vector<theory::TrustNode> newAsserts;
     std::vector<Node> newSkolems;
     TrustNode trn =
-        propEngine->preprocess(assertion, newAsserts, newSkolems, true);
+        propEngine->preprocess(assertion, newAsserts, newSkolems);
     if (!trn.isNull())
     {
       // process

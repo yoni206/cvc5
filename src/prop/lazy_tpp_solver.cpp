@@ -39,21 +39,28 @@ void LazyTppSolver::notifyAssertFact(TNode assertion)
 theory::TrustNode LazyTppSolver::preprocessLemma(
     theory::TrustNode trn,
     std::vector<theory::TrustNode>& newLemmas,
-    std::vector<Node>& newSkolems,
-    bool doTheoryPreprocess)
+    std::vector<Node>& newSkolems)
 {
   // version without fixed point or lemmas
-  return d_tpp.preprocessLemma(trn, doTheoryPreprocess);
+  return d_tpp.preprocessLemma(trn, true);
 }
 
 theory::TrustNode LazyTppSolver::preprocess(
     TNode node,
     std::vector<theory::TrustNode>& newLemmas,
-    std::vector<Node>& newSkolems,
-    bool doTheoryPreprocess)
+    std::vector<Node>& newSkolems)
 {
   // version without fixed point or lemmas
-  return d_tpp.preprocess(node, doTheoryPreprocess);
+  return d_tpp.preprocess(node, true);
+}
+
+theory::TrustNode TheoryPreprocessSolver::removeItes(TNode node,
+                              std::vector<theory::TrustNode>& ppLemmas,
+                              std::vector<Node>& ppSkolems)
+{
+  // run the remove term formula utility directly, version without lemma
+  // tracking or fixed point
+  return d_rtf.run(node);
 }
 
 void LazyTppSolver::check(theory::Theory::Effort effort)
@@ -69,7 +76,7 @@ void LazyTppSolver::check(theory::Theory::Effort effort)
 
     // add lemma to prop engine
     // TODO: technically losing skolem connection here
-    d_propEngine.assertLemma(lem, theory::LemmaProperty::PREPROCESS);
+    d_propEngine.assertLemma(lem);
 
     // newSkolems.push_back(k);
     d_processedSkolems.insert(k);

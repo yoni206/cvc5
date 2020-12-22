@@ -161,12 +161,17 @@ PropEngine::~PropEngine() {
 
 theory::TrustNode PropEngine::preprocess(
     TNode node,
-    std::vector<theory::TrustNode>& newLemmas,
-    std::vector<Node>& newSkolems,
-    bool doTheoryPreprocess)
+    std::vector<theory::TrustNode>& ppLemmas,
+    std::vector<Node>& ppSkolems)
 {
-  return d_theoryProxy->preprocess(
-      node, newLemmas, newSkolems, doTheoryPreprocess);
+  return d_theoryProxy->preprocess(node, ppLemmas, ppSkolems);
+}
+
+theory::TrustNode PropEngine::removeItes(TNode node,
+                              std::vector<theory::TrustNode>& ppLemmas,
+                              std::vector<Node>& ppSkolems)
+{
+  return d_theoryProxy->removeItes(node, ppLemmas, ppSkolems);
 }
 
 void PropEngine::notifyPreprocessedAssertions(
@@ -214,13 +219,12 @@ void PropEngine::assertFormula(TNode node) {
 Node PropEngine::assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p)
 {
   bool removable = isLemmaPropertyRemovable(p);
-  bool preprocess = options::theoryPpOnAssert() || isLemmaPropertyPreprocess(p);
 
   // call preprocessor
   std::vector<theory::TrustNode> ppLemmas;
   std::vector<Node> ppSkolems;
   theory::TrustNode tplemma =
-      d_theoryProxy->preprocessLemma(tlemma, ppLemmas, ppSkolems, preprocess);
+      d_theoryProxy->preprocessLemma(tlemma, ppLemmas, ppSkolems);
 
   Assert(ppSkolems.size() == ppLemmas.size());
 
@@ -441,12 +445,12 @@ Node PropEngine::ensureLiteral(TNode n)
   std::vector<theory::TrustNode> newLemmas;
   std::vector<Node> newSkolems;
   theory::TrustNode tpn =
-      d_theoryProxy->preprocess(n, newLemmas, newSkolems, true);
+      d_theoryProxy->preprocess(n, newLemmas, newSkolems);
   // send lemmas corresponding to the skolems introduced by preprocessing n
   for (const theory::TrustNode& tnl : newLemmas)
   {
     Trace("ensureLiteral") << "  lemma: " << tnl.getNode() << std::endl;
-    assertLemma(tnl, theory::LemmaProperty::NONE);
+    assertLemma(tnl);
   }
   Node preprocessed = tpn.isNull() ? Node(n) : tpn.getNode();
   Trace("ensureLiteral") << "ensureLiteral preprocessed: " << preprocessed

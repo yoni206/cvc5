@@ -36,24 +36,28 @@ void TheoryPreprocessSolver::notifyAssertFact(TNode assertion)
 
 theory::TrustNode TheoryPreprocessSolver::preprocessLemma(
     theory::TrustNode trn,
-    std::vector<theory::TrustNode>& newLemmas,
-    std::vector<Node>& newSkolems,
-    bool doTheoryPreprocess)
+    std::vector<theory::TrustNode>& ppLemmas,
+    std::vector<Node>& ppSkolems)
 {
-  // use version with lemmas, fixed point
-  return d_tpp.preprocessLemma(
-      trn, newLemmas, newSkolems, doTheoryPreprocess, true);
+  // use version with lemmas, use fixed point true
+  return d_tpp.preprocessLemma(trn, ppLemmas, ppSkolems, true, true);
 }
 
 theory::TrustNode TheoryPreprocessSolver::preprocess(
     TNode node,
-    std::vector<theory::TrustNode>& newLemmas,
-    std::vector<Node>& newSkolems,
-    bool doTheoryPreprocess)
+    std::vector<theory::TrustNode>& ppLemmas,
+    std::vector<Node>& ppSkolems)
 {
-  // use version with lemmas, fixed point
-  return d_tpp.preprocess(
-      node, newLemmas, newSkolems, doTheoryPreprocess, true);
+  // use version with lemmas, use fixed point true
+  return d_tpp.preprocess(node, ppLemmas, ppSkolems, true, true);
+}
+
+theory::TrustNode TheoryPreprocessSolver::removeItes(TNode node,
+                              std::vector<theory::TrustNode>& ppLemmas,
+                              std::vector<Node>& ppSkolems)
+{
+  // run using the remove term formula utility directly, use fixed point true
+  return d_rtf.run(node, ppLemmas, ppSkolems, true);
 }
 
 void TheoryPreprocessSolver::check(theory::Theory::Effort effort)

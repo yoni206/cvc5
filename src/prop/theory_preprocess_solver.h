@@ -62,9 +62,8 @@ class TheoryPreprocessSolver
    */
   virtual theory::TrustNode preprocessLemma(
       theory::TrustNode trn,
-      std::vector<theory::TrustNode>& newLemmas,
-      std::vector<Node>& newSkolems,
-      bool doTheoryPreprocess);
+      std::vector<theory::TrustNode>& ppLemmas,
+      std::vector<Node>& ppSkolems);
   /**
    * Call the preprocessor on node, return REWRITE trust node corresponding to
    * the rewrite.
@@ -73,13 +72,25 @@ class TheoryPreprocessSolver
    */
   virtual theory::TrustNode preprocess(
       TNode node,
-      std::vector<theory::TrustNode>& newLemmas,
-      std::vector<Node>& newSkolems,
-      bool doTheoryPreprocess);
+      std::vector<theory::TrustNode>& ppLemmas,
+      std::vector<Node>& ppSkolems);
+  /**
+   * Remove term ITEs (and more generally, term formulas) from the given node.
+   * Return the REWRITE trust node corresponding to rewriting node. New lemmas
+   * and skolems are added to ppLemmas and ppSkolems respectively.
+   *
+   * @param node The assertion to preprocess,
+   * @param ppLemmas The lemmas to add to the set of assertions,
+   * @param ppSkolems The skolems that newLemmas correspond to,
+   * @return The (REWRITE) trust node corresponding to rewritten node via
+   * preprocessing.
+   */
+  theory::TrustNode removeItes(TNode node,
+                               std::vector<theory::TrustNode>& ppLemmas,
+                               std::vector<Node>& ppSkolems);
 
   /** check method */
   virtual void check(theory::Theory::Effort effort);
-
  protected:
   /** The prop engine */
   PropEngine& d_propEngine;
