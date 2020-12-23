@@ -36,11 +36,14 @@ void TheoryPreprocessSolver::notifyAssertFact(TNode assertion)
 
 theory::TrustNode TheoryPreprocessSolver::preprocessLemma(
     theory::TrustNode trn,
-    std::vector<theory::TrustNode>& ppLemmas,
-    std::vector<Node>& ppSkolems)
+    std::vector<theory::TrustNode>& newLemmas,
+    std::vector<Node>& newSkolems,
+                                    Node& retLemma)
 {
   // use version with lemmas, use fixed point true
-  return d_tpp.preprocessLemma(trn, ppLemmas, ppSkolems, true, true);
+  theory::TrustNode ret = d_tpp.preprocessLemma(trn, newLemmas, newSkolems, true, true);
+  retLemma = makeReturnLemma(ret, newLemmas);
+  return ret;
 }
 
 theory::TrustNode TheoryPreprocessSolver::preprocess(
@@ -69,6 +72,23 @@ void TheoryPreprocessSolver::check(theory::Theory::Effort effort)
 bool TheoryPreprocessSolver::needCheck()
 {
   return false;
+}
+
+Node TheoryPreprocessSolver::makeReturnLemma(theory::TrustNode ret, std::vector<theory::TrustNode>& ppLemmas)
+{
+  // make the return lemma, which the theory engine will use
+  Node retLemma = ret.getProven();
+  if (!ppLemmas.empty())
+  {
+    std::vector<Node> lemmas{retLemma};
+    for (const theory::TrustNode& tnl : ppLemmas)
+    {
+      lemmas.push_back(tnl.getProven());
+    }
+    // the returned lemma is the conjunction of all additional lemmas.
+    retLemma = NodeManager::currentNM()->mkNode(kind::AND, lemmas);
+  }
+  return retLemma;
 }
 
 }  // namespace prop

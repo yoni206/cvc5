@@ -110,9 +110,9 @@ TrustNode TheoryArith::ppRewrite(TNode atom)
   CodeTimer timer(d_ppRewriteTimer, /* allow_reentrant = */ true);
   Debug("arith::preprocess") << "arith::preprocess() : " << atom << endl;
 
-  if (options::arithRewriteEq())
+  if (atom.getKind() == kind::EQUAL)
   {
-    if (atom.getKind() == kind::EQUAL)
+    if (options::arithRewriteEq())
     {
       Assert(atom[0].getType().isReal());
       Node leq = NodeBuilder<2>(kind::LEQ) << atom[0] << atom[1];
@@ -133,6 +133,7 @@ TrustNode TheoryArith::ppRewrite(TNode atom)
       // don't need to rewrite terms since rewritten is not a non-standard op
       return TrustNode::mkTrustRewrite(atom, rewritten, nullptr);
     }
+    return TrustNode::null();
   }
   return ppRewriteTerms(atom);
 }

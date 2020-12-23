@@ -40,10 +40,15 @@ void LazyTppSolver::notifyAssertFact(TNode assertion)
 theory::TrustNode LazyTppSolver::preprocessLemma(
     theory::TrustNode trn,
     std::vector<theory::TrustNode>& newLemmas,
-    std::vector<Node>& newSkolems)
+    std::vector<Node>& newSkolems,
+                                    Node& retLemma)
 {
   // version without fixed point or lemmas
-  return d_tpp.preprocessLemma(trn, true);
+  std::vector<theory::TrustNode> ppLemmas;
+  std::vector<Node> ppSkolems;
+  theory::TrustNode ret = d_tpp.preprocessLemma(trn, ppLemmas, ppSkolems, true, false);
+  retLemma = makeReturnLemma(ret, ppLemmas);
+  return ret;
 }
 
 theory::TrustNode LazyTppSolver::preprocess(

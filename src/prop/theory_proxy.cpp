@@ -208,10 +208,11 @@ CnfStream* TheoryProxy::getCnfStream() { return d_cnfStream; }
 theory::TrustNode TheoryProxy::preprocessLemma(
     theory::TrustNode trn,
     std::vector<theory::TrustNode>& newLemmas,
-    std::vector<Node>& newSkolems)
+    std::vector<Node>& newSkolems,
+                                    Node& retLemma)
 {
   // preprocess lemma based on the theory-preprocess solver
-  return d_tppSlv->preprocessLemma(trn, newLemmas, newSkolems);
+  return d_tppSlv->preprocessLemma(trn, newLemmas, newSkolems, retLemma);
 }
 
 theory::TrustNode TheoryProxy::preprocess(
