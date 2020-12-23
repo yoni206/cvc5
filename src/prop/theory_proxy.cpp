@@ -209,7 +209,7 @@ theory::TrustNode TheoryProxy::preprocessLemma(
     theory::TrustNode trn,
     std::vector<theory::TrustNode>& newLemmas,
     std::vector<Node>& newSkolems,
-                                    Node& retLemma)
+    Node& retLemma)
 {
   // preprocess lemma based on the theory-preprocess solver
   return d_tppSlv->preprocessLemma(trn, newLemmas, newSkolems, retLemma);

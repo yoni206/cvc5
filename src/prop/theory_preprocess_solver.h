@@ -64,7 +64,7 @@ class TheoryPreprocessSolver
       theory::TrustNode trn,
       std::vector<theory::TrustNode>& ppLemmas,
       std::vector<Node>& ppSkolems,
-                                    Node& retLemma);
+      Node& retLemma);
   /**
    * Call the preprocessor on node, return REWRITE trust node corresponding to
    * the rewrite.
@@ -93,9 +93,11 @@ class TheoryPreprocessSolver
   virtual void check(theory::Theory::Effort effort);
   /** needs check method */
   virtual bool needCheck();
+
  protected:
-   /** make lemma from trust nodes */
-  static Node makeReturnLemma(theory::TrustNode ret, std::vector<theory::TrustNode>& ppLemmas);
+  /** make lemma from trust nodes */
+  static Node makeReturnLemma(theory::TrustNode ret,
+                              std::vector<theory::TrustNode>& ppLemmas);
   /** The prop engine */
   PropEngine& d_propEngine;
   /** The theory preprocessor */

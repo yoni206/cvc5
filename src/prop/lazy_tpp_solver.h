@@ -76,6 +76,7 @@ class LazyTppSolver : public TheoryPreprocessSolver
   void check(theory::Theory::Effort effort) override;
   /** needs check method */
   bool needCheck() override;
+
  private:
   /**
    * Set of activated skolems, collected during calls to notifyAssertFact

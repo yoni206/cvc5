@@ -23,7 +23,8 @@ LazyTppSolver::LazyTppSolver(PropEngine& propEngine,
                              context::UserContext* userContext,
                              ProofNodeManager* pnm)
     : TheoryPreprocessSolver(propEngine, theoryEngine, userContext, pnm),
-      d_processedSkolems(userContext), d_lemmasAdded(false)
+      d_processedSkolems(userContext),
+      d_lemmasAdded(false)
 {
 }
 
@@ -31,7 +32,8 @@ LazyTppSolver::~LazyTppSolver() {}
 
 void LazyTppSolver::notifyAssertFact(TNode assertion)
 {
-  Trace("lazy-tpp") << "LazyTppSolver::notifyAssertFact: " << assertion << std::endl;
+  Trace("lazy-tpp") << "LazyTppSolver::notifyAssertFact: " << assertion
+                    << std::endl;
   // determine which skolems become activated, these will be processed
   // immediately after this call in check(...).
   d_rtf.getSkolems(assertion, d_activeSkolems);
@@ -41,12 +43,13 @@ theory::TrustNode LazyTppSolver::preprocessLemma(
     theory::TrustNode trn,
     std::vector<theory::TrustNode>& newLemmas,
     std::vector<Node>& newSkolems,
-                                    Node& retLemma)
+    Node& retLemma)
 {
   // version without fixed point or lemmas
   std::vector<theory::TrustNode> ppLemmas;
   std::vector<Node> ppSkolems;
-  theory::TrustNode ret = d_tpp.preprocessLemma(trn, ppLemmas, ppSkolems, true, false);
+  theory::TrustNode ret =
+      d_tpp.preprocessLemma(trn, ppLemmas, ppSkolems, true, false);
   retLemma = makeReturnLemma(ret, ppLemmas);
   return ret;
 }
@@ -96,10 +99,7 @@ void LazyTppSolver::check(theory::Theory::Effort effort)
   d_activeSkolems.clear();
 }
 
-bool LazyTppSolver::needCheck()
-{
-  return d_lemmasAdded;
-}
+bool LazyTppSolver::needCheck() { return d_lemmasAdded; }
 
 }  // namespace prop
 }  // namespace CVC4

@@ -1258,10 +1258,8 @@ void setDefaults(LogicInfo& logic, bool isInternalSubsolver)
     // introduces new literals into the search. This includes quantifiers
     // (quantifier instantiation), and the lemma schemas used in non-linear
     // and sets. We also can't use it if models are enabled.
-    if (logic.isTheoryEnabled(THEORY_SETS)
-        || logic.isTheoryEnabled(THEORY_BAGS)
-        || logic.isQuantified()
-        || options::theoryPpOnAssert()
+    if (logic.isTheoryEnabled(THEORY_SETS) || logic.isTheoryEnabled(THEORY_BAGS)
+        || logic.isQuantified() || options::theoryPpOnAssert()
         || options::produceModels() || options::produceAssignments()
         || options::checkModels()
         || (logic.isTheoryEnabled(THEORY_ARITH) && !logic.isLinear()))
@@ -1384,14 +1382,15 @@ void setDefaults(LogicInfo& logic, bool isInternalSubsolver)
 
   if (options::bitblastMode() == options::BitblastMode::EAGER)
   {
-      if ( !logic.isPure(THEORY_BV) && logic.getLogicString() != "QF_UFBV"
-      && logic.getLogicString() != "QF_ABV")
+    if (!logic.isPure(THEORY_BV) && logic.getLogicString() != "QF_UFBV"
+        && logic.getLogicString() != "QF_ABV")
     {
       throw OptionException(
           "Eager bit-blasting does not currently support theory combination. "
           "Note that in a QF_BV problem UF symbols can be introduced for "
           "division. "
-          "Try --bv-div-zero-const to interpret division by zero as a constant.");
+          "Try --bv-div-zero-const to interpret division by zero as a "
+          "constant.");
     }
     // must do eager theory preprocessing
     if (options::theoryPpOnAssert())

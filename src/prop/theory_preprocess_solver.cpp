@@ -38,10 +38,11 @@ theory::TrustNode TheoryPreprocessSolver::preprocessLemma(
     theory::TrustNode trn,
     std::vector<theory::TrustNode>& newLemmas,
     std::vector<Node>& newSkolems,
-                                    Node& retLemma)
+    Node& retLemma)
 {
   // use version with lemmas, use fixed point true
-  theory::TrustNode ret = d_tpp.preprocessLemma(trn, newLemmas, newSkolems, true, true);
+  theory::TrustNode ret =
+      d_tpp.preprocessLemma(trn, newLemmas, newSkolems, true, true);
   retLemma = makeReturnLemma(ret, newLemmas);
   return ret;
 }
@@ -69,12 +70,10 @@ void TheoryPreprocessSolver::check(theory::Theory::Effort effort)
   // do nothing
 }
 
-bool TheoryPreprocessSolver::needCheck()
-{
-  return false;
-}
+bool TheoryPreprocessSolver::needCheck() { return false; }
 
-Node TheoryPreprocessSolver::makeReturnLemma(theory::TrustNode ret, std::vector<theory::TrustNode>& ppLemmas)
+Node TheoryPreprocessSolver::makeReturnLemma(
+    theory::TrustNode ret, std::vector<theory::TrustNode>& ppLemmas)
 {
   // make the return lemma, which the theory engine will use
   Node retLemma = ret.getProven();

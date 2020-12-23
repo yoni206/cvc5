@@ -114,8 +114,7 @@ class TheoryProxy : public Registrar
   theory::TrustNode preprocessLemma(theory::TrustNode trn,
                                     std::vector<theory::TrustNode>& newLemmas,
                                     std::vector<Node>& newSkolems,
-                                    Node& retLemma
-                                   );
+                                    Node& retLemma);
   /**
    * Call the preprocessor on node, return trust node corresponding to the
    * rewrite.
