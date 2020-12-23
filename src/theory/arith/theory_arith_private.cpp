@@ -3694,6 +3694,9 @@ Node TheoryArithPrivate::branchIntegerVariable(ArithVar x) const {
     lem = nm->mkNode(kind::OR, ub, lb);
     Node eq = Rewriter::rewrite(
         nm->mkNode(kind::EQUAL, var, mkRationalNode(nearest)));
+    // also preprocess the equality
+    TrustNode peq = d_containing.ppRewrite(eq);
+    eq = peq.isNull() ? eq : peq.getNode();
     Node literal = d_containing.getValuation().ensureLiteral(eq);
     d_containing.getOutputChannel().requirePhase(literal, true);
     lem = nm->mkNode(kind::OR, literal, lem);
