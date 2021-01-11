@@ -128,7 +128,7 @@ class TheoryProxy : public Registrar
   theory::TrustNode removeItes(TNode node,
                                std::vector<theory::TrustNode>& newLemmas,
                                std::vector<Node>& newSkolems);
-  /** Preregister */
+  /** Preregister term */
   void preRegister(Node n) override;
 
  private:
