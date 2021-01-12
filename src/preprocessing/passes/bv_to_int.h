@@ -129,7 +129,7 @@ class BVToInt : public PreprocessingPass
    * @param k the bit width of the original bit-vector variable.
    * @return a node representing the range constraint.
    */
-  Node mkRangeConstraint(Node newVar, uint64_t k);
+  static Node mkRangeConstraint(Node newVar, uint64_t k);
 
   /**
    * In the translation to integers, it is convenient to assume that certain
@@ -151,7 +151,7 @@ class BVToInt : public PreprocessingPass
    * @param k A non-negative integer
    * @return A node that represents the constant 2^k
    */
-  Node pow2(uint64_t k);
+  static Node pow2(uint64_t k);
 
   /**
    * @param k A positive integer k
@@ -232,7 +232,7 @@ class BVToInt : public PreprocessingPass
    * @param bvUF the original function or variable
    * @param intUF the translated function or variable
    */
-  void defineBVUFAsIntUF(Node bvUF, Node intUF);
+  static void defineBVUFAsIntUF(Node bvUF, Node intUF);
 
   /**
    * @param bvUF is an uninterpreted function symbol from the original formula
@@ -240,7 +240,7 @@ class BVToInt : public PreprocessingPass
      by replacing every argument of type BV to an argument of type Integer,
      and the return type becomes integer in case it was BV.
    */
-  Node translateFunctionSymbol(Node bvUF);
+  static Node translateFunctionSymbol(Node bvUF);
 
   /**
    * Performs the actual translation to integers for nodes
@@ -254,7 +254,7 @@ class BVToInt : public PreprocessingPass
    * that don't have children (variables, constants, uninterpreted function
    * symbols).
    */
-  Node translateNoChildren(Node original);
+  static Node translateNoChildren(Node original, context::CDHashSet<Node, NodeHashFunction>& rangeAssertions);
 
   /**
    * Caches for the different functions
@@ -283,6 +283,9 @@ class BVToInt : public PreprocessingPass
   
   /** helper class for handeling bvand translation */
   theory::arith::nl::IAndUtils d_iandUtils;
+
+  static Node toIntNode(Node bvNode, CDNodeMap& externalCache);
+
 };
 
 }  // namespace passes

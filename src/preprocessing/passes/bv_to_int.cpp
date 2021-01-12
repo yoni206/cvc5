@@ -38,7 +38,14 @@ using namespace CVC4::theory::bv;
 
 namespace {
 
-Rational intpow2(uint64_t b)
+Node toIntNode(Node bvNode, CDNodeMap& externalCache) {
+  Assert(bvNode.getType().isBoolean() || bvNode.getType().isBitVector());
+  if (externalCache.find(bvNode) != externalCache.end()) {
+
+  }
+}
+
+static Rational intpow2(uint64_t b)
 {
   return Rational(Integer(2).pow(b), Integer(1));
 }
@@ -47,9 +54,11 @@ Rational intpow2(uint64_t b)
 
 Node BVToInt::mkRangeConstraint(Node newVar, uint64_t k)
 {
-  Node lower = d_nm->mkNode(kind::LEQ, d_zero, newVar);
-  Node upper = d_nm->mkNode(kind::LT, newVar, pow2(k));
-  Node result = d_nm->mkNode(kind::AND, lower, upper);
+  NodeManager* nm = NodeManager::currentNM();
+  Node zero = nm->mkConst<Rational>(0);
+  Node lower = nm->mkNode(kind::LEQ, zero, newVar);
+  Node upper = nm->mkNode(kind::LT, newVar, pow2(k));
+  Node result = nm->mkNode(kind::AND, lower, upper);
   return Rewriter::rewrite(result);
 }
 
@@ -62,8 +71,9 @@ Node BVToInt::maxInt(uint64_t k)
 
 Node BVToInt::pow2(uint64_t k)
 {
+  NodeManager* nm = NodeManager::currentNM();
   Assert(k >= 0);
-  return d_nm->mkConst<Rational>(intpow2(k));
+  return nm->mkConst<Rational>(intpow2(k));
 }
 
 Node BVToInt::modpow2(Node n, uint64_t exponent)
@@ -304,7 +314,7 @@ Node BVToInt::bvToInt(Node n)
         Node translation;
         if (currentNumChildren == 0)
         {
-          translation = translateNoChildren(current);
+          translation = translateNoChildren(current, d_rangeAssertions);
         }
         else
         {
@@ -717,9 +727,10 @@ Node BVToInt::translateWithChildren(Node original,
   return returnNode;
 }
 
-Node BVToInt::translateNoChildren(Node original)
+Node BVToInt::translateNoChildren(Node original, context::CDHashSet<Node, NodeHashFunction>& rangeAssertions)
 {
   Node translation;
+  NodeManager* nm = NodeManager::currentNM();
   Assert(original.isVar() || original.isConst());
   if (original.isVar())
   {
@@ -732,21 +743,21 @@ Node BVToInt::translateNoChildren(Node original)
         // they will be added once the quantifier itself is handled.
         std::stringstream ss;
         ss << original;
-        translation = d_nm->mkBoundVar(ss.str() + "_int", d_nm->integerType());
+        translation = nm->mkBoundVar(ss.str() + "_int", nm->integerType());
       }
       else
       {
         // New integer variables  that are not bound (symbolic constants)
         // are added together with range constraints induced by the 
         // bit-width of the original bit-vector variables.
-        Node newVar = d_nm->mkSkolem("__bvToInt_var",
-                                     d_nm->integerType(),
+        Node newVar = nm->mkSkolem("__bvToInt_var",
+                                     nm->integerType(),
                                      "Variable introduced in bvToInt "
                                      "pass instead of original variable "
                                          + original.toString());
         uint64_t bvsize = original.getType().getBitVectorSize();
         translation = newVar;
-        d_rangeAssertions.insert(mkRangeConstraint(newVar, bvsize));
+        rangeAssertions.insert(mkRangeConstraint(newVar, bvsize));
         defineBVUFAsIntUF(original, newVar);
       }
     }
@@ -769,7 +780,7 @@ Node BVToInt::translateNoChildren(Node original)
       // Bit-vector constants are transformed into their integer value.
       BitVector constant(original.getConst<BitVector>());
       Integer c = constant.toInteger();
-      translation = d_nm->mkConst<Rational>(c);
+      translation = nm->mkConst<Rational>(c);
     }
     else
     {
@@ -782,6 +793,7 @@ Node BVToInt::translateNoChildren(Node original)
 
 Node BVToInt::translateFunctionSymbol(Node bvUF)
 {
+  NodeManager* nm = NodeManager::currentNM();
   // construct the new function symbol.
   Node intUF;
   TypeNode tn = bvUF.getType();
