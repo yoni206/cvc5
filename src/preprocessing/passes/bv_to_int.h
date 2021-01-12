@@ -85,7 +85,10 @@ class BVToInt : public PreprocessingPass
 {
  public:
   BVToInt(PreprocessingPassContext* preprocContext);
-  Node getOneTimeTranslation(Node bvNode, options::SolveBVAsIntMode mode, std::unordered_map<Node, Node, NodeHashFunction> &cache);
+  Node getOneTimeTranslation(
+      Node bvNode,
+      options::SolveBVAsIntMode mode,
+      std::unordered_map<Node, Node, NodeHashFunction>& cache);
 
  protected:
   PreprocessingPassResult applyInternal(
@@ -120,7 +123,10 @@ class BVToInt : public PreprocessingPass
    * @param n is a bit-vector term or formula to be translated.
    * @return integer node that corresponds to n.
    */
-  Node bvToInt(Node n, options::SolveBVAsIntMode mode, context::CDHashSet<Node, NodeHashFunction>  & rangeConstraints,  bool useFreshIntVars = true);
+  Node bvToInt(Node n,
+               options::SolveBVAsIntMode mode,
+               context::CDHashSet<Node, NodeHashFunction>& rangeConstraints,
+               bool useFreshIntVars = true);
 
   /**
    * Whenever we introduce an integer variable that represents a bit-vector
@@ -248,7 +254,7 @@ class BVToInt : public PreprocessingPass
    * that have children.
    */
   Node translateWithChildren(Node original,
-      options::SolveBVAsIntMode mode, 
+                             options::SolveBVAsIntMode mode,
                              const vector<Node>& translated_children);
 
   /**
@@ -256,7 +262,10 @@ class BVToInt : public PreprocessingPass
    * that don't have children (variables, constants, uninterpreted function
    * symbols).
    */
-  Node translateNoChildren(Node original, context::CDHashSet<Node, NodeHashFunction> & rangeConstraints,  bool useFreshIntVars = true);
+  Node translateNoChildren(
+      Node original,
+      context::CDHashSet<Node, NodeHashFunction>& rangeConstraints,
+      bool useFreshIntVars = true);
 
   /**
    * Caches for the different functions

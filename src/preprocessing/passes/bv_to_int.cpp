@@ -45,10 +45,16 @@ Rational intpow2(uint64_t b)
 
 } //end empty namespace
 
-Node BVToInt::getOneTimeTranslation(Node bvNode,  options::SolveBVAsIntMode mode, unordered_map<Node, Node, NodeHashFunction> & cache) {
-  context::CDHashSet<Node, NodeHashFunction> rangeConstraints(d_preprocContext->getUserContext());
+Node BVToInt::getOneTimeTranslation(
+    Node bvNode,
+    options::SolveBVAsIntMode mode,
+    unordered_map<Node, Node, NodeHashFunction>& cache)
+{
+  context::CDHashSet<Node, NodeHashFunction> rangeConstraints(
+      d_preprocContext->getUserContext());
   Assert(bvNode.getType().isBoolean());
-  if (cache.find(bvNode) != cache.end()) {
+  if (cache.find(bvNode) != cache.end())
+  {
     return cache[bvNode];
   }
   Node translation = bvToInt(bvNode, mode, rangeConstraints, false);
@@ -272,7 +278,11 @@ Node BVToInt::eliminationPass(Node n)
 /**
  * Translate n to Integers via post-order traversal.
  */
-Node BVToInt::bvToInt(Node n, options::SolveBVAsIntMode mode, context::CDHashSet<Node, NodeHashFunction> & rangeConstraints, bool useFreshIntVars)
+Node BVToInt::bvToInt(
+    Node n,
+    options::SolveBVAsIntMode mode,
+    context::CDHashSet<Node, NodeHashFunction>& rangeConstraints,
+    bool useFreshIntVars)
 {
   // make sure the node is re-written before processing it.
   n = Rewriter::rewrite(n);
@@ -319,7 +329,8 @@ Node BVToInt::bvToInt(Node n, options::SolveBVAsIntMode mode, context::CDHashSet
         Node translation;
         if (currentNumChildren == 0)
         {
-          translation = translateNoChildren(current, rangeConstraints, useFreshIntVars);
+          translation =
+              translateNoChildren(current, rangeConstraints, useFreshIntVars);
         }
         else
         {
@@ -342,7 +353,8 @@ Node BVToInt::bvToInt(Node n, options::SolveBVAsIntMode mode, context::CDHashSet
           {
             translated_children.push_back(d_bvToIntCache[current[i]]);
           }
-          translation = translateWithChildren(current, mode, translated_children);
+          translation =
+              translateWithChildren(current, mode, translated_children);
         }
         // Map the current node to its translation in the cache.
         d_bvToIntCache[current] = translation;
@@ -356,7 +368,7 @@ Node BVToInt::bvToInt(Node n, options::SolveBVAsIntMode mode, context::CDHashSet
 }
 
 Node BVToInt::translateWithChildren(Node original,
-    options::SolveBVAsIntMode mode,
+                                    options::SolveBVAsIntMode mode,
                                     const vector<Node>& translated_children)
 {
   // The translation of the original node is determined by the kind of
@@ -733,7 +745,10 @@ Node BVToInt::translateWithChildren(Node original,
   return returnNode;
 }
 
-Node BVToInt::translateNoChildren(Node original, context::CDHashSet<Node, NodeHashFunction> & rangeConstraints, bool useFreshIntVars)
+Node BVToInt::translateNoChildren(
+    Node original,
+    context::CDHashSet<Node, NodeHashFunction>& rangeConstraints,
+    bool useFreshIntVars)
 {
   Node translation;
   Assert(original.isVar() || original.isConst());
@@ -753,18 +768,21 @@ Node BVToInt::translateNoChildren(Node original, context::CDHashSet<Node, NodeHa
       else
       {
         // New integer variables  that are not bound (symbolic constants)
-        // are added together with range constraints induced by the 
+        // are added together with range constraints induced by the
         // bit-width of the original bit-vector variables.
         // If useFreshIntVars is false, we use BV_TO_NAT
         // instead of a variable.
         Node newNode;
-        if (useFreshIntVars) {
+        if (useFreshIntVars)
+        {
           newNode = d_nm->mkSkolem("__bvToInt_var",
-                                     d_nm->integerType(),
-                                     "Variable introduced in bvToInt "
-                                     "pass instead of original variable "
-                                         + original.toString());
-        } else {
+                                   d_nm->integerType(),
+                                   "Variable introduced in bvToInt "
+                                   "pass instead of original variable "
+                                       + original.toString());
+        }
+        else
+        {
           newNode = d_nm->mkNode(kind::BITVECTOR_TO_NAT, original);
         }
         uint64_t bvsize = original.getType().getBitVectorSize();

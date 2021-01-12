@@ -54,7 +54,8 @@ class BVToIntWhite : public CxxTest::TestSuite
     d_pnm = new ProofNodeManager();
     d_ppc = new PreprocessingPassContext(d_smt, d_cp, d_pnm);
     d_ppr = &PreprocessingPassRegistry::getInstance();
-    d_bvToIntPP = static_cast<BVToInt*>(d_smt->d_pp->d_processor.d_passes["bv-to-int"].get());
+    d_bvToIntPP = static_cast<BVToInt*>(
+        d_smt->d_pp->d_processor.d_passes["bv-to-int"].get());
   }
 
   void tearDown() override
@@ -78,7 +79,7 @@ class BVToIntWhite : public CxxTest::TestSuite
     std::unordered_map<Node, Node, NodeHashFunction> map;
     Node int_eq = d_bvToIntPP->getOneTimeTranslation(bv_eq, map);
   }
- 
+
  private:
   ExprManager* d_em;
   NodeManager* d_nm;
