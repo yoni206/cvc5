@@ -399,6 +399,19 @@ RewriteResponse ArithRewriter::postRewriteIAnd(TNode t)
     // ((_ iand k) x x) ---> x
     return RewriteResponse(REWRITE_DONE, t[0]);
   }
+  else if ((t[0].getKind() == kind::MINUS
+            && t[0][0].getConst<Rational>().getNumerator()
+                   == Integer(2).pow(bsize) - 1
+            && t[0][1] == t[1])
+           || (t[1].getKind() == kind::MINUS
+               && t[1][0].getConst<Rational>().getNumerator()
+                      == Integer(2).pow(bsize) - 1
+               && t[1][1] == t[0]))
+  {
+    // ((_ iand k) x (2^k - 1 - x) ) ---> 0
+    return RewriteResponse(REWRITE_DONE,
+                           NodeManager::currentNM()->mkConst<Rational>(0));
+  }
   // simplifications involving constants
   for (unsigned i = 0; i < 2; i++)
   {
