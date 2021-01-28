@@ -110,9 +110,11 @@ bool EngineOutputChannel::propagate(TNode literal)
 }
 
 void EngineOutputChannel::addSharedTerm(TNode atom,
-                                        TNode term,
-                                        theory::TheoryIdSet theories)
+                                        TNode term)
 {
+
+  TheoryIdSet theories;
+  TheoryIdSetUtil::setInsert(Theory::theoryOf(term.getType()), theories);
   d_engine->d_tc->getSharedSolver()->getSharedTermsDB()->addSharedTerm(
       atom, term, theories);
 }

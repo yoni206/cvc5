@@ -143,9 +143,7 @@ bool InferenceManager::processDtLemma(
       {
         // Theory -> InferenceManager -> OutputChannel -> TheoryEngine ->
         // CombinationEngine -> SharedSolver -> SharedTermsDatabase
-        TheoryIdSet theories;
-        TheoryIdSetUtil::setInsert(Theory::theoryOf(child.getType()), theories);
-        d_out.addSharedTerm(conc, child, theories);
+        d_out.addSharedTerm(conc, child);
       }
     }
   }

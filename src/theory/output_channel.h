@@ -214,8 +214,7 @@ class OutputChannel {
   virtual void demandRestart() {}
 
   virtual void addSharedTerm(TNode atom,
-                             TNode term,
-                             theory::TheoryIdSet theories) = 0;
+                             TNode term) = 0;
 
   //---------------------------- new proof
   /**

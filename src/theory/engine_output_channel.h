@@ -80,8 +80,7 @@ class EngineOutputChannel : public theory::OutputChannel
                            LemmaProperty p = LemmaProperty::NONE) override;
 
   void addSharedTerm(TNode atom,
-                     TNode term,
-                     theory::TheoryIdSet theories) override;
+                     TNode term) override;
 
  protected:
   /**
