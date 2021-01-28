@@ -13,7 +13,8 @@
  **/
 
 #include "theory/engine_output_channel.h"
-
+#include "base/check.h"
+#include "expr/node_algorithm.h"
 #include "prop/prop_engine.h"
 #include "smt/smt_statistics_registry.h"
 #include "theory/theory_engine.h"
@@ -69,6 +70,15 @@ void EngineOutputChannel::safePoint(ResourceManager::Resource r)
 
 theory::LemmaStatus EngineOutputChannel::lemma(TNode lemma, LemmaProperty p)
 {
+    std::unordered_map<Node, Node, NodeHashFunction> mapping;
+  if (d_theory == THEORY_QUANTIFIERS && lemma.getKind() == IMPLIES && lemma[0].getKind() == FORALL) {
+
+    Node instantiation = lemma[1];
+    Node matrix = lemma[0][1];
+    if (expr::match(matrix, instantiation, mapping)) {
+      Trace("theory::lemma") << "QUANTIFIERS_INSTANCE: " << instantiation << std::endl;
+    }
+  }
   Trace("theory::lemma") << "EngineOutputChannel<" << d_theory << ">::lemma("
                          << lemma << ")"
                          << ", properties = " << p << std::endl;
