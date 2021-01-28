@@ -45,18 +45,8 @@ TheoryProxy::TheoryProxy(PropEngine* propEngine,
       d_theoryEngine(theoryEngine),
       d_queue(context),
       d_satRlv(nullptr),
-      d_tppSlv(nullptr)
+      d_tpp(*theoryEngine, userContext, pnm)
 {
-  if (options::theoryPpOnAssert())
-  {
-    d_tppSlv.reset(
-        new LazyTppSolver(*propEngine, *theoryEngine, userContext, pnm));
-  }
-  else
-  {
-    d_tppSlv.reset(new TheoryPreprocessSolver(
-        *propEngine, *theoryEngine, userContext, pnm));
-  }
 }
 
 TheoryProxy::~TheoryProxy() {
@@ -175,7 +165,7 @@ SatLiteral TheoryProxy::getNextDecisionEngineRequest(bool &stopSearch) {
 }
 
 bool TheoryProxy::theoryNeedCheck() const {
-  return d_theoryEngine->needCheck() || d_tppSlv->needCheck();
+  return d_theoryEngine->needCheck();
 }
 
 TNode TheoryProxy::getNode(SatLiteral lit) {
@@ -209,11 +199,9 @@ CnfStream* TheoryProxy::getCnfStream() { return d_cnfStream; }
 theory::TrustNode TheoryProxy::preprocessLemma(
     theory::TrustNode trn,
     std::vector<theory::TrustNode>& newLemmas,
-    std::vector<Node>& newSkolems,
-    Node& retLemma)
+    std::vector<Node>& newSkolems)
 {
-  // preprocess lemma based on the theory-preprocess solver
-  return d_tppSlv->preprocessLemma(trn, newLemmas, newSkolems, retLemma);
+  return d_tpp.preprocessLemma(trn, newLemmas, newSkolems);
 }
 
 theory::TrustNode TheoryProxy::preprocess(
@@ -221,8 +209,7 @@ theory::TrustNode TheoryProxy::preprocess(
     std::vector<theory::TrustNode>& newLemmas,
     std::vector<Node>& newSkolems)
 {
-  // preprocess based on the theory-preprocess solver
-  return d_tppSlv->preprocess(node, newLemmas, newSkolems);
+  return d_tpp.preprocess(node, newLemmas, newSkolems);
 }
 
 theory::TrustNode TheoryProxy::removeItes(
@@ -230,7 +217,8 @@ theory::TrustNode TheoryProxy::removeItes(
     std::vector<theory::TrustNode>& newLemmas,
     std::vector<Node>& newSkolems)
 {
-  return d_tppSlv->removeItes(node, newLemmas, newSkolems);
+  RemoveTermFormulas& rtf = d_tpp.getRemoveTermFormulas();
+  return rtf.run(node, newLemmas, newSkolems, true);
 }
 
 void TheoryProxy::preRegister(Node n) { d_theoryEngine->preRegister(n); }
