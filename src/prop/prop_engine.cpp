@@ -447,7 +447,7 @@ Node PropEngine::getPreprocessedTerm(TNode n)
   // send lemmas corresponding to the skolems introduced by preprocessing n
   for (const theory::TrustNode& tnl : newLemmas)
   {
-    assertLemma(tnl, LemmaProperty::NONE);
+    assertLemma(tnl, theory::LemmaProperty::NONE);
   }
   return tpn.isNull() ? Node(n) : tpn.getNode();
 }
