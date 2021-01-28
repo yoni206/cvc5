@@ -517,11 +517,9 @@ Node RemoveTermFormulas::getSkolemForNode(Node k) const
   return Node::null();
 }
 
-bool RemoveTermFormulas::getSkolems(
+void RemoveTermFormulas::getSkolems(
     TNode n, std::unordered_set<Node, NodeHashFunction>& skolems) const
 {
-  // otherwise, traverse it
-  bool ret = false;
   std::unordered_set<TNode, TNodeHashFunction> visited;
   std::unordered_set<TNode, TNodeHashFunction>::iterator it;
   std::vector<TNode> visit;
@@ -539,10 +537,7 @@ bool RemoveTermFormulas::getSkolems(
       {
         if (d_lemmaCache.find(cur) != d_lemmaCache.end())
         {
-          // technically could already be in skolems if skolems was non-empty,
-          // regardless set return value to true.
           skolems.insert(cur);
-          ret = true;
         }
       }
       else
@@ -551,7 +546,6 @@ bool RemoveTermFormulas::getSkolems(
       }
     }
   } while (!visit.empty());
-  return ret;
 }
 
 Node RemoveTermFormulas::getAxiomFor(Node n)
