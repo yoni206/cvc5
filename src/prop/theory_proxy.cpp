@@ -22,7 +22,6 @@
 #include "options/prop_options.h"
 #include "proof/cnf_proof.h"
 #include "prop/cnf_stream.h"
-#include "prop/lazy_tpp_solver.h"
 #include "prop/prop_engine.h"
 #include "prop/sat_relevancy.h"
 #include "smt/smt_statistics_registry.h"
@@ -74,14 +73,10 @@ void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
   while (!d_queue.empty()) {
     TNode assertion = d_queue.front();
     d_queue.pop();
-    // assert fact to the theory-preprocess solver, which may impact what
-    // skolems are activated
-    d_tppSlv->notifyAssertFact(assertion);
     // now, assert to theory engine
     d_theoryEngine->assertFact(assertion);
   }
-  // check with the theory preprocess solver and the theory engine
-  d_tppSlv->check(effort);
+  // check with the theory engine
   d_theoryEngine->check(effort);
 }
 

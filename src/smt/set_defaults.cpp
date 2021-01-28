@@ -1251,7 +1251,7 @@ void setDefaults(LogicInfo& logic, bool isInternalSubsolver)
     // (quantifier instantiation), and the lemma schemas used in non-linear
     // and sets. We also can't use it if models are enabled.
     if (logic.isTheoryEnabled(THEORY_SETS) || logic.isTheoryEnabled(THEORY_BAGS)
-        || logic.isQuantified() || options::theoryPpOnAssert()
+        || logic.isQuantified()
         || options::produceModels() || options::produceAssignments()
         || options::checkModels()
         || (logic.isTheoryEnabled(THEORY_ARITH) && !logic.isLinear()))
@@ -1383,11 +1383,6 @@ void setDefaults(LogicInfo& logic, bool isInternalSubsolver)
           "division. "
           "Try --bv-div-zero-const to interpret division by zero as a "
           "constant.");
-    }
-    // must do eager theory preprocessing
-    if (options::theoryPpOnAssert())
-    {
-      options::theoryPpOnAssert.set(false);
     }
   }
   // !!!!!!!!!!!!!!!! temporary, until proof-new is functional

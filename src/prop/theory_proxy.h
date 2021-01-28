@@ -31,7 +31,7 @@
 #include "expr/node.h"
 #include "prop/registrar.h"
 #include "prop/sat_solver.h"
-#include "prop/theory_preprocess_solver.h"
+#include "theory/theory_preprocessor.h"
 #include "theory/theory.h"
 #include "theory/trust_node.h"
 #include "util/resource_manager.h"
@@ -113,8 +113,7 @@ class TheoryProxy : public Registrar
    */
   theory::TrustNode preprocessLemma(theory::TrustNode trn,
                                     std::vector<theory::TrustNode>& newLemmas,
-                                    std::vector<Node>& newSkolems,
-                                    Node& retLemma);
+                                    std::vector<Node>& newSkolems);
   /**
    * Call the preprocessor on node, return trust node corresponding to the
    * rewrite.
