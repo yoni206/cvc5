@@ -115,6 +115,8 @@ class SharedSolver
   /** Send lemma to the theory engine, atomsTo is the theory to send atoms to */
   void sendLemma(TrustNode trn, TheoryId atomsTo);
 
+  SharedTermsDatabase* getSharedTermsDB();
+
  protected:
   /** Solver-specific pre-register shared */
   virtual void preRegisterSharedInternal(TNode t) = 0;

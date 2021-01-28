@@ -16,6 +16,7 @@
 
 #include "prop/prop_engine.h"
 #include "smt/smt_statistics_registry.h"
+#include "theory/combination_engine.h"
 #include "theory/theory_engine.h"
 
 using namespace CVC4::kind;
@@ -106,6 +107,14 @@ bool EngineOutputChannel::propagate(TNode literal)
   ++d_statistics.propagations;
   d_engine->d_outputChannelUsed = true;
   return d_engine->propagate(literal, d_theory);
+}
+
+void EngineOutputChannel::addSharedTerm(TNode atom,
+                                        TNode term,
+                                        theory::TheoryIdSet theories)
+{
+  d_engine->d_tc->getSharedSolver()->getSharedTermsDB()->addSharedTerm(
+      atom, term, theories);
 }
 
 void EngineOutputChannel::conflict(TNode conflictNode)

@@ -79,6 +79,10 @@ class EngineOutputChannel : public theory::OutputChannel
   LemmaStatus trustedLemma(TrustNode plem,
                            LemmaProperty p = LemmaProperty::NONE) override;
 
+  void addSharedTerm(TNode atom,
+                     TNode term,
+                     theory::TheoryIdSet theories) override;
+
  protected:
   /**
    * Statistics for a particular theory.

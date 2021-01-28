@@ -129,6 +129,27 @@ bool InferenceManager::processDtLemma(
     ipcl = std::make_shared<InferProofCons>(nullptr, d_pnm);
   }
   conc = prepareDtInference(conc, exp, id, ipcl.get());
+
+  // theory combination: only share selector terms
+  // that belong to finite non-DT theories
+  if (id == InferId::INST)
+  {
+    Assert(conc.getKind() == kind::EQUAL);
+    Node cons_term = conc[1];
+    for (Node child : cons_term)
+    {
+      Assert(child.getKind() == APPLY_SELECTOR);
+      if (child.getType().isFinite())
+      {
+        // Theory -> InferenceManager -> OutputChannel -> TheoryEngine ->
+        // CombinationEngine -> SharedSolver -> SharedTermsDatabase
+        TheoryIdSet theories;
+        TheoryIdSetUtil::setInsert(Theory::theoryOf(child.getType()), theories);
+        d_out.addSharedTerm(conc, child, theories);
+      }
+    }
+  }
+
   // send it as a lemma
   Node lem;
   if (!exp.isNull() && !exp.isConst())

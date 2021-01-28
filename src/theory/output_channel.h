@@ -213,6 +213,10 @@ class OutputChannel {
    */
   virtual void demandRestart() {}
 
+  virtual void addSharedTerm(TNode atom,
+                             TNode term,
+                             theory::TheoryIdSet theories) = 0;
+
   //---------------------------- new proof
   /**
    * Let pconf be the pair (Node conf, ProofGenerator * pfg). This method
