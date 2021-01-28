@@ -46,11 +46,6 @@ PreprocessingPassResult TheoryPreprocess::applyInternal(
     {
       // process
       assertions->replaceTrusted(i, trn);
-      // rewritten assertion has a dependence on the node (old pf architecture)
-      if (options::unsatCores())
-      {
-        ProofManager::currentPM()->addDependence(trn.getNode(), assertion);
-      }
     }
     Assert(newSkolems.size() == newAsserts.size());
     for (unsigned j = 0, nnasserts = newAsserts.size(); j < nnasserts; j++)

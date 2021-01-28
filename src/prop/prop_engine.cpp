@@ -161,18 +161,18 @@ PropEngine::~PropEngine() {
 
 theory::TrustNode PropEngine::preprocess(
     TNode node,
-    std::vector<theory::TrustNode>& ppLemmas,
-    std::vector<Node>& ppSkolems)
+    std::vector<theory::TrustNode>& newLemmas,
+    std::vector<Node>& newSkolems)
 {
-  return d_theoryProxy->preprocess(node, ppLemmas, ppSkolems);
+  return d_theoryProxy->preprocess(node, newLemmas, newSkolems);
 }
 
 theory::TrustNode PropEngine::removeItes(
     TNode node,
-    std::vector<theory::TrustNode>& ppLemmas,
-    std::vector<Node>& ppSkolems)
+    std::vector<theory::TrustNode>& newLemmas,
+    std::vector<Node>& newSkolems)
 {
-  return d_theoryProxy->removeItes(node, ppLemmas, ppSkolems);
+  return d_theoryProxy->removeItes(node, newLemmas, newSkolems);
 }
 
 void PropEngine::notifyPreprocessedAssertions(

@@ -107,7 +107,9 @@ class PropEngine
   /**
    * Remove term ITEs (and more generally, term formulas) from the given node.
    * Return the REWRITE trust node corresponding to rewriting node. New lemmas
-   * and skolems are added to ppLemmas and ppSkolems respectively.
+   * and skolems are added to ppLemmas and ppSkolems respectively. This can
+   * be seen a subset of the above preprocess method, which also does theory
+   * preprocessing and rewriting.
    *
    * @param node The assertion to preprocess,
    * @param ppLemmas The lemmas to add to the set of assertions,
@@ -118,7 +120,6 @@ class PropEngine
   theory::TrustNode removeItes(TNode node,
                                std::vector<theory::TrustNode>& ppLemmas,
                                std::vector<Node>& ppSkolems);
-
   /**
    * Notify preprocessed assertions. This method is called just before the
    * assertions are asserted to this prop engine. This method notifies the
