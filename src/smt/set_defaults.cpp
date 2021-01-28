@@ -1251,9 +1251,8 @@ void setDefaults(LogicInfo& logic, bool isInternalSubsolver)
     // (quantifier instantiation), and the lemma schemas used in non-linear
     // and sets. We also can't use it if models are enabled.
     if (logic.isTheoryEnabled(THEORY_SETS) || logic.isTheoryEnabled(THEORY_BAGS)
-        || logic.isQuantified()
-        || options::produceModels() || options::produceAssignments()
-        || options::checkModels()
+        || logic.isQuantified() || options::produceModels()
+        || options::produceAssignments() || options::checkModels()
         || (logic.isTheoryEnabled(THEORY_ARITH) && !logic.isLinear()))
     {
       options::minisatUseElim.set(false);

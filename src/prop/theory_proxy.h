@@ -31,8 +31,8 @@
 #include "expr/node.h"
 #include "prop/registrar.h"
 #include "prop/sat_solver.h"
-#include "theory/theory_preprocessor.h"
 #include "theory/theory.h"
+#include "theory/theory_preprocessor.h"
 #include "theory/trust_node.h"
 #include "util/resource_manager.h"
 #include "util/statistics_registry.h"
@@ -154,7 +154,7 @@ class TheoryProxy : public Registrar
 
   /** Pointer to the SAT relevancy module, if it exists */
   SatRelevancy* d_satRlv;
-  
+
   /** The theory preprocessor */
   theory::TheoryPreprocessor d_tpp;
 };
