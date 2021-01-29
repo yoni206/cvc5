@@ -34,6 +34,8 @@ SharedSolver::SharedSolver(TheoryEngine& te, ProofNodeManager* pnm)
 {
 }
 
+SharedTermsDatabase* SharedSolver::getSharedTermsDB() { return &d_sharedTerms; }
+
 bool SharedSolver::needsEqualityEngine(theory::EeSetupInfo& esi)
 {
   return false;
