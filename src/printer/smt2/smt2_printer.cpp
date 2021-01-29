@@ -26,6 +26,8 @@
 #include "expr/node_manager_attributes.h"
 #include "expr/node_visitor.h"
 #include "expr/sequence.h"
+#include "expr/node_algorithm.h"
+#include "expr/skolem_manager.h"
 #include "options/bv_options.h"
 #include "options/language.h"
 #include "options/printer_options.h"
@@ -924,21 +926,26 @@ void Smt2Printer::toStream(std::ostream& out,
   case kind::LAMBDA:
   case kind::WITNESS:
   {
-    out << smtKindString(k, d_variant) << " ";
-    toStream(out, n[0], toDepth, lbind);
-    out << " ";
-    if (n.getNumChildren() == 3)
-    {
-      out << "(! ";
-    }
-    toStreamWithLetify(out, n[1], toDepth - 1, lbind);
-    if (n.getNumChildren() == 3)
-    {
+    if (options::deleteQuantifiers()) {
+      Node sk = NodeManager::currentNM()->getSkolemManager()->mkPurifySkolem(n, "quant_del_bool");
+      out << "@quantifier_bool_skolem_" << sk << endl; 
+    } else {
+        out << smtKindString(k, d_variant) << " ";
+      toStream(out, n[0], toDepth, lbind);
       out << " ";
-      toStream(out, n[2], toDepth, lbind);
+      if (n.getNumChildren() == 3)
+      {
+        out << "(! ";
+      }
+      toStreamWithLetify(out, n[1], toDepth - 1, lbind);
+      if (n.getNumChildren() == 3)
+      {
+        out << " ";
+        toStream(out, n[2], toDepth, lbind);
+        out << ")";
+      }
       out << ")";
     }
-    out << ")";
     return;
     break;
   }
@@ -1498,7 +1505,9 @@ void Smt2Printer::toStreamModelTerm(std::ostream& out,
 
 void Smt2Printer::toStreamCmdAssert(std::ostream& out, Node n) const
 {
-  out << "(assert " << n << ')' << std::endl;
+  if (!options::deleteQuantifiers() || !expr::hasClosure(n) ) {
+    out << "(assert " << n << ')' << std::endl;
+  }
 }
 
 void Smt2Printer::toStreamCmdPush(std::ostream& out) const
