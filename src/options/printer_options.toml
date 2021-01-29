@@ -37,6 +37,14 @@ header = "options/printer_options.h"
 #  help = "Print instantiations as SZS compliant proof."
 
 [[option]]
+  name       = "deleteQuantifiers"
+  category   = "regular"
+  long       = "delete-quant"
+  type       = "bool"
+  default    = "false"
+  help       = "delete quantifiers in printer, replace by sko,ems"
+
+[[option]]
   name       = "flattenHOChains"
   category   = "regular"
   long       = "flatten-ho-chains"
