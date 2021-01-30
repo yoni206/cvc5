@@ -53,10 +53,11 @@ TheoryProxy::~TheoryProxy() {
   /* nothing to do for now */
 }
 
-void TheoryProxy::finishInit(CDCLTSatSolverInterface* satSolver, CnfStream* cnfStream)
+void TheoryProxy::finishInit(CDCLTSatSolverInterface* satSolver,
+                             CnfStream* cnfStream)
 {
   d_cnfStream = cnfStream;
-  
+
   if (options::satTheoryRelevancy())
   {
     d_satRlv.reset(new SatRelevancy(satSolver, d_context, cnfStream));

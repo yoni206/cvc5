@@ -274,7 +274,7 @@ void SatRelevancy::setRelevant(TNode n,
 bool SatRelevancy::hasSatValue(TNode node, bool& value) const
 {
   // special case for top-level assertions
-  if (d_asserted.find(node)!=d_asserted.end())
+  if (d_asserted.find(node) != d_asserted.end())
   {
     value = true;
     return true;

@@ -150,10 +150,10 @@ class TheoryProxy : public Registrar
 
   /** The decision engine we are using. */
   DecisionEngine* d_decisionEngine;
-  
+
   /** Pointer to the SAT context */
   context::Context* d_context;
-  
+
   /** The theory engine we are using. */
   TheoryEngine* d_theoryEngine;
 
