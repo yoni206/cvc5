@@ -20,12 +20,12 @@
 #include <iosfwd>
 #include <unordered_set>
 
-#include "expr/node.h"
-#include "context/context.h"
 #include "context/cdhashmap.h"
+#include "context/context.h"
+#include "expr/node.h"
 
 namespace CVC4 {
-  
+
 class RemoveTermFormulas;
 
 namespace prop {
@@ -37,10 +37,9 @@ namespace prop {
 class SkolemDefManager
 {
  public:
-  SkolemDefManager(
-              context::Context* context,
-              context::UserContext* userContext,
-              RemoveTermFormulas& rtf);
+  SkolemDefManager(context::Context* context,
+                   context::UserContext* userContext,
+                   RemoveTermFormulas& rtf);
 
   ~SkolemDefManager();
 

@@ -19,10 +19,12 @@
 namespace CVC4 {
 namespace prop {
 
-SkolemDefManager::SkolemDefManager(
-              context::Context* context,
-              context::UserContext* userContext,
-              RemoveTermFormulas& rtf) : d_rtf(rtf) {}
+SkolemDefManager::SkolemDefManager(context::Context* context,
+                                   context::UserContext* userContext,
+                                   RemoveTermFormulas& rtf)
+    : d_rtf(rtf)
+{
+}
 
 SkolemDefManager::~SkolemDefManager() {}
 
@@ -34,7 +36,6 @@ void SkolemDefManager::notifySkolemDefinitions(const std::vector<Node>& skolems,
 void SkolemDefManager::getActivatedDefinitions(TNode literal,
                                                std::vector<Node>& defs)
 {
-  
 }
 
 }  // namespace prop
