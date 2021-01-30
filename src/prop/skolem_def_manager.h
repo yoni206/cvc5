@@ -39,6 +39,7 @@ class SkolemDefManager
 {
   using NodeMap = context::CDHashMap<Node, Node, NodeHashFunction>;
   using NodeSet = context::CDHashSet<Node, NodeHashFunction>;
+
  public:
   SkolemDefManager(context::Context* context,
                    context::UserContext* userContext,

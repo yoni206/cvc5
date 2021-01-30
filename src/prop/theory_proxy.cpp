@@ -62,7 +62,8 @@ void TheoryProxy::finishInit(CDCLTSatSolverInterface* satSolver,
   if (options::satTheoryRelevancy())
   {
     d_satRlv.reset(new SatRelevancy(satSolver, d_context, cnfStream));
-    d_skdm.reset(new SkolemDefManager(d_context, d_userContext, d_tpp.getRemoveTermFormulas()));
+    d_skdm.reset(new SkolemDefManager(
+        d_context, d_userContext, d_tpp.getRemoveTermFormulas()));
   }
 }
 
@@ -75,7 +76,7 @@ void TheoryProxy::notifyPreprocessedAssertions(
 void TheoryProxy::notifyLemma(TNode lem, TNode skolem)
 {
   // notify the skolem definition manager if it exists
-  if (d_skdm!=nullptr && !skolem.isNull())
+  if (d_skdm != nullptr && !skolem.isNull())
   {
     d_skdm->notifySkolemDefinition(skolem, lem);
   }
@@ -92,7 +93,7 @@ void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
     d_queue.pop();
     // now, assert to theory engine
     d_theoryEngine->assertFact(assertion);
-    if (d_satRlv!=nullptr)
+    if (d_satRlv != nullptr)
     {
       // assertion processed makes all skolems in assertion active,
       // which triggers lemmas becoming active

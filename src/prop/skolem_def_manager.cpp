@@ -22,8 +22,7 @@ namespace prop {
 SkolemDefManager::SkolemDefManager(context::Context* context,
                                    context::UserContext* userContext,
                                    RemoveTermFormulas& rtf)
-    : d_rtf(rtf),
-    d_skDefs(userContext)
+    : d_rtf(rtf), d_skDefs(userContext)
 {
 }
 
@@ -43,14 +42,14 @@ void SkolemDefManager::getActivatedDefinitions(TNode literal,
   d_rtf.getSkolems(node, skolems);
   for (const Node& k : skolems)
   {
-    if (d_skActive.find(k)!=d_skActive.end())
+    if (d_skActive.find(k) != d_skActive.end())
     {
       // already active
       continue;
     }
     d_skActive.insert(k);
     it = d_skDefs.find(k);
-    Assert (it != d_skDefs.end());
+    Assert(it != d_skDefs.end());
     defs.push_back(it->second);
   }
 }
