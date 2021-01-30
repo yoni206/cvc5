@@ -205,11 +205,6 @@ void PropEngine::assertFormula(TNode node) {
   {
     d_cnfStream->convertAndAssert(node, false, false, true);
   }
-  // notify the SAT relevancy if it exists
-  if (d_satRlv != nullptr)
-  {
-    d_satRlv->notifyPreprocessedAssertion(node);
-  }
 }
 
 void PropEngine::assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p)
@@ -249,6 +244,7 @@ void PropEngine::assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p)
 
   // now, assert the lemmas
   assertLemmaInternal(tplemma, removable);
+  // TODO: notify lemma here.
   for (size_t i = 0, lsize = ppLemmas.size(); i < lsize; ++i)
   {
     assertLemmaInternal(ppLemmas[i], removable);

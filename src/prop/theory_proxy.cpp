@@ -81,7 +81,8 @@ void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
     d_queue.pop();
     // now, assert to theory engine
     d_theoryEngine->assertFact(assertion);
-    // TODO: assertion processed makes all skolems in assertion active
+    // TODO: assertion processed makes all skolems in assertion active,
+    // which triggers lemmas becoming active
   }
   // check with the theory engine
   d_theoryEngine->check(effort);
