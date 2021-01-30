@@ -92,14 +92,17 @@ void TheoryDatatypes::getAuxiliarySharedTerms(Node atom,
   NodeManager* nm = NodeManager::currentNM();
   if (atom.getKind() == APPLY_TESTER)
   {
-    // Node tester = atom.getOperator();
+    // get the constructor and datatype related to the tester
     size_t cindex = utils::isTester(atom);
     Assert(cindex >= 0);
     const DType& dt = utils::datatypeOf(atom.getOperator());
     const DTypeConstructor& c = dt[cindex];
+
+    // get the relevant selectors
     std::vector<std::shared_ptr<DTypeSelector>> sels = c.getArgs();
     for (std::shared_ptr<DTypeSelector> sel : sels)
     {
+      // add relevant selector terms to `sharedTerms`
       Node st = nm->mkNode(APPLY_SELECTOR, sel->getSelector(), atom[0]);
       sharedTerms.push_back(st);
     }

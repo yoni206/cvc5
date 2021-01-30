@@ -56,7 +56,6 @@ class TheoryDatatypes : public Theory {
        : TheoryEqNotifyClass(im), d_dt(dt)
    {
    }
-
    void eqNotifyNewClass(TNode t) override
    {
      Debug("dt") << "NotifyClass::eqNotifyNewClass(" << t << ")" << std::endl;
@@ -280,6 +279,9 @@ private:
   /** check instantiate */
   void instantiate( EqcInfo* eqc, Node n );
 
+  /** add selector terms to shared terms
+   * for every applied tester
+   */
   void getAuxiliarySharedTerms(Node atom,
                                std::vector<Node>& sharedTerms) override;
 

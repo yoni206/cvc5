@@ -53,6 +53,9 @@ void SharedSolver::preRegisterShared(TNode t, bool multipleTheories)
     // Collect the shared terms if there are multiple theories
     // This calls Theory::addSharedTerm, possibly multiple times
     NodeVisitor<SharedTermsVisitor>::run(d_sharedTermsVisitor, t);
+
+    // additionally, directly add auxiliary shared terms
+    // specified by the theory.
     std::vector<Node> sharedTerms;
     Theory* theory = d_te.theoryOf(t);
     theory->getAuxiliarySharedTerms(t, sharedTerms);

@@ -127,6 +127,10 @@ class SharedSolver
   SharedTermsDatabase d_sharedTerms;
   /** Visitor for collecting shared terms */
   SharedTermsVisitor d_sharedTermsVisitor;
+
+  /** making sure that newly created shared terms
+   * are reference-counter.
+   */
   typedef context::CDHashSet<Node, NodeHashFunction> NodeSet;
   NodeSet d_keep;
 };
