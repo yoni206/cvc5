@@ -104,7 +104,9 @@ void TheoryDatatypes::getAuxiliarySharedTerms(Node atom,
     {
       // add relevant selector terms to `sharedTerms`
       Node st = nm->mkNode(APPLY_SELECTOR, sel->getSelector(), atom[0]);
-      sharedTerms.push_back(st);
+      if (st.getType().isFinite()) {
+        sharedTerms.push_back(st);
+      }
     }
   }
 }
