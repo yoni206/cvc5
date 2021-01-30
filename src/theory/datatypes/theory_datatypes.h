@@ -56,6 +56,7 @@ class TheoryDatatypes : public Theory {
        : TheoryEqNotifyClass(im), d_dt(dt)
    {
    }
+
    void eqNotifyNewClass(TNode t) override
    {
      Debug("dt") << "NotifyClass::eqNotifyNewClass(" << t << ")" << std::endl;
@@ -278,7 +279,11 @@ private:
   Node getInstantiateCons(Node n, const DType& dt, int index);
   /** check instantiate */
   void instantiate( EqcInfo* eqc, Node n );
-private:
+
+  void getAuxiliarySharedTerms(Node atom,
+                               std::vector<Node>& sharedTerms) override;
+
+ private:
   //equality queries
   bool hasTerm( TNode a );
   bool areEqual( TNode a, TNode b );

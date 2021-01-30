@@ -86,6 +86,27 @@ TheoryDatatypes::~TheoryDatatypes() {
   }
 }
 
+void TheoryDatatypes::getAuxiliarySharedTerms(Node atom,
+                                              std::vector<Node>& sharedTerms)
+{
+  NodeManager* nm = NodeManager::currentNM();
+  if (atom.getKind() == APPLY_TESTER)
+  {
+    // Node tester = atom.getOperator();
+    size_t cindex = utils::isTester(atom);
+    Assert(cindex >= 0);
+    const DType& dt = utils::datatypeOf(atom.getOperator());
+    const DTypeConstructor& c = dt[cindex];
+    std::vector<std::shared_ptr<DTypeSelector>> sels = c.getArgs();
+    for (std::shared_ptr<DTypeSelector> sel : sels)
+    {
+      Node st = nm->mkNode(APPLY_SELECTOR, sel->getSelector(), atom[0]);
+      std::cout << "panda st: " << st << std::endl;
+      sharedTerms.push_back(st);
+    }
+  }
+}
+
 TheoryRewriter* TheoryDatatypes::getTheoryRewriter() { return &d_rewriter; }
 
 bool TheoryDatatypes::needsEqualityEngine(EeSetupInfo& esi)
