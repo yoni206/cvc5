@@ -74,6 +74,8 @@ class TheoryProxy : public Registrar
 
   /** Notify (preprocessed) assertions. */
   void notifyPreprocessedAssertions(const std::vector<Node>& assertions);
+  /** Notify a lemma, possibly corresponding to a skolem definition */
+  void notifyLemma(TNode lem, TNode skolem = TNode::null());
 
   void theoryCheck(theory::Theory::Effort effort);
 
@@ -154,6 +156,8 @@ class TheoryProxy : public Registrar
 
   /** Pointer to the SAT context */
   context::Context* d_context;
+  /** Pointer to the user context */
+  context::Context* d_userContext;
 
   /** The theory engine we are using. */
   TheoryEngine* d_theoryEngine;

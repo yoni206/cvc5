@@ -22,20 +22,37 @@ namespace prop {
 SkolemDefManager::SkolemDefManager(context::Context* context,
                                    context::UserContext* userContext,
                                    RemoveTermFormulas& rtf)
-    : d_rtf(rtf)
+    : d_rtf(rtf),
+    d_skDefs(userContext)
 {
 }
 
 SkolemDefManager::~SkolemDefManager() {}
 
-void SkolemDefManager::notifySkolemDefinitions(const std::vector<Node>& skolems,
-                                               const std::vector<Node>& defs)
+void SkolemDefManager::notifySkolemDefinition(TNode skolem, TNode def)
 {
+  Assert( d_skDefs.find(skolem)==d_skDefs.end();
+  d_skDefs[skolem] = def;
 }
 
 void SkolemDefManager::getActivatedDefinitions(TNode literal,
                                                std::vector<Node>& defs)
 {
+  NodeMap::iterator it;
+  std::unordered_set<Node, NodeHashFunction> skolems;
+  d_rtf.getSkolems(node, skolems);
+  for (const Node& k : skolems)
+  {
+    if (d_skActive.find(k)!=d_skActive.end())
+    {
+      // already active
+      continue;
+    }
+    d_skActive.insert(k);
+    it = d_skDefs.find(k);
+    Assert (it != d_skDefs.end());
+    defs.push_back(it->second);
+  }
 }
 
 }  // namespace prop

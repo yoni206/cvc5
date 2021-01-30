@@ -21,6 +21,7 @@
 #include <unordered_set>
 
 #include "context/cdhashmap.h"
+#include "context/cdhashset.h"
 #include "context/context.h"
 #include "expr/node.h"
 
@@ -36,6 +37,8 @@ namespace prop {
  */
 class SkolemDefManager
 {
+  using NodeMap = context::CDHashMap<Node, Node, NodeHashFunction>;
+  using NodeSet = context::CDHashSet<Node, NodeHashFunction>;
  public:
   SkolemDefManager(context::Context* context,
                    context::UserContext* userContext,
@@ -44,8 +47,7 @@ class SkolemDefManager
   ~SkolemDefManager();
 
   /** Notify skolem definitions */
-  void notifySkolemDefinitions(const std::vector<Node>& skolems,
-                               const std::vector<Node>& defs);
+  void notifySkolemDefinition(TNode skolem, TNode def);
   /** Get activated definitions */
   void getActivatedDefinitions(TNode literal, std::vector<Node>& defs);
 
@@ -53,7 +55,9 @@ class SkolemDefManager
   /** Reference to term formula removal */
   RemoveTermFormulas& d_rtf;
   /** skolems to definitions (user-context dependent) */
+  NodeMap d_skDefs;
   /** set of active skolems (SAT-context dependent) */
+  NodeSet d_skActive;
 };
 
 }  // namespace prop

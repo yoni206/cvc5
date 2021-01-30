@@ -244,10 +244,12 @@ void PropEngine::assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p)
 
   // now, assert the lemmas
   assertLemmaInternal(tplemma, removable);
-  // TODO: notify lemma here.
+  // notify the theory proxy of the lemma
+  d_theoryProxy->notifyLemma(tplemma.getProven());
   for (size_t i = 0, lsize = ppLemmas.size(); i < lsize; ++i)
   {
     assertLemmaInternal(ppLemmas[i], removable);
+    d_theoryProxy->notifyLemma(ppLemmas[i].getProven(), ppSkolems[i]);
   }
 
   // assert to decision engine
