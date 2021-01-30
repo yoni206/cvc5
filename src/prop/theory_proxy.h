@@ -36,6 +36,7 @@
 #include "theory/trust_node.h"
 #include "util/resource_manager.h"
 #include "util/statistics_registry.h"
+#include "prop/skolem_def_manager.h"
 
 namespace CVC4 {
 
@@ -171,6 +172,9 @@ class TheoryProxy : public Registrar
 
   /** The theory preprocessor */
   theory::TheoryPreprocessor d_tpp;
+  
+  /** The skolem definition manager */
+  std::unique_ptr<SkolemDefManager> d_skdm;
 };
 
 }/* CVC4::prop namespace */

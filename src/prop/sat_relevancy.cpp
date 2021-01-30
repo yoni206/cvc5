@@ -40,18 +40,18 @@ SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
 
 SatRelevancy::~SatRelevancy() {}
 
-void SatRelevancy::notifyPreprocessedAssertion(TNode a)
+void SatRelevancy::notifyAssertion(TNode a)
 {
   // Mark each assertion as relevant. Notice we use a null queue since nothing
   // should have SAT values yet.
   d_asserted.insert(a);
-  Trace("sat-rlv") << "notifyPreprocessedAssertion: " << a << std::endl;
+  Trace("sat-rlv") << "notifyAssertedFormula: " << a << std::endl;
   setRelevant(a, nullptr);
 }
 
-void SatRelevancy::notifyNewLemma(TNode n, context::CDQueue<TNode>& queue)
+void SatRelevancy::notifyActivatedLemma(TNode n, context::CDQueue<TNode>& queue)
 {
-  Trace("sat-rlv") << "notifyNewLemma: " << n << std::endl;
+  Trace("sat-rlv") << "notifyActivatedLemma: " << n << std::endl;
   // set the lemma is relevant
   setRelevant(n, &queue);
 }

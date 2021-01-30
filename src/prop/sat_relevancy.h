@@ -68,11 +68,11 @@ class SatRelevancy
    * Notify preprocessed assertions, should be called before any calls to
    * notifyAsserted are made in the current SAT context.
    */
-  void notifyPreprocessedAssertion(TNode assertion);
+  void notifyAssertion(TNode assertion);
   /**
    * Notify that lem is a new lemma
    */
-  void notifyNewLemma(TNode lem, context::CDQueue<TNode>& queue);
+  void notifyActivatedLemma(TNode lem, context::CDQueue<TNode>& queue);
   /**
    * Enqueue theory literals
    */

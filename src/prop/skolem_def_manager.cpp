@@ -14,10 +14,15 @@
 
 #include "prop/skolem_def_manager.h"
 
+#include "smt/term_formula_removal.h"
+
 namespace CVC4 {
 namespace prop {
 
-SkolemDefManager::SkolemDefManager() {}
+SkolemDefManager::SkolemDefManager(
+              context::Context* context,
+              context::UserContext* userContext,
+              RemoveTermFormulas& rtf) : d_rtf(rtf) {}
 
 SkolemDefManager::~SkolemDefManager() {}
 
@@ -29,6 +34,7 @@ void SkolemDefManager::notifySkolemDefinitions(const std::vector<Node>& skolems,
 void SkolemDefManager::getActivatedDefinitions(TNode literal,
                                                std::vector<Node>& defs)
 {
+  
 }
 
 }  // namespace prop

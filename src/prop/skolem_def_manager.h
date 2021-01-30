@@ -21,8 +21,13 @@
 #include <unordered_set>
 
 #include "expr/node.h"
+#include "context/context.h"
+#include "context/cdhashmap.h"
 
 namespace CVC4 {
+  
+class RemoveTermFormulas;
+
 namespace prop {
 
 /**
@@ -32,7 +37,10 @@ namespace prop {
 class SkolemDefManager
 {
  public:
-  SkolemDefManager();
+  SkolemDefManager(
+              context::Context* context,
+              context::UserContext* userContext,
+              RemoveTermFormulas& rtf);
 
   ~SkolemDefManager();
 
@@ -43,6 +51,10 @@ class SkolemDefManager
   void getActivatedDefinitions(TNode literal, std::vector<Node>& defs);
 
  private:
+  /** Reference to term formula removal */
+  RemoveTermFormulas& d_rtf;
+  /** skolems to definitions (user-context dependent) */
+  /** set of active skolems (SAT-context dependent) */
 };
 
 }  // namespace prop
