@@ -111,6 +111,10 @@ class SatRelevancy
   /** pointer to the CNF stream */
   CnfStream* d_cnfStream;
   /**
+   * The set of formulas that are asserted.
+   */
+  context::CDHashSet<Node, NodeHashFunction> d_asserted;
+  /**
    * The set of formulas that are relevant. Polarity matters, no double
    * negations.
    */

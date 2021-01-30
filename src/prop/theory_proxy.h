@@ -69,7 +69,7 @@ class TheoryProxy : public Registrar
   ~TheoryProxy();
 
   /** Finish initialize */
-  void finishInit(CnfStream* cnfStream, SatRelevancy* satRlv);
+  void finishInit(CDCLTSatSolverInterface* satSolver, CnfStream* cnfStream);
 
   /** Notify (preprocessed) assertions. */
   void notifyPreprocessedAssertions(const std::vector<Node>& assertions);
@@ -150,7 +150,10 @@ class TheoryProxy : public Registrar
 
   /** The decision engine we are using. */
   DecisionEngine* d_decisionEngine;
-
+  
+  /** Pointer to the SAT context */
+  context::Context* d_context;
+  
   /** The theory engine we are using. */
   TheoryEngine* d_theoryEngine;
 
@@ -163,8 +166,8 @@ class TheoryProxy : public Registrar
    */
   std::unordered_set<Node, NodeHashFunction> d_shared;
 
-  /** Pointer to the SAT relevancy module, if it exists */
-  SatRelevancy* d_satRlv;
+  /** The SAT relevancy module we will use */
+  std::unique_ptr<SatRelevancy> d_satRlv;
 
   /** The theory preprocessor */
   theory::TheoryPreprocessor d_tpp;

@@ -105,14 +105,8 @@ PropEngine::PropEngine(TheoryEngine* te,
                                          : FormulaLitPolicy::TRACK;
   d_cnfStream = new CVC4::prop::CnfStream(
       d_satSolver, d_theoryProxy, userContext, &d_outMgr, rm, flp);
-
-  if (useSatTheoryRlv)
-  {
-    // make the sat relevancy module if it is required
-    d_satRlv.reset(new SatRelevancy(d_satSolver, d_context, d_cnfStream));
-  }
   // connect theory proxy
-  d_theoryProxy->finishInit(d_cnfStream, d_satRlv.get());
+  d_theoryProxy->finishInit(d_satSolver, d_cnfStream);
   // connect SAT solver
   d_satSolver->initialize(d_context, d_theoryProxy, userContext, pnm);
 

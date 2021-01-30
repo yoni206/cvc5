@@ -29,6 +29,7 @@ SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
     : d_satSolver(satSolver),
       d_context(context),
       d_cnfStream(cnfStream),
+      d_asserted(context),
       d_rlv(context),
       d_justify(context),
       d_rlvWaitMap(context)
@@ -43,6 +44,7 @@ void SatRelevancy::notifyPreprocessedAssertion(TNode a)
 {
   // Mark each assertion as relevant. Notice we use a null queue since nothing
   // should have SAT values yet.
+  d_asserted.insert(a);
   Trace("sat-rlv") << "notifyPreprocessedAssertion: " << a << std::endl;
   setRelevant(a, nullptr);
 }
@@ -57,7 +59,7 @@ void SatRelevancy::notifyNewLemma(TNode n, context::CDQueue<TNode>& queue)
 void SatRelevancy::notifyAsserted(const SatLiteral& l,
                                   context::CDQueue<TNode>& queue)
 {
-  Node n = d_cnfStream->getNode(l);
+  TNode n = d_cnfStream->getNode(l);
   Trace("sat-rlv") << "notifyAsserted: " << n << std::endl;
   bool pol = n.getKind() != NOT;
   TNode atom = pol ? n : n[0];
@@ -271,6 +273,12 @@ void SatRelevancy::setRelevant(TNode n,
 
 bool SatRelevancy::hasSatValue(TNode node, bool& value) const
 {
+  // special case for top-level assertions
+  if (d_asserted.find(node)!=d_asserted.end())
+  {
+    value = true;
+    return true;
+  }
   SatLiteral lit = d_cnfStream->getLiteral(node);
   SatValue v = d_satSolver->value(lit);
   if (v == SAT_VALUE_TRUE)

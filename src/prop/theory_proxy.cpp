@@ -41,6 +41,7 @@ TheoryProxy::TheoryProxy(PropEngine* propEngine,
     : d_propEngine(propEngine),
       d_cnfStream(nullptr),
       d_decisionEngine(decisionEngine),
+      d_context(context),
       d_theoryEngine(theoryEngine),
       d_queue(context),
       d_satRlv(nullptr),
@@ -52,10 +53,14 @@ TheoryProxy::~TheoryProxy() {
   /* nothing to do for now */
 }
 
-void TheoryProxy::finishInit(CnfStream* cnfStream, SatRelevancy* satRlv)
+void TheoryProxy::finishInit(CDCLTSatSolverInterface* satSolver, CnfStream* cnfStream)
 {
   d_cnfStream = cnfStream;
-  d_satRlv = satRlv;
+  
+  if (options::satTheoryRelevancy())
+  {
+    d_satRlv.reset(new SatRelevancy(satSolver, d_context, cnfStream));
+  }
 }
 
 void TheoryProxy::notifyPreprocessedAssertions(
@@ -75,6 +80,7 @@ void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
     d_queue.pop();
     // now, assert to theory engine
     d_theoryEngine->assertFact(assertion);
+    // TODO: assertion processed makes all skolems in assertion active
   }
   // check with the theory engine
   d_theoryEngine->check(effort);

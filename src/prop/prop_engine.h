@@ -317,9 +317,6 @@ class PropEngine
   /** The context */
   context::Context* d_context;
 
-  /** The SAT relevancy module we will use */
-  std::unique_ptr<SatRelevancy> d_satRlv;
-
   /** SAT solver's proxy back to theories; kept around for dtor cleanup */
   TheoryProxy* d_theoryProxy;
 
