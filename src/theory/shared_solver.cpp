@@ -30,7 +30,8 @@ SharedSolver::SharedSolver(TheoryEngine& te, ProofNodeManager* pnm)
     : d_te(te),
       d_logicInfo(te.getLogicInfo()),
       d_sharedTerms(&d_te, d_te.getSatContext(), d_te.getUserContext(), pnm),
-      d_sharedTermsVisitor(d_sharedTerms)
+      d_sharedTermsVisitor(d_sharedTerms),
+      d_keep(d_te.getUserContext())
 {
 }
 
@@ -59,6 +60,7 @@ void SharedSolver::preRegisterShared(TNode t, bool multipleTheories)
     {
       TheoryIdSet theories = 0;
       TheoryIdSetUtil::setInsert(Theory::theoryOf(n.getType()), theories);
+      d_keep.insert(n);
       d_sharedTerms.addSharedTerm(t, n, theories);
     }
   }

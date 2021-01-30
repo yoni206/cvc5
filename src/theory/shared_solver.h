@@ -16,7 +16,8 @@
 
 #ifndef CVC4__THEORY__SHARED_SOLVER__H
 #define CVC4__THEORY__SHARED_SOLVER__H
-
+#include "context/cdhashmap.h"
+#include "context/cdhashset.h"
 #include "expr/node.h"
 #include "expr/proof_node_manager.h"
 #include "theory/ee_setup_info.h"
@@ -126,6 +127,8 @@ class SharedSolver
   SharedTermsDatabase d_sharedTerms;
   /** Visitor for collecting shared terms */
   SharedTermsVisitor d_sharedTermsVisitor;
+  typedef context::CDHashSet<Node, NodeHashFunction> NodeSet;
+  NodeSet d_keep;
 };
 
 }  // namespace theory

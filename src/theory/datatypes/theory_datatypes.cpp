@@ -101,7 +101,6 @@ void TheoryDatatypes::getAuxiliarySharedTerms(Node atom,
     for (std::shared_ptr<DTypeSelector> sel : sels)
     {
       Node st = nm->mkNode(APPLY_SELECTOR, sel->getSelector(), atom[0]);
-      std::cout << "panda st: " << st << std::endl;
       sharedTerms.push_back(st);
     }
   }
@@ -1579,7 +1578,7 @@ void TheoryDatatypes::instantiate( EqcInfo* eqc, Node n ){
   // may contribute to conflicts due to cardinality (good examples of this are
   // regress0/datatypes/dt-param-card4-bool-sat.smt2 and
   // regress0/datatypes/list-bool.smt2).
-  bool forceLemma = dt[index].hasFiniteExternalArgType(ttn);
+  bool forceLemma = false;
   Trace("datatypes-infer-debug") << "DtInstantiate : " << eqc << " " << eq
                                  << " forceLemma = " << forceLemma << std::endl;
   d_im.addPendingInference(eq, exp, forceLemma, InferId::INST);
