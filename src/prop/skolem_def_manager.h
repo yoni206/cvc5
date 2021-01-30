@@ -17,7 +17,6 @@
 #ifndef CVC4__PROP__SKOLEM_DEF_MANAGER_H
 #define CVC4__PROP__SKOLEM_DEF_MANAGER_H
 
-
 #include <iosfwd>
 #include <unordered_set>
 
@@ -32,20 +31,21 @@ namespace prop {
  */
 class SkolemDefManager
 {
-
  public:
   SkolemDefManager();
 
   ~SkolemDefManager();
 
   /** Notify skolem definitions */
-  void notifySkolemDefinitions(const std::vector<Node>& skolems, const std::vector<Node>& defs);
+  void notifySkolemDefinitions(const std::vector<Node>& skolems,
+                               const std::vector<Node>& defs);
   /** Get activated definitions */
   void getActivatedDefinitions(TNode literal, std::vector<Node>& defs);
+
  private:
 };
 
-}/* CVC4::prop namespace */
-}/* CVC4 namespace */
+}  // namespace prop
+}  // namespace CVC4
 
 #endif /* CVC4__PROP__SKOLEM_DEF_MANAGER_H */

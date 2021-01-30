@@ -21,16 +21,15 @@ SkolemDefManager::SkolemDefManager() {}
 
 SkolemDefManager::~SkolemDefManager() {}
 
-void SkolemDefManager::notifySkolemDefinitions(const std::vector<Node>& skolems, const std::vector<Node>& defs)
+void SkolemDefManager::notifySkolemDefinitions(const std::vector<Node>& skolems,
+                                               const std::vector<Node>& defs)
 {
-  
 }
 
-void SkolemDefManager::getActivatedDefinitions(TNode literal, std::vector<Node>& defs)
+void SkolemDefManager::getActivatedDefinitions(TNode literal,
+                                               std::vector<Node>& defs)
 {
-  
 }
 
-
-}/* CVC4::prop namespace */
-}/* CVC4 namespace */
+}  // namespace prop
+}  // namespace CVC4
