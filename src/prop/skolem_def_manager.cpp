@@ -22,7 +22,7 @@ namespace prop {
 SkolemDefManager::SkolemDefManager(context::Context* context,
                                    context::UserContext* userContext,
                                    RemoveTermFormulas& rtf)
-    : d_rtf(rtf), d_skDefs(userContext)
+    : d_rtf(rtf), d_skDefs(userContext), d_skActive(context)
 {
 }
 
@@ -30,7 +30,7 @@ SkolemDefManager::~SkolemDefManager() {}
 
 void SkolemDefManager::notifySkolemDefinition(TNode skolem, TNode def)
 {
-  Assert( d_skDefs.find(skolem)==d_skDefs.end();
+  Assert( d_skDefs.find(skolem)==d_skDefs.end() );
   d_skDefs[skolem] = def;
 }
 
@@ -39,7 +39,7 @@ void SkolemDefManager::getActivatedDefinitions(TNode literal,
 {
   NodeMap::iterator it;
   std::unordered_set<Node, NodeHashFunction> skolems;
-  d_rtf.getSkolems(node, skolems);
+  d_rtf.getSkolems(literal, skolems);
   for (const Node& k : skolems)
   {
     if (d_skActive.find(k) != d_skActive.end())

@@ -157,7 +157,7 @@ class TheoryProxy : public Registrar
   /** Pointer to the SAT context */
   context::Context* d_context;
   /** Pointer to the user context */
-  context::Context* d_userContext;
+  context::UserContext* d_userContext;
 
   /** The theory engine we are using. */
   TheoryEngine* d_theoryEngine;
