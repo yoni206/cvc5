@@ -30,7 +30,7 @@ SkolemDefManager::~SkolemDefManager() {}
 
 void SkolemDefManager::notifySkolemDefinition(TNode skolem, TNode def)
 {
-  Assert( d_skDefs.find(skolem)==d_skDefs.end() );
+  Assert(d_skDefs.find(skolem) == d_skDefs.end());
   d_skDefs[skolem] = def;
 }
 
