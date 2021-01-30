@@ -97,13 +97,14 @@ void TheoryDatatypes::getAuxiliarySharedTerms(Node atom,
     Assert(cindex >= 0);
     const DType& dt = utils::datatypeOf(atom.getOperator());
     const DTypeConstructor& c = dt[cindex];
-
-    // get the relevant selectors
-    std::vector<std::shared_ptr<DTypeSelector>> sels = c.getArgs();
-    for (std::shared_ptr<DTypeSelector> sel : sels)
+    // atom = is_c(x)
+    // dtTerm := x
+    Node dtTerm = atom[0];
+    TypeNode tn = dtTerm.getType();
+    for (unsigned i = 0, nargs = c.getNumArgs(); i < nargs; i++)
     {
-      // add relevant selector terms to `sharedTerms`
-      Node st = nm->mkNode(APPLY_SELECTOR, sel->getSelector(), atom[0]);
+      Node st = nm->mkNode(
+          APPLY_SELECTOR_TOTAL, c.getSelectorInternal(tn, i), dtTerm);
       Trace("polite-optimization")
           << "getAuxiliarySharedTerms: considering adding shared term:" << st
           << std::endl;
@@ -114,8 +115,8 @@ void TheoryDatatypes::getAuxiliarySharedTerms(Node atom,
         sharedTerms.push_back(st);
       }
     }
+    }
   }
-}
 
 TheoryRewriter* TheoryDatatypes::getTheoryRewriter() { return &d_rewriter; }
 

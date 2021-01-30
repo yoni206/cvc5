@@ -61,6 +61,7 @@ void SharedSolver::preRegisterShared(TNode t, bool multipleTheories)
     theory->getAuxiliarySharedTerms(t, sharedTerms);
     for (Node n : sharedTerms)
     {
+      n = Rewriter::rewrite(n);
       Trace("polite-optimization")
           << "preRegisterShared: really adding shared term: " << n << std::endl;
       Trace("polite-optimization")
