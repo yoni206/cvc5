@@ -44,7 +44,6 @@ void SatRelevancy::notifyAssertion(TNode a)
 {
   // Mark each assertion as relevant. Notice we use a null queue since nothing
   // should have SAT values yet.
-  d_asserted.insert(a);
   Trace("sat-rlv") << "notifyAssertedFormula: " << a << std::endl;
   setRelevant(a, nullptr);
 }

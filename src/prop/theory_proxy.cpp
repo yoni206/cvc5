@@ -101,6 +101,7 @@ void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
       d_skdm->getActivatedDefinitions(assertion, defs);
       for (const Node& d : defs)
       {
+        // notify the SAT relevancy module that the definition is now relevant
         d_satRlv->notifyActivatedLemma(d, d_queue);
       }
     }

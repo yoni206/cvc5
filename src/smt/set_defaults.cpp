@@ -65,15 +65,11 @@ void setDefaults(LogicInfo& logic, bool isInternalSubsolver)
     Notice() << "SmtEngine: setting dumpUnsatCores" << std::endl;
     options::dumpUnsatCores.set(true);
   }
-  if (options::checkUnsatCores() || options::checkUnsatCoresNew()
-      || options::dumpUnsatCores() || options::unsatAssumptions())
+  if (options::checkUnsatCores() || options::dumpUnsatCores()
+      || options::unsatAssumptions())
   {
     Notice() << "SmtEngine: setting unsatCores" << std::endl;
     options::unsatCores.set(true);
-  }
-  if (options::checkUnsatCoresNew())
-  {
-    options::proofNew.set(true);
   }
   if (options::bitvectorAigSimplifications.wasSetByUser())
   {
@@ -249,7 +245,6 @@ void setDefaults(LogicInfo& logic, bool isInternalSubsolver)
     // Note we allow E-matching by default to support combinations of sequences
     // and quantifiers.
   }
-
   if (options::arraysExp())
   {
     if (!logic.isQuantified())
@@ -1255,9 +1250,11 @@ void setDefaults(LogicInfo& logic, bool isInternalSubsolver)
     // introduces new literals into the search. This includes quantifiers
     // (quantifier instantiation), and the lemma schemas used in non-linear
     // and sets. We also can't use it if models are enabled.
-    if (logic.isTheoryEnabled(THEORY_SETS) || logic.isTheoryEnabled(THEORY_BAGS)
-        || logic.isQuantified() || options::produceModels()
-        || options::produceAssignments() || options::checkModels()
+    if (logic.isTheoryEnabled(THEORY_SETS)
+        || logic.isTheoryEnabled(THEORY_BAGS)
+        || logic.isQuantified()
+        || options::produceModels() || options::produceAssignments()
+        || options::checkModels()
         || (logic.isTheoryEnabled(THEORY_ARITH) && !logic.isLinear()))
     {
       options::minisatUseElim.set(false);
@@ -1376,18 +1373,15 @@ void setDefaults(LogicInfo& logic, bool isInternalSubsolver)
     }
   }
 
-  if (options::bitblastMode() == options::BitblastMode::EAGER)
+  if (options::bitblastMode() == options::BitblastMode::EAGER
+      && !logic.isPure(THEORY_BV) && logic.getLogicString() != "QF_UFBV"
+      && logic.getLogicString() != "QF_ABV")
   {
-    if (!logic.isPure(THEORY_BV) && logic.getLogicString() != "QF_UFBV"
-        && logic.getLogicString() != "QF_ABV")
-    {
-      throw OptionException(
-          "Eager bit-blasting does not currently support theory combination. "
-          "Note that in a QF_BV problem UF symbols can be introduced for "
-          "division. "
-          "Try --bv-div-zero-const to interpret division by zero as a "
-          "constant.");
-    }
+    throw OptionException(
+        "Eager bit-blasting does not currently support theory combination. "
+        "Note that in a QF_BV problem UF symbols can be introduced for "
+        "division. "
+        "Try --bv-div-zero-const to interpret division by zero as a constant.");
   }
   // !!!!!!!!!!!!!!!! temporary, until proof-new is functional
   if (options::proofNew())
