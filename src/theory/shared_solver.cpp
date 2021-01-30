@@ -61,8 +61,18 @@ void SharedSolver::preRegisterShared(TNode t, bool multipleTheories)
     theory->getAuxiliarySharedTerms(t, sharedTerms);
     for (Node n : sharedTerms)
     {
+      Trace("polite-optimization")
+          << "preRegisterShared: really adding shared term: " << n << std::endl;
+      Trace("polite-optimization")
+          << "preRegisterShared: the shared term was added via atom: " << t
+          << std::endl;
       TheoryIdSet theories = 0;
-      TheoryIdSetUtil::setInsert(Theory::theoryOf(n.getType()), theories);
+      theories =
+          TheoryIdSetUtil::setInsert(Theory::theoryOf(n.getType()), theories);
+      theories = TheoryIdSetUtil::setInsert(Theory::theoryOf(n), theories);
+      Trace("polite-optimization")
+          << "preRegisterShared: theories: "
+          << TheoryIdSetUtil::setToString(theories) << std::endl;
       d_keep.insert(n);
       d_sharedTerms.addSharedTerm(t, n, theories);
     }

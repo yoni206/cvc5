@@ -104,7 +104,13 @@ void TheoryDatatypes::getAuxiliarySharedTerms(Node atom,
     {
       // add relevant selector terms to `sharedTerms`
       Node st = nm->mkNode(APPLY_SELECTOR, sel->getSelector(), atom[0]);
+      Trace("polite-optimization")
+          << "getAuxiliarySharedTerms: considering adding shared term:" << st
+          << std::endl;
       if (st.getType().isFinite()) {
+        Trace("polite-optimization")
+            << "getAuxiliarySharedTerms: adding shared term:" << st
+            << std::endl;
         sharedTerms.push_back(st);
       }
     }
