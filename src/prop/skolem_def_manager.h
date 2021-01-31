@@ -31,7 +31,7 @@ namespace CVC4 {
 class RemoveTermFormulas;
 
 namespace prop {
-  
+
 class SatRelevancy;
 
 /**
@@ -46,14 +46,14 @@ class SkolemDefManager
  public:
   SkolemDefManager(context::Context* context,
                    context::UserContext* userContext,
-                   SatRelevancy * satRlv,
+                   SatRelevancy* satRlv,
                    RemoveTermFormulas& rtf);
 
   ~SkolemDefManager();
 
   /** Notify skolem definitions */
   void notifySkolemDefinition(TNode skolem, TNode def);
-  /** 
+  /**
    * Notify asserted literal, adds additionally trigger assertions into queue.
    */
   void notifyAsserted(TNode literal, context::CDQueue<TNode>& queue);

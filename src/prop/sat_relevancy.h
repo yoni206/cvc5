@@ -61,7 +61,7 @@ class SatRelevancy
  public:
   SatRelevancy(CDCLTSatSolverInterface* satSolver,
                context::Context* context,
-                         context::UserContext* userContext,
+               context::UserContext* userContext,
                CnfStream* cnfStream);
 
   ~SatRelevancy();
@@ -73,7 +73,7 @@ class SatRelevancy
   /**
    * Notify that lem is a new lemma. This adds new literals that should be
    * asserted at this time to theory engine.
-   * 
+   *
    * The notification of lemmas is user-context dependent.
    */
   void notifyLemma(TNode lem, context::CDQueue<TNode>& queue);
@@ -86,7 +86,7 @@ class SatRelevancy
   /**
    * Notify that the SAT solver has asserted literal l, which may be a theory
    * atom or a formula. Adds the literals that should be asserted to the theory
-   * engine at this time to queue.  
+   * engine at this time to queue.
    *
    * For example, if l is not relevant, this may add nothing to queue. If l is
    * a formula whose children are atoms and have already been asserted, this

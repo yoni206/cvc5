@@ -61,9 +61,12 @@ void TheoryProxy::finishInit(CDCLTSatSolverInterface* satSolver,
 
   if (options::satTheoryRelevancy())
   {
-    d_satRlv.reset(new SatRelevancy(satSolver, d_context, d_userContext, cnfStream));
-    d_skdm.reset(new SkolemDefManager(
-        d_context, d_userContext, d_satRlv.get(), d_tpp.getRemoveTermFormulas()));
+    d_satRlv.reset(
+        new SatRelevancy(satSolver, d_context, d_userContext, cnfStream));
+    d_skdm.reset(new SkolemDefManager(d_context,
+                                      d_userContext,
+                                      d_satRlv.get(),
+                                      d_tpp.getRemoveTermFormulas()));
   }
 }
 
@@ -75,7 +78,7 @@ void TheoryProxy::notifyPreprocessedAssertions(
 
 void TheoryProxy::notifyAssertion(TNode a)
 {
-  if (d_satRlv!=nullptr)
+  if (d_satRlv != nullptr)
   {
     d_satRlv->notifyAssertion(a);
   }
@@ -95,7 +98,6 @@ void TheoryProxy::notifyLemma(TNode lem, TNode skolem)
     {
       d_skdm->notifySkolemDefinition(skolem, lem);
     }
-    
   }
 }
 

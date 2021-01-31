@@ -25,7 +25,7 @@ namespace prop {
 
 SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
                            context::Context* context,
-                         context::UserContext* userContext,
+                           context::UserContext* userContext,
                            CnfStream* cnfStream)
     : d_satSolver(satSolver),
       d_context(context),
@@ -61,7 +61,8 @@ void SatRelevancy::notifyLemma(TNode lem, context::CDQueue<TNode>& queue)
   setRelevant(lem, &queue);
 }
 
-void SatRelevancy::notifyActivatedSkolemDef(TNode n, context::CDQueue<TNode>& queue)
+void SatRelevancy::notifyActivatedSkolemDef(TNode n,
+                                            context::CDQueue<TNode>& queue)
 {
   Trace("sat-rlv") << "notifyActivatedSkolemDef: " << n << std::endl;
   // set the lemma is relevant
@@ -92,7 +93,8 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
     {
       TNode parent = rwi->d_parents[i];
       bool cpol = rwi->d_childPol[i];
-      Trace("sat-rlv-debug") << "  look at parent: " << parent << ", cpol=" << cpol << std::endl;
+      Trace("sat-rlv-debug")
+          << "  look at parent: " << parent << ", cpol=" << cpol << std::endl;
       // n makes a child of parent have value equal to (pol==cpol), where pol
       // is the assigned value of the atom, and cpol is its polarity in the
       // parent. For instance, (and (not A) B), when A is assigned true, we
@@ -147,7 +149,8 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
   Assert(atom.getKind() != NOT);
   // notify formulas are in terms of atoms
   // NOTE this could be avoided by simply looking at the kind?
-  Trace("sat-rlv-debug") << "  notifyFormula: " << d_cnfStream->isNotifyFormula(atom) << std::endl;
+  Trace("sat-rlv-debug") << "  notifyFormula: "
+                         << d_cnfStream->isNotifyFormula(atom) << std::endl;
   if (d_cnfStream->isNotifyFormula(atom))
   {
     switch (atom.getKind())
@@ -329,8 +332,8 @@ void SatRelevancy::addParentRlvWait(TNode n, TNode parent)
   }
   rwi->d_parents.push_back(parent);
   rwi->d_childPol.push_back(pol);
-  Trace("sat-rlv-debug") << "  ...add parent rlv wait: " << n << " -> " << parent
-                   << std::endl;
+  Trace("sat-rlv-debug") << "  ...add parent rlv wait: " << n << " -> "
+                         << parent << std::endl;
 }
 
 bool SatRelevancy::setAssertedChild(TNode atom,
