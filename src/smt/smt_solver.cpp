@@ -229,11 +229,19 @@ void SmtSolver::processAssertions(Assertions& as)
   // introducing new ones
 
   // Now, theory-preprocess the assertion pipeline. It is important that this
-  // step is done here, since the prop engine is responsible for proofs only
-  // after preprocessing. Moreover, there are several important details
+  // step is done here since several important details are necessary and
   // available here, including:
   // (1) Which input assertions correspond to definitions for skolems,
-  // (2) whether we are in conflict due to preprocessing (noConflict above).
+  // (2) Whether we are in conflict due to preprocessing.
+  // Doing this during the main preprocessing passes above would require some
+  // additional bookkeeping.
+  //
+  // Conversely, these steps cannot be pushed further into PropEngine, since
+  // it only handles preprocessed assertions. Its proof generation in particular
+  // assumes that its proofs are in terms of preprocessed assertions, whereas
+  // preprocessing in the responsibility of PreprocessProofGenerator that lives
+  // in assertion pipeline and is invoked by the calls (replaceTrusted,
+  // pushBackTrusted) below.
   const std::vector<Node>& assertions = ap.ref();
   std::vector<theory::TrustNode> newAsserts;
   std::vector<Node> newSkolems;
@@ -269,11 +277,10 @@ void SmtSolver::processAssertions(Assertions& as)
   for (const theory::TrustNode& trn : newAsserts)
   {
     ap.pushBackTrusted(trn);
-
     newSkDefs.push_back(trn.getProven());
   }
 
-  // Push the formula to decision engine
+  // Push the formula to theory and decision engines
   if (noConflict)
   {
     Chat() << "notifying theory engine and decision engine..." << std::endl;
