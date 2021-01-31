@@ -225,29 +225,74 @@ void SmtSolver::processAssertions(Assertions& as)
   // process the assertions with the preprocessor
   bool noConflict = d_pp.process(as);
 
+  // end: INVARIANT to maintain: no reordering of assertions or
+  // introducing new ones
+
+  // Now, theory-preprocess the assertion pipeline. It is important that this
+  // step is done here, since the prop engine is responsible for proofs only
+  // after preprocessing. Moreover, there are several important details
+  // available here, including:
+  // (1) Which input assertions correspond to definitions for skolems,
+  // (2) whether we are in conflict due to preprocessing (noConflict above).
+  const std::vector<Node>& assertions = ap.ref();
+  std::vector<theory::TrustNode> newAsserts;
+  std::vector<Node> newSkolems;
+  // record the original assertion size, which impacts
+  size_t origAssertionSize = assertions.size();
+  size_t newAssertProcessed = 0;
+  for (size_t i = 0; i < origAssertionSize; ++i)
+  {
+    Node assertion = assertions[i];
+    theory::TrustNode trn = d_propEngine->preprocess(assertion, newAsserts, newSkolems);
+    if (!trn.isNull())
+    {
+      // process
+      ap.replaceTrusted(i, trn);
+    }
+    // new assertions have a dependence on the node (old pf architecture)
+    if (options::unsatCores())
+    {
+      while (newAssertProcessed<newAsserts.size())
+      {
+        ProofManager::currentPM()->addDependence(newAsserts[newAssertProcessed].getProven(),
+                                                  assertion);
+        newAssertProcessed++;
+      }
+    }
+  }
+  Assert(newSkolems.size() == newAsserts.size());
+  // Add the skolem definitions to the assertion pipeline, which is important
+  // for proofs. Additionally, we extract the proven formula in newSkDefs for
+  // each trust node in newAsserts.
+  std::vector<Node> newSkDefs;
+  for (const theory::TrustNode& trn : newAsserts)
+  {
+    ap.pushBackTrusted(trn);
+
+    newSkDefs.push_back(trn.getProven());
+  }
+  
   // Push the formula to decision engine
   if (noConflict)
   {
     Chat() << "notifying theory engine and decision engine..." << std::endl;
-    d_propEngine->notifyPreprocessedAssertions(ap);
+    d_propEngine->notifyPreprocessedAssertions(assertions, newSkolems, newSkDefs);
   }
-
-  // end: INVARIANT to maintain: no reordering of assertions or
-  // introducing new ones
-
-  d_pp.postprocess(as);
-
-  // Push the formula to SAT
+  
   {
     Chat() << "converting to CNF..." << endl;
     TimerStat::CodeTimer codeTimer(d_stats.d_cnfConversionTime);
-    for (const Node& assertion : ap.ref())
+    for (size_t i = 0; i < origAssertionSize; ++i)
     {
-      Chat() << "+ " << assertion << std::endl;
-      d_propEngine->assertFormula(assertion);
+      Chat() << "+ " << ap[i] << std::endl;
+      d_propEngine->assertFormula(ap[i]);
+    }
+    for (size_t i=0, nskdefs = newSkDefs.size(); i<nskdefs; i++)
+    {
+      Chat() << "+ skolem definition " << newSkDefs[i] << " for " << newSkolems[i] << std::endl;
+      d_propEngine->assertSkolemDefinition(newSkDefs[i], newSkolems[i]);
     }
   }
-
   // clear the current assertions
   as.clearCurrent();
 }

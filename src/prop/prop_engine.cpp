@@ -171,41 +171,32 @@ theory::TrustNode PropEngine::removeItes(
 }
 
 void PropEngine::notifyPreprocessedAssertions(
-    const preprocessing::AssertionPipeline& ap)
+    const std::vector<Node>& assertions,
+                     const std::vector<Node>& ppLemmas,
+                     const std::vector<Node>& ppSkolems)
 {
   // notify the theory engine of preprocessed assertions
-  d_theoryProxy->notifyPreprocessedAssertions(ap.ref());
+  d_theoryProxy->notifyPreprocessedAssertions(assertions, ppLemmas, ppSkolems);
 
-  // Add assertions to decision engine, which manually extracts what assertions
-  // corresponded to term formula removal. Note that alternatively we could
-  // delay all theory preprocessing and term formula removal to this point, in
-  // which case this method could simply take a vector of Node and not rely on
-  // assertion pipeline or its ITE skolem map.
-  std::vector<Node> ppLemmas;
-  std::vector<Node> ppSkolems;
-  for (const std::pair<const Node, unsigned>& i : ap.getIteSkolemMap())
-  {
-    Assert(i.second >= ap.getRealAssertionsEnd() && i.second < ap.size());
-    ppSkolems.push_back(i.first);
-    ppLemmas.push_back(ap[i.second]);
-  }
-  d_decisionEngine->addAssertions(ap.ref(), ppLemmas, ppSkolems);
+  // Add assertions to decision engine
+  d_decisionEngine->addAssertions(assertions, ppLemmas, ppSkolems);
 }
 
 void PropEngine::assertFormula(TNode node) {
   Assert(!d_inCheckSat) << "Sat solver in solve()!";
   Debug("prop") << "assertFormula(" << node << ")" << endl;
-  if (isProofEnabled())
-  {
-    d_pfCnfStream->convertAndAssert(node, false, false, nullptr);
-    // register in proof manager
-    d_ppm->registerAssertion(node);
-  }
-  else
-  {
-    d_cnfStream->convertAndAssert(node, false, false, true);
-  }
+  assertInternal(node, false, false, true);
+  // notify theory proxy of the assertion
   d_theoryProxy->notifyAssertion(node);
+}
+
+void PropEngine::assertSkolemDefinition(TNode node, TNode skolem)
+{
+  Assert(!d_inCheckSat) << "Sat solver in solve()!";
+  Debug("prop") << "assertFormula(" << node << ")" << endl;
+  assertInternal(node, false, false, true);
+  // notify theory proxy of the assertion
+  d_theoryProxy->notifyAssertion(node, skolem);
 }
 
 void PropEngine::assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p)
@@ -244,12 +235,12 @@ void PropEngine::assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p)
   }
 
   // now, assert the lemmas
-  assertLemmaInternal(tplemma, removable);
+  assertTrustedLemmaInternal(tplemma, removable);
   // notify the theory proxy of the lemma
   d_theoryProxy->notifyLemma(tplemma.getProven());
   for (size_t i = 0, lsize = ppLemmas.size(); i < lsize; ++i)
   {
-    assertLemmaInternal(ppLemmas[i], removable);
+    assertTrustedLemmaInternal(ppLemmas[i], removable);
     d_theoryProxy->notifyLemma(ppLemmas[i].getProven(), ppSkolems[i]);
   }
 
@@ -268,21 +259,31 @@ void PropEngine::assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p)
   }
 }
 
-void PropEngine::assertLemmaInternal(theory::TrustNode trn, bool removable)
+void PropEngine::assertTrustedLemmaInternal(theory::TrustNode trn, bool removable)
 {
   Node node = trn.getNode();
-  bool negated = trn.getKind() == theory::TrustNodeKind::CONFLICT;
   Debug("prop::lemmas") << "assertLemma(" << node << ")" << endl;
+  bool negated = trn.getKind() == theory::TrustNodeKind::CONFLICT;
+  Assert (!isProofEnabled() || trn.getGenerator()!=nullptr);
+  assertInternal(trn.getNode(), negated, removable, false, trn.getGenerator());
+}
+
+void PropEngine::assertInternal(TNode node, bool negated, bool removable, bool input, ProofGenerator * pg)
+{
   // Assert as (possibly) removable
   if (isProofEnabled())
   {
-    Assert(trn.getGenerator());
     d_pfCnfStream->convertAndAssert(
-        node, negated, removable, trn.getGenerator());
+        node, negated, removable, pg);
+    // if input, register the assertion
+    if (input)
+    {
+      d_ppm->registerAssertion(node);
+    }
   }
   else
   {
-    d_cnfStream->convertAndAssert(node, removable, negated);
+    d_cnfStream->convertAndAssert(node, removable, negated, input);
   }
 }
 

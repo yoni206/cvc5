@@ -71,16 +71,27 @@ void TheoryProxy::finishInit(CDCLTSatSolverInterface* satSolver,
 }
 
 void TheoryProxy::notifyPreprocessedAssertions(
-    const std::vector<Node>& assertions)
+    const std::vector<Node>& assertions,
+                     const std::vector<Node>& ppLemmas,
+                     const std::vector<Node>& ppSkolems)
 {
   d_theoryEngine->notifyPreprocessedAssertions(assertions);
 }
 
-void TheoryProxy::notifyAssertion(TNode a)
+void TheoryProxy::notifyAssertion(TNode a, TNode skolem)
 {
   if (d_satRlv != nullptr)
   {
-    d_satRlv->notifyAssertion(a);
+    if (skolem.isNull())
+    {
+      // an input assertion
+      d_satRlv->notifyAssertion(a);
+    }
+    else
+    {
+      // a skolem definition from input
+      d_skdm->notifySkolemDefinition(skolem, a);
+    }
   }
 }
 
@@ -96,6 +107,7 @@ void TheoryProxy::notifyLemma(TNode lem, TNode skolem)
     }
     else
     {
+      // a skolem definition from a lemma
       d_skdm->notifySkolemDefinition(skolem, lem);
     }
   }

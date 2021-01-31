@@ -266,7 +266,12 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
     }
     return;
   }
-
+  // if there is no queue, we are asserting that an input assertion is relevant,
+  // it will be asserted anyways.
+  if (queue==nullptr)
+  {
+    return;
+  }
   // otherwise it is a theory literal, if it already has a SAT value, it should
   // be asserted now
   bool value;
@@ -293,7 +298,8 @@ void SatRelevancy::setRelevant(TNode n,
 
 bool SatRelevancy::hasSatValue(TNode node, bool& value) const
 {
-  // special case for top-level assertions
+  // special case for top-level assertions, which may not have literals since
+  // CNF does not introduce intermediate literals for some top-level formulas
   if (d_asserted.find(node) != d_asserted.end())
   {
     value = true;
