@@ -231,17 +231,20 @@ void SmtSolver::processAssertions(Assertions& as)
   // Now, theory-preprocess the assertion pipeline. It is important that this
   // step is done here since several important details are necessary and
   // available here, including:
-  // (1) Which input assertions correspond to definitions for skolems,
+  // (1) Which input assertions correspond to definitions for skolems, which
+  // is important for the justification decision heuristic and the SAT
+  // relevancy heuristic.
   // (2) Whether we are in conflict due to preprocessing.
   // Doing this during the main preprocessing passes above would require some
-  // additional bookkeeping.
+  // additional bookkeeping, e.g. in the form of remembering which assertions
+  // correspond to assertions introduced by term formula (term ITE) removal.
   //
   // Conversely, these steps cannot be pushed further into PropEngine, since
-  // it only handles preprocessed assertions. Its proof generation in particular
-  // assumes that its proofs are in terms of preprocessed assertions, whereas
-  // preprocessing in the responsibility of PreprocessProofGenerator that lives
-  // in assertion pipeline and is invoked by the calls (replaceTrusted,
-  // pushBackTrusted) below.
+  // it only is intended to handle preprocessed assertions. In particular, its
+  // proof generator has preprocessed assertions as free assumptions. Thus, the
+  // responsibility of the preprocessing step done here is the
+  // PreprocessProofGenerator that lives in assertion pipeline and is invoked by
+  // the calls (replaceTrusted, pushBackTrusted) below.
   const std::vector<Node>& assertions = ap.ref();
   std::vector<theory::TrustNode> newAsserts;
   std::vector<Node> newSkolems;
