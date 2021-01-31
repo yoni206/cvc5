@@ -228,10 +228,11 @@ void SmtSolver::processAssertions(Assertions& as)
   // end: INVARIANT to maintain: no reordering of assertions or
   // introducing new ones
 
-  // Now, theory-preprocess the assertion pipeline. It is important that this
-  // step is done here since several important details are necessary and
-  // available here, including:
-  // (1) Which input assertions correspond to definitions for skolems, which
+  // Before asserting formulas to prop engine, we must theory-preprocess the
+  // assertion pipeline. It is important that this step is performed exactly
+  // at this point, since several important details are necessary and available
+  // here, including:
+  // (1) Which input assertions correspond to definitions for skolems. This
   // is important for the justification decision heuristic and the SAT
   // relevancy heuristic.
   // (2) Whether we are in conflict due to preprocessing.
@@ -247,6 +248,7 @@ void SmtSolver::processAssertions(Assertions& as)
   // the calls (replaceTrusted, pushBackTrusted) below.
   const std::vector<Node>& assertions = ap.ref();
   std::vector<theory::TrustNode> newAsserts;
+  std::vector<Node> newSkDefs;
   std::vector<Node> newSkolems;
   // record the original assertion size, which impacts
   size_t origAssertionSize = assertions.size();
@@ -261,27 +263,26 @@ void SmtSolver::processAssertions(Assertions& as)
       // process
       ap.replaceTrusted(i, trn);
     }
-    // new assertions have a dependence on the node (old pf architecture)
-    if (options::unsatCores())
+    // process each newly created lemma due to preprocessing the last assertion
+    while (newAssertProcessed < newAsserts.size())
     {
-      while (newAssertProcessed < newAsserts.size())
+      theory::TrustNode trna = newAsserts[newAssertProcessed];
+      if (options::unsatCores())
       {
+        // new assertions have a dependence on the node (old pf architecture)
         ProofManager::currentPM()->addDependence(
-            newAsserts[newAssertProcessed].getProven(), assertion);
-        newAssertProcessed++;
+            trna.getProven(), assertion);
       }
+      // Add the skolem definitions to the assertion pipeline, which is important
+      // for proofs.
+      ap.pushBackTrusted(trna);
+      // extract the formula from the trust node
+      newSkDefs.push_back(trna.getProven());
+      newAssertProcessed++;
     }
+    
   }
   Assert(newSkolems.size() == newAsserts.size());
-  // Add the skolem definitions to the assertion pipeline, which is important
-  // for proofs. Additionally, we extract the proven formula in newSkDefs for
-  // each trust node in newAsserts.
-  std::vector<Node> newSkDefs;
-  for (const theory::TrustNode& trn : newAsserts)
-  {
-    ap.pushBackTrusted(trn);
-    newSkDefs.push_back(trn.getProven());
-  }
 
   // Push the formula to theory and decision engines
   if (noConflict)
