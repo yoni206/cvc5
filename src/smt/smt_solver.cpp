@@ -243,7 +243,8 @@ void SmtSolver::processAssertions(Assertions& as)
   for (size_t i = 0; i < origAssertionSize; ++i)
   {
     Node assertion = assertions[i];
-    theory::TrustNode trn = d_propEngine->preprocess(assertion, newAsserts, newSkolems);
+    theory::TrustNode trn =
+        d_propEngine->preprocess(assertion, newAsserts, newSkolems);
     if (!trn.isNull())
     {
       // process
@@ -252,10 +253,10 @@ void SmtSolver::processAssertions(Assertions& as)
     // new assertions have a dependence on the node (old pf architecture)
     if (options::unsatCores())
     {
-      while (newAssertProcessed<newAsserts.size())
+      while (newAssertProcessed < newAsserts.size())
       {
-        ProofManager::currentPM()->addDependence(newAsserts[newAssertProcessed].getProven(),
-                                                  assertion);
+        ProofManager::currentPM()->addDependence(
+            newAsserts[newAssertProcessed].getProven(), assertion);
         newAssertProcessed++;
       }
     }
@@ -271,14 +272,15 @@ void SmtSolver::processAssertions(Assertions& as)
 
     newSkDefs.push_back(trn.getProven());
   }
-  
+
   // Push the formula to decision engine
   if (noConflict)
   {
     Chat() << "notifying theory engine and decision engine..." << std::endl;
-    d_propEngine->notifyPreprocessedAssertions(assertions, newSkolems, newSkDefs);
+    d_propEngine->notifyPreprocessedAssertions(
+        assertions, newSkolems, newSkDefs);
   }
-  
+
   {
     Chat() << "converting to CNF..." << endl;
     TimerStat::CodeTimer codeTimer(d_stats.d_cnfConversionTime);
@@ -287,9 +289,10 @@ void SmtSolver::processAssertions(Assertions& as)
       Chat() << "+ " << ap[i] << std::endl;
       d_propEngine->assertFormula(ap[i]);
     }
-    for (size_t i=0, nskdefs = newSkDefs.size(); i<nskdefs; i++)
+    for (size_t i = 0, nskdefs = newSkDefs.size(); i < nskdefs; i++)
     {
-      Chat() << "+ skolem definition " << newSkDefs[i] << " for " << newSkolems[i] << std::endl;
+      Chat() << "+ skolem definition " << newSkDefs[i] << " for "
+             << newSkolems[i] << std::endl;
       d_propEngine->assertSkolemDefinition(newSkDefs[i], newSkolems[i]);
     }
   }

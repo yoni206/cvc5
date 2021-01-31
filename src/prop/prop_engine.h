@@ -126,8 +126,8 @@ class PropEngine
    * decision engine and the theory engine of the assertions in ap.
    */
   void notifyPreprocessedAssertions(const std::vector<Node>& assertions,
-                     const std::vector<Node>& ppLemmas,
-                     const std::vector<Node>& ppSkolems);
+                                    const std::vector<Node>& ppLemmas,
+                                    const std::vector<Node>& ppSkolems);
 
   /**
    * Converts the given formula to CNF and assert the CNF to the SAT solver.
@@ -304,7 +304,11 @@ class PropEngine
    * on an activity heuristic
    */
   void assertTrustedLemmaInternal(theory::TrustNode trn, bool removable);
-  void assertInternal(TNode node, bool negated, bool removable, bool input, ProofGenerator * pg = nullptr);
+  void assertInternal(TNode node,
+                      bool negated,
+                      bool removable,
+                      bool input,
+                      ProofGenerator* pg = nullptr);
 
   /**
    * Indicates that the SAT solver is currently solving something and we should

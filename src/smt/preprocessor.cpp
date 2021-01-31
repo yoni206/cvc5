@@ -81,9 +81,9 @@ bool Preprocessor::process(Assertions& as)
 
   // process the assertions, return true if no conflict is discovered
   bool noConflict = d_processor.apply(as);
-  
+
   // now, post-process the assertions
-  
+
   // if incremental, compute which variables are assigned
   if (options::incrementalSolving())
   {
@@ -92,7 +92,7 @@ bool Preprocessor::process(Assertions& as)
 
   // mark that we've processed assertions
   d_assertionsProcessed = true;
-  
+
   return noConflict;
 }
 

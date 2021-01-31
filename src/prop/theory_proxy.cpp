@@ -72,8 +72,8 @@ void TheoryProxy::finishInit(CDCLTSatSolverInterface* satSolver,
 
 void TheoryProxy::notifyPreprocessedAssertions(
     const std::vector<Node>& assertions,
-                     const std::vector<Node>& ppLemmas,
-                     const std::vector<Node>& ppSkolems)
+    const std::vector<Node>& ppLemmas,
+    const std::vector<Node>& ppSkolems)
 {
   d_theoryEngine->notifyPreprocessedAssertions(assertions);
 }

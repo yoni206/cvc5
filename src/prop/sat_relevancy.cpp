@@ -268,7 +268,7 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
   }
   // if there is no queue, we are asserting that an input assertion is relevant,
   // it will be asserted anyways.
-  if (queue==nullptr)
+  if (queue == nullptr)
   {
     return;
   }

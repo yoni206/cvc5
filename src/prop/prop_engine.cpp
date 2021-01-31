@@ -172,8 +172,8 @@ theory::TrustNode PropEngine::removeItes(
 
 void PropEngine::notifyPreprocessedAssertions(
     const std::vector<Node>& assertions,
-                     const std::vector<Node>& ppLemmas,
-                     const std::vector<Node>& ppSkolems)
+    const std::vector<Node>& ppLemmas,
+    const std::vector<Node>& ppSkolems)
 {
   // notify the theory engine of preprocessed assertions
   d_theoryProxy->notifyPreprocessedAssertions(assertions, ppLemmas, ppSkolems);
@@ -259,22 +259,23 @@ void PropEngine::assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p)
   }
 }
 
-void PropEngine::assertTrustedLemmaInternal(theory::TrustNode trn, bool removable)
+void PropEngine::assertTrustedLemmaInternal(theory::TrustNode trn,
+                                            bool removable)
 {
   Node node = trn.getNode();
   Debug("prop::lemmas") << "assertLemma(" << node << ")" << endl;
   bool negated = trn.getKind() == theory::TrustNodeKind::CONFLICT;
-  Assert (!isProofEnabled() || trn.getGenerator()!=nullptr);
+  Assert(!isProofEnabled() || trn.getGenerator() != nullptr);
   assertInternal(trn.getNode(), negated, removable, false, trn.getGenerator());
 }
 
-void PropEngine::assertInternal(TNode node, bool negated, bool removable, bool input, ProofGenerator * pg)
+void PropEngine::assertInternal(
+    TNode node, bool negated, bool removable, bool input, ProofGenerator* pg)
 {
   // Assert as (possibly) removable
   if (isProofEnabled())
   {
-    d_pfCnfStream->convertAndAssert(
-        node, negated, removable, pg);
+    d_pfCnfStream->convertAndAssert(node, negated, removable, pg);
     // if input, register the assertion
     if (input)
     {
