@@ -270,17 +270,15 @@ void SmtSolver::processAssertions(Assertions& as)
       if (options::unsatCores())
       {
         // new assertions have a dependence on the node (old pf architecture)
-        ProofManager::currentPM()->addDependence(
-            trna.getProven(), assertion);
+        ProofManager::currentPM()->addDependence(trna.getProven(), assertion);
       }
-      // Add the skolem definitions to the assertion pipeline, which is important
-      // for proofs.
+      // Add the skolem definitions to the assertion pipeline, which is
+      // important for proofs.
       ap.pushBackTrusted(trna);
       // extract the formula from the trust node
       newSkDefs.push_back(trna.getProven());
       newAssertProcessed++;
     }
-    
   }
   Assert(newSkolems.size() == newAsserts.size());
 
