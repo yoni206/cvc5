@@ -61,6 +61,7 @@ class SatRelevancy
  public:
   SatRelevancy(CDCLTSatSolverInterface* satSolver,
                context::Context* context,
+                         context::UserContext* userContext,
                CnfStream* cnfStream);
 
   ~SatRelevancy();
@@ -70,11 +71,26 @@ class SatRelevancy
    */
   void notifyAssertion(TNode assertion);
   /**
-   * Notify that lem is a new lemma
+   * Notify that lem is a new lemma. This adds new literals that should be
+   * asserted at this time to theory engine.
+   * 
+   * The notification of lemmas is user-context dependent.
    */
-  void notifyActivatedLemma(TNode lem, context::CDQueue<TNode>& queue);
+  void notifyLemma(TNode lem, context::CDQueue<TNode>& queue);
   /**
-   * Enqueue theory literals
+   * Notify that lem is an activated skolem definition.
+   *
+   * The notification of lemmas is SAT-context dependent.
+   */
+  void notifyActivatedSkolemDef(TNode lem, context::CDQueue<TNode>& queue);
+  /**
+   * Notify that the SAT solver has asserted literal l, which may be a theory
+   * atom or a formula. Adds the literals that should be asserted to the theory
+   * engine at this time to queue.  
+   *
+   * For example, if l is not relevant, this may add nothing to queue. If l is
+   * a formula whose children are atoms and have already been asserted, this
+   * may trigger multiple literals to be added to queue.
    */
   void notifyAsserted(const SatLiteral& l, context::CDQueue<TNode>& queue);
 
@@ -111,9 +127,14 @@ class SatRelevancy
   /** pointer to the CNF stream */
   CnfStream* d_cnfStream;
   /**
-   * The set of formulas that are asserted.
+   * The set of formulas that are asserted (user-context dependent).
    */
   context::CDHashSet<Node, NodeHashFunction> d_asserted;
+  /**
+   * The set of asserted formulas that have been marked relevant (SAT-context
+   * dependent).
+   */
+  context::CDHashSet<Node, NodeHashFunction> d_assertedRlv;
   /**
    * The set of formulas that are relevant. Polarity matters, no double
    * negations.
@@ -131,7 +152,7 @@ class SatRelevancy
    */
   RlvWaitMap d_rlvWaitMap;
   // debugging
-  bool d_isActive;
+  bool d_isActiveTmp;
 };
 
 }  // namespace prop

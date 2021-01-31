@@ -15,14 +15,16 @@
 #include "prop/skolem_def_manager.h"
 
 #include "smt/term_formula_removal.h"
+#include "prop/sat_relevancy.h"
 
 namespace CVC4 {
 namespace prop {
 
 SkolemDefManager::SkolemDefManager(context::Context* context,
                                    context::UserContext* userContext,
+                                   SatRelevancy * satRlv,
                                    RemoveTermFormulas& rtf)
-    : d_rtf(rtf), d_skDefs(userContext), d_skActive(context)
+    : d_satRlv(satRlv), d_rtf(rtf), d_skDefs(userContext), d_skActive(context)
 {
 }
 
@@ -34,8 +36,7 @@ void SkolemDefManager::notifySkolemDefinition(TNode skolem, TNode def)
   d_skDefs[skolem] = def;
 }
 
-void SkolemDefManager::getActivatedDefinitions(TNode literal,
-                                               std::vector<Node>& defs)
+void SkolemDefManager::notifyAsserted(TNode literal, context::CDQueue<TNode>& queue)
 {
   NodeMap::iterator it;
   std::unordered_set<Node, NodeHashFunction> skolems;
@@ -50,7 +51,8 @@ void SkolemDefManager::getActivatedDefinitions(TNode literal,
     d_skActive.insert(k);
     it = d_skDefs.find(k);
     Assert(it != d_skDefs.end());
-    defs.push_back(it->second);
+    //defs.push_back(it->second);
+    d_satRlv->notifyActivatedSkolemDef(it->second, queue);
   }
 }
 

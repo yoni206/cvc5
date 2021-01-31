@@ -204,10 +204,14 @@ SatLiteral CnfStream::newLiteral(TNode node, bool isTheoryAtom, bool preRegister
   Assert(node.getKind() != kind::NOT);
 
   // if we are tracking formulas, everything is a theory atom
-  if (!isTheoryAtom && d_flitPolicy == FormulaLitPolicy::TRACK_AND_NOTIFY)
+  if (d_flitPolicy == FormulaLitPolicy::TRACK_AND_NOTIFY)
   {
+    if (isTheoryAtom)
+    {
+      // must distinguish theory atoms here
+      d_notifyFormulas.insert(node);
+    }
     isTheoryAtom = true;
-    d_notifyFormulas.insert(node);
   }
 
   // Get the literal for this node
@@ -279,7 +283,8 @@ void CnfStream::getBooleanVariables(std::vector<TNode>& outputVariables) const {
 
 bool CnfStream::isNotifyFormula(TNode node) const
 {
-  return d_notifyFormulas.find(node) != d_notifyFormulas.end();
+  // TODO: fix name
+  return d_notifyFormulas.find(node) == d_notifyFormulas.end();
 }
 
 void CnfStream::setProof(CnfProof* proof) {

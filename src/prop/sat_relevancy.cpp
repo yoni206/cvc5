@@ -25,17 +25,19 @@ namespace prop {
 
 SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
                            context::Context* context,
+                         context::UserContext* userContext,
                            CnfStream* cnfStream)
     : d_satSolver(satSolver),
       d_context(context),
       d_cnfStream(cnfStream),
-      d_asserted(context),
+      d_asserted(userContext),
+      d_assertedRlv(context),
       d_rlv(context),
       d_justify(context),
       d_rlvWaitMap(context)
 {
   // FIXME
-  d_isActive = false;
+  d_isActiveTmp = false;
 }
 
 SatRelevancy::~SatRelevancy() {}
@@ -44,13 +46,24 @@ void SatRelevancy::notifyAssertion(TNode a)
 {
   // Mark each assertion as relevant. Notice we use a null queue since nothing
   // should have SAT values yet.
-  Trace("sat-rlv") << "notifyAssertedFormula: " << a << std::endl;
+  d_asserted.insert(a);
+  d_assertedRlv.insert(a);
+  Trace("sat-rlv") << "notifyAssertion: " << a << std::endl;
   setRelevant(a, nullptr);
 }
 
-void SatRelevancy::notifyActivatedLemma(TNode n, context::CDQueue<TNode>& queue)
+void SatRelevancy::notifyLemma(TNode lem, context::CDQueue<TNode>& queue)
 {
-  Trace("sat-rlv") << "notifyActivatedLemma: " << n << std::endl;
+  // TODO: relevancy is SAT-context dependent, need to double check lemmas
+  // when we backtrack
+  Trace("sat-rlv") << "notifyLemma: " << lem << std::endl;
+  d_asserted.insert(lem);
+  setRelevant(lem, &queue);
+}
+
+void SatRelevancy::notifyActivatedSkolemDef(TNode n, context::CDQueue<TNode>& queue)
+{
+  Trace("sat-rlv") << "notifyActivatedSkolemDef: " << n << std::endl;
   // set the lemma is relevant
   setRelevant(n, &queue);
 }
@@ -60,34 +73,42 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
 {
   TNode n = d_cnfStream->getNode(l);
   Trace("sat-rlv") << "notifyAsserted: " << n << std::endl;
+  if (!d_isActiveTmp)
+  {
+    queue.push(n);
+  }
   bool pol = n.getKind() != NOT;
   TNode atom = pol ? n : n[0];
+  bool nrlv = false;
   // first, look at wait lists
   RlvWaitMap::const_iterator it = d_rlvWaitMap.find(atom);
-  if (it == d_rlvWaitMap.end())
+  if (it != d_rlvWaitMap.end())
   {
-    // nothing is waiting on its value, we are done.
-    return;
-  }
-  // otherwise, we are going to iterate through each parent that is waiting
-  // on its value and possibly update relevancy
-  RlvWaitInfo* rwi = it->second.get();
-  bool nrlv = false;
-  Assert(rwi->d_parents.size() == rwi->d_childPol.size());
-  for (size_t i = 0, nparents = rwi->d_parents.size(); i < nparents; i++)
-  {
-    TNode parent = rwi->d_parents[i];
-    bool cpol = rwi->d_childPol[i];
-    // n makes a child of parent have value equal to (pol==cpol), where pol
-    // is the assigned value of the atom, and cpol is its polarity in the
-    // parent. For instance, (and (not A) B), when A is assigned true, we
-    // get that pol=true, cpol = false, and hence we notify that a child of
-    // AND is false.
-    if (setAssertedChild(atom, pol == cpol, parent, queue))
+    // we are going to iterate through each parent that is waiting
+    // on its value and possibly update relevancy
+    RlvWaitInfo* rwi = it->second.get();
+    Assert(rwi->d_parents.size() == rwi->d_childPol.size());
+    for (size_t i = 0, nparents = rwi->d_parents.size(); i < nparents; i++)
     {
-      // due to the above call, n is now relevant
-      nrlv = true;
+      TNode parent = rwi->d_parents[i];
+      bool cpol = rwi->d_childPol[i];
+      Trace("sat-rlv-debug") << "  look at parent: " << parent << ", cpol=" << cpol << std::endl;
+      // n makes a child of parent have value equal to (pol==cpol), where pol
+      // is the assigned value of the atom, and cpol is its polarity in the
+      // parent. For instance, (and (not A) B), when A is assigned true, we
+      // get that pol=true, cpol = false, and hence we notify that a child of
+      // AND is false.
+      if (setAssertedChild(atom, pol == cpol, parent, queue))
+      {
+        Trace("sat-rlv-debug") << "  ...now relevant" << std::endl;
+        // due to the above call, n is now relevant
+        nrlv = true;
+      }
     }
+  }
+  else
+  {
+    Trace("sat-rlv-debug") << "  ...not on wait lists" << std::endl;
   }
   // note that notify formulas are in terms of atoms
   if (!d_cnfStream->isNotifyFormula(atom))
@@ -96,8 +117,8 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
     // if we became relevant due to a parent, or are already relevant, enqueue
     if (nrlv || d_rlv.find(n) != d_rlv.end())
     {
-      Trace("sat-rlv-debug") << "- enqueue from assert " << n << std::endl;
-      if (d_isActive)
+      Trace("sat-rlv") << "*** enqueue from assert " << n << std::endl;
+      if (d_isActiveTmp)
       {
         queue.push(n);
       }
@@ -109,11 +130,7 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
     // based on parents, this formula is now relevant and is not a theory atom
     setRelevant(n, &queue);
   }
-  Trace("sat-rlv") << "...finished" << std::endl;
-  if (!d_isActive)
-  {
-    queue.push(n);
-  }
+  Trace("sat-rlv-debug") << "  ...finished" << std::endl;
 }
 
 void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
@@ -130,6 +147,7 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
   Assert(atom.getKind() != NOT);
   // notify formulas are in terms of atoms
   // NOTE this could be avoided by simply looking at the kind?
+  Trace("sat-rlv-debug") << "  notifyFormula: " << d_cnfStream->isNotifyFormula(atom) << std::endl;
   if (d_cnfStream->isNotifyFormula(atom))
   {
     switch (atom.getKind())
@@ -254,8 +272,8 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
     // now, enqueue it
     Assert(queue != nullptr);
     Node alit = value ? Node(atom) : atom.notNode();
-    Trace("sat-rlv-debug") << "- enqueue " << alit << std::endl;
-    if (d_isActive)
+    Trace("sat-rlv") << "*** enqueue " << alit << std::endl;
+    if (d_isActiveTmp)
     {
       queue->push(alit);
     }
@@ -311,7 +329,7 @@ void SatRelevancy::addParentRlvWait(TNode n, TNode parent)
   }
   rwi->d_parents.push_back(parent);
   rwi->d_childPol.push_back(pol);
-  Trace("sat-rlv") << "- add parent rlv wait: " << n << " -> " << parent
+  Trace("sat-rlv-debug") << "  ...add parent rlv wait: " << n << " -> " << parent
                    << std::endl;
 }
 
@@ -322,7 +340,7 @@ bool SatRelevancy::setAssertedChild(TNode atom,
 {
   Trace("sat-rlv-debug") << "setAssertedChild " << pol << " in " << parent
                          << ", from " << atom << std::endl;
-  bool ppol = parent.getKind() == NOT;
+  bool ppol = parent.getKind() != NOT;
   TNode parentAtom = ppol ? parent : parent[0];
   switch (parentAtom.getKind())
   {
