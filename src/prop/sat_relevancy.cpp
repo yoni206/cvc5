@@ -76,6 +76,15 @@ void SatRelevancy::notifyActivatedSkolemDef(TNode n,
   Trace("sat-rlv") << "notifyActivatedSkolemDef: finished" << std::endl;
 }
 
+void SatRelevancy::notifyDecisionRequest(TNode n,
+                                            context::CDQueue<TNode>& queue)
+{
+  Trace("sat-rlv") << "notifyActivatedSkolemDef: " << n << std::endl;
+  // set the lemma is currently relevant
+  setRelevant(n, &queue);
+  Trace("sat-rlv") << "notifyActivatedSkolemDef: finished" << std::endl;
+}
+
 void SatRelevancy::notifyAsserted(const SatLiteral& l,
                                   context::CDQueue<TNode>& queue)
 {
@@ -127,14 +136,16 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
     // if we became relevant due to a parent, or are already relevant, enqueue
     if (nrlv || d_rlv.find(n) != d_rlv.end())
     {
-      Trace("sat-rlv") << "*** enqueue from assert " << n << std::endl;
-      if (d_isActiveTmp)
+      if (d_enqueued.find(atom)==d_enqueued.end())
       {
-        queue.push(n);
+        Trace("sat-rlv") << "*** enqueue from assert " << n << std::endl;
+        if (d_isActiveTmp)
+        {
+          queue.push(n);
+        }
+        d_enqueued.insert(atom);
+        d_numAssertsRlv.set(d_numAssertsRlv + 1);
       }
-      AlwaysAssert (d_enqueued.find(atom)==d_enqueued.end());
-      d_enqueued.insert(atom);
-      d_numAssertsRlv.set(d_numAssertsRlv + 1);
     }
     // otherwise we will assert if the literal gets marked as relevant
   }
@@ -346,15 +357,17 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
   {
     // now, enqueue it
     Assert(queue != nullptr);
-    Node alit = value ? Node(atom) : atom.notNode();
-    Trace("sat-rlv") << "*** enqueue " << alit << std::endl;
-    if (d_isActiveTmp)
+    if (d_enqueued.find(atom)==d_enqueued.end())
     {
-      queue->push(alit);
+      Node alit = value ? Node(atom) : atom.notNode();
+      Trace("sat-rlv") << "*** enqueue " << alit << std::endl;
+      if (d_isActiveTmp)
+      {
+        queue->push(alit);
+      }
+      d_enqueued.insert(atom);
+      d_numAssertsRlv.set(d_numAssertsRlv + 1);
     }
-    AlwaysAssert (d_enqueued.find(atom)==d_enqueued.end());
-    d_enqueued.insert(atom);
-    d_numAssertsRlv.set(d_numAssertsRlv + 1);
   }
 }
 

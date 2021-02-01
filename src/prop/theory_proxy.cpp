@@ -210,7 +210,18 @@ void TheoryProxy::enqueueTheoryLiteral(const SatLiteral& l) {
 
 SatLiteral TheoryProxy::getNextTheoryDecisionRequest() {
   TNode n = d_theoryEngine->getNextDecisionRequest();
-  return n.isNull() ? undefSatLiteral : d_cnfStream->getLiteral(n);
+  // it becomes relevant in this context
+  if (!n.isNull())
+  {
+    if (d_satRlv!=nullptr)
+    {
+      // also notify the SAT relevancy module, which will make this request
+      // relevant
+      d_satRlv->notifyDecisionRequest(n, d_queue);
+    }
+    return d_cnfStream->getLiteral(n);
+  }
+  return undefSatLiteral;
 }
 
 SatLiteral TheoryProxy::getNextDecisionEngineRequest(bool &stopSearch) {

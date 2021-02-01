@@ -97,7 +97,9 @@ class SatRelevancy
   void notifyAsserted(const SatLiteral& l, context::CDQueue<TNode>& queue);
   /** check */
   void check(theory::Theory::Effort effort, context::CDQueue<TNode>& queue);
-
+  /** notify decision request */
+  void notifyDecisionRequest(TNode n,
+                                            context::CDQueue<TNode>& queue);
  private:
   /**
    * Set that n is relevant, add new theory literals to assert to TheoryEngine
