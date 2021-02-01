@@ -1,0 +1,7 @@
+(set-logic QF_UF)
+(declare-sort A 0)
+(declare-fun x () A)
+(declare-fun f (A) A)
+(assert (not (= x (f x))))
+(assert (or (and (= x (f (f x))) (= x (f (f (f x))))) (and (= x (f (f x))) (= x (f (f (f (f (f x)))))))))
+(check-sat)

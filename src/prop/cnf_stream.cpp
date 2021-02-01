@@ -199,7 +199,7 @@ void CnfStream::ensureLiteral(TNode n, bool noPreregistration)
 
 SatLiteral CnfStream::newLiteral(TNode node, bool isTheoryAtom, bool preRegister, bool canEliminate) {
   Trace("cnf") << d_name << "::newLiteral(" << node << ", " << isTheoryAtom
-               << ")\n"
+               << "), prereg=" << preRegister << ", canElim=" << canEliminate << "\n"
                << push;
   Assert(node.getKind() != kind::NOT);
 
@@ -212,6 +212,8 @@ SatLiteral CnfStream::newLiteral(TNode node, bool isTheoryAtom, bool preRegister
       d_notifyFormulas.insert(node);
     }
     isTheoryAtom = true;
+    // cannot eliminate since then we would lose connections to what is relevant
+    canEliminate = false;
   }
 
   // Get the literal for this node
