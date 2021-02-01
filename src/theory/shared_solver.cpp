@@ -33,6 +33,11 @@ SharedSolver::SharedSolver(TheoryEngine& te, ProofNodeManager* pnm)
       d_sharedTermsVisitor(d_sharedTerms),
       d_keep(d_te.getUserContext())
 {
+  d_valuation = new Valuation(&d_te);
+}
+
+SharedSolver::~SharedSolver() {
+  delete d_valuation;
 }
 
 bool SharedSolver::needsEqualityEngine(theory::EeSetupInfo& esi)
@@ -61,7 +66,7 @@ void SharedSolver::preRegisterShared(TNode t, bool multipleTheories)
     theory->getAuxiliarySharedTerms(t, sharedTerms);
     for (Node n : sharedTerms)
     {
-      n = Rewriter::rewrite(n);
+      n = d_valuation->getPreprocessedTerm(n);
       Trace("polite-optimization")
           << "preRegisterShared: really adding shared term: " << n << std::endl;
       Trace("polite-optimization")

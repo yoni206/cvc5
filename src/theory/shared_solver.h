@@ -45,7 +45,7 @@ class SharedSolver
 {
  public:
   SharedSolver(TheoryEngine& te, ProofNodeManager* pnm);
-  virtual ~SharedSolver() {}
+  virtual ~SharedSolver();
   //------------------------------------- initialization
   /**
    * Returns true if we need an equality engine, this has the same contract
@@ -133,6 +133,9 @@ class SharedSolver
    */
   typedef context::CDHashSet<Node, NodeHashFunction> NodeSet;
   NodeSet d_keep;
+
+  /** A Valuation object */
+  Valuation* d_valuation;
 };
 
 }  // namespace theory
