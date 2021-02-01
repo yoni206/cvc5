@@ -12,6 +12,26 @@ header = "options/smt_options.h"
   help       = "dump preprocessed assertions, etc., see --dump=help"
 
 [[option]]
+  name       = "politeOptimize"
+  smt_name   = "polite-optimize"
+  category   = "experimental"
+  long       = "polite-optimize=MODE"
+  type       = "PoliteOptimizationMode"
+  default    = "NONE"
+  read_only  = true
+  help       = "turn on optimization for polite combination with a mode"
+  help_mode       = "turn on optimization for polite combination with a mode"
+[[option.mode.NONE]]
+  name = "none"
+  help = "Do not optimize polite combination"
+[[option.mode.COARSE]]
+  name = "coarse"
+  help = "Optimize only when no finite type exist"
+[[option.mode.FINE]]
+  name = "fine"
+  help = "Optimize whenever possible"
+
+[[option]]
   name       = "dumpToFileName"
   smt_name   = "dump-to"
   category   = "common"

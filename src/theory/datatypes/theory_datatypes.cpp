@@ -89,34 +89,36 @@ TheoryDatatypes::~TheoryDatatypes() {
 void TheoryDatatypes::getAuxiliarySharedTerms(Node atom,
                                               std::vector<Node>& sharedTerms)
 {
-  NodeManager* nm = NodeManager::currentNM();
-  if (atom.getKind() == APPLY_TESTER)
-  {
-    // get the constructor and datatype related to the tester
-    size_t cindex = utils::isTester(atom);
-    Assert(cindex >= 0);
-    const DType& dt = utils::datatypeOf(atom.getOperator());
-    const DTypeConstructor& c = dt[cindex];
-    // atom = is_c(x)
-    // dtTerm := x
-    Node dtTerm = atom[0];
-    TypeNode tn = dtTerm.getType();
-    for (unsigned i = 0, nargs = c.getNumArgs(); i < nargs; i++)
+  if (options::politeOptimize() == options::PoliteOptimizationMode::FINE) {
+    NodeManager* nm = NodeManager::currentNM(); 
+    if (atom.getKind() == APPLY_TESTER)
     {
-      Node st = nm->mkNode(
-          APPLY_SELECTOR_TOTAL, c.getSelectorInternal(tn, i), dtTerm);
-      Trace("polite-optimization")
-          << "getAuxiliarySharedTerms: considering adding shared term:" << st
-          << std::endl;
-      if (st.getType().isFinite()) {
+      // get the constructor and datatype related to the tester
+      size_t cindex = utils::isTester(atom);
+      Assert(cindex >= 0);
+      const DType& dt = utils::datatypeOf(atom.getOperator());
+      const DTypeConstructor& c = dt[cindex];
+      // atom = is_c(x)
+      // dtTerm := x
+      Node dtTerm = atom[0];
+      TypeNode tn = dtTerm.getType();
+      for (unsigned i = 0, nargs = c.getNumArgs(); i < nargs; i++)
+      {
+        Node st = nm->mkNode(
+            APPLY_SELECTOR_TOTAL, c.getSelectorInternal(tn, i), dtTerm);
         Trace("polite-optimization")
-            << "getAuxiliarySharedTerms: adding shared term:" << st
+            << "getAuxiliarySharedTerms: considering adding shared term:" << st
             << std::endl;
-        sharedTerms.push_back(st);
+        if (st.getType().isFinite()) {
+          Trace("polite-optimization")
+              << "getAuxiliarySharedTerms: adding shared term:" << st
+              << std::endl;
+          sharedTerms.push_back(st);
+        }
       }
     }
-    }
   }
+}
 
 TheoryRewriter* TheoryDatatypes::getTheoryRewriter() { return &d_rewriter; }
 
@@ -1590,9 +1592,15 @@ void TheoryDatatypes::instantiate( EqcInfo* eqc, Node n ){
   // may contribute to conflicts due to cardinality (good examples of this are
   // regress0/datatypes/dt-param-card4-bool-sat.smt2 and
   // regress0/datatypes/list-bool.smt2).
-  //
-  // Having said all that: we are trying to never force the lemma.
-  bool forceLemma = false;
+  bool forceLemma;
+  if (options::politeOptimize() == options::PoliteOptimizationMode::NONE) {
+    forceLemma = true;
+  } else if (options::politeOptimize() == options::PoliteOptimizationMode::COARSE) {
+    forceLemma = dt[index].hasFiniteExternalArgType(ttn);
+  } else {
+    Assert(options::politeOptimize() == options::PoliteOptimizationMode::FINE);
+    forceLemma = false;
+  }
   Trace("datatypes-infer-debug") << "DtInstantiate : " << eqc << " " << eq
                                  << " forceLemma = " << forceLemma << std::endl;
   d_im.addPendingInference(eq, exp, forceLemma, InferId::INST);
