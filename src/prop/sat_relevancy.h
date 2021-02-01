@@ -46,7 +46,7 @@ class RlvWaitInfo
   }
   ~RlvWaitInfo() {}
   /** The parents that we impact */
-  context::CDList<Node> d_parents;
+  context::CDList<TNode> d_parents;
   /** The child polarity in the parent */
   context::CDList<bool> d_childPol;
 };
@@ -57,7 +57,7 @@ class RlvWaitInfo
 class SatRelevancy
 {
   typedef context::
-      CDHashMap<Node, std::shared_ptr<RlvWaitInfo>, NodeHashFunction>
+      CDHashMap<TNode, std::shared_ptr<RlvWaitInfo>, TNodeHashFunction>
           RlvWaitMap;
 
  public:
@@ -96,7 +96,7 @@ class SatRelevancy
    */
   void notifyAsserted(const SatLiteral& l, context::CDQueue<TNode>& queue);
   /** check */
-  void check(theory::Theory::Effort effort);
+  void check(theory::Theory::Effort effort, context::CDQueue<TNode>& queue);
 
  private:
   /**
@@ -135,7 +135,7 @@ class SatRelevancy
   /**
    * The set of formulas that are asserted (user-context dependent).
    */
-  context::CDList<Node> d_asserted;
+  context::CDList<TNode> d_asserted;
   /**
    * The set of asserted formulas that have been marked relevant (SAT-context
    * dependent).
@@ -161,6 +161,9 @@ class SatRelevancy
   bool d_isActiveTmp;
   context::CDO<uint64_t> d_numAsserts;
   context::CDO<uint64_t> d_numAssertsRlv;
+  /**
+   */
+  context::CDHashSet<Node, NodeHashFunction> d_enqueued;
 };
 
 }  // namespace prop

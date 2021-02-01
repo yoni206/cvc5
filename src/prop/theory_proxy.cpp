@@ -122,6 +122,10 @@ void TheoryProxy::variableNotify(SatVariable var) {
 }
 
 void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
+  if (d_satRlv != nullptr)
+  {
+    d_satRlv->check(effort, d_queue);
+  }
   while (!d_queue.empty()) {
     TNode assertion = d_queue.front();
     d_queue.pop();
@@ -138,10 +142,6 @@ void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
   }
   // check with the theory engine
   d_theoryEngine->check(effort);
-  if (d_satRlv != nullptr)
-  {
-    d_satRlv->check(effort);
-  }
 }
 
 void TheoryProxy::theoryPropagate(std::vector<SatLiteral>& output) {

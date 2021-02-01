@@ -36,7 +36,8 @@ SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
       d_justify(context),
       d_rlvWaitMap(context),
       d_numAsserts(context, 0),
-      d_numAssertsRlv(context, 0)
+      d_numAssertsRlv(context, 0),
+      d_enqueued(context)
 {
   // FIXME
   d_isActiveTmp = true;
@@ -46,6 +47,8 @@ SatRelevancy::~SatRelevancy() {}
 
 void SatRelevancy::notifyAssertion(TNode a)
 {
+  // not used currently
+  AlwaysAssert(false);
   // Mark each assertion as relevant. Notice we use a null queue since nothing
   // should have SAT values yet.
   Trace("sat-rlv") << "notifyAssertion: " << a << std::endl;
@@ -61,22 +64,21 @@ void SatRelevancy::notifyLemma(TNode lem, context::CDQueue<TNode>& queue)
   // when we backtrack
   Trace("sat-rlv") << "notifyLemma: " << lem << std::endl;
   d_asserted.push_back(lem);
-  ensureLemmasRelevant(&queue);
+  Trace("sat-rlv") << "notifyLemma: finished" << std::endl;
 }
 
 void SatRelevancy::notifyActivatedSkolemDef(TNode n,
                                             context::CDQueue<TNode>& queue)
 {
   Trace("sat-rlv") << "notifyActivatedSkolemDef: " << n << std::endl;
-  ensureLemmasRelevant(&queue);
   // set the lemma is currently relevant
   setRelevant(n, &queue);
+  Trace("sat-rlv") << "notifyActivatedSkolemDef: finished" << std::endl;
 }
 
 void SatRelevancy::notifyAsserted(const SatLiteral& l,
                                   context::CDQueue<TNode>& queue)
 {
-  ensureLemmasRelevant(&queue);
   TNode n = d_cnfStream->getNode(l);
   Trace("sat-rlv") << "notifyAsserted: " << n << std::endl;
   if (!d_isActiveTmp)
@@ -130,6 +132,8 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
       {
         queue.push(n);
       }
+      AlwaysAssert (d_enqueued.find(atom)==d_enqueued.end());
+      d_enqueued.insert(atom);
       d_numAssertsRlv.set(d_numAssertsRlv + 1);
     }
     // otherwise we will assert if the literal gets marked as relevant
@@ -139,7 +143,7 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
     // based on parents, this formula is now relevant and is not a theory atom
     setRelevant(n, &queue);
   }
-  Trace("sat-rlv-debug") << "  ...finished" << std::endl;
+  Trace("sat-rlv") << "notifyAsserted: finished" << std::endl;
 }
 
 void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
@@ -179,8 +183,8 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
           // asserted?
           bool justified = false;
           bool value;
-          std::vector<Node> acb;
-          for (const Node& ac : atom)
+          std::vector<TNode> acb;
+          for (TNode ac : atom)
           {
             if (hasSatValue(ac, value))
             {
@@ -207,7 +211,7 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
           if (!justified)
           {
             // for all children that do not yet have values
-            for (const Node& ac : acb)
+            for (TNode ac : acb)
             {
               addParentRlvWait(ac, n);
             }
@@ -229,7 +233,7 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
           // asserted?
           bool justified = false;
           bool value;
-          std::vector<Node> acb;
+          std::vector<TNode> acb;
           std::vector<size_t> acbi;
           for (size_t i = 0; i < 2; i++)
           {
@@ -348,6 +352,8 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
     {
       queue->push(alit);
     }
+    AlwaysAssert (d_enqueued.find(atom)==d_enqueued.end());
+    d_enqueued.insert(atom);
     d_numAssertsRlv.set(d_numAssertsRlv + 1);
   }
 }
@@ -487,17 +493,21 @@ void SatRelevancy::ensureLemmasRelevant(context::CDQueue<TNode>* queue)
   {
     return;
   }
+  Trace("sat-rlv") << "ensureLemmasRelevant" << std::endl;
   while (index < numAsserts)
   {
     TNode lem = d_asserted[index];
+    Trace("sat-rlv") << "ensureLemmaRelevant: " << lem << std::endl;
     d_assertedRlv.insert(lem);
     setRelevant(lem, queue);
     index++;
   }
+  Trace("sat-rlv") << "...finished ensureLemmasRelevant" << std::endl;
 }
 
-void SatRelevancy::check(theory::Theory::Effort effort)
+void SatRelevancy::check(theory::Theory::Effort effort, context::CDQueue<TNode>& queue)
 {
+  ensureLemmasRelevant(&queue);
   if (Trace.isOn("sat-rlv-summary"))
   {
     if (theory::Theory::fullEffort(effort))
