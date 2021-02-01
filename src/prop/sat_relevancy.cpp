@@ -190,7 +190,8 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
                 // relevant and are done. Notice the polarity (pol) is important
                 //   ac = false justifies an AND parent being false,
                 //   ac = true justifies an OR parent being true.
-                Trace("sat-rlv-debug") << "  ...justified already by " << ac << std::endl;
+                Trace("sat-rlv-debug")
+                    << "  ...justified already by " << ac << std::endl;
                 setRelevant(ac, pol, queue);
                 justified = true;
                 break;
@@ -230,15 +231,16 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
           bool value;
           std::vector<Node> acb;
           std::vector<size_t> acbi;
-          for (size_t i=0; i<2; i++)
+          for (size_t i = 0; i < 2; i++)
           {
             TNode ac = atom[i];
             if (hasSatValue(ac, value))
             {
               // does the child make the IMPLIES true?
-              if (value == (i==1))
+              if (value == (i == 1))
               {
-                Trace("sat-rlv-debug") << "  ...justified already by " << ac << std::endl;
+                Trace("sat-rlv-debug")
+                    << "  ...justified already by " << ac << std::endl;
                 setRelevant(ac, value, queue);
                 justified = true;
                 break;
@@ -255,10 +257,10 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
           if (!justified)
           {
             // for all children that do not yet have values
-            for (size_t i=0, acbs = acb.size(); i<acbs; i++)
+            for (size_t i = 0, acbs = acb.size(); i < acbs; i++)
             {
               TNode ac = acb[i];
-              Node acc = acbi[i]==0 ? ac.negate() : Node(ac);
+              Node acc = acbi[i] == 0 ? ac.negate() : Node(ac);
               addParentRlvWait(acc, n);
             }
           }
