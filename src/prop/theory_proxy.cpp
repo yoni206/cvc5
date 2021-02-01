@@ -126,6 +126,7 @@ void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
     d_theoryEngine->assertFact(assertion);
     if (d_skdm != nullptr)
     {
+      Trace("sat-rlv-assert") << "Assert to theory engine: " << assertion << std::endl;
       // assertion processed makes all skolems in assertion active,
       // which triggers lemmas becoming active
       d_skdm->notifyAsserted(assertion, d_queue);

@@ -37,7 +37,7 @@ SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
       d_rlvWaitMap(context)
 {
   // FIXME
-  d_isActiveTmp = false;
+  d_isActiveTmp = true;
 }
 
 SatRelevancy::~SatRelevancy() {}
