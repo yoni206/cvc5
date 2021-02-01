@@ -203,6 +203,8 @@ void PropEngine::assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p)
 {
   bool removable = isLemmaPropertyRemovable(p);
 
+  Trace("prop-lemma") << "Lemma, input: " << tlemma << ", property = " << p
+                    << std::endl;
   // call preprocessor
   std::vector<theory::TrustNode> ppLemmas;
   std::vector<Node> ppSkolems;
@@ -224,12 +226,12 @@ void PropEngine::assertLemma(theory::TrustNode tlemma, theory::LemmaProperty p)
     }
   }
 
-  if (Trace.isOn("te-lemma"))
+  if (Trace.isOn("prop-lemma"))
   {
-    Trace("te-lemma") << "Lemma, output: " << tplemma.getProven() << std::endl;
+    Trace("prop-lemma") << "Lemma, output: " << tplemma.getProven() << std::endl;
     for (size_t i = 0, lsize = ppLemmas.size(); i < lsize; ++i)
     {
-      Trace("te-lemma") << "Lemma, new lemma: " << ppLemmas[i].getProven()
+      Trace("prop-lemma") << "Lemma, new lemma: " << ppLemmas[i].getProven()
                         << " (skolem is " << ppSkolems[i] << ")" << std::endl;
     }
   }

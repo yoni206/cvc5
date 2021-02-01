@@ -33,6 +33,7 @@ SkolemDefManager::~SkolemDefManager() {}
 void SkolemDefManager::notifySkolemDefinition(TNode skolem, TNode def)
 {
   Assert(d_skDefs.find(skolem) == d_skDefs.end());
+  Trace("sk-defs") << "notifySkolemDefinition: " << def << " for " << skolem << std::endl;
   d_skDefs[skolem] = def;
 }
 
@@ -51,7 +52,7 @@ void SkolemDefManager::notifyAsserted(TNode literal,
     }
     d_skActive.insert(k);
     it = d_skDefs.find(k);
-    Assert(it != d_skDefs.end());
+    AlwaysAssert(it != d_skDefs.end()) << "No skolem def for " << k << " in " << literal;
     // defs.push_back(it->second);
     d_satRlv->notifyActivatedSkolemDef(it->second, queue);
   }

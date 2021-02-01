@@ -1319,8 +1319,6 @@ void TheoryEngine::lemma(theory::TrustNode tlemma,
   // get the node
   Node node = tlemma.getNode();
   Node lemma = tlemma.getProven();
-  Trace("te-lemma") << "Lemma, input: " << lemma << ", property = " << p
-                    << std::endl;
 
   Assert(!expr::hasFreeVar(lemma));
 
