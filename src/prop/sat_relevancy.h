@@ -120,6 +120,8 @@ class SatRelevancy
    * Add parent to the relevant waiting parents of n.
    */
   void addParentRlvWait(TNode n, TNode parent);
+  /** Ensure lemmas relevant */
+  void ensureLemmasRelevant(context::CDQueue<TNode>* queue);
   /** Pointer to the SAT solver */
   CDCLTSatSolverInterface* d_satSolver;
   /** Pointer to the SAT context */
@@ -129,7 +131,7 @@ class SatRelevancy
   /**
    * The set of formulas that are asserted (user-context dependent).
    */
-  context::CDHashSet<Node, NodeHashFunction> d_asserted;
+  context::CDList<Node> d_asserted;
   /**
    * The set of asserted formulas that have been marked relevant (SAT-context
    * dependent).

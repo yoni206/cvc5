@@ -46,32 +46,35 @@ void SatRelevancy::notifyAssertion(TNode a)
 {
   // Mark each assertion as relevant. Notice we use a null queue since nothing
   // should have SAT values yet.
-  d_asserted.insert(a);
-  d_assertedRlv.insert(a);
   Trace("sat-rlv") << "notifyAssertion: " << a << std::endl;
+  Assert (d_asserted.size()==d_assertedRlv.size());
+  d_asserted.push_back(a);
+  d_assertedRlv.insert(a);
   setRelevant(a, nullptr);
 }
 
 void SatRelevancy::notifyLemma(TNode lem, context::CDQueue<TNode>& queue)
 {
-  // TODO: relevancy is SAT-context dependent, need to double check lemmas
+  // relevancy is SAT-context dependent, need to double check lemmas
   // when we backtrack
   Trace("sat-rlv") << "notifyLemma: " << lem << std::endl;
-  d_asserted.insert(lem);
-  setRelevant(lem, &queue);
+  d_asserted.push_back(lem);
+  ensureLemmasRelevant(&queue);
 }
 
 void SatRelevancy::notifyActivatedSkolemDef(TNode n,
                                             context::CDQueue<TNode>& queue)
 {
   Trace("sat-rlv") << "notifyActivatedSkolemDef: " << n << std::endl;
-  // set the lemma is relevant
+  ensureLemmasRelevant(&queue);
+  // set the lemma is currently relevant
   setRelevant(n, &queue);
 }
 
 void SatRelevancy::notifyAsserted(const SatLiteral& l,
                                   context::CDQueue<TNode>& queue)
 {
+  ensureLemmasRelevant(&queue);
   TNode n = d_cnfStream->getNode(l);
   Trace("sat-rlv") << "notifyAsserted: " << n << std::endl;
   if (!d_isActiveTmp)
@@ -300,7 +303,7 @@ bool SatRelevancy::hasSatValue(TNode node, bool& value) const
 {
   // special case for top-level assertions, which may not have literals since
   // CNF does not introduce intermediate literals for some top-level formulas
-  if (d_asserted.find(node) != d_asserted.end())
+  if (d_assertedRlv.find(node) != d_assertedRlv.end())
   {
     value = true;
     return true;
@@ -412,6 +415,23 @@ bool SatRelevancy::setAssertedChild(TNode atom,
     break;
   }
   return false;
+}
+
+void SatRelevancy::ensureLemmasRelevant(context::CDQueue<TNode>* queue)
+{
+  size_t index = d_assertedRlv.size();
+  size_t numAsserts = d_asserted.size();
+  if (index>=numAsserts)
+  {
+    return;
+  }
+  while (index<numAsserts)
+  {
+    TNode lem = d_asserted[index];
+    d_assertedRlv.insert(lem);
+    setRelevant(lem, queue);
+    index++;
+  }
 }
 
 }  // namespace prop
