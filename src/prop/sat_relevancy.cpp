@@ -34,7 +34,9 @@ SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
       d_assertedRlv(context),
       d_rlv(context),
       d_justify(context),
-      d_rlvWaitMap(context)
+      d_rlvWaitMap(context),
+      d_numAsserts(context, 0),
+      d_numAssertsRlv(context,0)
 {
   // FIXME
   d_isActiveTmp = true;
@@ -118,6 +120,7 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
   // note that notify formulas are in terms of atoms
   if (!d_cnfStream->isNotifyFormula(atom))
   {
+    d_numAsserts.set(d_numAsserts+1);
     // we are a theory literal
     // if we became relevant due to a parent, or are already relevant, enqueue
     if (nrlv || d_rlv.find(n) != d_rlv.end())
@@ -127,6 +130,7 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
       {
         queue.push(n);
       }
+      d_numAssertsRlv.set(d_numAssertsRlv+1);
     }
     // otherwise we will assert if the literal gets marked as relevant
   }
@@ -233,6 +237,8 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
       case XOR:
       {
         Assert(atom.getNumChildren() == 2);
+        // notify formulas of kind EQUAL should only be Boolean (IFF)
+        Assert(atom[0].getType().isBoolean());
         // do we have values for either of the children?
         bool value;
         if (hasSatValue(atom[0], value))
@@ -288,6 +294,7 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
     {
       queue->push(alit);
     }
+    d_numAssertsRlv.set(d_numAssertsRlv+1);
   }
 }
 
@@ -337,7 +344,7 @@ void SatRelevancy::addParentRlvWait(TNode n, TNode parent)
   else
   {
     rwi = std::make_shared<RlvWaitInfo>(d_context);
-    d_rlvWaitMap.insert(n, rwi);
+    d_rlvWaitMap.insert(atom, rwi);
   }
   rwi->d_parents.push_back(parent);
   rwi->d_childPol.push_back(pol);
@@ -431,6 +438,17 @@ void SatRelevancy::ensureLemmasRelevant(context::CDQueue<TNode>* queue)
     d_assertedRlv.insert(lem);
     setRelevant(lem, queue);
     index++;
+  }
+}
+
+void SatRelevancy::check(theory::Theory::Effort effort)
+{
+  if (Trace.isOn("sat-rlv-summary"))
+  {
+    if (theory::Theory::fullEffort(effort))
+    {
+      Trace("sat-rlv-summary") << "SatRelevancy::check(" << effort << "): " << d_numAssertsRlv.get() << "/" << d_numAsserts.get() << " assertions relevant" << std::endl;
+    }
   }
 }
 

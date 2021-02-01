@@ -85,7 +85,10 @@ void TheoryProxy::notifyAssertion(TNode a, TNode skolem)
     if (skolem.isNull())
     {
       // an input assertion
-      d_satRlv->notifyAssertion(a);
+      // NOTE: we don't currently distinguish input from lemmas since unit
+      // input formulas trigger assertions before input, thus, adding a formula
+      // may trigger assertions to add to d_queue already here.
+      d_satRlv->notifyLemma(a, d_queue);
     }
     else
     {
@@ -135,6 +138,10 @@ void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
   }
   // check with the theory engine
   d_theoryEngine->check(effort);
+  if (d_satRlv!=nullptr)
+  {
+    d_satRlv->check(effort);
+  }
 }
 
 void TheoryProxy::theoryPropagate(std::vector<SatLiteral>& output) {

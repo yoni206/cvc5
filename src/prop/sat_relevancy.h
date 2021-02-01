@@ -19,10 +19,12 @@
 
 #include "context/cdhashmap.h"
 #include "context/cdhashset.h"
+#include "context/cdo.h"
 #include "context/cdlist.h"
 #include "context/cdqueue.h"
 #include "expr/node.h"
 #include "prop/sat_solver.h"
+#include "theory/theory.h"
 #include "util/statistics_registry.h"
 
 namespace CVC4 {
@@ -93,7 +95,8 @@ class SatRelevancy
    * may trigger multiple literals to be added to queue.
    */
   void notifyAsserted(const SatLiteral& l, context::CDQueue<TNode>& queue);
-
+  /** check */
+  void check(theory::Theory::Effort effort);
  private:
   /**
    * Set that n is relevant, add new theory literals to assert to TheoryEngine
@@ -155,6 +158,8 @@ class SatRelevancy
   RlvWaitMap d_rlvWaitMap;
   // debugging
   bool d_isActiveTmp;
+  context::CDO<uint64_t> d_numAsserts;
+  context::CDO<uint64_t> d_numAssertsRlv;
 };
 
 }  // namespace prop
