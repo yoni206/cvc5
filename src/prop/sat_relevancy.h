@@ -19,8 +19,8 @@
 
 #include "context/cdhashmap.h"
 #include "context/cdhashset.h"
-#include "context/cdo.h"
 #include "context/cdlist.h"
+#include "context/cdo.h"
 #include "context/cdqueue.h"
 #include "expr/node.h"
 #include "prop/sat_solver.h"
@@ -97,6 +97,7 @@ class SatRelevancy
   void notifyAsserted(const SatLiteral& l, context::CDQueue<TNode>& queue);
   /** check */
   void check(theory::Theory::Effort effort);
+
  private:
   /**
    * Set that n is relevant, add new theory literals to assert to TheoryEngine

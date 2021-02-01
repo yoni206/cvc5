@@ -138,7 +138,7 @@ void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
   }
   // check with the theory engine
   d_theoryEngine->check(effort);
-  if (d_satRlv!=nullptr)
+  if (d_satRlv != nullptr)
   {
     d_satRlv->check(effort);
   }
