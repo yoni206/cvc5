@@ -47,7 +47,7 @@ void SatRelevancy::notifyAssertion(TNode a)
   // Mark each assertion as relevant. Notice we use a null queue since nothing
   // should have SAT values yet.
   Trace("sat-rlv") << "notifyAssertion: " << a << std::endl;
-  Assert (d_asserted.size()==d_assertedRlv.size());
+  Assert(d_asserted.size() == d_assertedRlv.size());
   d_asserted.push_back(a);
   d_assertedRlv.insert(a);
   setRelevant(a, nullptr);
@@ -421,11 +421,11 @@ void SatRelevancy::ensureLemmasRelevant(context::CDQueue<TNode>* queue)
 {
   size_t index = d_assertedRlv.size();
   size_t numAsserts = d_asserted.size();
-  if (index>=numAsserts)
+  if (index >= numAsserts)
   {
     return;
   }
-  while (index<numAsserts)
+  while (index < numAsserts)
   {
     TNode lem = d_asserted[index];
     d_assertedRlv.insert(lem);
