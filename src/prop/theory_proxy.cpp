@@ -213,7 +213,7 @@ SatLiteral TheoryProxy::getNextTheoryDecisionRequest() {
   // it becomes relevant in this context
   if (!n.isNull())
   {
-    if (d_satRlv!=nullptr)
+    if (d_satRlv != nullptr)
     {
       // also notify the SAT relevancy module, which will make this request
       // relevant

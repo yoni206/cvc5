@@ -77,7 +77,7 @@ void SatRelevancy::notifyActivatedSkolemDef(TNode n,
 }
 
 void SatRelevancy::notifyDecisionRequest(TNode n,
-                                            context::CDQueue<TNode>& queue)
+                                         context::CDQueue<TNode>& queue)
 {
   Trace("sat-rlv") << "notifyActivatedSkolemDef: " << n << std::endl;
   // set the lemma is currently relevant
@@ -136,7 +136,7 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
     // if we became relevant due to a parent, or are already relevant, enqueue
     if (nrlv || d_rlv.find(n) != d_rlv.end())
     {
-      if (d_enqueued.find(atom)==d_enqueued.end())
+      if (d_enqueued.find(atom) == d_enqueued.end())
       {
         Trace("sat-rlv") << "*** enqueue from assert " << n << std::endl;
         if (d_isActiveTmp)
@@ -357,7 +357,7 @@ void SatRelevancy::setRelevant(TNode n, context::CDQueue<TNode>* queue)
   {
     // now, enqueue it
     Assert(queue != nullptr);
-    if (d_enqueued.find(atom)==d_enqueued.end())
+    if (d_enqueued.find(atom) == d_enqueued.end())
     {
       Node alit = value ? Node(atom) : atom.notNode();
       Trace("sat-rlv") << "*** enqueue " << alit << std::endl;
@@ -518,7 +518,8 @@ void SatRelevancy::ensureLemmasRelevant(context::CDQueue<TNode>* queue)
   Trace("sat-rlv") << "...finished ensureLemmasRelevant" << std::endl;
 }
 
-void SatRelevancy::check(theory::Theory::Effort effort, context::CDQueue<TNode>& queue)
+void SatRelevancy::check(theory::Theory::Effort effort,
+                         context::CDQueue<TNode>& queue)
 {
   ensureLemmasRelevant(&queue);
   if (Trace.isOn("sat-rlv-summary"))
