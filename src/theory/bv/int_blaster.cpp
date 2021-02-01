@@ -25,6 +25,7 @@
 #include "expr/node.h"
 #include "expr/node_traversal.h"
 #include "expr/skolem_manager.h"
+#include "options/arith_options.h"
 #include "options/uf_options.h"
 #include "theory/bv/theory_bv_rewrite_rules_operator_elimination.h"
 #include "theory/bv/theory_bv_rewrite_rules_simplification.h"
@@ -1001,6 +1002,14 @@ IntBlaster::IntBlaster(context::Context* c,
   d_nm = NodeManager::currentNM();
   d_zero = d_nm->mkConst<Rational>(0);
   d_one = d_nm->mkConst<Rational>(1);
+  // make sure nl-ext-tplanes is set,
+  // unless specified otherwise by the user
+  if (!options::nlExtTangentPlanes.wasSetByUser())
+  {
+    Trace("int-blaster") << "setting nlExtTangentPlanesInterleave to true"
+                         << std::endl;
+    options::nlExtTangentPlanes.set(true);
+  }
 };
 
 Node IntBlaster::createShiftNode(std::vector<Node> children,
