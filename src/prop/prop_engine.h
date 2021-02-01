@@ -309,6 +309,11 @@ class PropEngine
                       bool removable,
                       bool input,
                       ProofGenerator* pg = nullptr);
+  void assertLemmasInternal(
+    theory::TrustNode trn,
+  const std::vector<theory::TrustNode>& ppLemmas,
+  const std::vector<Node>& ppSkolems,
+  bool removable);
 
   /**
    * Indicates that the SAT solver is currently solving something and we should
