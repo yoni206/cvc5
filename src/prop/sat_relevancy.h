@@ -65,7 +65,10 @@ class RlvInfo
 {
  public:
   RlvInfo(context::Context* context)
-      : d_parents(context), d_parentPol(context), d_childPol(context), d_rlvp(context, RlvProperty::NONE)
+      : d_parents(context),
+        d_parentPol(context),
+        d_childPol(context),
+        d_rlvp(context, RlvProperty::NONE)
   {
   }
   ~RlvInfo() {}
@@ -84,9 +87,8 @@ class RlvInfo
  */
 class SatRelevancy
 {
-  typedef context::
-      CDHashMap<TNode, std::shared_ptr<RlvInfo>, TNodeHashFunction>
-          RlvMap;
+  typedef context::CDHashMap<TNode, std::shared_ptr<RlvInfo>, TNodeHashFunction>
+      RlvMap;
 
  public:
   SatRelevancy(CDCLTSatSolverInterface* satSolver,
@@ -129,8 +131,8 @@ class SatRelevancy
   void notifyDecisionRequest(TNode n, context::CDQueue<TNode>& queue);
 
  private:
-   /** Get or mk rlv info */
-   RlvInfo* getOrMkRlvInfo(TNode n);
+  /** Get or mk rlv info */
+  RlvInfo* getOrMkRlvInfo(TNode n);
   /**
    * Set that n is relevant, add new theory literals to assert to TheoryEngine
    * in queue.

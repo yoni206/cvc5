@@ -22,7 +22,7 @@ using namespace CVC4::kind;
 
 namespace CVC4 {
 namespace prop {
-  
+
 bool isRlvPropertyRlvPos(RlvProperty p)
 {
   return (p & RlvProperty::RLV_POS) != RlvProperty::NONE;
@@ -51,7 +51,7 @@ bool isRlvPropertyInput(RlvProperty p)
 RlvProperty operator|(RlvProperty lhs, RlvProperty rhs)
 {
   return static_cast<RlvProperty>(static_cast<uint32_t>(lhs)
-                                    | static_cast<uint32_t>(rhs));
+                                  | static_cast<uint32_t>(rhs));
 }
 RlvProperty& operator|=(RlvProperty& lhs, RlvProperty rhs)
 {
@@ -61,7 +61,7 @@ RlvProperty& operator|=(RlvProperty& lhs, RlvProperty rhs)
 RlvProperty operator&(RlvProperty lhs, RlvProperty rhs)
 {
   return static_cast<RlvProperty>(static_cast<uint32_t>(lhs)
-                                    & static_cast<uint32_t>(rhs));
+                                  & static_cast<uint32_t>(rhs));
 }
 RlvProperty& operator&=(RlvProperty& lhs, RlvProperty rhs)
 {
@@ -457,14 +457,17 @@ bool SatRelevancy::hasSatValue(TNode node, bool& value) const
   return false;
 }
 
-void SatRelevancy::addParentRlvWait(TNode n, bool pol, TNode parentAtom, bool ppol)
+void SatRelevancy::addParentRlvWait(TNode n,
+                                    bool pol,
+                                    TNode parentAtom,
+                                    bool ppol)
 {
-  if (n.getKind()==NOT)
+  if (n.getKind() == NOT)
   {
     pol = !pol;
     n = n[0];
   }
-  RlvInfo * rwi = getOrMkRlvInfo(n);
+  RlvInfo* rwi = getOrMkRlvInfo(n);
   rwi->d_parents.push_back(parentAtom);
   rwi->d_parentPol.push_back(ppol);
   rwi->d_childPol.push_back(pol);
@@ -481,7 +484,6 @@ RlvInfo* SatRelevancy::getOrMkRlvInfo(TNode n)
   std::shared_ptr<RlvInfo> rwi = std::make_shared<RlvInfo>(d_context);
   d_rlvMap.insert(n, rwi);
   return rwi.get();
-  
 }
 
 bool SatRelevancy::setAssertedChild(TNode atom,
