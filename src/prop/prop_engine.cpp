@@ -278,14 +278,10 @@ void PropEngine::assertLemmasInternal(
   if (!trn.isNull())
   {
     assertTrustedLemmaInternal(trn, removable);
-    // notify the theory proxy of the lemma
-    d_theoryProxy->notifyLemma(trn.getProven());
   }
-  Assert(ppSkolems.size() == ppLemmas.size());
-  for (size_t i = 0, lsize = ppLemmas.size(); i < lsize; ++i)
+  for (const theory::TrustNode& tnl : ppLemmas)
   {
-    assertTrustedLemmaInternal(ppLemmas[i], removable);
-    d_theoryProxy->notifyLemma(ppLemmas[i].getProven(), ppSkolems[i]);
+    assertTrustedLemmaInternal(tnl, removable);
   }
   // assert to decision engine
   if (!removable)
@@ -295,11 +291,16 @@ void PropEngine::assertLemmasInternal(
     if (!trn.isNull())
     {
       assertions.push_back(trn.getProven());
+      // notify the theory proxy of the lemma
+      d_theoryProxy->notifyLemma(trn.getProven());
     }
+    Assert(ppSkolems.size() == ppLemmas.size());
     std::vector<Node> ppLemmasF;
-    for (const theory::TrustNode& tnl : ppLemmas)
+    for (size_t i = 0, lsize = ppLemmas.size(); i < lsize; ++i)
     {
-      ppLemmasF.push_back(tnl.getProven());
+      Node lem = ppLemmas[i].getProven();
+      ppLemmasF.push_back(lem);
+      d_theoryProxy->notifyLemma(lem, ppSkolems[i]);
     }
     d_decisionEngine->addAssertions(assertions, ppLemmasF, ppSkolems);
   }
