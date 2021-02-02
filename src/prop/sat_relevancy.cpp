@@ -76,8 +76,9 @@ SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
     : d_satSolver(satSolver),
       d_context(context),
       d_cnfStream(cnfStream),
-      d_asserted(userContext),
-      d_assertedRlv(context),
+      d_inputs(userContext),
+      d_numInputs(userContext, 0),
+      d_inputsRlv(context),
       d_rlvPos(context),
       d_rlvNeg(context),
       d_justify(context),
@@ -99,9 +100,10 @@ void SatRelevancy::notifyAssertion(TNode a)
   // Mark each assertion as relevant. Notice we use a null queue since nothing
   // should have SAT values yet.
   Trace("sat-rlv") << "notifyAssertion: " << a << std::endl;
-  Assert(d_asserted.size() == d_assertedRlv.size());
-  d_asserted.push_back(a);
-  d_assertedRlv.insert(a);
+  Assert(d_inputs.size() == d_inputsRlv.size());
+  d_inputs.push_back(a);
+  d_inputsRlv.insert(a);
+  d_numInputs = d_numInputs + 1;
   setRelevant(a, true, nullptr);
 }
 
@@ -110,7 +112,7 @@ void SatRelevancy::notifyLemma(TNode lem, context::CDQueue<TNode>& queue)
   // relevancy is SAT-context dependent, need to double check lemmas
   // when we backtrack
   Trace("sat-rlv") << "notifyLemma: " << lem << std::endl;
-  d_asserted.push_back(lem);
+  d_inputs.push_back(lem);
   Trace("sat-rlv") << "notifyLemma: finished" << std::endl;
 }
 
@@ -436,7 +438,7 @@ bool SatRelevancy::hasSatValue(TNode node, bool& value) const
 {
   // special case for top-level assertions, which may not have literals since
   // CNF does not introduce intermediate literals for some top-level formulas
-  if (d_assertedRlv.find(node) != d_assertedRlv.end())
+  if (d_inputsRlv.find(node) != d_inputsRlv.end())
   {
     value = true;
     return true;
@@ -561,22 +563,23 @@ bool SatRelevancy::setAssertedChild(TNode atom,
 
 void SatRelevancy::ensureLemmasRelevant(context::CDQueue<TNode>* queue)
 {
-  size_t index = d_assertedRlv.size();
-  size_t numAsserts = d_asserted.size();
-  if (index >= numAsserts)
+  size_t index = d_inputsRlv.size();
+  size_t numInputs = d_inputs.size();
+  if (index >= numInputs)
   {
     return;
   }
   Trace("sat-rlv") << "ensureLemmasRelevant" << std::endl;
-  while (index < numAsserts)
+  while (index < numInputs)
   {
-    TNode lem = d_asserted[index];
+    TNode lem = d_inputs[index];
     Trace("sat-rlv") << "ensureLemmaRelevant: " << lem << std::endl;
-    d_assertedRlv.insert(lem);
+    d_inputsRlv.insert(lem);
     setRelevant(lem, true, queue);
     index++;
   }
   Trace("sat-rlv") << "...finished ensureLemmasRelevant" << std::endl;
+  d_numInputs = numInputs;
 }
 
 void SatRelevancy::check(theory::Theory::Effort effort,

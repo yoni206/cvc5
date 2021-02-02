@@ -170,12 +170,14 @@ class SatRelevancy
   /**
    * The set of formulas that are asserted (user-context dependent).
    */
-  context::CDList<TNode> d_asserted;
+  context::CDList<TNode> d_inputs;
+  /** the number of input formulas marked relevant */
+  context::CDO<uint64_t> d_numInputs;
   /**
    * The set of asserted formulas that have been marked relevant (SAT-context
    * dependent).
    */
-  context::CDHashSet<Node, NodeHashFunction> d_assertedRlv;
+  context::CDHashSet<Node, NodeHashFunction> d_inputsRlv;
   /**
    * The set of formulas that are relevant. Polarity matters, no double
    * negations.
