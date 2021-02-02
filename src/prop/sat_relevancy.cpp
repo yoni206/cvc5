@@ -86,15 +86,18 @@ bool RlvInfo::isInput(bool& pol) const
     pol = true;
     return true;
   }
-  else 
-  if ((d_rlvp.get() & RlvProperty::INPUT_NEG) != RlvProperty::NONE)
+  else if ((d_rlvp.get() & RlvProperty::INPUT_NEG) != RlvProperty::NONE)
   {
     pol = false;
     return true;
   }
   return false;
 }
-void RlvInfo::setInput(bool pol) { d_rlvp.set(d_rlvp.get() | (pol ? RlvProperty::INPUT_POS : RlvProperty::INPUT_NEG)); }
+void RlvInfo::setInput(bool pol)
+{
+  d_rlvp.set(d_rlvp.get()
+             | (pol ? RlvProperty::INPUT_POS : RlvProperty::INPUT_NEG));
+}
 
 SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
                            context::Context* context,
@@ -172,29 +175,29 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
   bool nrlv = false;
   // first, look at wait lists
   RlvInfo* ri = getOrMkRlvInfo(atom);
-    // we are going to iterate through each parent that is waiting
-    // on its value and possibly update relevancy
-    Assert(ri->d_parents.size() == ri->d_childPol.size());
-    for (size_t i = 0, nparents = ri->d_parents.size(); i < nparents; i++)
+  // we are going to iterate through each parent that is waiting
+  // on its value and possibly update relevancy
+  Assert(ri->d_parents.size() == ri->d_childPol.size());
+  for (size_t i = 0, nparents = ri->d_parents.size(); i < nparents; i++)
+  {
+    TNode parent = ri->d_parents[i];
+    bool ppol = ri->d_parentPol[i];
+    bool cpol = ri->d_childPol[i];
+    Trace("sat-rlv-debug") << "  look at parent: " << parent
+                           << ", cpol=" << cpol << std::endl;
+    // n makes a child of parent have value equal to (pol==cpol), where pol
+    // is the assigned value of the atom, and cpol is its polarity in the
+    // parent. For instance, (and (not A) B), when A is assigned true, we
+    // get that pol=true, cpol = false, and hence we notify that a child of
+    // AND is false.
+    if (setAssertedChild(atom, pol == cpol, parent, ppol, queue))
     {
-      TNode parent = ri->d_parents[i];
-      bool ppol = ri->d_parentPol[i];
-      bool cpol = ri->d_childPol[i];
-      Trace("sat-rlv-debug")
-          << "  look at parent: " << parent << ", cpol=" << cpol << std::endl;
-      // n makes a child of parent have value equal to (pol==cpol), where pol
-      // is the assigned value of the atom, and cpol is its polarity in the
-      // parent. For instance, (and (not A) B), when A is assigned true, we
-      // get that pol=true, cpol = false, and hence we notify that a child of
-      // AND is false.
-      if (setAssertedChild(atom, pol == cpol, parent, ppol, queue))
-      {
-        Trace("sat-rlv-debug") << "  ...now relevant" << std::endl;
-        // due to the above call, n is now relevant
-        nrlv = true;
-      }
+      Trace("sat-rlv-debug") << "  ...now relevant" << std::endl;
+      // due to the above call, n is now relevant
+      nrlv = true;
     }
-  
+  }
+
   // note that notify formulas are in terms of atoms
   if (!d_cnfStream->isNotifyFormula(atom))
   {
@@ -210,7 +213,7 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
         {
           queue.push(n);
         }
-        //d_enqueued.insert(atom);
+        // d_enqueued.insert(atom);
         ri->setEnqueued();
         d_numAssertsRlv.set(d_numAssertsRlv + 1);
       }
