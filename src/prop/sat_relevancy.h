@@ -41,12 +41,14 @@ class RlvWaitInfo
 {
  public:
   RlvWaitInfo(context::Context* context)
-      : d_parents(context), d_childPol(context)
+      : d_parents(context), d_parentPol(context), d_childPol(context)
   {
   }
   ~RlvWaitInfo() {}
   /** The parents that we impact */
   context::CDList<TNode> d_parents;
+  /** The polarity of the parent */
+  context::CDList<bool> d_parentPol;
   /** The child polarity in the parent */
   context::CDList<bool> d_childPol;
 };
@@ -105,8 +107,8 @@ class SatRelevancy
    * Set that n is relevant, add new theory literals to assert to TheoryEngine
    * in queue.
    */
-  void setRelevant(TNode n, context::CDQueue<TNode>* queue);
   void setRelevant(TNode n, bool pol, context::CDQueue<TNode>* queue);
+  void setRelevantInternal(TNode n, bool pol, context::CDQueue<TNode>* queue);
   /**
    * Set that atom has been assigned a value that makes a child of parent equal
    * to "pol", where parent is a term that was waiting for the value of atom.
@@ -119,13 +121,14 @@ class SatRelevancy
   bool setAssertedChild(TNode atom,
                         bool pol,
                         TNode parent,
+                                    bool ppol,
                         context::CDQueue<TNode>& queue);
   /** has SAT value, if node has a value, return true and set value */
   bool hasSatValue(TNode node, bool& value) const;
   /**
    * Add parent to the relevant waiting parents of n.
    */
-  void addParentRlvWait(TNode n, TNode parent);
+  void addParentRlvWait(TNode n, TNode parentAtom, bool ppol);
   /** Ensure lemmas relevant */
   void ensureLemmasRelevant(context::CDQueue<TNode>* queue);
   /** Pointer to the SAT solver */
@@ -147,7 +150,8 @@ class SatRelevancy
    * The set of formulas that are relevant. Polarity matters, no double
    * negations.
    */
-  context::CDHashSet<Node, NodeHashFunction> d_rlv;
+  context::CDHashSet<Node, NodeHashFunction> d_rlvPos;
+  context::CDHashSet<Node, NodeHashFunction> d_rlvNeg;
   /**
    * The set of formulas that have been justified that are in the range of
    * d_rlvWaitMap.
