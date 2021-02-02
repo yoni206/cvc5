@@ -79,6 +79,15 @@ void TheoryProxy::notifyPreprocessedAssertions(
   d_theoryEngine->notifyPreprocessedAssertions(assertions);
 }
 
+void TheoryProxy::presolve()
+{
+  d_theoryEngine->presolve();
+  if (d_satRlv != nullptr)
+  {
+    d_satRlv->presolve(d_queue);
+  }
+}
+
 void TheoryProxy::notifyAssertion(TNode a, TNode skolem)
 {
   if (d_satRlv != nullptr)

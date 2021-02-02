@@ -348,7 +348,7 @@ Result PropEngine::checkSat() {
   d_inCheckSat = true;
 
   // TODO This currently ignores conflicts (a dangerous practice).
-  d_theoryEngine->presolve();
+  d_theoryProxy->presolve();
 
   if(options::preprocessOnly()) {
     return Result(Result::SAT_UNKNOWN, Result::REQUIRES_FULL_CHECK);

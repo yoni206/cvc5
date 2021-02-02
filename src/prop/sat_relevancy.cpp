@@ -117,6 +117,11 @@ SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
 
 SatRelevancy::~SatRelevancy() {}
 
+void SatRelevancy::presolve(context::CDQueue<TNode>& queue)
+{
+  ensureLemmasRelevant(&queue);
+}
+
 void SatRelevancy::notifyAssertion(TNode a)
 {
   // not used currently

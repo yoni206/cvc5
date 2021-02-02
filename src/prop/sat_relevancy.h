@@ -112,6 +112,8 @@ class SatRelevancy
    * notifyAsserted are made in the current SAT context.
    */
   void notifyAssertion(TNode assertion);
+  /** presolve */
+  void presolve(context::CDQueue<TNode>& queue);
   /**
    * Notify that lem is a new lemma. This adds new literals that should be
    * asserted at this time to theory engine.
