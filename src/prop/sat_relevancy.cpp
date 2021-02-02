@@ -22,6 +22,52 @@ using namespace CVC4::kind;
 
 namespace CVC4 {
 namespace prop {
+  
+bool isRlvPropertyRlvPos(RlvProperty p)
+{
+  return (p & RlvProperty::RLV_POS) != RlvProperty::NONE;
+}
+
+bool isRlvPropertyRlvNeg(RlvProperty p)
+{
+  return (p & RlvProperty::RLV_NEG) != RlvProperty::NONE;
+}
+
+bool isRlvPropertyEnqueued(RlvProperty p)
+{
+  return (p & RlvProperty::ENQUEUED) != RlvProperty::NONE;
+}
+
+bool isRlvPropertyJustified(RlvProperty p)
+{
+  return (p & RlvProperty::JUSTIFIED) != RlvProperty::NONE;
+}
+
+bool isRlvPropertyInput(RlvProperty p)
+{
+  return (p & RlvProperty::INPUT) != RlvProperty::NONE;
+}
+
+RlvProperty operator|(RlvProperty lhs, RlvProperty rhs)
+{
+  return static_cast<RlvProperty>(static_cast<uint32_t>(lhs)
+                                    | static_cast<uint32_t>(rhs));
+}
+RlvProperty& operator|=(RlvProperty& lhs, RlvProperty rhs)
+{
+  lhs = lhs | rhs;
+  return lhs;
+}
+RlvProperty operator&(RlvProperty lhs, RlvProperty rhs)
+{
+  return static_cast<RlvProperty>(static_cast<uint32_t>(lhs)
+                                    & static_cast<uint32_t>(rhs));
+}
+RlvProperty& operator&=(RlvProperty& lhs, RlvProperty rhs)
+{
+  lhs = lhs & rhs;
+  return lhs;
+}
 
 SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
                            context::Context* context,
@@ -35,7 +81,7 @@ SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
       d_rlvPos(context),
       d_rlvNeg(context),
       d_justify(context),
-      d_rlvWaitMap(context),
+      d_rlvMap(context),
       d_numAsserts(context, 0),
       d_numAssertsRlv(context, 0),
       d_enqueued(context)
@@ -99,12 +145,12 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
   TNode atom = pol ? n : n[0];
   bool nrlv = false;
   // first, look at wait lists
-  RlvWaitMap::const_iterator it = d_rlvWaitMap.find(atom);
-  if (it != d_rlvWaitMap.end())
+  RlvMap::const_iterator it = d_rlvMap.find(atom);
+  if (it != d_rlvMap.end())
   {
     // we are going to iterate through each parent that is waiting
     // on its value and possibly update relevancy
-    RlvWaitInfo* rwi = it->second.get();
+    RlvInfo* rwi = it->second.get();
     Assert(rwi->d_parents.size() == rwi->d_childPol.size());
     for (size_t i = 0, nparents = rwi->d_parents.size(); i < nparents; i++)
     {
@@ -241,7 +287,7 @@ void SatRelevancy::setRelevantInternal(TNode atom,
             // for all children that do not yet have values
             for (TNode ac : acb)
             {
-              addParentRlvWait(ac, atom, pol);
+              addParentRlvWait(ac, true, atom, pol);
             }
           }
         }
@@ -291,9 +337,7 @@ void SatRelevancy::setRelevantInternal(TNode atom,
             // for all children that do not yet have values
             for (size_t i = 0, acbs = acb.size(); i < acbs; i++)
             {
-              TNode ac = acb[i];
-              Node acc = acbi[i] == 0 ? ac.negate() : Node(ac);
-              addParentRlvWait(acc, atom, pol);
+              addParentRlvWait(acb[i], acbi[i] == 1, atom, pol);
             }
           }
         }
@@ -315,7 +359,7 @@ void SatRelevancy::setRelevantInternal(TNode atom,
         else
         {
           // otherwise, we are waiting for the value of the condition
-          addParentRlvWait(atom[0], atom, pol);
+          addParentRlvWait(atom[0], true, atom, pol);
         }
       }
       break;
@@ -346,7 +390,7 @@ void SatRelevancy::setRelevantInternal(TNode atom,
           // neither have values, we are waiting
           for (size_t i = 0; i < 2; i++)
           {
-            addParentRlvWait(atom[i], atom, pol);
+            addParentRlvWait(atom[i], true, atom, pol);
           }
         }
       }
@@ -413,26 +457,31 @@ bool SatRelevancy::hasSatValue(TNode node, bool& value) const
   return false;
 }
 
-void SatRelevancy::addParentRlvWait(TNode n, TNode parentAtom, bool ppol)
+void SatRelevancy::addParentRlvWait(TNode n, bool pol, TNode parentAtom, bool ppol)
 {
-  bool pol = n.getKind() != NOT;
-  TNode atom = pol ? n : n[0];
-  RlvWaitMap::const_iterator it = d_rlvWaitMap.find(atom);
-  std::shared_ptr<RlvWaitInfo> rwi;
-  if (it != d_rlvWaitMap.end())
+  if (n.getKind()==NOT)
   {
-    rwi = it->second;
+    pol = !pol;
+    n = n[0];
   }
-  else
-  {
-    rwi = std::make_shared<RlvWaitInfo>(d_context);
-    d_rlvWaitMap.insert(atom, rwi);
-  }
+  RlvInfo * rwi = getOrMkRlvInfo(n);
   rwi->d_parents.push_back(parentAtom);
   rwi->d_parentPol.push_back(ppol);
   rwi->d_childPol.push_back(pol);
   Trace("sat-rlv-debug") << "  ...add parent rlv wait: " << n << " -> "
                          << parentAtom << ", ppol=" << ppol << std::endl;
+}
+RlvInfo* SatRelevancy::getOrMkRlvInfo(TNode n)
+{
+  RlvMap::const_iterator it = d_rlvMap.find(n);
+  if (it != d_rlvMap.end())
+  {
+    return it->second.get();
+  }
+  std::shared_ptr<RlvInfo> rwi = std::make_shared<RlvInfo>(d_context);
+  d_rlvMap.insert(n, rwi);
+  return rwi.get();
+  
 }
 
 bool SatRelevancy::setAssertedChild(TNode atom,

@@ -37,20 +37,46 @@ namespace prop {
 class CnfStream;
 class CDCLTSatSolverInterface;
 
-class RlvWaitInfo
+/** Properties of lemmas */
+enum class RlvProperty : uint32_t
+{
+  NONE = 0,
+  RLV_POS = 1,
+  RLV_NEG = 2,
+  ENQUEUED = 4,
+  JUSTIFIED = 8,
+  INPUT = 16
+};
+bool isRlvPropertyRlvPos(RlvProperty p);
+bool isRlvPropertyRlvNeg(RlvProperty p);
+bool isRlvPropertyEnqueued(RlvProperty p);
+bool isRlvPropertyJustified(RlvProperty p);
+bool isRlvPropertyInput(RlvProperty p);
+/** Define operator lhs | rhs */
+RlvProperty operator|(RlvProperty lhs, RlvProperty rhs);
+/** Define operator lhs |= rhs */
+RlvProperty& operator|=(RlvProperty& lhs, RlvProperty rhs);
+/** Define operator lhs & rhs */
+RlvProperty operator&(RlvProperty lhs, RlvProperty rhs);
+/** Define operator lhs &= rhs */
+RlvProperty& operator&=(RlvProperty& lhs, RlvProperty rhs);
+
+class RlvInfo
 {
  public:
-  RlvWaitInfo(context::Context* context)
-      : d_parents(context), d_parentPol(context), d_childPol(context)
+  RlvInfo(context::Context* context)
+      : d_parents(context), d_parentPol(context), d_childPol(context), d_rlvp(context, RlvProperty::NONE)
   {
   }
-  ~RlvWaitInfo() {}
+  ~RlvInfo() {}
   /** The parents that we impact */
   context::CDList<TNode> d_parents;
   /** The polarity of the parent */
   context::CDList<bool> d_parentPol;
   /** The child polarity in the parent */
   context::CDList<bool> d_childPol;
+  /** The properties */
+  context::CDO<RlvProperty> d_rlvp;
 };
 
 /**
@@ -59,8 +85,8 @@ class RlvWaitInfo
 class SatRelevancy
 {
   typedef context::
-      CDHashMap<TNode, std::shared_ptr<RlvWaitInfo>, TNodeHashFunction>
-          RlvWaitMap;
+      CDHashMap<TNode, std::shared_ptr<RlvInfo>, TNodeHashFunction>
+          RlvMap;
 
  public:
   SatRelevancy(CDCLTSatSolverInterface* satSolver,
@@ -103,6 +129,8 @@ class SatRelevancy
   void notifyDecisionRequest(TNode n, context::CDQueue<TNode>& queue);
 
  private:
+   /** Get or mk rlv info */
+   RlvInfo* getOrMkRlvInfo(TNode n);
   /**
    * Set that n is relevant, add new theory literals to assert to TheoryEngine
    * in queue.
@@ -128,7 +156,7 @@ class SatRelevancy
   /**
    * Add parent to the relevant waiting parents of n.
    */
-  void addParentRlvWait(TNode n, TNode parentAtom, bool ppol);
+  void addParentRlvWait(TNode n, bool pol, TNode parentAtom, bool ppol);
   /** Ensure lemmas relevant */
   void ensureLemmasRelevant(context::CDQueue<TNode>* queue);
   /** Pointer to the SAT solver */
@@ -162,7 +190,7 @@ class SatRelevancy
   /**
    * The relevancy waiting map, for each (non-negated) formula.
    */
-  RlvWaitMap d_rlvWaitMap;
+  RlvMap d_rlvMap;
   // debugging
   bool d_isActiveTmp;
   context::CDO<uint64_t> d_numAsserts;
