@@ -95,10 +95,6 @@ SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
       d_inputs(userContext),
       d_numInputs(context, 0),
       d_inputsRlv(context),
-      d_rlvPos(context),
-      d_rlvNeg(context),
-      d_justify(context),
-      d_enqueued(context),
       d_rlvMap(context),
       d_numAsserts(context, 0),
       d_numAssertsRlv(context, 0)
@@ -164,11 +160,7 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
   TNode atom = pol ? n : n[0];
   bool nrlv = false;
   // first, look at wait lists
-  // RlvInfo* ri = getOrMkRlvInfo(atom);
-  RlvMap::const_iterator it = d_rlvMap.find(atom);
-  if (it != d_rlvMap.end())
-  {
-    RlvInfo* ri = it->second.get();
+  RlvInfo* ri = getOrMkRlvInfo(atom);
     // we are going to iterate through each parent that is waiting
     // on its value and possibly update relevancy
     Assert(ri->d_parents.size() == ri->d_childPol.size());
@@ -191,29 +183,26 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
         nrlv = true;
       }
     }
-  }
+  
   // note that notify formulas are in terms of atoms
   if (!d_cnfStream->isNotifyFormula(atom))
   {
     d_numAsserts.set(d_numAsserts + 1);
     //--
-    context::CDHashSet<Node, NodeHashFunction>& r = pol ? d_rlvPos : d_rlvNeg;
     //--
     // we are a theory literal
     // if we became relevant due to a parent, or are already relevant, enqueue
-    // if (nrlv || ri->isRelevant(pol))
-    if (nrlv || r.find(atom) != r.end())
+    if (nrlv || ri->isRelevant(pol))
     {
-      if (d_enqueued.find(atom) == d_enqueued.end())
-      // if (!ri->isEnqueued())
+      if (!ri->isEnqueued())
       {
         Trace("sat-rlv") << "*** enqueue from assert " << n << std::endl;
         if (d_isActiveTmp)
         {
           queue.push(n);
         }
-        d_enqueued.insert(atom);
-        // ri->setEnqueued();
+        //d_enqueued.insert(atom);
+        ri->setEnqueued();
         d_numAssertsRlv.set(d_numAssertsRlv + 1);
       }
     }
@@ -245,18 +234,16 @@ void SatRelevancy::setRelevantInternal(TNode atom,
                                        context::CDQueue<TNode>* queue,
                                        bool input)
 {
-  // RlvInfo* ri = getOrMkRlvInfo(atom);
-  // if (ri->isRelevant(pol))
-  context::CDHashSet<Node, NodeHashFunction>& r = pol ? d_rlvPos : d_rlvNeg;
-  if (r.find(atom) != r.end())
+  RlvInfo* ri = getOrMkRlvInfo(atom);
+  if (ri->isRelevant(pol))
   {
     // already marked relevant
     return;
   }
   Trace("sat-rlv") << "- set relevant: " << atom << ", pol = " << pol
                    << std::endl;
-  r.insert(atom);
-  // ri->setRelevant(pol);
+  //r.insert(atom);
+  ri->setRelevant(pol);
   Assert(atom.getKind() != NOT);
   // notify formulas are in terms of atoms
   // NOTE this could be avoided by simply looking at the kind?
@@ -442,8 +429,7 @@ void SatRelevancy::setRelevantInternal(TNode atom,
   if (hasSatValue(atom, value))
   {
     // now, enqueue it
-    // if (!ri->isEnqueued())
-    if (d_enqueued.find(atom) == d_enqueued.end())
+    if (!ri->isEnqueued())
     {
       Node alit = value ? Node(atom) : atom.notNode();
       Trace("sat-rlv") << "*** enqueue " << alit << std::endl;
@@ -451,8 +437,7 @@ void SatRelevancy::setRelevantInternal(TNode atom,
       {
         queue->push(alit);
       }
-      d_enqueued.insert(atom);
-      // ri->setEnqueued();
+      ri->setEnqueued();
       d_numAssertsRlv.set(d_numAssertsRlv + 1);
     }
   }
@@ -528,9 +513,8 @@ bool SatRelevancy::setAssertedChild(TNode atom,
     case IMPLIES:
     {
       Assert(ppol == (parentAtom.getKind() != AND));
-      // RlvInfo* pri = getOrMkRlvInfo(parentAtom);
-      // if (pri->isJustified())
-      if (d_justify.find(parentAtom) != d_justify.end())
+      RlvInfo* pri = getOrMkRlvInfo(parentAtom);
+      if (pri->isJustified())
       {
         Trace("sat-rlv-debug") << "...already justified" << std::endl;
         // the parent was already justified by another child, nothing to do
@@ -541,8 +525,7 @@ bool SatRelevancy::setAssertedChild(TNode atom,
       {
         Trace("sat-rlv-debug") << "...now justified" << std::endl;
         // we've justified the parent
-        // pri->setJustified();
-        d_justify.insert(parentAtom);
+        pri->setJustified();
         // the value of this is relevant
         return true;
       }

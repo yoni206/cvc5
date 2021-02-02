@@ -194,20 +194,6 @@ class SatRelevancy
    */
   context::CDHashSet<Node, NodeHashFunction> d_inputsRlv;
   /**
-   * The set of formulas that are relevant. Polarity matters, no double
-   * negations.
-   */
-  context::CDHashSet<Node, NodeHashFunction> d_rlvPos;
-  context::CDHashSet<Node, NodeHashFunction> d_rlvNeg;
-  /**
-   * The set of formulas that have been justified that are in the range of
-   * d_rlvWaitMap.
-   *
-   * Polarity matters, no double negations.
-   */
-  context::CDHashSet<Node, NodeHashFunction> d_justify;
-  context::CDHashSet<Node, NodeHashFunction> d_enqueued;
-  /**
    * The relevancy waiting map, for each (non-negated) formula.
    */
   RlvMap d_rlvMap;
