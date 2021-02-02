@@ -79,11 +79,22 @@ void RlvInfo::setJustified()
 {
   d_rlvp.set(d_rlvp.get() | RlvProperty::JUSTIFIED);
 }
-bool RlvInfo::isInput() const
+bool RlvInfo::isInput(bool& pol) const
 {
-  return (d_rlvp.get() & RlvProperty::INPUT) != RlvProperty::NONE;
+  if ((d_rlvp.get() & RlvProperty::INPUT_POS) != RlvProperty::NONE)
+  {
+    pol = true;
+    return true;
+  }
+  else 
+  if ((d_rlvp.get() & RlvProperty::INPUT_NEG) != RlvProperty::NONE)
+  {
+    pol = false;
+    return true;
+  }
+  return false;
 }
-void RlvInfo::setInput() { d_rlvp.set(d_rlvp.get() | RlvProperty::INPUT); }
+void RlvInfo::setInput(bool pol) { d_rlvp.set(d_rlvp.get() | (pol ? RlvProperty::INPUT_POS : RlvProperty::INPUT_NEG)); }
 
 SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
                            context::Context* context,
@@ -188,8 +199,6 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
   if (!d_cnfStream->isNotifyFormula(atom))
   {
     d_numAsserts.set(d_numAsserts + 1);
-    //--
-    //--
     // we are a theory literal
     // if we became relevant due to a parent, or are already relevant, enqueue
     if (nrlv || ri->isRelevant(pol))
@@ -242,7 +251,6 @@ void SatRelevancy::setRelevantInternal(TNode atom,
   }
   Trace("sat-rlv") << "- set relevant: " << atom << ", pol = " << pol
                    << std::endl;
-  //r.insert(atom);
   ri->setRelevant(pol);
   Assert(atom.getKind() != NOT);
   // notify formulas are in terms of atoms
@@ -423,10 +431,25 @@ void SatRelevancy::setRelevantInternal(TNode atom,
   Assert(queue != nullptr);
   // otherwise it is a theory literal, if it already has a SAT value, it should
   // be asserted now
+  bool hasValue;
   bool value;
+  if (input)
+  {
+    ri->setInput(pol);
+    value = pol;
+    hasValue = true;
+  }
+  else if (ri->isInput(value))
+  {
+    hasValue = true;
+  }
+  else
+  {
+    hasValue = hasSatValue(atom, value);
+  }
   // special case for top-level assertions, which may not have literals since
   // CNF does not introduce intermediate literals for some top-level formulas
-  if (hasSatValue(atom, value))
+  if (hasValue)
   {
     // now, enqueue it
     if (!ri->isEnqueued())
@@ -445,13 +468,6 @@ void SatRelevancy::setRelevantInternal(TNode atom,
 
 bool SatRelevancy::hasSatValue(TNode node, bool& value) const
 {
-  // special case for top-level assertions, which may not have literals since
-  // CNF does not introduce intermediate literals for some top-level formulas
-  if (d_inputsRlv.find(node) != d_inputsRlv.end())
-  {
-    value = true;
-    return true;
-  }
   SatLiteral lit = d_cnfStream->getLiteral(node);
   SatValue v = d_satSolver->value(lit);
   if (v == SAT_VALUE_TRUE)
@@ -573,8 +589,7 @@ bool SatRelevancy::setAssertedChild(TNode atom,
 
 void SatRelevancy::ensureLemmasRelevant(context::CDQueue<TNode>* queue)
 {
-  // size_t index = d_numInputs.get();
-  size_t index = d_inputsRlv.size();
+  size_t index = d_numInputs.get();
   size_t numInputs = d_inputs.size();
   if (index >= numInputs)
   {
@@ -585,7 +600,6 @@ void SatRelevancy::ensureLemmasRelevant(context::CDQueue<TNode>* queue)
   {
     TNode lem = d_inputs[index];
     Trace("sat-rlv") << "ensureLemmaRelevant: " << lem << std::endl;
-    d_inputsRlv.insert(lem);
     setRelevant(lem, true, queue, true);
     index++;
   }

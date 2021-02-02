@@ -49,7 +49,8 @@ enum class RlvProperty : uint32_t
   ENQUEUED = 4,
   // has the formula been justified?
   JUSTIFIED = 8,
-  INPUT = 16
+  INPUT_POS = 16,
+  INPUT_NEG = 32
 };
 /** Define operator lhs | rhs */
 RlvProperty operator|(RlvProperty lhs, RlvProperty rhs);
@@ -86,9 +87,9 @@ class RlvInfo
   /** set justified */
   void setJustified();
   /** is input? */
-  bool isInput() const;
+  bool isInput(bool& pol) const;
   /** set input */
-  void setInput();
+  void setInput(bool pol);
 };
 
 /**
