@@ -41,17 +41,16 @@ class CDCLTSatSolverInterface;
 enum class RlvProperty : uint32_t
 {
   NONE = 0,
+  // is the formula relevant with true polarity?
   RLV_POS = 1,
+  // is the formula relevant with false polarity?
   RLV_NEG = 2,
+  // has the formula been enqueued (sent as a theory atom to theory engine)?
   ENQUEUED = 4,
+  // has the formula been justified?
   JUSTIFIED = 8,
   INPUT = 16
 };
-bool isRlvPropertyRlvPos(RlvProperty p);
-bool isRlvPropertyRlvNeg(RlvProperty p);
-bool isRlvPropertyEnqueued(RlvProperty p);
-bool isRlvPropertyJustified(RlvProperty p);
-bool isRlvPropertyInput(RlvProperty p);
 /** Define operator lhs | rhs */
 RlvProperty operator|(RlvProperty lhs, RlvProperty rhs);
 /** Define operator lhs |= rhs */
@@ -64,13 +63,7 @@ RlvProperty& operator&=(RlvProperty& lhs, RlvProperty rhs);
 class RlvInfo
 {
  public:
-  RlvInfo(context::Context* context)
-      : d_parents(context),
-        d_parentPol(context),
-        d_childPol(context),
-        d_rlvp(context, RlvProperty::NONE)
-  {
-  }
+  RlvInfo(context::Context* context);
   ~RlvInfo() {}
   /** The parents that we impact */
   context::CDList<TNode> d_parents;
@@ -80,6 +73,22 @@ class RlvInfo
   context::CDList<bool> d_childPol;
   /** The properties */
   context::CDO<RlvProperty> d_rlvp;
+  /** is relevant with polarity? */
+  bool isRelevant(bool pol) const;
+  /** set relevant with polarity */
+  void setRelevant(bool pol);
+  /** is enqueued? */
+  bool isEnqueued() const;
+  /** set enqueued? */
+  void setEnqueued();
+  /** is justified? */
+  bool isJustified() const;
+  /** set justified */
+  void setJustified();
+  /** is input? */
+  bool isInput() const;
+  /** set input */
+  void setInput();
 };
 
 /**
@@ -137,8 +146,8 @@ class SatRelevancy
    * Set that n is relevant, add new theory literals to assert to TheoryEngine
    * in queue.
    */
-  void setRelevant(TNode n, bool pol, context::CDQueue<TNode>* queue);
-  void setRelevantInternal(TNode n, bool pol, context::CDQueue<TNode>* queue);
+  void setRelevant(TNode n, bool pol, context::CDQueue<TNode>* queue, bool input = false);
+  void setRelevantInternal(TNode n, bool pol, context::CDQueue<TNode>* queue, bool input = false);
   /**
    * Set that atom has been assigned a value that makes a child of parent equal
    * to "pol", where parent is a term that was waiting for the value of atom.
@@ -191,6 +200,7 @@ class SatRelevancy
    * Polarity matters, no double negations.
    */
   context::CDHashSet<Node, NodeHashFunction> d_justify;
+  context::CDHashSet<Node, NodeHashFunction> d_enqueued;
   /**
    * The relevancy waiting map, for each (non-negated) formula.
    */
@@ -199,9 +209,6 @@ class SatRelevancy
   bool d_isActiveTmp;
   context::CDO<uint64_t> d_numAsserts;
   context::CDO<uint64_t> d_numAssertsRlv;
-  /**
-   */
-  context::CDHashSet<Node, NodeHashFunction> d_enqueued;
 };
 
 }  // namespace prop
