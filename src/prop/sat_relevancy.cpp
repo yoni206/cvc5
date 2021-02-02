@@ -555,6 +555,8 @@ bool SatRelevancy::setAssertedChild(TNode atom,
     break;
     case ITE:
     {
+      // ITE's only wait on their condition, so we know the condition was
+      // asserted.
       // now set the proper branch to be relevant with the parent's polarity
       setRelevant(parentAtom[pol ? 1 : 2], ppol, &queue);
       // the value of this is now also relevant
