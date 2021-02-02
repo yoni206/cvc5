@@ -160,9 +160,11 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
   Trace("sat-rlv") << "notifyAsserted: finished" << std::endl;
 }
 
-void SatRelevancy::setRelevant(TNode n, bool pol, context::CDQueue<TNode>* queue)
+void SatRelevancy::setRelevant(TNode n,
+                               bool pol,
+                               context::CDQueue<TNode>* queue)
 {
-  if (n.getKind()==NOT)
+  if (n.getKind() == NOT)
   {
     pol = !pol;
     n = n[0];
@@ -170,7 +172,9 @@ void SatRelevancy::setRelevant(TNode n, bool pol, context::CDQueue<TNode>* queue
   setRelevantInternal(n, pol, queue);
 }
 
-void SatRelevancy::setRelevantInternal(TNode atom, bool pol, context::CDQueue<TNode>* queue)
+void SatRelevancy::setRelevantInternal(TNode atom,
+                                       bool pol,
+                                       context::CDQueue<TNode>* queue)
 {
   context::CDHashSet<Node, NodeHashFunction>& r = pol ? d_rlvPos : d_rlvNeg;
   if (r.find(atom) != r.end())
@@ -178,7 +182,8 @@ void SatRelevancy::setRelevantInternal(TNode atom, bool pol, context::CDQueue<TN
     // already marked relevant
     return;
   }
-  Trace("sat-rlv") << "- set relevant: " << atom <<", pol = " << pol << std::endl;
+  Trace("sat-rlv") << "- set relevant: " << atom << ", pol = " << pol
+                   << std::endl;
   r.insert(atom);
   Assert(atom.getKind() != NOT);
   // notify formulas are in terms of atoms
@@ -437,7 +442,8 @@ bool SatRelevancy::setAssertedChild(TNode atom,
                                     context::CDQueue<TNode>& queue)
 {
   Trace("sat-rlv-debug") << "setAssertedChild " << pol << " in " << parentAtom
-                         << " with ppol=" << ppol << ", from " << atom << std::endl;
+                         << " with ppol=" << ppol << ", from " << atom
+                         << std::endl;
   switch (parentAtom.getKind())
   {
     case AND:

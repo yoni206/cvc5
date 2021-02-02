@@ -199,7 +199,8 @@ void CnfStream::ensureLiteral(TNode n, bool noPreregistration)
 
 SatLiteral CnfStream::newLiteral(TNode node, bool isTheoryAtom, bool preRegister, bool canEliminate) {
   Trace("cnf") << d_name << "::newLiteral(" << node << ", " << isTheoryAtom
-               << "), prereg=" << preRegister << ", canElim=" << canEliminate << "\n"
+               << "), prereg=" << preRegister << ", canElim=" << canEliminate
+               << "\n"
                << push;
   Assert(node.getKind() != kind::NOT);
 

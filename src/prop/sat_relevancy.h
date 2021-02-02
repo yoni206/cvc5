@@ -121,7 +121,7 @@ class SatRelevancy
   bool setAssertedChild(TNode atom,
                         bool pol,
                         TNode parent,
-                                    bool ppol,
+                        bool ppol,
                         context::CDQueue<TNode>& queue);
   /** has SAT value, if node has a value, return true and set value */
   bool hasSatValue(TNode node, bool& value) const;
