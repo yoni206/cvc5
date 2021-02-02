@@ -190,11 +190,6 @@ class SatRelevancy
   /** the number of input formulas marked relevant */
   context::CDO<uint64_t> d_numInputs;
   /**
-   * The set of asserted formulas that have been marked relevant (SAT-context
-   * dependent).
-   */
-  context::CDHashSet<Node, NodeHashFunction> d_inputsRlv;
-  /**
    * The relevancy waiting map, for each (non-negated) formula.
    */
   RlvMap d_rlvMap;

@@ -108,7 +108,6 @@ SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
       d_cnfStream(cnfStream),
       d_inputs(userContext),
       d_numInputs(context, 0),
-      d_inputsRlv(context),
       d_rlvMap(context),
       d_numAsserts(context, 0),
       d_numAssertsRlv(context, 0)
@@ -126,9 +125,7 @@ void SatRelevancy::notifyAssertion(TNode a)
   // Mark each assertion as relevant. Notice we use a null queue since nothing
   // should have SAT values yet.
   Trace("sat-rlv") << "notifyAssertion: " << a << std::endl;
-  //Assert(d_inputs.size() == d_inputsRlv.size());
   d_inputs.push_back(a);
-  //d_inputsRlv.insert(a);
   d_numInputs = d_numInputs + 1;
   setRelevant(a, true, nullptr);
   */
