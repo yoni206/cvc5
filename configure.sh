@@ -29,8 +29,6 @@ General options;
 Features:
 The following flags enable optional features (disable with --no-<option name>).
   --static                 build static libraries and binaries [default=no]
-  --static-binary          statically link against system libraries
-                           (must be disabled for static macOS builds) [default=yes]
   --proofs                 support for proof generation
   --optimized              optimize the build
   --debug-symbols          include debug symbols
@@ -143,7 +141,6 @@ python_bindings=default
 java_bindings=default
 editline=default
 shared=default
-static_binary=default
 statistics=default
 symfpu=default
 tracing=default
@@ -264,11 +261,8 @@ do
     --proofs) proofs=ON;;
     --no-proofs) proofs=OFF;;
 
-    --static) shared=OFF; static_binary=ON;;
+    --static) shared=OFF;;
     --no-static) shared=ON;;
-
-    --static-binary) static_binary=ON;;
-    --no-static-binary) static_binary=OFF;;
 
     --statistics) statistics=ON;;
     --no-statistics) statistics=OFF;;
@@ -398,8 +392,11 @@ cmake_opts=""
   && cmake_opts="$cmake_opts -DENABLE_PROOFS=$proofs"
 [ $shared != default ] \
   && cmake_opts="$cmake_opts -DENABLE_SHARED=$shared"
-[ $static_binary != default ] \
-  && cmake_opts="$cmake_opts -DENABLE_STATIC_BINARY=$static_binary"
+# disable static system libraries on macOS, enable otherwise
+[ $OSTYPE == "darwin"* ] \
+  && cmake_opts="$cmake_opts -DENABLE_STATIC_BINARY=OFF"
+[ $OSTYPE != "darwin"* ] \
+  && cmake_opts="$cmake_opts -DENABLE_STATIC_BINARY=ON"
 [ $statistics != default ] \
   && cmake_opts="$cmake_opts -DENABLE_STATISTICS=$statistics"
 [ $tracing != default ] \
