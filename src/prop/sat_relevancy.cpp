@@ -23,7 +23,6 @@ using namespace CVC4::kind;
 namespace CVC4 {
 namespace prop {
 
-
 RlvProperty operator|(RlvProperty lhs, RlvProperty rhs)
 {
   return static_cast<RlvProperty>(static_cast<uint32_t>(lhs)
@@ -54,12 +53,14 @@ RlvInfo::RlvInfo(context::Context* context)
 }
 bool RlvInfo::isRelevant(bool pol) const
 {
-  return (d_rlvp.get() & (pol ? RlvProperty::RLV_POS : RlvProperty::RLV_NEG)) != RlvProperty::NONE;
+  return (d_rlvp.get() & (pol ? RlvProperty::RLV_POS : RlvProperty::RLV_NEG))
+         != RlvProperty::NONE;
 }
 
 void RlvInfo::setRelevant(bool pol)
 {
-  d_rlvp.set( d_rlvp.get() | (pol ? RlvProperty::RLV_POS : RlvProperty::RLV_NEG));
+  d_rlvp.set(d_rlvp.get()
+             | (pol ? RlvProperty::RLV_POS : RlvProperty::RLV_NEG));
 }
 
 bool RlvInfo::isEnqueued() const
@@ -68,7 +69,7 @@ bool RlvInfo::isEnqueued() const
 }
 void RlvInfo::setEnqueued()
 {
-  d_rlvp.set( d_rlvp.get() | RlvProperty::ENQUEUED);
+  d_rlvp.set(d_rlvp.get() | RlvProperty::ENQUEUED);
 }
 bool RlvInfo::isJustified() const
 {
@@ -76,16 +77,13 @@ bool RlvInfo::isJustified() const
 }
 void RlvInfo::setJustified()
 {
-  d_rlvp.set( d_rlvp.get() | RlvProperty::JUSTIFIED);
+  d_rlvp.set(d_rlvp.get() | RlvProperty::JUSTIFIED);
 }
 bool RlvInfo::isInput() const
 {
   return (d_rlvp.get() & RlvProperty::INPUT) != RlvProperty::NONE;
 }
-void RlvInfo::setInput()
-{
-  d_rlvp.set( d_rlvp.get() | RlvProperty::INPUT);
-}
+void RlvInfo::setInput() { d_rlvp.set(d_rlvp.get() | RlvProperty::INPUT); }
 
 SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
                            context::Context* context,
@@ -166,7 +164,7 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
   TNode atom = pol ? n : n[0];
   bool nrlv = false;
   // first, look at wait lists
-  //RlvInfo* ri = getOrMkRlvInfo(atom);
+  // RlvInfo* ri = getOrMkRlvInfo(atom);
   RlvMap::const_iterator it = d_rlvMap.find(atom);
   if (it != d_rlvMap.end())
   {
@@ -203,11 +201,11 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
     //--
     // we are a theory literal
     // if we became relevant due to a parent, or are already relevant, enqueue
-    //if (nrlv || ri->isRelevant(pol))
+    // if (nrlv || ri->isRelevant(pol))
     if (nrlv || r.find(atom) != r.end())
     {
       if (d_enqueued.find(atom) == d_enqueued.end())
-      //if (!ri->isEnqueued())
+      // if (!ri->isEnqueued())
       {
         Trace("sat-rlv") << "*** enqueue from assert " << n << std::endl;
         if (d_isActiveTmp)
@@ -215,7 +213,7 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
           queue.push(n);
         }
         d_enqueued.insert(atom);
-        //ri->setEnqueued();
+        // ri->setEnqueued();
         d_numAssertsRlv.set(d_numAssertsRlv + 1);
       }
     }
@@ -231,7 +229,8 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
 
 void SatRelevancy::setRelevant(TNode n,
                                bool pol,
-                               context::CDQueue<TNode>* queue, bool input)
+                               context::CDQueue<TNode>* queue,
+                               bool input)
 {
   if (n.getKind() == NOT)
   {
@@ -243,10 +242,11 @@ void SatRelevancy::setRelevant(TNode n,
 
 void SatRelevancy::setRelevantInternal(TNode atom,
                                        bool pol,
-                                       context::CDQueue<TNode>* queue, bool input)
+                                       context::CDQueue<TNode>* queue,
+                                       bool input)
 {
-  //RlvInfo* ri = getOrMkRlvInfo(atom);
-  //if (ri->isRelevant(pol))
+  // RlvInfo* ri = getOrMkRlvInfo(atom);
+  // if (ri->isRelevant(pol))
   context::CDHashSet<Node, NodeHashFunction>& r = pol ? d_rlvPos : d_rlvNeg;
   if (r.find(atom) != r.end())
   {
@@ -256,7 +256,7 @@ void SatRelevancy::setRelevantInternal(TNode atom,
   Trace("sat-rlv") << "- set relevant: " << atom << ", pol = " << pol
                    << std::endl;
   r.insert(atom);
-  //ri->setRelevant(pol);
+  // ri->setRelevant(pol);
   Assert(atom.getKind() != NOT);
   // notify formulas are in terms of atoms
   // NOTE this could be avoided by simply looking at the kind?
@@ -433,7 +433,7 @@ void SatRelevancy::setRelevantInternal(TNode atom,
   }
   // if there is no queue, we are asserting that an input assertion is relevant,
   // it will be asserted anyways.
-  Assert (queue != nullptr);
+  Assert(queue != nullptr);
   // otherwise it is a theory literal, if it already has a SAT value, it should
   // be asserted now
   bool value;
@@ -442,7 +442,7 @@ void SatRelevancy::setRelevantInternal(TNode atom,
   if (hasSatValue(atom, value))
   {
     // now, enqueue it
-    //if (!ri->isEnqueued())
+    // if (!ri->isEnqueued())
     if (d_enqueued.find(atom) == d_enqueued.end())
     {
       Node alit = value ? Node(atom) : atom.notNode();
@@ -452,7 +452,7 @@ void SatRelevancy::setRelevantInternal(TNode atom,
         queue->push(alit);
       }
       d_enqueued.insert(atom);
-      //ri->setEnqueued();
+      // ri->setEnqueued();
       d_numAssertsRlv.set(d_numAssertsRlv + 1);
     }
   }
@@ -528,8 +528,8 @@ bool SatRelevancy::setAssertedChild(TNode atom,
     case IMPLIES:
     {
       Assert(ppol == (parentAtom.getKind() != AND));
-      //RlvInfo* pri = getOrMkRlvInfo(parentAtom);
-      //if (pri->isJustified())
+      // RlvInfo* pri = getOrMkRlvInfo(parentAtom);
+      // if (pri->isJustified())
       if (d_justify.find(parentAtom) != d_justify.end())
       {
         Trace("sat-rlv-debug") << "...already justified" << std::endl;
@@ -541,7 +541,7 @@ bool SatRelevancy::setAssertedChild(TNode atom,
       {
         Trace("sat-rlv-debug") << "...now justified" << std::endl;
         // we've justified the parent
-        //pri->setJustified();
+        // pri->setJustified();
         d_justify.insert(parentAtom);
         // the value of this is relevant
         return true;
@@ -590,7 +590,7 @@ bool SatRelevancy::setAssertedChild(TNode atom,
 
 void SatRelevancy::ensureLemmasRelevant(context::CDQueue<TNode>* queue)
 {
-  //size_t index = d_numInputs.get();
+  // size_t index = d_numInputs.get();
   size_t index = d_inputsRlv.size();
   size_t numInputs = d_inputs.size();
   if (index >= numInputs)

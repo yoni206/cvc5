@@ -146,8 +146,14 @@ class SatRelevancy
    * Set that n is relevant, add new theory literals to assert to TheoryEngine
    * in queue.
    */
-  void setRelevant(TNode n, bool pol, context::CDQueue<TNode>* queue, bool input = false);
-  void setRelevantInternal(TNode n, bool pol, context::CDQueue<TNode>* queue, bool input = false);
+  void setRelevant(TNode n,
+                   bool pol,
+                   context::CDQueue<TNode>* queue,
+                   bool input = false);
+  void setRelevantInternal(TNode n,
+                           bool pol,
+                           context::CDQueue<TNode>* queue,
+                           bool input = false);
   /**
    * Set that atom has been assigned a value that makes a child of parent equal
    * to "pol", where parent is a term that was waiting for the value of atom.
