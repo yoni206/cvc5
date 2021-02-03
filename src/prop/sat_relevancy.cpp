@@ -109,6 +109,27 @@ void RlvInfo::setPreregistered()
   d_rlvp.set(d_rlvp.get() | RlvProperty::PREREG);
 }
 
+bool RlvInfo::isAsserted(bool& pol) const
+{
+  if ((d_rlvp.get() & RlvProperty::ASSERTED_POS) != RlvProperty::NONE)
+  {
+    pol = true;
+    return true;
+  }
+  else if ((d_rlvp.get() & RlvProperty::ASSERTED_NEG) != RlvProperty::NONE)
+  {
+    pol = false;
+    return true;
+  }
+  return false;
+}
+
+void RlvInfo::setAsserted(bool pol)
+{
+  d_rlvp.set(d_rlvp.get()
+             | (pol ? RlvProperty::ASSERTED_POS : RlvProperty::ASSERTED_NEG));
+}
+
 bool RlvInfo::isMarkedPreregistered() const
 {
   return (d_rlvp.get() & RlvProperty::MARKED_PREREG) != RlvProperty::NONE;
@@ -237,13 +258,25 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
     if (nrlv || ri->isRelevant(pol))
     {
       enqueue(n, false, ri, &queue);
+      // don't bother setting asserted
+    }
+    else
+    {
+      // set asserted
+      ri->setAsserted(pol);
     }
     // otherwise we will assert if the literal gets marked as relevant
   }
-  else if (nrlv)
+  else
   {
-    // based on parents, this formula is now relevant and is not a theory atom
-    setRelevantInternal(atom, pol, &queue);
+    // mark as asserted
+    ri->setAsserted(pol);
+    // if now relevant
+    if (nrlv)
+    {
+      // this formula is now relevant and is not a theory atom
+      setRelevantInternal(atom, pol, &queue, ri);
+    }
   }
   Trace("sat-rlv") << "notifyAsserted: finished" << std::endl;
 }
@@ -251,6 +284,7 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
 void SatRelevancy::setRelevant(TNode n,
                                bool pol,
                                context::CDQueue<TNode>* queue,
+                   RlvInfo* ri,
                                bool input)
 {
   if (n.getKind() == NOT)
@@ -258,15 +292,19 @@ void SatRelevancy::setRelevant(TNode n,
     pol = !pol;
     n = n[0];
   }
-  setRelevantInternal(n, pol, queue, input);
+  setRelevantInternal(n, pol, queue, ri, input);
 }
 
 void SatRelevancy::setRelevantInternal(TNode atom,
                                        bool pol,
                                        context::CDQueue<TNode>* queue,
+                                       RlvInfo* ri,
                                        bool input)
 {
-  RlvInfo* ri = getOrMkRlvInfo(atom);
+  if (ri==nullptr)
+  {
+    ri = getOrMkRlvInfo(atom);
+  }
   if (ri->isRelevant(pol))
   {
     // already marked relevant
@@ -278,10 +316,9 @@ void SatRelevancy::setRelevantInternal(TNode atom,
   Assert(atom.getKind() != NOT);
   // notify formulas are in terms of atoms
   // NOTE this could be avoided by simply looking at the kind?
-  Trace("sat-rlv-debug") << "  notifyFormula: "
-                         << d_cnfStream->isNotifyFormula(atom) << std::endl;
   if (d_cnfStream->isNotifyFormula(atom))
   {
+    Trace("sat-rlv-debug") << "  ...a notify formula" << std::endl;
     switch (atom.getKind())
     {
       case AND:
@@ -449,6 +486,7 @@ void SatRelevancy::setRelevantInternal(TNode atom,
     }
     return;
   }
+  Trace("sat-rlv-debug") << "  ...not a notify formula" << std::endl;
   // preregister the atom here
   preregister(atom, ri);
   // if there is no queue, we are asserting that an input assertion is relevant,
@@ -623,7 +661,7 @@ void SatRelevancy::ensureLemmasRelevant(context::CDQueue<TNode>* queue)
   {
     TNode lem = d_inputs[index];
     Trace("sat-rlv") << "ensureLemmaRelevant: " << lem << std::endl;
-    setRelevant(lem, true, queue, true);
+    setRelevant(lem, true, queue, nullptr, true);
     index++;
   }
   Trace("sat-rlv") << "...finished ensureLemmasRelevant" << std::endl;

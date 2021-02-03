@@ -57,9 +57,13 @@ enum class RlvProperty : uint32_t
   INPUT_NEG = 32,
   // has the atom been preregistered? True only for theory literals.
   PREREG = 64,
+  // is the atom asserted with positive polarity?
+  ASSERTED_POS = 128,
+  // is the atom asserted with negative polarity?
+  ASSERTED_NEG = 256,
 
   // temporary
-  MARKED_PREREG = 128
+  MARKED_PREREG = 512
 };
 /** Define operator lhs | rhs */
 RlvProperty operator|(RlvProperty lhs, RlvProperty rhs);
@@ -103,6 +107,10 @@ class RlvInfo
   bool isPreregistered() const;
   /** set preregistered */
   void setPreregistered();
+  /** is asserted? */
+  bool isAsserted(bool& pol) const;
+  /** set asserted */
+  void setAsserted(bool pol);
   /** is preregistered? */
   bool isMarkedPreregistered() const;
   /** set preregistered */
@@ -174,10 +182,12 @@ class SatRelevancy
   void setRelevant(TNode n,
                    bool pol,
                    context::CDQueue<TNode>* queue,
+                   RlvInfo* ri = nullptr,
                    bool input = false);
   void setRelevantInternal(TNode n,
                            bool pol,
                            context::CDQueue<TNode>* queue,
+                   RlvInfo* ri = nullptr,
                            bool input = false);
   /**
    * Set that atom has been assigned a value that makes a child of parent equal
