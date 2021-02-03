@@ -63,7 +63,7 @@ void TheoryProxy::finishInit(CDCLTSatSolverInterface* satSolver,
   if (options::satTheoryRelevancy())
   {
     d_satRlv.reset(
-        new SatRelevancy(satSolver, d_context, d_userContext, cnfStream));
+        new SatRelevancy(satSolver, d_theoryEngine, d_context, d_userContext, cnfStream));
     d_skdm.reset(new SkolemDefManager(d_context,
                                       d_userContext,
                                       d_satRlv.get(),
@@ -322,7 +322,10 @@ void TheoryProxy::preRegister(Node n)
     // do nothing?
     d_satRlv->notifyPrereg(n);
   }
-  d_theoryEngine->preRegister(n);
+  else
+  {
+    d_theoryEngine->preRegister(n);
+  }
 }
 
 }/* CVC4::prop namespace */

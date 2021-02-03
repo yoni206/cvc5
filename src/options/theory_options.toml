@@ -74,3 +74,11 @@ header = "options/theory_options.h"
   type       = "bool"
   default    = "false"
   help       = "enable filtering of literals from the SAT solver to the theory engine based on relevancy"
+
+[[option]]
+  name       = "preregRelevancy"
+  category   = "regular"
+  long       = "prereg-rlv"
+  type       = "bool"
+  default    = "false"
+  help       = "preregister literals to the theory engine based on relevancy"

@@ -17,6 +17,7 @@
 #include "prop/cnf_stream.h"
 #include "prop/prop_engine.h"
 #include "prop/sat_solver.h"
+#include "theory/theory_engine.h"
 
 using namespace CVC4::kind;
 
@@ -109,10 +110,12 @@ void RlvInfo::setPreregistered()
 }
 
 SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
+              TheoryEngine* theoryEngine,
                            context::Context* context,
                            context::UserContext* userContext,
                            CnfStream* cnfStream)
     : d_satSolver(satSolver),
+    d_theoryEngine(theoryEngine),
       d_context(context),
       d_cnfStream(cnfStream),
       d_inputs(userContext),
@@ -168,10 +171,10 @@ void SatRelevancy::notifyActivatedSkolemDef(TNode n,
 void SatRelevancy::notifyDecisionRequest(TNode n,
                                          context::CDQueue<TNode>& queue)
 {
-  Trace("sat-rlv") << "notifyActivatedSkolemDef: " << n << std::endl;
+  Trace("sat-rlv") << "notifyDecisionRequest: " << n << std::endl;
   // set the lemma is currently relevant
   setRelevant(n, true, &queue);
-  Trace("sat-rlv") << "notifyActivatedSkolemDef: finished" << std::endl;
+  Trace("sat-rlv") << "notifyDecisionRequest: finished" << std::endl;
 }
 
 void SatRelevancy::notifyAsserted(const SatLiteral& l,
@@ -217,9 +220,14 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
     d_numAsserts.set(d_numAsserts + 1);
     if (!ri->isPreregistered())
     {
+      if (options::preregRelevancy())
+      {
+        d_theoryEngine->preRegister(atom);
+      }
       ri->setPreregistered();
       d_numAssertsRlv.set(d_numAssertsRlv + 1);
     }
+    
     // we are a theory literal
     // if we became relevant due to a parent, or are already relevant, enqueue
     if (nrlv || ri->isRelevant(pol))
@@ -450,6 +458,10 @@ void SatRelevancy::setRelevantInternal(TNode atom,
   // preregister the atom here?
   if (!ri->isPreregistered())
   {
+    if (options::preregRelevancy())
+    {
+      d_theoryEngine->preRegister(atom);
+    }
     ri->setPreregistered();
     d_numAssertsRlv.set(d_numAssertsRlv + 1);
   }
@@ -656,6 +668,10 @@ void SatRelevancy::check(theory::Theory::Effort effort,
 void SatRelevancy::notifyPrereg(TNode n)
 {
   d_numAssertsPrereg.set(d_numAssertsPrereg + 1);
+  if (!options::preregRelevancy())
+  {
+    d_theoryEngine->preRegister(n);
+  }
 }
 
 }  // namespace prop

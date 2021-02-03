@@ -107,6 +107,7 @@ class SatRelevancy
 
  public:
   SatRelevancy(CDCLTSatSolverInterface* satSolver,
+              TheoryEngine* theoryEngine,
                context::Context* context,
                context::UserContext* userContext,
                CnfStream* cnfStream);
@@ -188,6 +189,8 @@ class SatRelevancy
   void ensureLemmasRelevant(context::CDQueue<TNode>* queue);
   /** Pointer to the SAT solver */
   CDCLTSatSolverInterface* d_satSolver;
+  /** Pointer to theory engine */
+  TheoryEngine * d_theoryEngine;
   /** Pointer to the SAT context */
   context::Context* d_context;
   /** pointer to the CNF stream */
