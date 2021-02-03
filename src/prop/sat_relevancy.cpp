@@ -667,7 +667,8 @@ void SatRelevancy::preregister(TNode atom, RlvInfo* ri)
   {
     if (d_alwaysPregRlv || options::preregRelevancy())
     {
-      AlwaysAssert (ri->isMarkedPreregistered()) << "registering non-marked " << atom;
+      AlwaysAssert(ri->isMarkedPreregistered())
+          << "registering non-marked " << atom;
       Trace("sat-rlv") << "*** preregister " << atom << std::endl;
       d_theoryEngine->preRegister(atom);
     }
@@ -685,7 +686,8 @@ void SatRelevancy::enqueue(TNode atom,
   {
     Trace("sat-rlv") << "*** enqueue " << atom << ", negated=" << negated
                      << std::endl;
-      AlwaysAssert (ri->isMarkedPreregistered()) << "enqueuing non-marked " << atom;
+    AlwaysAssert(ri->isMarkedPreregistered())
+        << "enqueuing non-marked " << atom;
     if (d_isActiveTmp)
     {
       queue->push(negated ? atom.notNode() : Node(atom));
