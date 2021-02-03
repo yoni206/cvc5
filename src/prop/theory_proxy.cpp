@@ -315,13 +315,14 @@ void TheoryProxy::getSkolems(TNode node,
   }
 }
 
-void TheoryProxy::preRegister(Node n) { 
-  if (d_satRlv!=nullptr)
+void TheoryProxy::preRegister(Node n)
+{
+  if (d_satRlv != nullptr)
   {
     // do nothing?
     d_satRlv->notifyPrereg(n);
   }
-  d_theoryEngine->preRegister(n); 
+  d_theoryEngine->preRegister(n);
 }
 
 }/* CVC4::prop namespace */

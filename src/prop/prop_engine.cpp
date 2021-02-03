@@ -175,7 +175,9 @@ void PropEngine::notifyPreprocessedAssertions(
     const std::vector<Node>& ppLemmas,
     const std::vector<Node>& ppSkolems)
 {
-  Trace("prop-summary") << "Preprocessed assertions: " << assertions.size() << " input / " << ppLemmas.size() << " skolem definitions" << std::endl;
+  Trace("prop-summary") << "Preprocessed assertions: " << assertions.size()
+                        << " input / " << ppLemmas.size()
+                        << " skolem definitions" << std::endl;
   // notify the theory engine of preprocessed assertions
   d_theoryProxy->notifyPreprocessedAssertions(assertions, ppLemmas, ppSkolems);
 

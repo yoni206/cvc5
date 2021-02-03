@@ -218,7 +218,7 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
     if (!ri->isPreregistered())
     {
       ri->setPreregistered();
-      d_numAssertsRlv.set(d_numAssertsRlv+1);
+      d_numAssertsRlv.set(d_numAssertsRlv + 1);
     }
     // we are a theory literal
     // if we became relevant due to a parent, or are already relevant, enqueue
@@ -451,7 +451,7 @@ void SatRelevancy::setRelevantInternal(TNode atom,
   if (!ri->isPreregistered())
   {
     ri->setPreregistered();
-    d_numAssertsRlv.set(d_numAssertsRlv+1);
+    d_numAssertsRlv.set(d_numAssertsRlv + 1);
   }
   // if there is no queue, we are asserting that an input assertion is relevant,
   // it will be asserted anyways.
@@ -647,13 +647,15 @@ void SatRelevancy::check(theory::Theory::Effort effort,
     {
       Trace("sat-rlv-summary")
           << "SatRelevancy::check(" << effort << "): " << d_numAssertsEnq.get()
-          << "/" << d_numAsserts.get() << " assertions enqueued, " << d_numAssertsRlv.get() << "/" << d_numAssertsPrereg.get() << " preregistered" << std::endl;
+          << "/" << d_numAsserts.get() << " assertions enqueued, "
+          << d_numAssertsRlv.get() << "/" << d_numAssertsPrereg.get()
+          << " preregistered" << std::endl;
     }
   }
 }
 void SatRelevancy::notifyPrereg(TNode n)
 {
-  d_numAssertsPrereg.set(d_numAssertsPrereg+1);
+  d_numAssertsPrereg.set(d_numAssertsPrereg + 1);
 }
 
 }  // namespace prop

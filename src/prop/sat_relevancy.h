@@ -148,6 +148,7 @@ class SatRelevancy
   void notifyDecisionRequest(TNode n, context::CDQueue<TNode>& queue);
 
   void notifyPrereg(TNode n);
+
  private:
   /** Get or mk rlv info */
   RlvInfo* getOrMkRlvInfo(TNode n);
