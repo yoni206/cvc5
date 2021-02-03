@@ -37,21 +37,29 @@ namespace prop {
 class CnfStream;
 class CDCLTSatSolverInterface;
 
-/** Properties of lemmas */
+/** Properties of atoms (which can also be non-negated formulas) */
 enum class RlvProperty : uint32_t
 {
   NONE = 0,
-  // is the formula relevant with true polarity?
+  // is the atom relevant with true polarity?
   RLV_POS = 1,
-  // is the formula relevant with false polarity?
+  // is the atom relevant with false polarity?
   RLV_NEG = 2,
-  // has the formula been enqueued (sent as a theory atom to theory engine)?
+  // Has the atom been enqueued (sent as a theory atom to theory engine)?
+  // Note polarity is agnostic, since we should never assert both true and
+  // false. This holds only for theory literals.
   ENQUEUED = 4,
-  // has the formula been justified?
+  // Has the atom been justified? This is used only for AND/OR/IMPLIES.
   JUSTIFIED = 8,
+  // is the atom a top-level input or lemma with positive polarity?
   INPUT_POS = 16,
+  // is the atom a top-level input or lemma with negative polarity?
   INPUT_NEG = 32,
-  PREREG = 64
+  // has the atom been preregistered? True only for theory literals.
+  PREREG = 64,
+  
+  // temporary
+  MARKED_PREREG = 128
 };
 /** Define operator lhs | rhs */
 RlvProperty operator|(RlvProperty lhs, RlvProperty rhs);
@@ -95,6 +103,10 @@ class RlvInfo
   bool isPreregistered() const;
   /** set preregistered */
   void setPreregistered();
+  /** is preregistered? */
+  bool isMarkedPreregistered() const;
+  /** set preregistered */
+  void setMarkedPreregistered();
 };
 
 /**
@@ -187,6 +199,11 @@ class SatRelevancy
   void addParentRlvWait(TNode n, bool pol, TNode parentAtom, bool ppol);
   /** Ensure lemmas relevant */
   void ensureLemmasRelevant(context::CDQueue<TNode>* queue);
+  /** If necessary, reregister the atom with the given relevancy info */
+  void preregister(TNode atom, RlvInfo * ri);
+  /** If necessary, enqueue atom with the given relevancy info */
+  void enqueue(TNode atom, bool negated, RlvInfo * ri,
+                           context::CDQueue<TNode>* queue);
   /** Pointer to the SAT solver */
   CDCLTSatSolverInterface* d_satSolver;
   /** Pointer to theory engine */

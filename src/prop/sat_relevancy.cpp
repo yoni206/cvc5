@@ -109,6 +109,15 @@ void RlvInfo::setPreregistered()
   d_rlvp.set(d_rlvp.get() | RlvProperty::PREREG);
 }
 
+bool RlvInfo::isMarkedPreregistered() const
+{
+  return (d_rlvp.get() & RlvProperty::MARKED_PREREG) != RlvProperty::NONE;
+}
+void RlvInfo::setMarkedPreregistered()
+{
+  d_rlvp.set(d_rlvp.get() | RlvProperty::MARKED_PREREG);
+}
+
 SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
               TheoryEngine* theoryEngine,
                            context::Context* context,
@@ -218,31 +227,14 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
   if (!d_cnfStream->isNotifyFormula(atom))
   {
     d_numAsserts.set(d_numAsserts + 1);
-    if (!ri->isPreregistered())
-    {
-      if (options::preregRelevancy())
-      {
-        d_theoryEngine->preRegister(atom);
-      }
-      ri->setPreregistered();
-      d_numAssertsRlv.set(d_numAssertsRlv + 1);
-    }
-    
+    // preregister if not done already
+    preregister(atom, ri);
+
     // we are a theory literal
     // if we became relevant due to a parent, or are already relevant, enqueue
     if (nrlv || ri->isRelevant(pol))
     {
-      if (!ri->isEnqueued())
-      {
-        Trace("sat-rlv") << "*** enqueue from assert " << n << std::endl;
-        if (d_isActiveTmp)
-        {
-          queue.push(n);
-        }
-        // d_enqueued.insert(atom);
-        ri->setEnqueued();
-        d_numAssertsEnq.set(d_numAssertsEnq + 1);
-      }
+      enqueue(n, false, ri, &queue);
     }
     // otherwise we will assert if the literal gets marked as relevant
   }
@@ -455,16 +447,8 @@ void SatRelevancy::setRelevantInternal(TNode atom,
     }
     return;
   }
-  // preregister the atom here?
-  if (!ri->isPreregistered())
-  {
-    if (options::preregRelevancy())
-    {
-      d_theoryEngine->preRegister(atom);
-    }
-    ri->setPreregistered();
-    d_numAssertsRlv.set(d_numAssertsRlv + 1);
-  }
+  // preregister the atom here
+  preregister(atom, ri);
   // if there is no queue, we are asserting that an input assertion is relevant,
   // it will be asserted anyways.
   Assert(queue != nullptr);
@@ -474,34 +458,29 @@ void SatRelevancy::setRelevantInternal(TNode atom,
   bool value;
   if (input)
   {
+    // The caller indicated that this is an input formula. It is important that
+    // we don't call hasSatValue below, as input formulas do not necessarily
+    // have literals in the SAT solver, as CNF conversion does not require this.
     ri->setInput(pol);
     value = pol;
     hasValue = true;
   }
   else if (ri->isInput(value))
   {
+    // We have previously been marked as an input formula, we cannot call
+    // hasSatValue below, for the same reasons. The value is computed by the
+    // call to ri->isInput.
     hasValue = true;
   }
   else
   {
     hasValue = hasSatValue(atom, value);
   }
-  // special case for top-level assertions, which may not have literals since
-  // CNF does not introduce intermediate literals for some top-level formulas
+  // do we already have a value?
   if (hasValue)
   {
-    // now, enqueue it
-    if (!ri->isEnqueued())
-    {
-      Node alit = value ? Node(atom) : atom.notNode();
-      Trace("sat-rlv") << "*** enqueue " << alit << std::endl;
-      if (d_isActiveTmp)
-      {
-        queue->push(alit);
-      }
-      ri->setEnqueued();
-      d_numAssertsEnq.set(d_numAssertsEnq + 1);
-    }
+    // if so, enqueue the atom, possibly negated
+    enqueue(atom, !value, ri, queue);
   }
 }
 
@@ -671,6 +650,36 @@ void SatRelevancy::notifyPrereg(TNode n)
   if (!options::preregRelevancy())
   {
     d_theoryEngine->preRegister(n);
+  }
+  Assert (n.getKind()!=NOT);
+}
+
+void SatRelevancy::preregister(TNode atom, RlvInfo * ri)
+{
+  if (!ri->isPreregistered())
+  {
+    if (options::preregRelevancy())
+    {
+      d_theoryEngine->preRegister(atom);
+    }
+    ri->setPreregistered();
+    d_numAssertsRlv.set(d_numAssertsRlv + 1);
+  }
+}
+
+void SatRelevancy::enqueue(TNode atom, bool negated, RlvInfo * ri,
+                          context::CDQueue<TNode>* queue)
+{
+
+  if (!ri->isEnqueued())
+  {
+    Trace("sat-rlv") << "*** enqueue " << atom << ", negated=" << negated << std::endl;
+    if (d_isActiveTmp)
+    {
+      queue->push(negated ? atom.notNode() : Node(atom));
+    }
+    ri->setEnqueued();
+    d_numAssertsEnq.set(d_numAssertsEnq + 1);
   }
 }
 
