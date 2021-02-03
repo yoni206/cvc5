@@ -281,11 +281,8 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
   Trace("sat-rlv") << "notifyAsserted: finished" << std::endl;
 }
 
-void SatRelevancy::setRelevant(TNode n,
-                               bool pol,
-                               context::CDQueue<TNode>* queue,
-                   RlvInfo* ri,
-                               bool input)
+void SatRelevancy::setRelevant(
+    TNode n, bool pol, context::CDQueue<TNode>* queue, RlvInfo* ri, bool input)
 {
   if (n.getKind() == NOT)
   {
@@ -301,7 +298,7 @@ void SatRelevancy::setRelevantInternal(TNode atom,
                                        RlvInfo* ri,
                                        bool input)
 {
-  if (ri==nullptr)
+  if (ri == nullptr)
   {
     ri = getOrMkRlvInfo(atom);
   }
@@ -702,10 +699,10 @@ void SatRelevancy::notifyPrereg(TNode n)
 void SatRelevancy::notifyPropagate(TNode n)
 {
   Trace("sat-rlv") << "notifyPropagate: " << n << std::endl;
-  //TNode atom = n.getKind()==NOT ? n[0] : n;
-  //RlvInfo* ri = getOrMkRlvInfo(atom);
-  //AlwaysAssert(ri->isPreregistered()) << "propagate before preregister";
-  //AlwaysAssert(!ri->isEnqueued()) << "propagate after enqueued";
+  // TNode atom = n.getKind()==NOT ? n[0] : n;
+  // RlvInfo* ri = getOrMkRlvInfo(atom);
+  // AlwaysAssert(ri->isPreregistered()) << "propagate before preregister";
+  // AlwaysAssert(!ri->isEnqueued()) << "propagate after enqueued";
 }
 
 void SatRelevancy::preregister(TNode atom, RlvInfo* ri)

@@ -161,7 +161,7 @@ void TheoryProxy::theoryPropagate(std::vector<SatLiteral>& output) {
   for (unsigned i = 0, i_end = outputNodes.size(); i < i_end; ++ i) {
     Debug("prop-explain") << "theoryPropagate() => " << outputNodes[i] << std::endl;
     // TEMPORARY
-    if (d_satRlv!=nullptr)
+    if (d_satRlv != nullptr)
     {
       d_satRlv->notifyPropagate(outputNodes[i]);
     }

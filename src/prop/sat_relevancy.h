@@ -187,7 +187,7 @@ class SatRelevancy
   void setRelevantInternal(TNode n,
                            bool pol,
                            context::CDQueue<TNode>* queue,
-                   RlvInfo* ri = nullptr,
+                           RlvInfo* ri = nullptr,
                            bool input = false);
   /**
    * Set that atom has been assigned a value that makes a child of parent equal
