@@ -128,7 +128,7 @@ void TheoryProxy::notifyLemma(TNode lem, TNode skolem)
 
 void TheoryProxy::variableNotify(SatVariable var) {
   Node n = d_cnfStream->getNode(SatLiteral(var));
-  d_theoryEngine->preRegister(n);
+  preRegister(n);
 }
 
 void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
@@ -315,7 +315,14 @@ void TheoryProxy::getSkolems(TNode node,
   }
 }
 
-void TheoryProxy::preRegister(Node n) { d_theoryEngine->preRegister(n); }
+void TheoryProxy::preRegister(Node n) { 
+  if (d_satRlv!=nullptr)
+  {
+    // do nothing?
+    d_satRlv->notifyPrereg(n);
+  }
+  d_theoryEngine->preRegister(n); 
+}
 
 }/* CVC4::prop namespace */
 }/* CVC4 namespace */

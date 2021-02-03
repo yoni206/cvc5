@@ -99,6 +99,15 @@ void RlvInfo::setInput(bool pol)
              | (pol ? RlvProperty::INPUT_POS : RlvProperty::INPUT_NEG));
 }
 
+bool RlvInfo::isPreregistered() const
+{
+  return (d_rlvp.get() & RlvProperty::PREREG) != RlvProperty::NONE;
+}
+void RlvInfo::setPreregistered()
+{
+  d_rlvp.set(d_rlvp.get() | RlvProperty::PREREG);
+}
+
 SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
                            context::Context* context,
                            context::UserContext* userContext,
@@ -110,7 +119,9 @@ SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
       d_numInputs(context, 0),
       d_rlvMap(context),
       d_numAsserts(context, 0),
-      d_numAssertsRlv(context, 0)
+      d_numAssertsEnq(context, 0),
+      d_numAssertsRlv(context, 0),
+      d_numAssertsPrereg(context, 0)
 {
   d_isActiveTmp = true;
 }
@@ -204,6 +215,11 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
   if (!d_cnfStream->isNotifyFormula(atom))
   {
     d_numAsserts.set(d_numAsserts + 1);
+    if (!ri->isPreregistered())
+    {
+      ri->setPreregistered();
+      d_numAssertsRlv.set(d_numAssertsRlv+1);
+    }
     // we are a theory literal
     // if we became relevant due to a parent, or are already relevant, enqueue
     if (nrlv || ri->isRelevant(pol))
@@ -217,7 +233,7 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
         }
         // d_enqueued.insert(atom);
         ri->setEnqueued();
-        d_numAssertsRlv.set(d_numAssertsRlv + 1);
+        d_numAssertsEnq.set(d_numAssertsEnq + 1);
       }
     }
     // otherwise we will assert if the literal gets marked as relevant
@@ -431,6 +447,12 @@ void SatRelevancy::setRelevantInternal(TNode atom,
     }
     return;
   }
+  // preregister the atom here?
+  if (!ri->isPreregistered())
+  {
+    ri->setPreregistered();
+    d_numAssertsRlv.set(d_numAssertsRlv+1);
+  }
   // if there is no queue, we are asserting that an input assertion is relevant,
   // it will be asserted anyways.
   Assert(queue != nullptr);
@@ -466,7 +488,7 @@ void SatRelevancy::setRelevantInternal(TNode atom,
         queue->push(alit);
       }
       ri->setEnqueued();
-      d_numAssertsRlv.set(d_numAssertsRlv + 1);
+      d_numAssertsEnq.set(d_numAssertsEnq + 1);
     }
   }
 }
@@ -506,6 +528,7 @@ void SatRelevancy::addParentRlvWait(TNode n,
   Trace("sat-rlv-debug") << "  ...add parent rlv wait: " << n << " -> "
                          << parentAtom << ", ppol=" << ppol << std::endl;
 }
+
 RlvInfo* SatRelevancy::getOrMkRlvInfo(TNode n)
 {
   RlvMap::const_iterator it = d_rlvMap.find(n);
@@ -623,10 +646,14 @@ void SatRelevancy::check(theory::Theory::Effort effort,
     if (theory::Theory::fullEffort(effort))
     {
       Trace("sat-rlv-summary")
-          << "SatRelevancy::check(" << effort << "): " << d_numAssertsRlv.get()
-          << "/" << d_numAsserts.get() << " assertions relevant" << std::endl;
+          << "SatRelevancy::check(" << effort << "): " << d_numAssertsEnq.get()
+          << "/" << d_numAsserts.get() << " assertions enqueued, " << d_numAssertsRlv.get() << "/" << d_numAssertsPrereg.get() << " preregistered" << std::endl;
     }
   }
+}
+void SatRelevancy::notifyPrereg(TNode n)
+{
+  d_numAssertsPrereg.set(d_numAssertsPrereg+1);
 }
 
 }  // namespace prop

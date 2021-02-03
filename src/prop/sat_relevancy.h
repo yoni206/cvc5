@@ -50,7 +50,8 @@ enum class RlvProperty : uint32_t
   // has the formula been justified?
   JUSTIFIED = 8,
   INPUT_POS = 16,
-  INPUT_NEG = 32
+  INPUT_NEG = 32,
+  PREREG = 64
 };
 /** Define operator lhs | rhs */
 RlvProperty operator|(RlvProperty lhs, RlvProperty rhs);
@@ -90,6 +91,10 @@ class RlvInfo
   bool isInput(bool& pol) const;
   /** set input */
   void setInput(bool pol);
+  /** is preregistered? */
+  bool isPreregistered() const;
+  /** set preregistered */
+  void setPreregistered();
 };
 
 /**
@@ -142,6 +147,7 @@ class SatRelevancy
   /** notify decision request */
   void notifyDecisionRequest(TNode n, context::CDQueue<TNode>& queue);
 
+  void notifyPrereg(TNode n);
  private:
   /** Get or mk rlv info */
   RlvInfo* getOrMkRlvInfo(TNode n);
@@ -198,7 +204,9 @@ class SatRelevancy
   // debugging
   bool d_isActiveTmp;
   context::CDO<uint64_t> d_numAsserts;
+  context::CDO<uint64_t> d_numAssertsEnq;
   context::CDO<uint64_t> d_numAssertsRlv;
+  context::CDO<uint64_t> d_numAssertsPrereg;
 };
 
 }  // namespace prop
