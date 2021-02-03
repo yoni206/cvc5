@@ -135,6 +135,8 @@ SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
       d_numAssertsRlv(context, 0),
       d_numAssertsPrereg(context, 0)
 {
+  // temporary
+  d_alwaysPregRlv = false;
   d_isActiveTmp = true;
 }
 
@@ -646,20 +648,27 @@ void SatRelevancy::check(theory::Theory::Effort effort,
 }
 void SatRelevancy::notifyPrereg(TNode n)
 {
+  Trace("sat-rlv") << "notifyPrereg: " << n << std::endl;
   d_numAssertsPrereg.set(d_numAssertsPrereg + 1);
-  if (!options::preregRelevancy())
+  if (!d_alwaysPregRlv && !options::preregRelevancy())
   {
+    Trace("sat-rlv") << "*** preregister " << n << std::endl;
     d_theoryEngine->preRegister(n);
   }
-  Assert(n.getKind() != NOT);
+  AlwaysAssert(n.getKind() != NOT);
+  // TEMPORARY
+  RlvInfo* ri = getOrMkRlvInfo(n);
+  ri->setMarkedPreregistered();
 }
 
 void SatRelevancy::preregister(TNode atom, RlvInfo* ri)
 {
   if (!ri->isPreregistered())
   {
-    if (options::preregRelevancy())
+    if (d_alwaysPregRlv || options::preregRelevancy())
     {
+      AlwaysAssert (ri->isMarkedPreregistered()) << "registering non-marked " << atom;
+      Trace("sat-rlv") << "*** preregister " << atom << std::endl;
       d_theoryEngine->preRegister(atom);
     }
     ri->setPreregistered();
@@ -676,6 +685,7 @@ void SatRelevancy::enqueue(TNode atom,
   {
     Trace("sat-rlv") << "*** enqueue " << atom << ", negated=" << negated
                      << std::endl;
+      AlwaysAssert (ri->isMarkedPreregistered()) << "enqueuing non-marked " << atom;
     if (d_isActiveTmp)
     {
       queue->push(negated ? atom.notNode() : Node(atom));

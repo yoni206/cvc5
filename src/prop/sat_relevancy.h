@@ -225,6 +225,7 @@ class SatRelevancy
    */
   RlvMap d_rlvMap;
   // debugging
+  bool d_alwaysPregRlv;
   bool d_isActiveTmp;
   context::CDO<uint64_t> d_numAsserts;
   context::CDO<uint64_t> d_numAssertsEnq;
