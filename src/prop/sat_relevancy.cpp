@@ -183,7 +183,7 @@ void SatRelevancy::notifyDecisionRequest(TNode n,
                                          context::CDQueue<TNode>& queue)
 {
   Trace("sat-rlv") << "notifyDecisionRequest: " << n << std::endl;
-  // set the lemma is currently relevant
+  // set the literal is currently relevant
   setRelevant(n, true, &queue);
   Trace("sat-rlv") << "notifyDecisionRequest: finished" << std::endl;
 }
@@ -648,6 +648,9 @@ void SatRelevancy::check(theory::Theory::Effort effort,
 }
 void SatRelevancy::notifyPrereg(TNode n)
 {
+  // TEMPORARY
+  RlvInfo* ri = getOrMkRlvInfo(n);
+  ri->setMarkedPreregistered();
   Trace("sat-rlv") << "notifyPrereg: " << n << std::endl;
   d_numAssertsPrereg.set(d_numAssertsPrereg + 1);
   if (!d_alwaysPregRlv && !options::preregRelevancy())
@@ -656,23 +659,29 @@ void SatRelevancy::notifyPrereg(TNode n)
     d_theoryEngine->preRegister(n);
   }
   AlwaysAssert(n.getKind() != NOT);
-  // TEMPORARY
-  RlvInfo* ri = getOrMkRlvInfo(n);
-  ri->setMarkedPreregistered();
+}
+
+void SatRelevancy::notifyPropagate(TNode n)
+{
+  Trace("sat-rlv") << "notifyPropagate: " << n << std::endl;
+  //TNode atom = n.getKind()==NOT ? n[0] : n;
+  //RlvInfo* ri = getOrMkRlvInfo(atom);
+  //AlwaysAssert(ri->isPreregistered()) << "propagate before preregister";
+  //AlwaysAssert(!ri->isEnqueued()) << "propagate after enqueued";
 }
 
 void SatRelevancy::preregister(TNode atom, RlvInfo* ri)
 {
   if (!ri->isPreregistered())
   {
+    ri->setPreregistered();
     if (d_alwaysPregRlv || options::preregRelevancy())
     {
       AlwaysAssert(ri->isMarkedPreregistered())
-          << "registering non-marked " << atom;
+          << "preregistering non-marked " << atom;
       Trace("sat-rlv") << "*** preregister " << atom << std::endl;
       d_theoryEngine->preRegister(atom);
     }
-    ri->setPreregistered();
     d_numAssertsRlv.set(d_numAssertsRlv + 1);
   }
 }

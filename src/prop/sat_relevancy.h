@@ -160,7 +160,9 @@ class SatRelevancy
   /** notify decision request */
   void notifyDecisionRequest(TNode n, context::CDQueue<TNode>& queue);
 
+  // TEMPORARY
   void notifyPrereg(TNode n);
+  void notifyPropagate(TNode n);
 
  private:
   /** Get or mk rlv info */
