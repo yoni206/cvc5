@@ -62,8 +62,8 @@ void TheoryProxy::finishInit(CDCLTSatSolverInterface* satSolver,
 
   if (options::satTheoryRelevancy())
   {
-    d_satRlv.reset(
-        new SatRelevancy(satSolver, d_theoryEngine, d_context, d_userContext, cnfStream));
+    d_satRlv.reset(new SatRelevancy(
+        satSolver, d_theoryEngine, d_context, d_userContext, cnfStream));
     d_skdm.reset(new SkolemDefManager(d_context,
                                       d_userContext,
                                       d_satRlv.get(),

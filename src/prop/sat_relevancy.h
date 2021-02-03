@@ -57,7 +57,7 @@ enum class RlvProperty : uint32_t
   INPUT_NEG = 32,
   // has the atom been preregistered? True only for theory literals.
   PREREG = 64,
-  
+
   // temporary
   MARKED_PREREG = 128
 };
@@ -119,7 +119,7 @@ class SatRelevancy
 
  public:
   SatRelevancy(CDCLTSatSolverInterface* satSolver,
-              TheoryEngine* theoryEngine,
+               TheoryEngine* theoryEngine,
                context::Context* context,
                context::UserContext* userContext,
                CnfStream* cnfStream);
@@ -200,14 +200,16 @@ class SatRelevancy
   /** Ensure lemmas relevant */
   void ensureLemmasRelevant(context::CDQueue<TNode>* queue);
   /** If necessary, reregister the atom with the given relevancy info */
-  void preregister(TNode atom, RlvInfo * ri);
+  void preregister(TNode atom, RlvInfo* ri);
   /** If necessary, enqueue atom with the given relevancy info */
-  void enqueue(TNode atom, bool negated, RlvInfo * ri,
-                           context::CDQueue<TNode>* queue);
+  void enqueue(TNode atom,
+               bool negated,
+               RlvInfo* ri,
+               context::CDQueue<TNode>* queue);
   /** Pointer to the SAT solver */
   CDCLTSatSolverInterface* d_satSolver;
   /** Pointer to theory engine */
-  TheoryEngine * d_theoryEngine;
+  TheoryEngine* d_theoryEngine;
   /** Pointer to the SAT context */
   context::Context* d_context;
   /** pointer to the CNF stream */

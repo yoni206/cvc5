@@ -119,12 +119,12 @@ void RlvInfo::setMarkedPreregistered()
 }
 
 SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
-              TheoryEngine* theoryEngine,
+                           TheoryEngine* theoryEngine,
                            context::Context* context,
                            context::UserContext* userContext,
                            CnfStream* cnfStream)
     : d_satSolver(satSolver),
-    d_theoryEngine(theoryEngine),
+      d_theoryEngine(theoryEngine),
       d_context(context),
       d_cnfStream(cnfStream),
       d_inputs(userContext),
@@ -651,10 +651,10 @@ void SatRelevancy::notifyPrereg(TNode n)
   {
     d_theoryEngine->preRegister(n);
   }
-  Assert (n.getKind()!=NOT);
+  Assert(n.getKind() != NOT);
 }
 
-void SatRelevancy::preregister(TNode atom, RlvInfo * ri)
+void SatRelevancy::preregister(TNode atom, RlvInfo* ri)
 {
   if (!ri->isPreregistered())
   {
@@ -667,13 +667,15 @@ void SatRelevancy::preregister(TNode atom, RlvInfo * ri)
   }
 }
 
-void SatRelevancy::enqueue(TNode atom, bool negated, RlvInfo * ri,
-                          context::CDQueue<TNode>* queue)
+void SatRelevancy::enqueue(TNode atom,
+                           bool negated,
+                           RlvInfo* ri,
+                           context::CDQueue<TNode>* queue)
 {
-
   if (!ri->isEnqueued())
   {
-    Trace("sat-rlv") << "*** enqueue " << atom << ", negated=" << negated << std::endl;
+    Trace("sat-rlv") << "*** enqueue " << atom << ", negated=" << negated
+                     << std::endl;
     if (d_isActiveTmp)
     {
       queue->push(negated ? atom.notNode() : Node(atom));
