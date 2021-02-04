@@ -697,6 +697,7 @@ void SatRelevancy::check(theory::Theory::Effort effort,
   {
     if (theory::Theory::fullEffort(effort))
     {
+      // d_numAssertsEnq.get()==d_numAssertsRlv.get() when --sat-rlv=all
       Trace("sat-rlv-summary")
           << "SatRelevancy::check(" << effort << "): " << d_numAssertsEnq.get()
           << "/" << d_numAsserts.get() << " assertions enqueued, "
