@@ -144,7 +144,7 @@ SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
                            context::Context* context,
                            context::UserContext* userContext,
                            CnfStream* cnfStream,
-               options::SatRelevancyMode mode)
+                           options::SatRelevancyMode mode)
     : d_satSolver(satSolver),
       d_theoryEngine(theoryEngine),
       d_context(context),
@@ -545,7 +545,7 @@ bool SatRelevancy::hasSatValue(TNode node, bool& value)
   }
   return false;
   */
-  
+
   SatLiteral lit = d_cnfStream->getLiteral(node);
   SatValue v = d_satSolver->value(lit);
   if (v == SAT_VALUE_TRUE)
@@ -721,7 +721,7 @@ void SatRelevancy::notifyPrereg(TNode n)
   ri->setMarkedPreregistered();
   Trace("sat-rlv") << "notifyPrereg: " << n << std::endl;
   d_numAssertsPrereg.set(d_numAssertsPrereg + 1);
-  if (d_mode!=options::SatRelevancyMode::ALL)
+  if (d_mode != options::SatRelevancyMode::ALL)
   {
     Trace("sat-rlv") << "*** preregister " << n << std::endl;
     ri->setPreregistered();
@@ -733,13 +733,15 @@ void SatRelevancy::notifyPrereg(TNode n)
 void SatRelevancy::notifyPropagate(TNode n)
 {
   Trace("sat-rlv") << "notifyPropagate: " << n << std::endl;
-  TNode atom = n.getKind()==NOT ? n[0] : n;
+  TNode atom = n.getKind() == NOT ? n[0] : n;
   RlvInfo* ri = getOrMkRlvInfo(atom);
-  AlwaysAssert(ri->isMarkedPreregistered()) << "propagate before marked preregister";
-  //AlwaysAssert(ri->isPreregistered()) << "propagate before preregister";
+  AlwaysAssert(ri->isMarkedPreregistered())
+      << "propagate before marked preregister";
+  // AlwaysAssert(ri->isPreregistered()) << "propagate before preregister";
   if (!ri->isPreregistered())
   {
-    Trace("sat-rlv-warn") << "WARN: propagate before preregister " << n << std::endl;
+    Trace("sat-rlv-warn") << "WARN: propagate before preregister " << n
+                          << std::endl;
   }
   // AlwaysAssert(!ri->isEnqueued()) << "propagate after enqueued";
 }
@@ -748,7 +750,7 @@ void SatRelevancy::preregister(TNode atom, RlvInfo* ri)
 {
   if (!ri->isPreregistered())
   {
-    if (d_mode==options::SatRelevancyMode::ALL)
+    if (d_mode == options::SatRelevancyMode::ALL)
     {
       AlwaysAssert(ri->isMarkedPreregistered())
           << "preregistering non-marked " << atom;
@@ -772,7 +774,7 @@ void SatRelevancy::enqueue(TNode atom,
     AlwaysAssert(ri->isMarkedPreregistered())
         << "enqueuing non-marked " << atom;
     //    bool avalue;
-    //AlwaysAssert(ri->isAsserted(avalue))
+    // AlwaysAssert(ri->isAsserted(avalue))
     //    << "enqueuing non-asserted " << atom;
     if (d_isActiveTmp)
     {

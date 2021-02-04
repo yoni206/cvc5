@@ -23,10 +23,10 @@
 #include "context/cdo.h"
 #include "context/cdqueue.h"
 #include "expr/node.h"
+#include "options/prop_options.h"
 #include "prop/sat_solver.h"
 #include "theory/theory.h"
 #include "util/statistics_registry.h"
-#include "options/prop_options.h"
 
 namespace CVC4 {
 
@@ -132,8 +132,7 @@ class SatRelevancy
                context::Context* context,
                context::UserContext* userContext,
                CnfStream* cnfStream,
-               options::SatRelevancyMode mode
-              );
+               options::SatRelevancyMode mode);
 
   ~SatRelevancy();
   /**

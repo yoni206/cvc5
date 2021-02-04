@@ -60,10 +60,14 @@ void TheoryProxy::finishInit(CDCLTSatSolverInterface* satSolver,
 {
   d_cnfStream = cnfStream;
 
-  if (options::satTheoryRelevancy()!=options::SatRelevancyMode::NONE)
+  if (options::satTheoryRelevancy() != options::SatRelevancyMode::NONE)
   {
-    d_satRlv.reset(new SatRelevancy(
-        satSolver, d_theoryEngine, d_context, d_userContext, cnfStream, options::satTheoryRelevancy()));
+    d_satRlv.reset(new SatRelevancy(satSolver,
+                                    d_theoryEngine,
+                                    d_context,
+                                    d_userContext,
+                                    cnfStream,
+                                    options::satTheoryRelevancy()));
     d_skdm.reset(new SkolemDefManager(d_context,
                                       d_userContext,
                                       d_satRlv.get(),
@@ -128,7 +132,7 @@ void TheoryProxy::notifyLemma(TNode lem, TNode skolem)
 
 void TheoryProxy::variableNotify(SatVariable var) {
   Node n = d_cnfStream->getNode(SatLiteral(var));
-  if (d_satRlv!=nullptr)
+  if (d_satRlv != nullptr)
   {
     d_satRlv->notifyVarNotify(n);
   }
