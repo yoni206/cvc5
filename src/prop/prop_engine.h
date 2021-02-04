@@ -32,7 +32,9 @@
 #include "prop/minisat/minisat.h"
 #include "prop/proof_cnf_stream.h"
 #include "prop/prop_proof_manager.h"
+#include "prop/sat_relevancy.h"
 #include "prop/sat_solver_types.h"
+#include "prop/theory_proxy.h"
 #include "theory/trust_node.h"
 #include "util/resource_manager.h"
 #include "util/result.h"
@@ -45,16 +47,10 @@ class DecisionEngine;
 class OutputManager;
 class TheoryEngine;
 
-namespace theory {
-  class TheoryRegistrar;
-}/* CVC4::theory namespace */
-
 namespace prop {
 
 class CnfStream;
 class CDCLTSatSolverInterface;
-
-class PropEngine;
 
 /**
  * PropEngine is the abstraction of a Sat Solver, providing methods for
@@ -129,7 +125,9 @@ class PropEngine
    * assertions are asserted to this prop engine. This method notifies the
    * decision engine and the theory engine of the assertions in ap.
    */
-  void notifyPreprocessedAssertions(const preprocessing::AssertionPipeline& ap);
+  void notifyPreprocessedAssertions(const std::vector<Node>& assertions,
+                                    const std::vector<Node>& ppLemmas,
+                                    const std::vector<Node>& ppSkolems);
 
   /**
    * Converts the given formula to CNF and assert the CNF to the SAT solver.
@@ -137,6 +135,7 @@ class PropEngine
    * @param node the formula to assert
    */
   void assertFormula(TNode node);
+  void assertSkolemDefinition(TNode node, TNode skolem);
 
   /**
    * Converts the given formula to CNF and assert the CNF to the SAT solver.
@@ -304,7 +303,16 @@ class PropEngine
    * @param removable whether this lemma can be quietly removed based
    * on an activity heuristic
    */
-  void assertLemmaInternal(theory::TrustNode trn, bool removable);
+  void assertTrustedLemmaInternal(theory::TrustNode trn, bool removable);
+  void assertInternal(TNode node,
+                      bool negated,
+                      bool removable,
+                      bool input,
+                      ProofGenerator* pg = nullptr);
+  void assertLemmasInternal(theory::TrustNode trn,
+                            const std::vector<theory::TrustNode>& ppLemmas,
+                            const std::vector<Node>& ppSkolems,
+                            bool removable);
 
   /**
    * Indicates that the SAT solver is currently solving something and we should

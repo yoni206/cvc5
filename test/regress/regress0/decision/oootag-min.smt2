@@ -1,0 +1,7 @@
+(set-logic QF_UFIDL)
+(declare-fun Br1 () Int)
+(declare-fun Br2 () Int)
+(declare-fun BOOOB_46_New_var (Int) Int)
+(declare-fun BOOOB_46_New_oper_1 (Int) Bool)
+(assert (and (not (= Br1 Br2)) (= 0 (ite (= Br2 (BOOOB_46_New_var 0)) 1 Br1)) (or (= Br2 (BOOOB_46_New_var 0)) (and (BOOOB_46_New_oper_1 0) (= 0 Br2)))))
+(check-sat)

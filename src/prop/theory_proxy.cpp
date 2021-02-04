@@ -19,9 +19,12 @@
 #include "context/context.h"
 #include "decision/decision_engine.h"
 #include "options/decision_options.h"
+#include "options/prop_options.h"
+#include "options/smt_options.h"
 #include "proof/cnf_proof.h"
 #include "prop/cnf_stream.h"
 #include "prop/prop_engine.h"
+#include "prop/sat_relevancy.h"
 #include "smt/smt_statistics_registry.h"
 #include "theory/rewriter.h"
 #include "theory/theory_engine.h"
@@ -39,8 +42,11 @@ TheoryProxy::TheoryProxy(PropEngine* propEngine,
     : d_propEngine(propEngine),
       d_cnfStream(nullptr),
       d_decisionEngine(decisionEngine),
+      d_context(context),
+      d_userContext(userContext),
       d_theoryEngine(theoryEngine),
       d_queue(context),
+      d_satRlv(nullptr),
       d_tpp(*theoryEngine, userContext, pnm)
 {
 }
@@ -49,18 +55,113 @@ TheoryProxy::~TheoryProxy() {
   /* nothing to do for now */
 }
 
-void TheoryProxy::finishInit(CnfStream* cnfStream) { d_cnfStream = cnfStream; }
+void TheoryProxy::finishInit(CDCLTSatSolverInterface* satSolver,
+                             CnfStream* cnfStream)
+{
+  d_cnfStream = cnfStream;
+
+  if (options::satTheoryRelevancy() != options::SatRelevancyMode::NONE)
+  {
+    d_satRlv.reset(new SatRelevancy(satSolver,
+                                    d_theoryEngine,
+                                    d_context,
+                                    d_userContext,
+                                    cnfStream,
+                                    options::satTheoryRelevancy()));
+    d_skdm.reset(new SkolemDefManager(d_context,
+                                      d_userContext,
+                                      d_satRlv.get(),
+                                      d_tpp.getRemoveTermFormulas()));
+  }
+}
+
+void TheoryProxy::notifyPreprocessedAssertions(
+    const std::vector<Node>& assertions,
+    const std::vector<Node>& ppLemmas,
+    const std::vector<Node>& ppSkolems)
+{
+  d_theoryEngine->notifyPreprocessedAssertions(assertions);
+}
+
+void TheoryProxy::presolve()
+{
+  d_theoryEngine->presolve();
+  if (d_satRlv != nullptr)
+  {
+    d_satRlv->presolve(d_queue);
+  }
+}
+
+void TheoryProxy::notifyAssertion(TNode a, TNode skolem)
+{
+  if (d_satRlv != nullptr)
+  {
+    if (skolem.isNull())
+    {
+      // an input assertion
+      // NOTE: we don't currently distinguish input from lemmas since unit
+      // input formulas trigger assertions before input, thus, adding a formula
+      // may trigger assertions to add to d_queue already here.
+      d_satRlv->notifyLemma(a, d_queue);
+    }
+    else
+    {
+      // a skolem definition from input
+      d_skdm->notifySkolemDefinition(skolem, a);
+    }
+  }
+}
+
+void TheoryProxy::notifyLemma(TNode lem, TNode skolem)
+{
+  // notify the skolem definition manager if it exists
+  if (d_satRlv != nullptr)
+  {
+    if (skolem.isNull())
+    {
+      // a new theory lemma
+      d_satRlv->notifyLemma(lem, d_queue);
+    }
+    else
+    {
+      // a skolem definition from a lemma
+      d_skdm->notifySkolemDefinition(skolem, lem);
+    }
+  }
+}
 
 void TheoryProxy::variableNotify(SatVariable var) {
-  d_theoryEngine->preRegister(getNode(SatLiteral(var)));
+  Node n = d_cnfStream->getNode(SatLiteral(var));
+  if (d_satRlv != nullptr)
+  {
+    d_satRlv->notifyVarNotify(n);
+  }
+  else
+  {
+    d_theoryEngine->preRegister(n);
+  }
 }
 
 void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
+  if (d_satRlv != nullptr)
+  {
+    d_satRlv->check(effort, d_queue);
+  }
   while (!d_queue.empty()) {
     TNode assertion = d_queue.front();
     d_queue.pop();
+    // now, assert to theory engine
     d_theoryEngine->assertFact(assertion);
+    if (d_skdm != nullptr)
+    {
+      Trace("sat-rlv-assert")
+          << "Assert to theory engine: " << assertion << std::endl;
+      // assertion processed makes all skolems in assertion active,
+      // which triggers lemmas becoming active
+      d_skdm->notifyAsserted(assertion, d_queue);
+    }
   }
+  // check with the theory engine
   d_theoryEngine->check(effort);
 }
 
@@ -70,6 +171,11 @@ void TheoryProxy::theoryPropagate(std::vector<SatLiteral>& output) {
   d_theoryEngine->getPropagatedLiterals(outputNodes);
   for (unsigned i = 0, i_end = outputNodes.size(); i < i_end; ++ i) {
     Debug("prop-explain") << "theoryPropagate() => " << outputNodes[i] << std::endl;
+    // TEMPORARY
+    if (d_satRlv != nullptr)
+    {
+      d_satRlv->notifyPropagate(outputNodes[i]);
+    }
     output.push_back(d_cnfStream->getLiteral(outputNodes[i]));
   }
 }
@@ -116,6 +222,12 @@ void TheoryProxy::explainPropagation(SatLiteral l, SatClause& explanation) {
 }
 
 void TheoryProxy::enqueueTheoryLiteral(const SatLiteral& l) {
+  if (d_satRlv != nullptr)
+  {
+    // use the sat relevancy to enqueue literals that are relevant
+    d_satRlv->notifyAsserted(l, d_queue);
+    return;
+  }
   Node literalNode = d_cnfStream->getNode(l);
   Debug("prop") << "enqueueing theory literal " << l << " " << literalNode << std::endl;
   Assert(!literalNode.isNull());
@@ -124,7 +236,19 @@ void TheoryProxy::enqueueTheoryLiteral(const SatLiteral& l) {
 
 SatLiteral TheoryProxy::getNextTheoryDecisionRequest() {
   TNode n = d_theoryEngine->getNextDecisionRequest();
-  return n.isNull() ? undefSatLiteral : d_cnfStream->getLiteral(n);
+  // it becomes relevant in this context
+  if (!n.isNull())
+  {
+    SatLiteral lit = d_cnfStream->getLiteral(n);
+    if (d_satRlv != nullptr)
+    {
+      // also notify the SAT relevancy module, which will make this request
+      // relevant
+      d_satRlv->notifyDecisionRequest(n, d_queue);
+    }
+    return lit;
+  }
+  return undefSatLiteral;
 }
 
 SatLiteral TheoryProxy::getNextDecisionEngineRequest(bool &stopSearch) {
@@ -208,7 +332,18 @@ void TheoryProxy::getSkolems(TNode node,
   }
 }
 
-void TheoryProxy::preRegister(Node n) { d_theoryEngine->preRegister(n); }
+void TheoryProxy::preRegister(Node n)
+{
+  if (d_satRlv != nullptr)
+  {
+    // do nothing?
+    d_satRlv->notifyPrereg(n);
+  }
+  else
+  {
+    d_theoryEngine->preRegister(n);
+  }
+}
 
 }/* CVC4::prop namespace */
 }/* CVC4 namespace */

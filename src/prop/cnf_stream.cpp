@@ -127,7 +127,7 @@ bool CnfStream::hasLiteral(TNode n) const {
   return find != d_nodeToLiteralMap.end();
 }
 
-void CnfStream::ensureLiteral(TNode n, bool noPreregistration)
+void CnfStream::ensureLiteral(TNode n)
 {
   // These are not removable and have no proof ID
   d_removable = false;
@@ -190,7 +190,7 @@ void CnfStream::ensureLiteral(TNode n, bool noPreregistration)
     d_literalToNodeMap.insert_safe(~lit, n.notNode());
   } else {
     // We have a theory atom or variable.
-    lit = convertAtom(n, noPreregistration);
+    lit = convertAtom(n, false);
   }
 
   Assert(hasLiteral(n) && getNode(lit) == n);
@@ -199,15 +199,22 @@ void CnfStream::ensureLiteral(TNode n, bool noPreregistration)
 
 SatLiteral CnfStream::newLiteral(TNode node, bool isTheoryAtom, bool preRegister, bool canEliminate) {
   Trace("cnf") << d_name << "::newLiteral(" << node << ", " << isTheoryAtom
-               << ")\n"
+               << "), prereg=" << preRegister << ", canElim=" << canEliminate
+               << "\n"
                << push;
   Assert(node.getKind() != kind::NOT);
 
   // if we are tracking formulas, everything is a theory atom
-  if (!isTheoryAtom && d_flitPolicy == FormulaLitPolicy::TRACK_AND_NOTIFY)
+  if (d_flitPolicy == FormulaLitPolicy::TRACK_AND_NOTIFY)
   {
+    if (isTheoryAtom)
+    {
+      // must distinguish theory atoms here
+      d_notifyFormulas.insert(node);
+    }
     isTheoryAtom = true;
-    d_notifyFormulas.insert(node);
+    // cannot eliminate since then we would lose connections to what is relevant
+    canEliminate = false;
   }
 
   // Get the literal for this node
@@ -279,7 +286,8 @@ void CnfStream::getBooleanVariables(std::vector<TNode>& outputVariables) const {
 
 bool CnfStream::isNotifyFormula(TNode node) const
 {
-  return d_notifyFormulas.find(node) != d_notifyFormulas.end();
+  // TODO: fix name
+  return d_notifyFormulas.find(node) == d_notifyFormulas.end();
 }
 
 void CnfStream::setProof(CnfProof* proof) {

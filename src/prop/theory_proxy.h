@@ -31,6 +31,7 @@
 #include "expr/node.h"
 #include "prop/registrar.h"
 #include "prop/sat_solver.h"
+#include "prop/skolem_def_manager.h"
 #include "theory/theory.h"
 #include "theory/theory_preprocessor.h"
 #include "theory/trust_node.h"
@@ -46,12 +47,18 @@ namespace prop {
 
 class PropEngine;
 class CnfStream;
+class SatRelevancy;
 
 /**
- * The proxy class that allows the SatSolver to communicate with the theories
+ * The proxy class that allows the SatSolver to communicate with the theories.
+ *
+ * It is an instance of the Registrar class, since it implements
+ * preregistration.
  */
 class TheoryProxy : public Registrar
 {
+  using NodeNodeMap = context::CDHashMap<Node, Node, NodeHashFunction>;
+
  public:
   TheoryProxy(PropEngine* propEngine,
               TheoryEngine* theoryEngine,
@@ -63,7 +70,20 @@ class TheoryProxy : public Registrar
   ~TheoryProxy();
 
   /** Finish initialize */
-  void finishInit(CnfStream* cnfStream);
+  void finishInit(CDCLTSatSolverInterface* satSolver, CnfStream* cnfStream);
+
+  /** Notify (preprocessed) assertions. */
+  void notifyPreprocessedAssertions(const std::vector<Node>& assertions,
+                                    const std::vector<Node>& ppLemmas,
+                                    const std::vector<Node>& ppSkolems);
+
+  void presolve();
+
+  /** Notify assertions. */
+  void notifyAssertion(TNode lem, TNode skolem = TNode::null());
+
+  /** Notify a lemma, possibly corresponding to a skolem definition */
+  void notifyLemma(TNode lem, TNode skolem = TNode::null());
 
   void theoryCheck(theory::Theory::Effort effort);
 
@@ -142,6 +162,11 @@ class TheoryProxy : public Registrar
   /** The decision engine we are using. */
   DecisionEngine* d_decisionEngine;
 
+  /** Pointer to the SAT context */
+  context::Context* d_context;
+  /** Pointer to the user context */
+  context::UserContext* d_userContext;
+
   /** The theory engine we are using. */
   TheoryEngine* d_theoryEngine;
 
@@ -154,9 +179,15 @@ class TheoryProxy : public Registrar
    */
   std::unordered_set<Node, NodeHashFunction> d_shared;
 
+  /** The SAT relevancy module we will use */
+  std::unique_ptr<SatRelevancy> d_satRlv;
+
   /** The theory preprocessor */
   theory::TheoryPreprocessor d_tpp;
-}; /* class TheoryProxy */
+
+  /** The skolem definition manager */
+  std::unique_ptr<SkolemDefManager> d_skdm;
+};
 
 }/* CVC4::prop namespace */
 

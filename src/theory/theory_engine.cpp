@@ -16,33 +16,23 @@
 
 #include "theory/theory_engine.h"
 
-#include <list>
-#include <vector>
-
 #include "base/map_util.h"
 #include "decision/decision_engine.h"
 #include "expr/attribute.h"
 #include "expr/lazy_proof.h"
-#include "expr/node.h"
 #include "expr/node_builder.h"
 #include "expr/node_visitor.h"
 #include "expr/proof_ensure_closed.h"
-#include "options/bv_options.h"
-#include "options/options.h"
 #include "options/quantifiers_options.h"
+#include "options/smt_options.h"
 #include "options/theory_options.h"
 #include "printer/printer.h"
+#include "prop/prop_engine.h"
 #include "smt/dump.h"
 #include "smt/logic_exception.h"
-#include "smt/term_formula_removal.h"
-#include "theory/arith/arith_ite_utils.h"
-#include "theory/bv/theory_bv_utils.h"
-#include "theory/care_graph.h"
 #include "theory/combination_care_graph.h"
 #include "theory/decision_manager.h"
 #include "theory/quantifiers/first_order_model.h"
-#include "theory/quantifiers/fmf/model_engine.h"
-#include "theory/quantifiers/theory_quantifiers.h"
 #include "theory/quantifiers_engine.h"
 #include "theory/relevance_manager.h"
 #include "theory/rewriter.h"
@@ -287,6 +277,11 @@ void TheoryEngine::interrupt() { d_interrupted = true; }
 void TheoryEngine::preRegister(TNode preprocessed) {
   Debug("theory") << "TheoryEngine::preRegister( " << preprocessed << ")"
                   << std::endl;
+  if (d_inConflict)
+  {
+    // not necessary if in conflict already
+    return;
+  }
   d_preregisterQueue.push(preprocessed);
 
   if (!d_inPreregister) {
@@ -295,6 +290,7 @@ void TheoryEngine::preRegister(TNode preprocessed) {
 
     // Process the pre-registration queue
     while (!d_preregisterQueue.empty()) {
+      Assert (!d_inConflict);
       // Get the next atom to pre-register
       preprocessed = d_preregisterQueue.front();
       d_preregisterQueue.pop();
@@ -1319,8 +1315,6 @@ void TheoryEngine::lemma(theory::TrustNode tlemma,
   // get the node
   Node node = tlemma.getNode();
   Node lemma = tlemma.getProven();
-  Trace("te-lemma") << "Lemma, input: " << lemma << ", property = " << p
-                    << std::endl;
 
   Assert(!expr::hasFreeVar(lemma));
 

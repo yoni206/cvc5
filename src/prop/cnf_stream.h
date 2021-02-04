@@ -131,7 +131,7 @@ class CnfStream {
    * can be queried via getSatValue(). Essentially, this is like a "convert-but-
    * don't-assert" version of convertAndAssert().
    */
-  void ensureLiteral(TNode n, bool noPreregistration = false);
+  void ensureLiteral(TNode n);
 
   /**
    * Returns the literal that represents the given node in the SAT CNF
