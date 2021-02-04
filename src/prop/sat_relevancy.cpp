@@ -143,7 +143,8 @@ SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
                            TheoryEngine* theoryEngine,
                            context::Context* context,
                            context::UserContext* userContext,
-                           CnfStream* cnfStream)
+                           CnfStream* cnfStream,
+               options::SatRelevancyMode mode)
     : d_satSolver(satSolver),
       d_theoryEngine(theoryEngine),
       d_context(context),
@@ -154,10 +155,10 @@ SatRelevancy::SatRelevancy(CDCLTSatSolverInterface* satSolver,
       d_numAsserts(context, 0),
       d_numAssertsEnq(context, 0),
       d_numAssertsRlv(context, 0),
-      d_numAssertsPrereg(context, 0)
+      d_numAssertsPrereg(context, 0),
+      d_mode(mode)
 {
   // temporary
-  d_alwaysPregRlv = false;
   d_isActiveTmp = true;
 }
 
@@ -187,6 +188,13 @@ void SatRelevancy::notifyLemma(TNode lem, context::CDQueue<TNode>& queue)
   // relevancy is SAT-context dependent, need to double check lemmas
   // when we backtrack
   Trace("sat-rlv") << "notifyLemma: " << lem << std::endl;
+  /*
+  if (lem.isConst())
+  {
+    // ignore true/false
+    return;
+  }
+  */
   d_inputs.push_back(lem);
   Trace("sat-rlv") << "notifyLemma: finished" << std::endl;
 }
@@ -223,6 +231,8 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
   bool nrlv = false;
   // first, look at wait lists
   RlvInfo* ri = getOrMkRlvInfo(atom);
+  // temporary, debugging
+  //    ri->setAsserted(pol);
   // we are going to iterate through each parent that is waiting
   // on its value and possibly update relevancy
   Assert(ri->d_parents.size() == ri->d_childPol.size());
@@ -258,7 +268,7 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
     if (nrlv || ri->isRelevant(pol))
     {
       enqueue(n, false, ri, &queue);
-      // don't bother setting asserted
+      // TODO: don't bother setting asserted
     }
     else
     {
@@ -521,8 +531,21 @@ void SatRelevancy::setRelevantInternal(TNode atom,
   }
 }
 
-bool SatRelevancy::hasSatValue(TNode node, bool& value) const
+bool SatRelevancy::hasSatValue(TNode node, bool& value)
 {
+  /*
+  bool pol = node.getKind()!=NOT;
+  TNode atom = pol ? node : node[0];
+  // TODO: pass ri
+  RlvInfo * ri = getOrMkRlvInfo(atom);
+  if (ri->isAsserted(value))
+  {
+    value = (value==pol);
+    return true;
+  }
+  return false;
+  */
+  
   SatLiteral lit = d_cnfStream->getLiteral(node);
   SatValue v = d_satSolver->value(lit);
   if (v == SAT_VALUE_TRUE)
@@ -681,6 +704,16 @@ void SatRelevancy::check(theory::Theory::Effort effort,
     }
   }
 }
+void SatRelevancy::notifyVarNotify(TNode n)
+{
+  RlvInfo* ri = getOrMkRlvInfo(n);
+  ri->setMarkedPreregistered();
+  ri->setPreregistered();
+  // always preregister here?
+  Trace("sat-rlv") << "*** var notify / preregister " << n << std::endl;
+  d_theoryEngine->preRegister(n);
+}
+
 void SatRelevancy::notifyPrereg(TNode n)
 {
   // TEMPORARY
@@ -688,9 +721,10 @@ void SatRelevancy::notifyPrereg(TNode n)
   ri->setMarkedPreregistered();
   Trace("sat-rlv") << "notifyPrereg: " << n << std::endl;
   d_numAssertsPrereg.set(d_numAssertsPrereg + 1);
-  if (!d_alwaysPregRlv && !options::preregRelevancy())
+  if (d_mode!=options::SatRelevancyMode::ALL)
   {
     Trace("sat-rlv") << "*** preregister " << n << std::endl;
+    ri->setPreregistered();
     d_theoryEngine->preRegister(n);
   }
   AlwaysAssert(n.getKind() != NOT);
@@ -699,9 +733,14 @@ void SatRelevancy::notifyPrereg(TNode n)
 void SatRelevancy::notifyPropagate(TNode n)
 {
   Trace("sat-rlv") << "notifyPropagate: " << n << std::endl;
-  // TNode atom = n.getKind()==NOT ? n[0] : n;
-  // RlvInfo* ri = getOrMkRlvInfo(atom);
-  // AlwaysAssert(ri->isPreregistered()) << "propagate before preregister";
+  TNode atom = n.getKind()==NOT ? n[0] : n;
+  RlvInfo* ri = getOrMkRlvInfo(atom);
+  AlwaysAssert(ri->isMarkedPreregistered()) << "propagate before marked preregister";
+  //AlwaysAssert(ri->isPreregistered()) << "propagate before preregister";
+  if (!ri->isPreregistered())
+  {
+    Trace("sat-rlv-warn") << "WARN: propagate before preregister " << n << std::endl;
+  }
   // AlwaysAssert(!ri->isEnqueued()) << "propagate after enqueued";
 }
 
@@ -709,12 +748,12 @@ void SatRelevancy::preregister(TNode atom, RlvInfo* ri)
 {
   if (!ri->isPreregistered())
   {
-    ri->setPreregistered();
-    if (d_alwaysPregRlv || options::preregRelevancy())
+    if (d_mode==options::SatRelevancyMode::ALL)
     {
       AlwaysAssert(ri->isMarkedPreregistered())
           << "preregistering non-marked " << atom;
       Trace("sat-rlv") << "*** preregister " << atom << std::endl;
+      ri->setPreregistered();
       d_theoryEngine->preRegister(atom);
     }
     d_numAssertsRlv.set(d_numAssertsRlv + 1);
@@ -732,6 +771,9 @@ void SatRelevancy::enqueue(TNode atom,
                      << std::endl;
     AlwaysAssert(ri->isMarkedPreregistered())
         << "enqueuing non-marked " << atom;
+    //    bool avalue;
+    //AlwaysAssert(ri->isAsserted(avalue))
+    //    << "enqueuing non-asserted " << atom;
     if (d_isActiveTmp)
     {
       queue->push(negated ? atom.notNode() : Node(atom));

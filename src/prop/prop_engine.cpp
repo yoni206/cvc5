@@ -100,7 +100,7 @@ PropEngine::PropEngine(TheoryEngine* te,
                                   userContext,
                                   pnm);
   // track and notify formulas if we are using SAT/Theory relevancy
-  bool useSatTheoryRlv = options::satTheoryRelevancy();
+  bool useSatTheoryRlv = options::satTheoryRelevancy()!=options::SatRelevancyMode::NONE;
   FormulaLitPolicy flp = useSatTheoryRlv ? FormulaLitPolicy::TRACK_AND_NOTIFY
                                          : FormulaLitPolicy::TRACK;
   d_cnfStream = new CVC4::prop::CnfStream(

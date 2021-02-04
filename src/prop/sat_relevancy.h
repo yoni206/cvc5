@@ -26,6 +26,7 @@
 #include "prop/sat_solver.h"
 #include "theory/theory.h"
 #include "util/statistics_registry.h"
+#include "options/prop_options.h"
 
 namespace CVC4 {
 
@@ -130,7 +131,9 @@ class SatRelevancy
                TheoryEngine* theoryEngine,
                context::Context* context,
                context::UserContext* userContext,
-               CnfStream* cnfStream);
+               CnfStream* cnfStream,
+               options::SatRelevancyMode mode
+              );
 
   ~SatRelevancy();
   /**
@@ -170,6 +173,7 @@ class SatRelevancy
 
   // TEMPORARY
   void notifyPrereg(TNode n);
+  void notifyVarNotify(TNode n);
   void notifyPropagate(TNode n);
 
  private:
@@ -204,7 +208,7 @@ class SatRelevancy
                         bool ppol,
                         context::CDQueue<TNode>& queue);
   /** has SAT value, if node has a value, return true and set value */
-  bool hasSatValue(TNode node, bool& value) const;
+  bool hasSatValue(TNode node, bool& value);
   /**
    * Add parent to the relevant waiting parents of n.
    */
@@ -237,12 +241,13 @@ class SatRelevancy
    */
   RlvMap d_rlvMap;
   // debugging
-  bool d_alwaysPregRlv;
   bool d_isActiveTmp;
   context::CDO<uint64_t> d_numAsserts;
   context::CDO<uint64_t> d_numAssertsEnq;
   context::CDO<uint64_t> d_numAssertsRlv;
   context::CDO<uint64_t> d_numAssertsPrereg;
+  /** The mode */
+  options::SatRelevancyMode d_mode;
 };
 
 }  // namespace prop

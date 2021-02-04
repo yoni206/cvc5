@@ -82,3 +82,21 @@ header = "options/prop_options.h"
   default    = "false"
   read_only  = true
   help       = "instead of solving minisat dumps the asserted clauses in Dimacs format"
+
+[[option]]
+  name       = "satTheoryRelevancy"
+  category   = "expert"
+  long       = "sat-rlv=MODE"
+  type       = "SatRelevancyMode"
+  default    = "NONE"
+  help       = "mode for using relevancy in prop engine to theory engine interface"
+  help_mode  = "Defines mode for using relevancy in prop engine to theory engine interface."
+[[option.mode.NONE]]
+  name = "none"
+  help = "Do not use relevancy."
+[[option.mode.ASSERT]]
+  name = "assert"
+  help = "Use relevancy to filter asserts."
+[[option.mode.ALL]]
+  name = "all"
+  help = "Use relevancy to filter all calls, including asserts and preregisters."

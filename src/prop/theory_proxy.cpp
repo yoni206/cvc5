@@ -60,10 +60,10 @@ void TheoryProxy::finishInit(CDCLTSatSolverInterface* satSolver,
 {
   d_cnfStream = cnfStream;
 
-  if (options::satTheoryRelevancy())
+  if (options::satTheoryRelevancy()!=options::SatRelevancyMode::NONE)
   {
     d_satRlv.reset(new SatRelevancy(
-        satSolver, d_theoryEngine, d_context, d_userContext, cnfStream));
+        satSolver, d_theoryEngine, d_context, d_userContext, cnfStream, options::satTheoryRelevancy()));
     d_skdm.reset(new SkolemDefManager(d_context,
                                       d_userContext,
                                       d_satRlv.get(),
@@ -128,7 +128,14 @@ void TheoryProxy::notifyLemma(TNode lem, TNode skolem)
 
 void TheoryProxy::variableNotify(SatVariable var) {
   Node n = d_cnfStream->getNode(SatLiteral(var));
-  preRegister(n);
+  if (d_satRlv!=nullptr)
+  {
+    d_satRlv->notifyVarNotify(n);
+  }
+  else
+  {
+    d_theoryEngine->preRegister(n);
+  }
 }
 
 void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
@@ -228,13 +235,14 @@ SatLiteral TheoryProxy::getNextTheoryDecisionRequest() {
   // it becomes relevant in this context
   if (!n.isNull())
   {
+    SatLiteral lit = d_cnfStream->getLiteral(n);
     if (d_satRlv != nullptr)
     {
       // also notify the SAT relevancy module, which will make this request
       // relevant
       d_satRlv->notifyDecisionRequest(n, d_queue);
     }
-    return d_cnfStream->getLiteral(n);
+    return lit;
   }
   return undefSatLiteral;
 }
