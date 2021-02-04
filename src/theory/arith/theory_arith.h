@@ -45,6 +45,9 @@ class TheoryArith : public Theory {
 
   TimerStat d_ppRewriteTimer;
 
+  /** Used to prove pp-rewrites */
+  EagerProofGenerator d_ppPfGen;
+
  public:
   TheoryArith(context::Context* c,
               context::UserContext* u,
@@ -68,7 +71,11 @@ class TheoryArith : public Theory {
   /** finish initialization */
   void finishInit() override;
   //--------------------------------- end initialization
-
+  /**
+   * Expand definition, which eliminates extended operators like div/mod in
+   * the given node.
+   */
+  TrustNode expandDefinition(Node node) override;
   /**
    * Does non-context dependent setup for a node connected to a theory.
    */
@@ -147,6 +154,7 @@ class TheoryArith : public Theory {
   std::unique_ptr<nl::NonlinearExtension> d_nonlinearExtension;
   /** The theory rewriter for this theory. */
   ArithRewriter d_rewriter;
+
 };/* class TheoryArith */
 
 }/* CVC4::theory::arith namespace */

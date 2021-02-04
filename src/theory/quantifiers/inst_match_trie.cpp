@@ -52,12 +52,11 @@ bool InstMatchTrie::addInstMatch(QuantifiersEngine* qe,
   }
   if (modEq)
   {
+    quantifiers::QuantifiersState& qs = qe->getState();
     // check modulo equality if any other instantiation match exists
-    if (!n.isNull() && qe->getEqualityQuery()->getEngine()->hasTerm(n))
+    if (!n.isNull() && qs.hasTerm(n))
     {
-      eq::EqClassIterator eqc(
-          qe->getEqualityQuery()->getEngine()->getRepresentative(n),
-          qe->getEqualityQuery()->getEngine());
+      eq::EqClassIterator eqc(qs.getRepresentative(n), qs.getEqualityEngine());
       while (!eqc.isFinished())
       {
         Node en = (*eqc);
@@ -256,6 +255,32 @@ void InstMatchTrie::getExplanationForInstLemmas(
   }
 }
 
+void InstMatchTrie::getInstantiations(
+    Node q, std::vector<std::vector<Node>>& insts) const
+{
+  std::vector<Node> terms;
+  getInstantiations(q, insts, terms);
+}
+
+void InstMatchTrie::getInstantiations(Node q,
+                                      std::vector<std::vector<Node>>& insts,
+                                      std::vector<Node>& terms) const
+{
+  if (terms.size() == q[0].getNumChildren())
+  {
+    insts.push_back(terms);
+  }
+  else
+  {
+    for (const std::pair<const Node, InstMatchTrie>& d : d_data)
+    {
+      terms.push_back(d.first);
+      d.second.getInstantiations(q, insts, terms);
+      terms.pop_back();
+    }
+  }
+}
+
 CDInstMatchTrie::~CDInstMatchTrie()
 {
   for (std::pair<const Node, CDInstMatchTrie*>& d : d_data)
@@ -305,11 +330,10 @@ bool CDInstMatchTrie::addInstMatch(QuantifiersEngine* qe,
   if (modEq)
   {
     // check modulo equality if any other instantiation match exists
-    if (!n.isNull() && qe->getEqualityQuery()->getEngine()->hasTerm(n))
+    quantifiers::QuantifiersState& qs = qe->getState();
+    if (!n.isNull() && qs.hasTerm(n))
     {
-      eq::EqClassIterator eqc(
-          qe->getEqualityQuery()->getEngine()->getRepresentative(n),
-          qe->getEqualityQuery()->getEngine());
+      eq::EqClassIterator eqc(qs.getRepresentative(n), qs.getEqualityEngine());
       while (!eqc.isFinished())
       {
         Node en = (*eqc);
@@ -513,6 +537,36 @@ void CDInstMatchTrie::getExplanationForInstLemmas(
         d.second->getExplanationForInstLemmas(q, terms, lems, quant, tvec);
         terms.pop_back();
       }
+    }
+  }
+}
+
+void CDInstMatchTrie::getInstantiations(
+    Node q, std::vector<std::vector<Node>>& insts) const
+{
+  std::vector<Node> terms;
+  getInstantiations(q, insts, terms);
+}
+
+void CDInstMatchTrie::getInstantiations(Node q,
+                                        std::vector<std::vector<Node>>& insts,
+                                        std::vector<Node>& terms) const
+{
+  if (!d_valid.get())
+  {
+    // do nothing
+  }
+  else if (terms.size() == q[0].getNumChildren())
+  {
+    insts.push_back(terms);
+  }
+  else
+  {
+    for (const std::pair<const Node, CDInstMatchTrie*>& d : d_data)
+    {
+      terms.push_back(d.first);
+      d.second->getInstantiations(q, insts, terms);
+      terms.pop_back();
     }
   }
 }

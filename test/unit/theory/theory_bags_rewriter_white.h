@@ -2,10 +2,10 @@
 /*! \file theory_bags_rewriter_white.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Mudathir Mohamed
+ **   Mudathir Mohamed, Andrew Reynolds
  ** This file is part of the CVC4 project.
  ** Copyright (c) 2009-2020 by the authors listed in the file AUTHORS
- ** in the top-level source directory) and their institutional affiliations.
+ ** in the top-level source directory and their institutional affiliations.
  ** All rights reserved.  See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
@@ -34,8 +34,8 @@ class BagsTypeRuleWhite : public CxxTest::TestSuite
   void setUp() override
   {
     d_em.reset(new ExprManager());
-    d_smt.reset(new SmtEngine(d_em.get()));
     d_nm.reset(NodeManager::fromExprManager(d_em.get()));
+    d_smt.reset(new SmtEngine(d_nm.get()));
     d_smt->finishInit();
     d_rewriter.reset(new BagsRewriter(nullptr));
   }
@@ -74,16 +74,36 @@ class BagsTypeRuleWhite : public CxxTest::TestSuite
     Node y = elements[1];
     Node c = d_nm->mkSkolem("c", d_nm->integerType());
     Node d = d_nm->mkSkolem("d", d_nm->integerType());
-    Node bagX = d_nm->mkBag(d_nm->stringType(), x, c);
-    Node bagY = d_nm->mkBag(d_nm->stringType(), y, d);
+    Node A = d_nm->mkBag(d_nm->stringType(), x, c);
+    Node B = d_nm->mkBag(d_nm->stringType(), y, d);
     Node emptyBag =
         d_nm->mkConst(EmptyBag(d_nm->mkBagType(d_nm->stringType())));
+    Node emptyString = d_nm->mkConst(String(""));
+    Node constantBag = d_nm->mkBag(
+        d_nm->stringType(), emptyString, d_nm->mkConst(Rational(1)));
 
     // (= A A) = true where A is a bag
-    Node n1 = emptyBag.eqNode(emptyBag);
+    Node n1 = A.eqNode(A);
     RewriteResponse response1 = d_rewriter->preRewrite(n1);
     TS_ASSERT(response1.d_node == d_nm->mkConst(true)
               && response1.d_status == REWRITE_AGAIN_FULL);
+
+    // (= A B) = false if A and B are different bag constants
+    Node n2 = constantBag.eqNode(emptyBag);
+    RewriteResponse response2 = d_rewriter->postRewrite(n2);
+    TS_ASSERT(response2.d_node == d_nm->mkConst(false)
+              && response2.d_status == REWRITE_AGAIN_FULL);
+
+    // (= B A) = (= A B) if A < B and at least one of A or B is not a constant
+    Node n3 = B.eqNode(A);
+    RewriteResponse response3 = d_rewriter->postRewrite(n3);
+    TS_ASSERT(response3.d_node == A.eqNode(B)
+              && response3.d_status == REWRITE_AGAIN_FULL);
+
+    // (= A B) = (= A B) no rewrite
+    Node n4 = A.eqNode(B);
+    RewriteResponse response4 = d_rewriter->postRewrite(n4);
+    TS_ASSERT(response4.d_node == n4 && response4.d_status == REWRITE_DONE);
   }
 
   void testMkBagConstantElement()
@@ -260,16 +280,20 @@ class BagsTypeRuleWhite : public CxxTest::TestSuite
   void testUnionDisjoint()
   {
     int n = 3;
-    vector<Node> elements = getNStrings(2);
+    vector<Node> elements = getNStrings(3);
     Node emptyBag =
         d_nm->mkConst(EmptyBag(d_nm->mkBagType(d_nm->stringType())));
     Node A = d_nm->mkBag(
         d_nm->stringType(), elements[0], d_nm->mkConst(Rational(n)));
     Node B = d_nm->mkBag(
         d_nm->stringType(), elements[1], d_nm->mkConst(Rational(n + 1)));
+    Node C = d_nm->mkBag(
+        d_nm->stringType(), elements[2], d_nm->mkConst(Rational(n + 2)));
+
     Node unionDisjointAB = d_nm->mkNode(UNION_DISJOINT, A, B);
     Node unionDisjointBA = d_nm->mkNode(UNION_DISJOINT, B, A);
     Node unionMaxAB = d_nm->mkNode(UNION_MAX, A, B);
+    Node unionMaxAC = d_nm->mkNode(UNION_MAX, A, C);
     Node unionMaxBA = d_nm->mkNode(UNION_MAX, B, A);
     Node intersectionAB = d_nm->mkNode(INTERSECTION_MIN, A, B);
     Node intersectionBA = d_nm->mkNode(INTERSECTION_MIN, B, A);
@@ -301,6 +325,14 @@ class BagsTypeRuleWhite : public CxxTest::TestSuite
     RewriteResponse response4 = d_rewriter->postRewrite(unionDisjoint4);
     TS_ASSERT(response4.d_node == unionDisjointBA
               && response4.d_status == REWRITE_AGAIN_FULL);
+
+    // (union_disjoint (intersection_min B A)) (union_max A B) =
+    //          (union_disjoint B A) // sum(a,b) = max(a,b) + min(a,b)
+    Node unionDisjoint5 =
+        d_nm->mkNode(UNION_DISJOINT, unionMaxAC, intersectionAB);
+    RewriteResponse response5 = d_rewriter->postRewrite(unionDisjoint5);
+    TS_ASSERT(response5.d_node == unionDisjoint5
+              && response5.d_status == REWRITE_DONE);
   }
 
   void testIntersectionMin()

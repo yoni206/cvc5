@@ -27,8 +27,6 @@
 #include "context/cdhashmap.h"
 #include "context/cdhashset.h"
 #include "context/context.h"
-#include "expr/dtype.h"
-#include "expr/type.h"
 
 namespace CVC4 {
 
@@ -346,10 +344,11 @@ class SymbolTable::Implementation {
         d_typeMap(&d_context),
         d_overload_trie(&d_context)
   {
+    // use an outermost push, to be able to clear definitions not at level zero
+    d_context.push();
   }
 
-  ~Implementation() {
-  }
+  ~Implementation() { d_context.pop(); }
 
   bool bind(const string& name, api::Term obj, bool levelZero, bool doOverload);
   void bindType(const string& name, api::Sort t, bool levelZero = false);
@@ -368,6 +367,7 @@ class SymbolTable::Implementation {
   void pushScope();
   size_t getLevel() const;
   void reset();
+  void resetAssertions();
   //------------------------ operator overloading
   /** implementation of function from header */
   bool isOverloadedFunction(api::Term fun) const;
@@ -411,6 +411,9 @@ bool SymbolTable::Implementation::bind(const string& name,
                                        bool doOverload)
 {
   PrettyCheckArgument(!obj.isNull(), obj, "cannot bind to a null api::Term");
+  Trace("sym-table") << "SymbolTable: bind " << name
+                     << ", levelZero=" << levelZero
+                     << ", doOverload=" << doOverload << std::endl;
   if (doOverload) {
     if (!bindWithOverloading(name, obj)) {
       return false;
@@ -500,35 +503,37 @@ api::Sort SymbolTable::Implementation::lookupType(
     PrettyCheckArgument(p.second.isUninterpretedSort(), name.c_str());
     return p.second;
   }
-  if (p.second.isSortConstructor()) {
-    if (Debug.isOn("sort")) {
-      Debug("sort") << "instantiating using a sort constructor" << endl;
-      Debug("sort") << "have formals [";
-      copy(p.first.begin(),
-           p.first.end() - 1,
-           ostream_iterator<api::Sort>(Debug("sort"), ", "));
-      Debug("sort") << p.first.back() << "]" << endl << "parameters   [";
-      copy(params.begin(),
-           params.end() - 1,
-           ostream_iterator<api::Sort>(Debug("sort"), ", "));
-      Debug("sort") << params.back() << "]" << endl
-                    << "type ctor    " << name << endl
-                    << "type is      " << p.second << endl;
-    }
-
-    api::Sort instantiation = p.second.instantiate(params);
-
-    Debug("sort") << "instance is  " << instantiation << endl;
-
-    return instantiation;
-  } else if (p.second.isDatatype()) {
+  if (p.second.isDatatype())
+  {
     PrettyCheckArgument(
         p.second.isParametricDatatype(), name, "expected parametric datatype");
     return p.second.instantiate(params);
   }
-  // failed to instantiate
-  Unhandled() << "Could not instantiate sort";
-  return p.second;
+  bool isSortConstructor = p.second.isSortConstructor();
+  if (Debug.isOn("sort"))
+  {
+    Debug("sort") << "instantiating using a sort "
+                  << (isSortConstructor ? "constructor" : "substitution")
+                  << std::endl;
+    Debug("sort") << "have formals [";
+    copy(p.first.begin(),
+         p.first.end() - 1,
+         ostream_iterator<api::Sort>(Debug("sort"), ", "));
+    Debug("sort") << p.first.back() << "]" << std::endl << "parameters   [";
+    copy(params.begin(),
+         params.end() - 1,
+         ostream_iterator<api::Sort>(Debug("sort"), ", "));
+    Debug("sort") << params.back() << "]" << endl
+                  << "type ctor    " << name << std::endl
+                  << "type is      " << p.second << std::endl;
+  }
+  api::Sort instantiation = isSortConstructor
+                                ? p.second.instantiate(params)
+                                : p.second.substitute(p.first, params);
+
+  Debug("sort") << "instance is  " << instantiation << std::endl;
+
+  return instantiation;
 }
 
 size_t SymbolTable::Implementation::lookupArity(const string& name) {
@@ -538,7 +543,9 @@ size_t SymbolTable::Implementation::lookupArity(const string& name) {
 }
 
 void SymbolTable::Implementation::popScope() {
-  if (d_context.getLevel() == 0) {
+  // should not pop beyond level one
+  if (d_context.getLevel() == 1)
+  {
     throw ScopeException();
   }
   d_context.pop();
@@ -551,8 +558,20 @@ size_t SymbolTable::Implementation::getLevel() const {
 }
 
 void SymbolTable::Implementation::reset() {
+  Trace("sym-table") << "SymbolTable: reset" << std::endl;
   this->SymbolTable::Implementation::~Implementation();
   new (this) SymbolTable::Implementation();
+}
+
+void SymbolTable::Implementation::resetAssertions()
+{
+  Trace("sym-table") << "SymbolTable: resetAssertions" << std::endl;
+  // pop all contexts
+  while (d_context.getLevel() > 0)
+  {
+    d_context.pop();
+  }
+  d_context.push();
 }
 
 bool SymbolTable::Implementation::isOverloadedFunction(api::Term fun) const
@@ -658,5 +677,6 @@ void SymbolTable::popScope() { d_implementation->popScope(); }
 void SymbolTable::pushScope() { d_implementation->pushScope(); }
 size_t SymbolTable::getLevel() const { return d_implementation->getLevel(); }
 void SymbolTable::reset() { d_implementation->reset(); }
+void SymbolTable::resetAssertions() { d_implementation->resetAssertions(); }
 
 }  // namespace CVC4

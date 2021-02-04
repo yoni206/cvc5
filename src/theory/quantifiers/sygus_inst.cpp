@@ -2,7 +2,7 @@
 /*! \file sygus_inst.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Mathias Preiner, Andrew Reynolds
+ **   Mathias Preiner, Aina Niemetz, Andrew Reynolds
  ** This file is part of the CVC4 project.
  ** Copyright (c) 2009-2020 by the authors listed in the file AUTHORS
  ** in the top-level source directory and their institutional affiliations.
@@ -24,7 +24,6 @@
 #include "theory/quantifiers/sygus/sygus_grammar_cons.h"
 #include "theory/quantifiers/sygus/synth_engine.h"
 #include "theory/quantifiers_engine.h"
-#include "theory/theory_engine.h"
 
 namespace CVC4 {
 namespace theory {
@@ -180,11 +179,13 @@ void addSpecialValues(
 
 }  // namespace
 
-SygusInst::SygusInst(QuantifiersEngine* qe)
-    : QuantifiersModule(qe),
-      d_ce_lemma_added(qe->getUserContext()),
-      d_global_terms(qe->getUserContext()),
-      d_notified_assertions(qe->getUserContext())
+SygusInst::SygusInst(QuantifiersEngine* qe,
+                     QuantifiersState& qs,
+                     QuantifiersInferenceManager& qim)
+    : QuantifiersModule(qs, qim, qe),
+      d_ce_lemma_added(qs.getUserContext()),
+      d_global_terms(qs.getUserContext()),
+      d_notified_assertions(qs.getUserContext())
 {
 }
 
@@ -518,7 +519,7 @@ void SygusInst::registerCeLemma(Node q, std::vector<TypeNode>& types)
   DecisionStrategy* ds =
       new DecisionStrategySingleton("CeLiteral",
                                     lit,
-                                    d_quantEngine->getSatContext(),
+                                    d_qstate.getSatContext(),
                                     d_quantEngine->getValuation());
 
   d_dstrat[q].reset(ds);

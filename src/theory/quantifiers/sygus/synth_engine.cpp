@@ -2,7 +2,7 @@
 /*! \file synth_engine.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Andrew Reynolds, Mathias Preiner, Haniel Barbosa
+ **   Andrew Reynolds, Haniel Barbosa
  ** This file is part of the CVC4 project.
  ** Copyright (c) 2009-2020 by the authors listed in the file AUTHORS
  ** in the top-level source directory and their institutional affiliations.
@@ -21,7 +21,6 @@
 #include "theory/quantifiers/sygus/term_database_sygus.h"
 #include "theory/quantifiers/term_util.h"
 #include "theory/quantifiers_engine.h"
-#include "theory/theory_engine.h"
 
 using namespace CVC4::kind;
 using namespace std;
@@ -30,14 +29,16 @@ namespace CVC4 {
 namespace theory {
 namespace quantifiers {
 
-SynthEngine::SynthEngine(QuantifiersEngine* qe, context::Context* c)
-    : QuantifiersModule(qe),
+SynthEngine::SynthEngine(QuantifiersEngine* qe,
+                         QuantifiersState& qs,
+                         QuantifiersInferenceManager& qim)
+    : QuantifiersModule(qs, qim, qe),
       d_tds(qe->getTermDatabaseSygus()),
       d_conj(nullptr),
       d_sqp(qe)
 {
   d_conjs.push_back(std::unique_ptr<SynthConjecture>(
-      new SynthConjecture(d_quantEngine, d_statistics)));
+      new SynthConjecture(d_quantEngine, qs, d_statistics)));
   d_conj = d_conjs.back().get();
 }
 
@@ -134,8 +135,7 @@ void SynthEngine::check(Theory::Effort e, QEffort quant_e)
     activeCheckConj.clear();
     activeCheckConj = acnext;
     acnext.clear();
-  } while (!activeCheckConj.empty()
-           && !d_quantEngine->theoryEngineNeedsCheck());
+  } while (!activeCheckConj.empty() && !d_qstate.getValuation().needCheck());
   Trace("sygus-engine")
       << "Finished Counterexample Guided Instantiation engine." << std::endl;
 }
@@ -159,7 +159,7 @@ void SynthEngine::assignConjecture(Node q)
   if (d_conjs.back()->isAssigned())
   {
     d_conjs.push_back(std::unique_ptr<SynthConjecture>(
-        new SynthConjecture(d_quantEngine, d_statistics)));
+        new SynthConjecture(d_quantEngine, d_qstate, d_statistics)));
   }
   d_conjs.back()->assign(q);
 }

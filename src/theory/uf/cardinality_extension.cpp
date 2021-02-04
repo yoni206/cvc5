@@ -14,13 +14,14 @@
 
 #include "theory/uf/cardinality_extension.h"
 
+#include "options/smt_options.h"
 #include "options/uf_options.h"
-#include "theory/uf/theory_uf.h"
-#include "theory/uf/equality_engine.h"
-#include "theory/theory_engine.h"
-#include "theory/quantifiers_engine.h"
 #include "theory/quantifiers/term_database.h"
+#include "theory/quantifiers_engine.h"
+#include "theory/theory_engine.h"
 #include "theory/theory_model.h"
+#include "theory/uf/equality_engine.h"
+#include "theory/uf/theory_uf.h"
 
 using namespace std;
 using namespace CVC4::kind;
@@ -1014,8 +1015,9 @@ int SortModel::addSplit(Region* r)
       }else{
         Trace("uf-ss-warn") << "Split on unknown literal : " << ss << std::endl;
       }
-      if( ss==b_t ){
-        Message() << "Bad split " << s << std::endl;
+      if (ss == b_t)
+      {
+        CVC4Message() << "Bad split " << s << std::endl;
         AlwaysAssert(false);
       }
     }
@@ -1174,7 +1176,8 @@ bool SortModel::checkLastCall()
           }
         }
         Node cl = getCardinalityLiteral( d_maxNegCard );
-        Node lem = NodeManager::currentNM()->mkNode( OR, cl, NodeManager::currentNM()->mkNode( AND, force_cl ) );
+        Node lem = NodeManager::currentNM()->mkNode(
+            OR, cl, NodeManager::currentNM()->mkAnd(force_cl));
         Trace("uf-ss-lemma") << "*** Enforce negative cardinality constraint lemma : " << lem << std::endl;
         d_im.lemma(lem, LemmaProperty::NONE, false);
         return false;
@@ -1420,8 +1423,8 @@ void CardinalityExtension::assertNode(Node n, bool isDecision)
           for( std::map< TypeNode, SortModel* >::iterator it = d_rep_model.begin(); it != d_rep_model.end(); ++it ){
             if( !it->second->hasCardinalityAsserted() ){
               Trace("uf-ss-warn") << "WARNING: Assert " << n << " as a decision before cardinality for " << it->first << "." << std::endl;
-              //Message() << "Error: constraint asserted before cardinality for " << it->first << std::endl;
-              //Unimplemented();
+              // CVC4Message() << "Error: constraint asserted before cardinality
+              // for " << it->first << std::endl; Unimplemented();
             }
           }
         }

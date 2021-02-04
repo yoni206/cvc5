@@ -151,12 +151,12 @@ bool TypeNode::isFiniteInternal(bool usortFinite)
       TypeNode tnc = getArrayConstituentType();
       if (!tnc.isFiniteInternal(usortFinite))
       {
-        // arrays with consistuent type that is infinite are infinite
+        // arrays with constituent type that is infinite are infinite
         ret = false;
       }
       else if (getArrayIndexType().isFiniteInternal(usortFinite))
       {
-        // arrays with both finite consistuent and index types are finite
+        // arrays with both finite constituent and index types are finite
         ret = true;
       }
       else
@@ -169,6 +169,11 @@ bool TypeNode::isFiniteInternal(bool usortFinite)
     else if (isSet())
     {
       ret = getSetElementType().isFiniteInternal(usortFinite);
+    }
+    else if (isBag())
+    {
+      // there are infinite bags for all element types
+      ret = false;
     }
     else if (isFunction())
     {
@@ -589,13 +594,11 @@ TypeNode TypeNode::commonTypeNode(TypeNode t0, TypeNode t1, bool isLeast) {
     case kind::SEQUENCE_TYPE:
     case kind::SET_TYPE:
     case kind::BAG_TYPE:
+    case kind::SEXPR_TYPE:
     {
       // we don't support subtyping except for built in types Int and Real.
       return TypeNode();  // return null type
     }
-    case kind::SEXPR_TYPE:
-      Unimplemented()
-          << "haven't implemented leastCommonType for symbolic expressions yet";
     default:
       Unimplemented() << "don't have a commonType for types `" << t0
                       << "' and `" << t1 << "'";

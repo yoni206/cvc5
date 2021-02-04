@@ -2,7 +2,7 @@
 /*! \file printer.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Abdalrhman Mohamed, Morgan Deters, Aina Niemetz
+ **   Abdalrhman Mohamed, Andrew Reynolds, Morgan Deters
  ** This file is part of the CVC4 project.
  ** Copyright (c) 2009-2020 by the authors listed in the file AUTHORS
  ** in the top-level source directory and their institutional affiliations.
@@ -26,6 +26,7 @@
 #include "proof/unsat_core.h"
 #include "smt/command.h"
 #include "smt/node_command.h"
+#include "theory/quantifiers/instantiation_list.h"
 
 using namespace std;
 
@@ -74,17 +75,33 @@ unique_ptr<Printer> Printer::makePrinter(OutputLanguage lang)
 
 void Printer::toStream(std::ostream& out, const smt::Model& m) const
 {
-  for(size_t i = 0; i < m.getNumCommands(); ++i) {
-    const NodeCommand* cmd = m.getCommand(i);
-    const DeclareFunctionNodeCommand* dfc =
-        dynamic_cast<const DeclareFunctionNodeCommand*>(cmd);
-    if (dfc != NULL && !m.isModelCoreSymbol(dfc->getFunction()))
+  // print the declared sorts
+  const std::vector<TypeNode>& dsorts = m.getDeclaredSorts();
+  for (const TypeNode& tn : dsorts)
+  {
+    toStreamModelSort(out, m, tn);
+  }
+
+  // print the declared terms
+  const std::vector<Node>& dterms = m.getDeclaredTerms();
+  for (const Node& n : dterms)
+  {
+    // take into account model core, independently of the format
+    if (!m.isModelCoreSymbol(n))
     {
       continue;
     }
-    toStream(out, m, cmd);
+    toStreamModelTerm(out, m, n);
   }
+
 }/* Printer::toStream(Model) */
+
+void Printer::toStreamUsing(OutputLanguage lang,
+                            std::ostream& out,
+                            const smt::Model& m) const
+{
+  getPrinter(lang)->toStream(out, m);
+}
 
 void Printer::toStream(std::ostream& out, const UnsatCore& core) const
 {
@@ -93,6 +110,33 @@ void Printer::toStream(std::ostream& out, const UnsatCore& core) const
     out << std::endl;
   }
 }/* Printer::toStream(UnsatCore) */
+
+void Printer::toStream(std::ostream& out, const InstantiationList& is) const
+{
+  out << "(instantiations " << is.d_quant << std::endl;
+  for (const std::vector<Node>& i : is.d_inst)
+  {
+    out << "  ( ";
+    for (const Node& n : i)
+    {
+      out << n << " ";
+    }
+    out << ")" << std::endl;
+  }
+  out << ")" << std::endl;
+}
+
+void Printer::toStream(std::ostream& out, const SkolemList& sks) const
+{
+  out << "(skolem " << sks.d_quant << std::endl;
+  out << "  ( ";
+  for (const Node& n : sks.d_sks)
+  {
+    out << n << " ";
+  }
+  out << ")" << std::endl;
+  out << ")" << std::endl;
+}
 
 Printer* Printer::getPrinter(OutputLanguage lang)
 {
@@ -160,8 +204,6 @@ void Printer::toStreamCmdDeclareFunction(std::ostream& out,
 }
 
 void Printer::toStreamCmdDeclareType(std::ostream& out,
-                                     const std::string& id,
-                                     size_t arity,
                                      TypeNode type) const
 {
   printUnknownCommand(out, "declare-sort");
@@ -224,9 +266,8 @@ void Printer::toStreamCmdDeclareVar(std::ostream& out,
 }
 
 void Printer::toStreamCmdSynthFun(std::ostream& out,
-                                  const std::string& sym,
+                                  Node f,
                                   const std::vector<Node>& vars,
-                                  TypeNode range,
                                   bool isInv,
                                   TypeNode sygusType) const
 {

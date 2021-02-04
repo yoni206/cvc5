@@ -382,11 +382,14 @@ Node Rewriter::rewriteTo(theory::TheoryId theoryId,
                 << "with proofs: " << rewriteStackTop.d_node << std::endl;
             Trace("rewriter-proof") << " w/o proofs: " << cached << std::endl;
             Node eq = rewriteStackTop.d_node.eqNode(cached);
+            // we make this a post-rewrite, since we are processing a node that
+            // has finished post-rewriting above
             tcpg->addRewriteStep(rewriteStackTop.d_node,
                                  cached,
                                  PfRule::TRUST_REWRITE,
                                  {},
-                                 {eq});
+                                 {eq},
+                                 false);
             // don't overwrite the cache, should be the same
             rewriteStackTop.d_node = cached;
           }
@@ -479,19 +482,19 @@ RewriteResponse Rewriter::processTrustRewriteResponse(
     {
       Node tidn = builtin::BuiltinProofRuleChecker::mkTheoryIdNode(theoryId);
       // add small step trusted rewrite
-      NodeManager* nm = NodeManager::currentNM();
       Node rid = mkMethodId(isPre ? MethodId::RW_REWRITE_THEORY_PRE
                                   : MethodId::RW_REWRITE_THEORY_POST);
       tcpg->addRewriteStep(proven[0],
                            proven[1],
                            PfRule::THEORY_REWRITE,
                            {},
-                           {proven, tidn, rid});
+                           {proven, tidn, rid},
+                           isPre);
     }
     else
     {
       // store proven rewrite step
-      tcpg->addRewriteStep(proven[0], proven[1], pg);
+      tcpg->addRewriteStep(proven[0], proven[1], pg, isPre);
     }
   }
   return RewriteResponse(tresponse.d_status, trn.getNode());

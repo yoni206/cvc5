@@ -30,7 +30,7 @@
 #include "options/language.h"
 #include "options/printer_options.h"
 #include "options/smt_options.h"
-#include "printer/dagification_visitor.h"
+#include "printer/let_binding.h"
 #include "proof/unsat_core.h"
 #include "smt/command.h"
 #include "smt/node_command.h"
@@ -39,7 +39,6 @@
 #include "theory/arrays/theory_arrays_rewriter.h"
 #include "theory/datatypes/sygus_datatype_utils.h"
 #include "theory/quantifiers/quantifiers_attributes.h"
-#include "theory/substitutions.h"
 #include "theory/theory_model.h"
 #include "util/smt2_quote_string.h"
 
@@ -108,51 +107,52 @@ void Smt2Printer::toStream(std::ostream& out,
                            size_t dag) const
 {
   if(dag != 0) {
-    DagificationVisitor dv(dag);
-    NodeVisitor<DagificationVisitor> visitor;
-    visitor.run(dv, n);
-    const theory::SubstitutionMap& lets = dv.getLets();
-    if(!lets.empty()) {
-      theory::SubstitutionMap::const_iterator i = lets.begin();
-      theory::SubstitutionMap::const_iterator i_end = lets.end();
-      for(; i != i_end; ++ i) {
-        out << "(let ((";
-        toStream(out, (*i).second, toDepth);
-        out << ' ';
-        toStream(out, (*i).first, toDepth);
-        out << ")) ";
-      }
-    }
-    Node body = dv.getDagifiedBody();
-    toStream(out, body, toDepth);
-    if(!lets.empty()) {
-      theory::SubstitutionMap::const_iterator i = lets.begin();
-      theory::SubstitutionMap::const_iterator i_end = lets.end();
-      for(; i != i_end; ++ i) {
-        out << ")";
-      }
-    }
+    LetBinding lbind(dag + 1);
+    toStreamWithLetify(out, n, toDepth, &lbind);
   } else {
     toStream(out, n, toDepth);
   }
 }
 
-static bool stringifyRegexp(Node n, stringstream& ss) {
-  if(n.getKind() == kind::STRING_TO_REGEXP) {
-    ss << n[0].getConst<String>().toString(true);
-  } else if(n.getKind() == kind::REGEXP_CONCAT) {
-    for(unsigned i = 0; i < n.getNumChildren(); ++i) {
-      if(!stringifyRegexp(n[i], ss)) {
-        return false;
-      }
-    }
-  } else {
-    return false;
+void Smt2Printer::toStreamWithLetify(std::ostream& out,
+                                     Node n,
+                                     int toDepth,
+                                     LetBinding* lbind) const
+{
+  if (lbind == nullptr)
+  {
+    toStream(out, n, toDepth);
+    return;
   }
-  return true;
+  std::stringstream cparen;
+  std::vector<Node> letList;
+  lbind->letify(n, letList);
+  if (!letList.empty())
+  {
+    std::map<Node, uint32_t>::const_iterator it;
+    for (size_t i = 0, nlets = letList.size(); i < nlets; i++)
+    {
+      Node nl = letList[i];
+      out << "(let ((";
+      uint32_t id = lbind->getId(nl);
+      out << "_let_" << id << " ";
+      Node nlc = lbind->convert(nl, "_let_", false);
+      toStream(out, nlc, toDepth, lbind);
+      out << ")) ";
+      cparen << ")";
+    }
+  }
+  Node nc = lbind->convert(n, "_let_");
+  // print the body, passing the lbind object
+  toStream(out, nc, toDepth, lbind);
+  out << cparen.str();
+  lbind->popScope();
 }
 
-void Smt2Printer::toStream(std::ostream& out, TNode n, int toDepth) const
+void Smt2Printer::toStream(std::ostream& out,
+                           TNode n,
+                           int toDepth,
+                           LetBinding* lbind) const
 {
   // null
   if(n.getKind() == kind::NULL_EXPR) {
@@ -207,14 +207,14 @@ void Smt2Printer::toStream(std::ostream& out, TNode n, int toDepth) const
     }
     case kind::CONST_ROUNDINGMODE:
       switch (n.getConst<RoundingMode>()) {
-      case roundNearestTiesToEven : out << "roundNearestTiesToEven"; break;
-      case roundNearestTiesToAway : out << "roundNearestTiesToAway"; break;
-      case roundTowardPositive : out << "roundTowardPositive"; break;
-      case roundTowardNegative : out << "roundTowardNegative"; break;
-      case roundTowardZero : out << "roundTowardZero"; break;
-      default :
-        Unreachable() << "Invalid value of rounding mode constant ("
-                      << n.getConst<RoundingMode>() << ")";
+        case ROUND_NEAREST_TIES_TO_EVEN: out << "roundNearestTiesToEven"; break;
+        case ROUND_NEAREST_TIES_TO_AWAY: out << "roundNearestTiesToAway"; break;
+        case ROUND_TOWARD_POSITIVE: out << "roundTowardPositive"; break;
+        case ROUND_TOWARD_NEGATIVE: out << "roundTowardNegative"; break;
+        case ROUND_TOWARD_ZERO: out << "roundTowardZero"; break;
+        default:
+          Unreachable() << "Invalid value of rounding mode constant ("
+                        << n.getConst<RoundingMode>() << ")";
       }
       break;
     case kind::CONST_BOOLEAN:
@@ -309,8 +309,8 @@ void Smt2Printer::toStream(std::ostream& out, TNode n, int toDepth) const
     case kind::UNINTERPRETED_CONSTANT: {
       const UninterpretedConstant& uc = n.getConst<UninterpretedConstant>();
       std::stringstream ss;
-      ss << '@' << uc;
-      out << CVC4::quoteSymbol(ss.str());
+      ss << "(as @" << uc << " " << n.getType() << ")";
+      out << ss.str();
       break;
     }
 
@@ -486,7 +486,7 @@ void Smt2Printer::toStream(std::ostream& out, TNode n, int toDepth) const
             << smtKindString(is_int ? kind::TO_INTEGER : kind::DIVISION,
                              d_variant)
             << " ";
-        toStream(out, type_asc_arg, toDepth);
+        toStream(out, type_asc_arg, toDepth, lbind);
         if (!is_int)
         {
           out << " 1";
@@ -498,7 +498,7 @@ void Smt2Printer::toStream(std::ostream& out, TNode n, int toDepth) const
     {
       // use type ascription
       out << "(as ";
-      toStream(out, type_asc_arg, toDepth < 0 ? toDepth : toDepth - 1);
+      toStream(out, type_asc_arg, toDepth < 0 ? toDepth : toDepth - 1, lbind);
       out << " " << force_nt << ")";
     }
     return;
@@ -583,20 +583,19 @@ void Smt2Printer::toStream(std::ostream& out, TNode n, int toDepth) const
         args.insert(args.begin(), head[1]);
         head = head[0];
       }
-      toStream(out, head, toDepth);
+      toStream(out, head, toDepth, lbind);
       for (unsigned i = 0, size = args.size(); i < size; ++i)
       {
         out << " ";
-        toStream(out, args[i], toDepth);
+        toStream(out, args[i], toDepth, lbind);
       }
       out << ")";
     }
     return;
 
-  case kind::LAMBDA: out << smtKindString(k, d_variant) << " "; break;
   case kind::MATCH:
     out << smtKindString(k, d_variant) << " ";
-    toStream(out, n[0], toDepth);
+    toStream(out, n[0], toDepth, lbind);
     out << " (";
     for (size_t i = 1, nchild = n.getNumChildren(); i < nchild; i++)
     {
@@ -604,21 +603,20 @@ void Smt2Printer::toStream(std::ostream& out, TNode n, int toDepth) const
       {
         out << " ";
       }
-      toStream(out, n[i], toDepth);
+      toStream(out, n[i], toDepth, lbind);
     }
     out << "))";
     return;
   case kind::MATCH_BIND_CASE:
     // ignore the binder
-    toStream(out, n[1], toDepth);
+    toStream(out, n[1], toDepth, lbind);
     out << " ";
-    toStream(out, n[2], toDepth);
+    toStream(out, n[2], toDepth, lbind);
     out << ")";
     return;
   case kind::MATCH_CASE:
     // do nothing
     break;
-  case kind::WITNESS: out << smtKindString(k, d_variant) << " "; break;
 
   // arith theory
   case kind::PLUS:
@@ -815,7 +813,30 @@ void Smt2Printer::toStream(std::ostream& out, TNode n, int toDepth) const
   case kind::UNIVERSE_SET:out << "(as univset " << n.getType() << ")";break;
 
   // bags
-  case kind::BAG_TYPE:  out << smtKindString(k, d_variant) << " "; break;
+  case kind::BAG_TYPE:
+  case kind::UNION_MAX:
+  case kind::UNION_DISJOINT:
+  case kind::INTERSECTION_MIN:
+  case kind::DIFFERENCE_SUBTRACT:
+  case kind::DIFFERENCE_REMOVE:
+  case kind::SUBBAG:
+  case kind::BAG_COUNT:
+  case kind::DUPLICATE_REMOVAL:
+  case kind::BAG_CARD:
+  case kind::BAG_CHOOSE:
+  case kind::BAG_IS_SINGLETON:
+  case kind::BAG_FROM_SET:
+  case kind::BAG_TO_SET: out << smtKindString(k, d_variant) << " "; break;
+  case kind::MK_BAG:
+  {
+    // print (bag (mkBag_op Real) 1 3) as (bag 1.0 3)
+    out << smtKindString(k, d_variant) << " ";
+    TypeNode elemType = n.getType().getBagElementType();
+    toStreamCastToType(
+        out, n[0], toDepth < 0 ? toDepth : toDepth - 1, elemType);
+    out << " " << n[1] << ")";
+    return;
+  }
 
     // fp theory
   case kind::FLOATINGPOINT_FP:
@@ -900,26 +921,21 @@ void Smt2Printer::toStream(std::ostream& out, TNode n, int toDepth) const
     // quantifiers
   case kind::FORALL:
   case kind::EXISTS:
+  case kind::LAMBDA:
+  case kind::WITNESS:
   {
-    if (k == kind::FORALL)
-    {
-      out << "forall ";
-    }
-    else
-    {
-      out << "exists ";
-    }
-    for (unsigned i = 0; i < 2; i++)
-    {
-      out << n[i] << " ";
-      if (i == 0 && n.getNumChildren() == 3)
-      {
-        out << "(! ";
-      }
-    }
+    out << smtKindString(k, d_variant) << " ";
+    toStream(out, n[0], toDepth, lbind);
+    out << " ";
     if (n.getNumChildren() == 3)
     {
-      out << n[2];
+      out << "(! ";
+    }
+    toStreamWithLetify(out, n[1], toDepth - 1, lbind);
+    if (n.getNumChildren() == 3)
+    {
+      out << " ";
+      toStream(out, n[2], toDepth, lbind);
       out << ")";
     }
     out << ")";
@@ -932,7 +948,7 @@ void Smt2Printer::toStream(std::ostream& out, TNode n, int toDepth) const
     for (TNode::iterator i = n.begin(), iend = n.end(); i != iend;)
     {
       out << '(';
-      toStream(out, *i, toDepth < 0 ? toDepth : toDepth - 1, 0);
+      toStream(out, *i, toDepth < 0 ? toDepth : toDepth - 1);
       out << ' ';
       out << (*i).getType();
       out << ')';
@@ -989,7 +1005,8 @@ void Smt2Printer::toStream(std::ostream& out, TNode n, int toDepth) const
                    toDepth < 0 ? toDepth : toDepth - 1);
         }
       }else{
-        toStream(out, n.getOperator(), toDepth < 0 ? toDepth : toDepth - 1);
+        toStream(
+            out, n.getOperator(), toDepth < 0 ? toDepth : toDepth - 1, lbind);
       }
     } else {
       out << "(...)";
@@ -1002,7 +1019,7 @@ void Smt2Printer::toStream(std::ostream& out, TNode n, int toDepth) const
   
   for(size_t i = 0, c = 1; i < n.getNumChildren(); ) {
     if(toDepth != 0) {
-      toStream(out, n[i], toDepth < 0 ? toDepth : toDepth - c);
+      toStream(out, n[i], toDepth < 0 ? toDepth : toDepth - c, lbind);
     } else {
       out << "(...)";
     }
@@ -1062,8 +1079,7 @@ static string smtKindString(Kind k, Variant v)
     // uf theory
   case kind::APPLY_UF: break;
 
-  case kind::LAMBDA:
-    return "lambda";
+  case kind::LAMBDA: return "lambda";
   case kind::MATCH: return "match";
   case kind::WITNESS: return "witness";
 
@@ -1177,6 +1193,20 @@ static string smtKindString(Kind k, Variant v)
 
   // bag theory
   case kind::BAG_TYPE: return "Bag";
+  case kind::UNION_MAX: return "union_max";
+  case kind::UNION_DISJOINT: return "union_disjoint";
+  case kind::INTERSECTION_MIN: return "intersection_min";
+  case kind::DIFFERENCE_SUBTRACT: return "difference_subtract";
+  case kind::DIFFERENCE_REMOVE: return "difference_remove";
+  case kind::SUBBAG: return "subbag";
+  case kind::BAG_COUNT: return "bag.count";
+  case kind::DUPLICATE_REMOVAL: return "duplicate_removal";
+  case kind::MK_BAG: return "bag";
+  case kind::BAG_CARD: return "bag.card";
+  case kind::BAG_CHOOSE: return "bag.choose";
+  case kind::BAG_IS_SINGLETON: return "bag.is_singleton";
+  case kind::BAG_FROM_SET: return "bag.from_set";
+  case kind::BAG_TO_SET: return "bag.to_set";
 
     // fp theory
   case kind::FLOATINGPOINT_FP: return "fp";
@@ -1279,6 +1309,10 @@ static string smtKindString(Kind k, Variant v)
   case kind::SEP_WAND: return "wand";
   case kind::SEP_EMP: return "emp";
 
+  // quantifiers
+  case kind::FORALL: return "forall";
+  case kind::EXISTS: return "exists";
+
   default:
     ; /* fall through */
   }
@@ -1319,15 +1353,20 @@ void Smt2Printer::toStream(std::ostream& out, const CommandStatus* s) const
 void Smt2Printer::toStream(std::ostream& out, const UnsatCore& core) const
 {
   out << "(" << std::endl;
-  SmtEngine * smt = core.getSmtEngine();
-  Assert(smt != NULL);
-  for(UnsatCore::const_iterator i = core.begin(); i != core.end(); ++i) {
-    std::string name;
-    if (smt->getExpressionName(*i,name)) {
-      // Named assertions always get printed
-      out << CVC4::quoteSymbol(name) << endl;
-    } else if (options::dumpUnsatCoresFull()) {
-      // Unnamed assertions only get printed if the option is set
+  if (core.useNames())
+  {
+    // use the names
+    const std::vector<std::string>& cnames = core.getCoreNames();
+    for (const std::string& cn : cnames)
+    {
+      out << CVC4::quoteSymbol(cn) << std::endl;
+    }
+  }
+  else
+  {
+    // otherwise, use the formulas
+    for (UnsatCore::const_iterator i = core.begin(); i != core.end(); ++i)
+    {
       out << *i << endl;
     }
   }
@@ -1362,124 +1401,98 @@ void Smt2Printer::toStream(std::ostream& out, const smt::Model& m) const
   }
 }
 
-void Smt2Printer::toStream(std::ostream& out,
-                           const smt::Model& model,
-                           const NodeCommand* command) const
+void Smt2Printer::toStreamModelSort(std::ostream& out,
+                                    const smt::Model& m,
+                                    TypeNode tn) const
 {
-  const theory::TheoryModel* theory_model = model.getTheoryModel();
-  AlwaysAssert(theory_model != nullptr);
-  if (const DeclareTypeNodeCommand* dtc =
-          dynamic_cast<const DeclareTypeNodeCommand*>(command))
+  if (!tn.isSort())
   {
-    // print out the DeclareTypeCommand
-    TypeNode tn = dtc->getType();
-    if (!tn.isSort())
+    out << "ERROR: don't know how to print non uninterpreted sort in model: "
+        << tn << std::endl;
+    return;
+  }
+  const theory::TheoryModel* tm = m.getTheoryModel();
+  std::vector<Node> elements = tm->getDomainElements(tn);
+  if (options::modelUninterpPrint() == options::ModelUninterpPrintMode::DtEnum)
+  {
+    if (isVariant_2_6(d_variant))
     {
-      out << (*dtc) << endl;
+      out << "(declare-datatypes ((" << tn << " 0)) (";
     }
     else
     {
-      std::vector<Node> elements = theory_model->getDomainElements(tn);
-      if (options::modelUninterpPrint()
-          == options::ModelUninterpPrintMode::DtEnum)
-      {
-        if (isVariant_2_6(d_variant))
-        {
-          out << "(declare-datatypes ((" << (*dtc).getSymbol() << " 0)) (";
-        }
-        else
-        {
-          out << "(declare-datatypes () ((" << (*dtc).getSymbol() << " ";
-        }
-        for (const Node& type_ref : elements)
-        {
-          out << "(" << type_ref << ")";
-        }
-        out << ")))" << endl;
-      }
-      else
-      {
-        // print the cardinality
-        out << "; cardinality of " << tn << " is " << elements.size() << endl;
-        if (options::modelUninterpPrint()
-            == options::ModelUninterpPrintMode::DeclSortAndFun)
-        {
-          out << (*dtc) << endl;
-        }
-        // print the representatives
-        for (const Node& trn : elements)
-        {
-          if (trn.isVar())
-          {
-            out << "(declare-fun " << quoteSymbol(trn) << " () " << tn << ")"
-                << endl;
-          }
-          else
-          {
-            out << "; rep: " << trn << endl;
-          }
-        }
-      }
+      out << "(declare-datatypes () ((" << tn << " ";
     }
+    for (const Node& type_ref : elements)
+    {
+      out << "(" << type_ref << ")";
+    }
+    out << ")))" << endl;
+    return;
   }
-  else if (const DeclareFunctionNodeCommand* dfc =
-               dynamic_cast<const DeclareFunctionNodeCommand*>(command))
+  // print the cardinality
+  out << "; cardinality of " << tn << " is " << elements.size() << endl;
+  if (options::modelUninterpPrint()
+      == options::ModelUninterpPrintMode::DeclSortAndFun)
   {
-    // print out the DeclareFunctionCommand
-    Node n = dfc->getFunction();
-    if ((*dfc).getPrintInModelSetByUser())
+    toStreamCmdDeclareType(out, tn);
+  }
+  // print the representatives
+  for (const Node& trn : elements)
+  {
+    if (trn.isVar())
     {
-      if (!(*dfc).getPrintInModel())
+      if (options::modelUninterpPrint()
+              == options::ModelUninterpPrintMode::DeclSortAndFun
+          || options::modelUninterpPrint()
+                 == options::ModelUninterpPrintMode::DeclFun)
       {
-        return;
+        out << "(declare-fun " << quoteSymbol(trn) << " () " << tn << ")"
+            << endl;
       }
-    }
-    else if (n.getKind() == kind::SKOLEM)
-    {
-      // don't print out internal stuff
-      return;
-    }
-    // We get the value from the theory model directly, which notice
-    // does not have to go through the standard SmtEngine::getValue interface.
-    Node val = theory_model->getValue(n);
-    if (val.getKind() == kind::LAMBDA)
-    {
-      TypeNode rangeType = n.getType().getRangeType();
-      out << "(define-fun " << n << " " << val[0] << " " << rangeType << " ";
-      // call toStream and force its type to be proper
-      toStreamCastToType(out, val[1], -1, rangeType);
-      out << ")" << endl;
     }
     else
     {
-      if (options::modelUninterpPrint()
-              == options::ModelUninterpPrintMode::DtEnum
-          && val.getKind() == kind::STORE)
-      {
-        TypeNode tn = val[1].getType();
-        const std::vector<Node>* type_refs =
-            theory_model->getRepSet()->getTypeRepsOrNull(tn);
-        if (tn.isSort() && type_refs != nullptr)
-        {
-          Cardinality indexCard(type_refs->size());
-          val = theory::arrays::TheoryArraysRewriter::normalizeConstant(
-              val, indexCard);
-        }
-      }
-      out << "(define-fun " << n << " () " << n.getType() << " ";
-      // call toStream and force its type to be proper
-      toStreamCastToType(out, val, -1, n.getType());
-      out << ")" << endl;
+      out << "; rep: " << trn << endl;
     }
   }
-  else if (const DeclareDatatypeNodeCommand* declare_datatype_command =
-               dynamic_cast<const DeclareDatatypeNodeCommand*>(command))
+}
+
+void Smt2Printer::toStreamModelTerm(std::ostream& out,
+                                    const smt::Model& m,
+                                    Node n) const
+{
+  const theory::TheoryModel* tm = m.getTheoryModel();
+  // We get the value from the theory model directly, which notice
+  // does not have to go through the standard SmtEngine::getValue interface.
+  Node val = tm->getValue(n);
+  if (val.getKind() == kind::LAMBDA)
   {
-    out << *declare_datatype_command;
+    TypeNode rangeType = n.getType().getRangeType();
+    out << "(define-fun " << n << " " << val[0] << " " << rangeType << " ";
+    // call toStream and force its type to be proper
+    toStreamCastToType(out, val[1], -1, rangeType);
+    out << ")" << endl;
   }
   else
   {
-    Unreachable();
+    if (options::modelUninterpPrint() == options::ModelUninterpPrintMode::DtEnum
+        && val.getKind() == kind::STORE)
+    {
+      TypeNode tn = val[1].getType();
+      const std::vector<Node>* type_refs =
+          tm->getRepSet()->getTypeRepsOrNull(tn);
+      if (tn.isSort() && type_refs != nullptr)
+      {
+        Cardinality indexCard(type_refs->size());
+        val = theory::arrays::TheoryArraysRewriter::normalizeConstant(
+            val, indexCard);
+      }
+    }
+    out << "(define-fun " << n << " () " << n.getType() << " ";
+    // call toStream and force its type to be proper
+    toStreamCastToType(out, val, -1, n.getType());
+    out << ")" << endl;
   }
 }
 
@@ -1692,11 +1705,13 @@ void Smt2Printer::toStreamCmdDefineFunctionRec(
 }
 
 void Smt2Printer::toStreamCmdDeclareType(std::ostream& out,
-                                         const std::string& id,
-                                         size_t arity,
                                          TypeNode type) const
 {
-  out << "(declare-sort " << CVC4::quoteSymbol(id) << " " << arity << ")"
+  Assert(type.isSort() || type.isSortConstructor());
+  std::stringstream id;
+  id << type;
+  size_t arity = type.isSortConstructor() ? type.getSortConstructorArity() : 0;
+  out << "(declare-sort " << CVC4::quoteSymbol(id.str()) << " " << arity << ")"
       << std::endl;
 }
 
@@ -2038,14 +2053,15 @@ static void toStreamSygusGrammar(std::ostream& out, const TypeNode& t)
 }
 
 void Smt2Printer::toStreamCmdSynthFun(std::ostream& out,
-                                      const std::string& sym,
+                                      Node f,
                                       const std::vector<Node>& vars,
-                                      TypeNode range,
                                       bool isInv,
                                       TypeNode sygusType) const
 {
-  out << '(' << (isInv ? "synth-inv " : "synth-fun ") << CVC4::quoteSymbol(sym)
-      << ' ';
+  std::stringstream sym;
+  sym << f;
+  out << '(' << (isInv ? "synth-inv " : "synth-fun ")
+      << CVC4::quoteSymbol(sym.str()) << ' ';
   out << '(';
   if (!vars.empty())
   {
@@ -2063,11 +2079,13 @@ void Smt2Printer::toStreamCmdSynthFun(std::ostream& out,
   // if not invariant-to-synthesize, print return type
   if (!isInv)
   {
+    TypeNode ftn = f.getType();
+    TypeNode range = ftn.isFunction() ? ftn.getRangeType() : ftn;
     out << ' ' << range;
   }
   out << '\n';
   // print grammar, if any
-  if (sygusType != TypeNode::null())
+  if (!sygusType.isNull())
   {
     toStreamSygusGrammar(out, sygusType);
   }
