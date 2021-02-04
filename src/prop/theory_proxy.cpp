@@ -171,11 +171,13 @@ void TheoryProxy::theoryPropagate(std::vector<SatLiteral>& output) {
   d_theoryEngine->getPropagatedLiterals(outputNodes);
   for (unsigned i = 0, i_end = outputNodes.size(); i < i_end; ++ i) {
     Debug("prop-explain") << "theoryPropagate() => " << outputNodes[i] << std::endl;
+    /*
     // TEMPORARY
     if (d_satRlv != nullptr)
     {
       d_satRlv->notifyPropagate(outputNodes[i]);
     }
+    */
     output.push_back(d_cnfStream->getLiteral(outputNodes[i]));
   }
 }

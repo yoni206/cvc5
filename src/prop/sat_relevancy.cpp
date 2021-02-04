@@ -280,14 +280,14 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
     else
     {
       // set asserted
-      ri->setAsserted(pol);
+      //ri->setAsserted(pol);
     }
     // otherwise we will assert if the literal gets marked as relevant
   }
   else
   {
     // mark as asserted
-    ri->setAsserted(pol);
+    //ri->setAsserted(pol);
     // if now relevant
     if (nrlv)
     {
@@ -713,7 +713,7 @@ void SatRelevancy::check(theory::Theory::Effort effort,
 }
 void SatRelevancy::notifyVarNotify(TNode n)
 {
-  // do not distinguish?
+  // do not distinguish
   notifyPrereg(n);
   /*
   RlvInfo* ri = getOrMkRlvInfo(n);
@@ -737,6 +737,7 @@ void SatRelevancy::notifyPrereg(TNode n)
   {
     Trace("sat-rlv") << "*** preregister " << n << std::endl;
     ri->setPreregistered();
+    d_numAssertsRlv.set(d_numAssertsRlv + 1);
     d_theoryEngine->preRegister(n);
   }
   AlwaysAssert(n.getKind() != NOT);
@@ -744,6 +745,7 @@ void SatRelevancy::notifyPrereg(TNode n)
 
 void SatRelevancy::notifyPropagate(TNode n)
 {
+  /*
   Trace("sat-rlv") << "notifyPropagate: " << n << std::endl;
   TNode atom = n.getKind() == NOT ? n[0] : n;
   RlvInfo* ri = getOrMkRlvInfo(atom);
@@ -756,6 +758,7 @@ void SatRelevancy::notifyPropagate(TNode n)
                           << std::endl;
   }
   // AlwaysAssert(!ri->isEnqueued()) << "propagate after enqueued";
+  */
 }
 
 void SatRelevancy::preregister(TNode atom, RlvInfo* ri)
@@ -768,9 +771,9 @@ void SatRelevancy::preregister(TNode atom, RlvInfo* ri)
           << "preregistering non-marked " << atom;
       Trace("sat-rlv") << "*** preregister " << atom << std::endl;
       ri->setPreregistered();
+      d_numAssertsRlv.set(d_numAssertsRlv + 1);
       d_theoryEngine->preRegister(atom);
     }
-    d_numAssertsRlv.set(d_numAssertsRlv + 1);
   }
 }
 

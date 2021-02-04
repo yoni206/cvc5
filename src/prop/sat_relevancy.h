@@ -137,18 +137,15 @@ class SatRelevancy
                options::SatRelevancyMode mode);
 
   ~SatRelevancy();
-  /**
-   * Notify preprocessed assertions, should be called before any calls to
-   * notifyAsserted are made in the current SAT context.
-   */
-  void notifyAssertion(TNode assertion);
   /** presolve */
   void presolve(context::CDQueue<TNode>& queue);
   /**
-   * Notify that lem is a new lemma. This adds new literals that should be
-   * asserted at this time to theory engine.
+   * Notify that lem is a new lemma, or an input formula. This adds new literals
+   * that should be asserted at this time to theory engine, which are those
+   * that were asserted but not relevant, but are now relevant based on this
+   * lemma.
    *
-   * The notification of lemmas is user-context dependent.
+   * Note the notification of lemmas is user-context dependent.
    */
   void notifyLemma(TNode lem, context::CDQueue<TNode>& queue);
   /**
@@ -171,10 +168,14 @@ class SatRelevancy
   void check(theory::Theory::Effort effort, context::CDQueue<TNode>& queue);
   /** notify decision request */
   void notifyDecisionRequest(TNode n, context::CDQueue<TNode>& queue);
-
-  // TEMPORARY
+  /** Notify that atom n has been preregistered, i.e. assigned a SAT literal */
   void notifyPrereg(TNode n);
+  /** 
+   * Similar as above, called for variables lemmas that are refreshed when
+   * backtracking.
+   */
   void notifyVarNotify(TNode n);
+  // TEMPORARY
   void notifyPropagate(TNode n);
 
  private:
