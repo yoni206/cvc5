@@ -132,30 +132,11 @@ bool ProcessAssertions::apply(Assertions& as)
       << "ProcessAssertions::processAssertions() : pre-definition-expansion"
       << endl;
   dumpAssertions("pre-definition-expansion", assertions);
-<<<<<<< HEAD
-  {
-    Chat() << "expanding definitions..." << endl;
-    Trace("simplify") << "ProcessAssertions::simplify(): expanding definitions"
-                      << endl;
-    TimerStat::CodeTimer codeTimer(d_smt.d_stats->d_definitionExpansionTime);
-    unordered_map<Node, Node, NodeHashFunction> cache;
-    for (size_t i = 0, nasserts = assertions.size(); i < nasserts; ++i)
-    {
-      Node expd = expandDefinitions(
-          assertions[i], cache, false);
-      if (expd != assertions[i])
-      {
-        assertions.replace(i, expd);
-      }
-    }
-  }
-=======
   // Expand definitions, which replaces defined functions with their definition
   // and does beta reduction. Notice we pass true as the second argument since
   // we do not want to call theories to expand definitions here, since we want
   // to give the opportunity to rewrite/preprocess terms before expansion.
   d_exDefs.expandAssertions(assertions, true);
->>>>>>> 18e8b81b8eb4c4e313b03f4616271a0ea8e65e9b
   Trace("smt-proc")
       << "ProcessAssertions::processAssertions() : post-definition-expansion"
       << endl;
@@ -311,17 +292,12 @@ bool ProcessAssertions::apply(Assertions& as)
   }
   Debug("smt") << " assertions     : " << assertions.size() << endl;
 
-<<<<<<< HEAD
   if (options::learnedRewrite())
   {
     d_passes["learned-rewrite"]->apply(&assertions);
-    // now apply theory preprocessing so that ite-removal below is complete
-    d_passes["theory-preprocess"]->apply(&assertions);
   }
 
-=======
   if (options::earlyIteRemoval())
->>>>>>> 18e8b81b8eb4c4e313b03f4616271a0ea8e65e9b
   {
     d_smtStats.d_numAssertionsPre += assertions.size();
     d_passes["ite-removal"]->apply(&assertions);
