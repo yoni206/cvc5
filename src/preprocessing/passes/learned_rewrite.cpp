@@ -122,7 +122,7 @@ Node LearnedRewrite::rewriteLearnedRec(Node n, arith::BoundInference& binfer)
 }
 
 Node LearnedRewrite::rewriteLearned(Node n,
-                                     theory::arith::BoundInference& binfer)
+                                    theory::arith::BoundInference& binfer)
 {
   NodeManager* nm = NodeManager::currentNM();
   Trace("learned-rewrite-rr-debug") << "Rewrite " << n << std::endl;
@@ -142,20 +142,23 @@ Node LearnedRewrite::rewriteLearned(Node n,
     {
       arith::Bounds db = binfer.get(den);
       Trace("learned-rewrite-rr-debug")
-          << "Bounds for " << den << " : " << db.lower_bound << " " << db.upper_bound
-          << std::endl;
-      if (!db.lower_bound.isNull() && db.lower_bound.getConst<Rational>().sgn() == 1)
+          << "Bounds for " << den << " : " << db.lower_bound << " "
+          << db.upper_bound << std::endl;
+      if (!db.lower_bound.isNull()
+          && db.lower_bound.getConst<Rational>().sgn() == 1)
       {
         isNonZeroDen = true;
       }
-      else if (!db.upper_bound.isNull() && db.upper_bound.getConst<Rational>().sgn() == -1)
+      else if (!db.upper_bound.isNull()
+               && db.upper_bound.getConst<Rational>().sgn() == -1)
       {
         isNonZeroDen = true;
       }
     }
     if (isNonZeroDen)
     {
-      Trace("learned-rewrite-rr-debug") << "...non-zero denominator" << std::endl;
+      Trace("learned-rewrite-rr-debug")
+          << "...non-zero denominator" << std::endl;
       Kind nk = k;
       switch (k)
       {
