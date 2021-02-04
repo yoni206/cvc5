@@ -290,7 +290,7 @@ void TheoryEngine::preRegister(TNode preprocessed) {
 
     // Process the pre-registration queue
     while (!d_preregisterQueue.empty()) {
-      Assert (!d_inConflict);
+      Assert(!d_inConflict);
       // Get the next atom to pre-register
       preprocessed = d_preregisterQueue.front();
       d_preregisterQueue.pop();

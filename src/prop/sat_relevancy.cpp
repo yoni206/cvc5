@@ -280,14 +280,14 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
     else
     {
       // set asserted
-      //ri->setAsserted(pol);
+      // ri->setAsserted(pol);
     }
     // otherwise we will assert if the literal gets marked as relevant
   }
   else
   {
     // mark as asserted
-    //ri->setAsserted(pol);
+    // ri->setAsserted(pol);
     // if now relevant
     if (nrlv)
     {

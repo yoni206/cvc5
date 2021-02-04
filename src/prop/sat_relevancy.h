@@ -170,7 +170,7 @@ class SatRelevancy
   void notifyDecisionRequest(TNode n, context::CDQueue<TNode>& queue);
   /** Notify that atom n has been preregistered, i.e. assigned a SAT literal */
   void notifyPrereg(TNode n);
-  /** 
+  /**
    * Similar as above, called for variables lemmas that are refreshed when
    * backtracking.
    */
