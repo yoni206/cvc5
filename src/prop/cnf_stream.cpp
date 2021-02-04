@@ -127,7 +127,7 @@ bool CnfStream::hasLiteral(TNode n) const {
   return find != d_nodeToLiteralMap.end();
 }
 
-void CnfStream::ensureLiteral(TNode n, bool noPreregistration)
+void CnfStream::ensureLiteral(TNode n)
 {
   // These are not removable and have no proof ID
   d_removable = false;
@@ -190,7 +190,7 @@ void CnfStream::ensureLiteral(TNode n, bool noPreregistration)
     d_literalToNodeMap.insert_safe(~lit, n.notNode());
   } else {
     // We have a theory atom or variable.
-    lit = convertAtom(n, noPreregistration);
+    lit = convertAtom(n, false);
   }
 
   Assert(hasLiteral(n) && getNode(lit) == n);

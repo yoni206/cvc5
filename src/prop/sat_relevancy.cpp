@@ -266,13 +266,14 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
   if (!d_cnfStream->isNotifyFormula(atom))
   {
     d_numAsserts.set(d_numAsserts + 1);
-    // preregister if not done already
-    preregister(atom, ri);
 
     // we are a theory literal
     // if we became relevant due to a parent, or are already relevant, enqueue
     if (nrlv || ri->isRelevant(pol))
     {
+      // preregister if not done already
+      preregister(atom, ri);
+      // then, enqueue
       enqueue(n, false, ri, &queue);
       // TODO: don't bother setting asserted
     }
