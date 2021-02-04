@@ -172,21 +172,10 @@ SatRelevancy::~SatRelevancy() {}
 
 void SatRelevancy::presolve(context::CDQueue<TNode>& queue)
 {
+  // ensure lemmas are relevant here, which is a minor optimization to ensure
+  // we don't have to refresh them at decision level != 0
+  // TODO: is this necessary?
   ensureLemmasRelevant(&queue);
-}
-
-void SatRelevancy::notifyAssertion(TNode a)
-{
-  // not used currently
-  AlwaysAssert(false);
-  /*
-  // Mark each assertion as relevant. Notice we use a null queue since nothing
-  // should have SAT values yet.
-  Trace("sat-rlv") << "notifyAssertion: " << a << std::endl;
-  d_inputs.push_back(a);
-  d_numInputs = d_numInputs + 1;
-  setRelevant(a, true, nullptr);
-  */
 }
 
 void SatRelevancy::notifyLemma(TNode lem, context::CDQueue<TNode>& queue)
@@ -234,13 +223,11 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
   }
   bool pol = n.getKind() != NOT;
   TNode atom = pol ? n : n[0];
-  bool nrlv = false;
   // first, look at wait lists
   RlvInfo* ri = getOrMkRlvInfo(atom);
-  // temporary, debugging
-  //    ri->setAsserted(pol);
   // we are going to iterate through each parent that is waiting
-  // on its value and possibly update relevancy
+  // on its value and possibly make this assertion relevant (when nrlv=true)
+  bool nrlv = false;
   Assert(ri->d_parents.size() == ri->d_childPol.size());
   for (size_t i = 0, nparents = ri->d_parents.size(); i < nparents; i++)
   {
@@ -275,10 +262,10 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
       preregister(atom, ri);
       // then, enqueue
       enqueue(n, false, ri, &queue);
-      // TODO: don't bother setting asserted
     }
     else
     {
+      // Not currently necessary, since we use the prop engine to look up values
       // set asserted
       // ri->setAsserted(pol);
     }
@@ -540,6 +527,7 @@ void SatRelevancy::setRelevantInternal(TNode atom,
 
 bool SatRelevancy::hasSatValue(TNode node, bool& value)
 {
+  // TODO: could use explicit assertion tracking here
   /*
   bool pol = node.getKind()!=NOT;
   TNode atom = pol ? node : node[0];
@@ -647,13 +635,15 @@ bool SatRelevancy::setAssertedChild(TNode atom,
     case EQUAL:
     case XOR:
     {
-      // the value of the other side is now relevant
+      // the value of the other side is now relevant, check both sides to
+      // infer which side atom is on
       for (size_t i = 0; i < 2; i++)
       {
         TNode pc = parentAtom[i];
         TNode pcatom = pc.getKind() == NOT ? pc[0] : pc;
         if (pcatom == atom)
         {
+          // the other side is relevant with a computed polarity
           setRelevant(parentAtom[1 - i],
                       pol == (ppol == (parentAtom.getKind() == EQUAL)),
                       &queue);
@@ -677,6 +667,10 @@ bool SatRelevancy::setAssertedChild(TNode atom,
 
 void SatRelevancy::ensureLemmasRelevant(context::CDQueue<TNode>* queue)
 {
+  // Here, we ensure that lemmas have been marked relevant. This is necessary
+  // since lemmas persist in user contexts, but relevancy information is
+  // SAT-context dependent. Thus, relevancy information for lemmas must be
+  // refreshsed here when we backtrack.
   size_t index = d_numInputs.get();
   size_t numInputs = d_inputs.size();
   if (index >= numInputs)
@@ -713,7 +707,7 @@ void SatRelevancy::check(theory::Theory::Effort effort,
 }
 void SatRelevancy::notifyVarNotify(TNode n)
 {
-  // do not distinguish
+  // do not distinguish var-notify from preregister
   notifyPrereg(n);
   /*
   RlvInfo* ri = getOrMkRlvInfo(n);
