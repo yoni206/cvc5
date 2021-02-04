@@ -213,7 +213,6 @@ void TheoryArith::postCheck(Effort level)
 bool TheoryArith::preNotifyFact(
     TNode atom, bool pol, TNode fact, bool isPrereg, bool isInternal)
 {
-<<<<<<< HEAD
   if (options::arithPreprocess() == options::ArithPreprocessMode::EAGER)
   {
     if (d_arithPreproc.reduceAssertion(atom))
@@ -226,11 +225,9 @@ bool TheoryArith::preNotifyFact(
       }
     }
   }
-=======
   Trace("arith-check") << "TheoryArith::preNotifyFact: " << fact
                        << ", isPrereg=" << isPrereg
                        << ", isInternal=" << isInternal << std::endl;
->>>>>>> 18e8b81b8eb4c4e313b03f4616271a0ea8e65e9b
   d_internal->preNotifyFact(atom, pol, fact);
   // We do not assert to the equality engine of arithmetic in the standard way,
   // hence we return "true" to indicate we are finished with this fact.
