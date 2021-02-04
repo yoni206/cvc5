@@ -90,6 +90,8 @@ class RlvInfo
   context::CDO<RlvProperty> d_rlvp;
   /** is relevant with polarity? */
   bool isRelevant(bool pol) const;
+  /** is relevant with either polarity */
+  bool isRelevant() const;
   /** set relevant with polarity */
   void setRelevant(bool pol);
   /** is enqueued? */

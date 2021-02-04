@@ -58,6 +58,12 @@ bool RlvInfo::isRelevant(bool pol) const
          != RlvProperty::NONE;
 }
 
+bool RlvInfo::isRelevant() const
+{
+  return (d_rlvp.get() & (RlvProperty::RLV_POS | RlvProperty::RLV_NEG))
+         != RlvProperty::NONE;
+}
+
 void RlvInfo::setRelevant(bool pol)
 {
   d_rlvp.set(d_rlvp.get()
@@ -706,12 +712,16 @@ void SatRelevancy::check(theory::Theory::Effort effort,
 }
 void SatRelevancy::notifyVarNotify(TNode n)
 {
+  // do not distinguish?
+  notifyPrereg(n);
+  /*
   RlvInfo* ri = getOrMkRlvInfo(n);
   ri->setMarkedPreregistered();
   ri->setPreregistered();
   // always preregister here?
   Trace("sat-rlv") << "*** var notify / preregister " << n << std::endl;
   d_theoryEngine->preRegister(n);
+  */
 }
 
 void SatRelevancy::notifyPrereg(TNode n)
@@ -721,7 +731,8 @@ void SatRelevancy::notifyPrereg(TNode n)
   ri->setMarkedPreregistered();
   Trace("sat-rlv") << "notifyPrereg: " << n << std::endl;
   d_numAssertsPrereg.set(d_numAssertsPrereg + 1);
-  if (d_mode != options::SatRelevancyMode::ALL)
+  // always preregister immediately if already relevant
+  if (ri->isRelevant() || d_mode != options::SatRelevancyMode::ALL)
   {
     Trace("sat-rlv") << "*** preregister " << n << std::endl;
     ri->setPreregistered();
