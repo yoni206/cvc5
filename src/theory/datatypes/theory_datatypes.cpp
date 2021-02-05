@@ -109,7 +109,7 @@ void TheoryDatatypes::getAuxiliarySharedTerms(Node atom,
         Trace("polite-optimization")
             << "getAuxiliarySharedTerms: considering adding shared term:" << st
             << std::endl;
-        if (st.getType().isFinite()) {
+        if (st.getType().isFinite() && !st.getType().isDatatype()) {
           Trace("polite-optimization")
               << "getAuxiliarySharedTerms: adding shared term:" << st
               << std::endl;
