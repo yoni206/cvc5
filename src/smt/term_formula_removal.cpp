@@ -17,11 +17,11 @@
 
 #include <vector>
 
+#include "expr/attribute.h"
 #include "expr/node_algorithm.h"
 #include "expr/skolem_manager.h"
 #include "options/smt_options.h"
 #include "proof/proof_manager.h"
-#include "expr/attribute.h"
 
 using namespace std;
 
@@ -549,7 +549,7 @@ bool RemoveTermFormulas::hasSkolems(TNode n) const
     if (it == visited.end())
     {
       visited.insert(cur);
-      if (cur.getNumChildren()==0)
+      if (cur.getNumChildren() == 0)
       {
         visit.pop_back();
         bool hasSkolem = false;
@@ -571,7 +571,7 @@ bool RemoveTermFormulas::hasSkolems(TNode n) const
       bool hasSkolem = false;
       for (TNode i : cur)
       {
-        Assert (i.getAttribute(HasSkolemComputedAttr()));
+        Assert(i.getAttribute(HasSkolemComputedAttr()));
         if (i.getAttribute(HasSkolemAttr()))
         {
           hasSkolem = true;
@@ -582,7 +582,7 @@ bool RemoveTermFormulas::hasSkolems(TNode n) const
       cur.setAttribute(HasSkolemComputedAttr(), true);
     }
   } while (!visit.empty());
-  Assert (n.getAttribute(HasSkolemComputedAttr()));
+  Assert(n.getAttribute(HasSkolemComputedAttr()));
   return n.getAttribute(HasSkolemAttr());
 }
 

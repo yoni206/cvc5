@@ -779,11 +779,14 @@ void TheorySetsPrivate::postCheck(Theory::Effort level)
   {
     if (level == Theory::EFFORT_FULL)
     {
-      fullEffortCheck();
-      if (!d_state.isInConflict() && !d_im.hasSentLemma()
-          && d_full_check_incomplete)
+      if (!d_external.d_valuation.needCheck())
       {
-        d_im.setIncomplete();
+        fullEffortCheck();
+        if (!d_state.isInConflict() && !d_im.hasSentLemma()
+            && d_full_check_incomplete)
+        {
+          d_im.setIncomplete();
+        }
       }
     }
   }
@@ -978,6 +981,7 @@ void TheorySetsPrivate::computeCareGraph()
       // populate indices
       for (TNode f1 : it.second)
       {
+        Assert(d_equalityEngine->hasTerm(f1));
         Trace("sets-cg-debug") << "...build for " << f1 << std::endl;
         Assert(d_equalityEngine->hasTerm(f1));
         // break into index based on operator, and type of first argument (since
