@@ -747,8 +747,8 @@ void SatRelevancy::notifyPropagate(TNode n)
   Trace("sat-rlv") << "notifyPropagate: " << n << std::endl;
   TNode atom = n.getKind() == NOT ? n[0] : n;
   RlvInfo* ri = getOrMkRlvInfo(atom);
-  AlwaysAssert(ri->isMarkedPreregistered())
-      << "propagate before marked preregister";
+  // AlwaysAssert(ri->isMarkedPreregistered())
+  //     << "propagate before marked preregister";
   // AlwaysAssert(ri->isPreregistered()) << "propagate before preregister";
   if (!ri->isPreregistered())
   {
