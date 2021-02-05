@@ -187,7 +187,7 @@ TheoryId Theory::theoryOf(options::TheoryOfMode mode, TNode node)
       node.setAttribute(TheoryOfTypeAttr(), tid);
       return tid;
     }
-      break;
+    break;
     case options::TheoryOfMode::THEORY_OF_TERM_BASED:
     {
       if (node.hasAttribute(TheoryOfTermAttr()))
