@@ -353,7 +353,8 @@ class Theory {
   static inline TheoryId theoryOf(TypeNode typeNode) {
     TheoryId id;
     Kind k = typeNode.getKind();
-    if (k == kind::TYPE_CONSTANT) {
+    if (k == kind::TYPE_CONSTANT)
+    {
       return typeConstantToTheoryId(typeNode.getConst<TypeConstant>());
     }
     id = kindToTheoryId(k);
