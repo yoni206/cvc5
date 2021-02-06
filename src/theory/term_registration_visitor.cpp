@@ -18,9 +18,9 @@
 #include "options/quantifiers_options.h"
 #include "theory/theory_engine.h"
 
-using namespace std;
-using namespace CVC4;
-using namespace theory;
+using namespace CVC4::theory;
+
+namespace CVC4 {
 
 std::string PreRegisterVisitor::toString() const {
   std::stringstream ss;
@@ -214,61 +214,28 @@ void SharedTermsVisitor::visit(TNode current, TNode parent) {
   if (Debug.isOn("register::internal")) {
     Debug("register::internal") << toString() << std::endl;
   }
-
-  // Get the theories of the terms
-  TheoryId currentTheoryId = Theory::theoryOf(current);
-  TheoryId parentTheoryId  = Theory::theoryOf(parent);
-
-  // Should we use the theory of the type
-  bool useType = false;
-  TheoryId typeTheoryId = THEORY_LAST;
-
-  if (current != parent) {
-    if (currentTheoryId != parentTheoryId) {
-      // If enclosed by different theories it's shared -- in read(a, f(a)) f(a) should be shared with integers
-      TypeNode type = current.getType();
-      useType = true;
-      typeTheoryId = Theory::theoryOf(type);
-    } else {
-      TypeNode type = current.getType();
-      typeTheoryId = Theory::theoryOf(type);
-      if (typeTheoryId != currentTheoryId) {
-        if (type.isInterpretedFinite()) {
-          useType = true;
-        }
-      }
-    }
-  }
-
   TheoryIdSet visitedTheories = d_visited[current];
-  Debug("register::internal")
-      << "SharedTermsVisitor::visit(" << current << "," << parent
-      << "): previously registered with "
-      << TheoryIdSetUtil::setToString(visitedTheories) << std::endl;
-  if (!TheoryIdSetUtil::setContains(currentTheoryId, visitedTheories))
-  {
-    visitedTheories =
-        TheoryIdSetUtil::setInsert(currentTheoryId, visitedTheories);
-    Debug("register::internal") << "SharedTermsVisitor::visit(" << current << "," << parent << "): adding " << currentTheoryId << std::endl;
-  }
-  if (!TheoryIdSetUtil::setContains(parentTheoryId, visitedTheories))
-  {
+
+  // consider current
+  TheoryId currentTheoryId = Theory::theoryOf(current);
+  visitedTheories =
+          TheoryIdSetUtil::setInsert(currentTheoryId, visitedTheories);
+        
+  if (current != parent) {
+    // consider parent
+    TheoryId parentTheoryId  = Theory::theoryOf(parent);
     visitedTheories =
         TheoryIdSetUtil::setInsert(parentTheoryId, visitedTheories);
-    Debug("register::internal") << "SharedTermsVisitor::visit(" << current << "," << parent << "): adding " << parentTheoryId << std::endl;
-  }
-  if (useType) {
-    if (!TheoryIdSetUtil::setContains(typeTheoryId, visitedTheories))
+
+    // consider type if current and parent are different theories, or type is finite
+    TypeNode type = current.getType();
+    if (currentTheoryId != parentTheoryId || type.isInterpretedFinite())
     {
+      TheoryId typeTheoryId = Theory::theoryOf(type);
       visitedTheories =
           TheoryIdSetUtil::setInsert(typeTheoryId, visitedTheories);
-      Debug("register::internal") << "SharedTermsVisitor::visit(" << current << "," << parent << "): adding " << typeTheoryId << std::endl;
     }
   }
-  Debug("register::internal")
-      << "SharedTermsVisitor::visit(" << current << "," << parent
-      << "): now registered with "
-      << TheoryIdSetUtil::setToString(visitedTheories) << std::endl;
 
   // Record the new theories that we visited
   d_visited[current] = visitedTheories;
@@ -285,7 +252,7 @@ void SharedTermsVisitor::visit(TNode current, TNode parent) {
 }
 
 void SharedTermsVisitor::start(TNode node) {
-  clear();
+  d_visited.clear();
   d_atom = node;
 }
 
@@ -296,4 +263,6 @@ void SharedTermsVisitor::done(TNode node) {
 void SharedTermsVisitor::clear() {
   d_atom = TNode();
   d_visited.clear();
+}
+
 }
