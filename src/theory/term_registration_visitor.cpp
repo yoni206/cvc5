@@ -56,6 +56,7 @@ bool PreRegisterVisitor::alreadyVisited(TNode current, TNode parent) {
   }
 
   TheoryIdSet visitedTheories = (*find).second;
+  d_theories = TheoryIdSetUtil::setUnion(visitedTheories, d_theories);
   TheoryId currentTheoryId = Theory::theoryOf(current);
   if (!TheoryIdSetUtil::setContains(currentTheoryId, visitedTheories))
   {
@@ -80,9 +81,9 @@ bool PreRegisterVisitor::alreadyVisited(TNode current, TNode parent) {
 
   // do we need to consider the type?
   TypeNode type = current.getType();
-  if (!type.isInterpretedFinite())
+  if (currentTheoryId == parentTheoryId && !type.isInterpretedFinite())
   {
-    // if the type is interpreted infinite, return true
+    // current and parent are the same theory, and we are infinite, return true
     return true;
   }
   TheoryId typeTheoryId = Theory::theoryOf(type);
@@ -133,20 +134,9 @@ void PreRegisterVisitor::visit(TNode current, TNode parent) {
 
     // Should we use the theory of the type
     TypeNode type = current.getType();
-    TheoryId typeTheoryId = Theory::theoryOf(type);
-    bool useType = false;
-    if (currentTheoryId != parentTheoryId) {
-      // If enclosed by different theories it's shared -- in read(a, f(a)) f(a) should be shared with integers
-      useType = true;
-    } else {
-      if (typeTheoryId != currentTheoryId) {
-        if (type.isInterpretedFinite()) {
-          useType = true;
-        }
-      }
-    }
-    if (useType)
+    if (currentTheoryId != parentTheoryId || type.isInterpretedFinite())
     {
+      TheoryId typeTheoryId = Theory::theoryOf(type);
       if (!TheoryIdSetUtil::setContains(typeTheoryId, visitedTheories))
       {
         visitedTheories =
@@ -170,6 +160,12 @@ void PreRegisterVisitor::visit(TNode current, TNode parent) {
   d_theories = TheoryIdSetUtil::setUnion(visitedTheories, d_theories);
   Assert(d_visited.find(current) != d_visited.end());
   Assert(alreadyVisited(current, parent));
+}
+
+void PreRegisterVisitor::start(TNode node)
+{
+  // reset the set of theories we have seen
+  d_theories = 0;
 }
 
 std::string SharedTermsVisitor::toString() const {
