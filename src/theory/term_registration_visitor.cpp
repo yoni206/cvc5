@@ -116,7 +116,7 @@ void PreRegisterVisitor::visit(TNode current, TNode parent) {
       << "): previously registered with "
       << TheoryIdSetUtil::setToString(visitedTheories) << std::endl;
 
-  if (current != parent) 
+  if (current != parent)
   {
     // preregister with parent theory, if necessary
     TheoryId parentTheoryId = Theory::theoryOf(parent);
@@ -130,7 +130,7 @@ void PreRegisterVisitor::visit(TNode current, TNode parent) {
           << "PreRegisterVisitor::visit(" << current << "," << parent
           << "): adding " << parentTheoryId << std::endl;
     }
-    
+
     // Should we use the theory of the type
     TypeNode type = current.getType();
     TheoryId typeTheoryId = Theory::theoryOf(type);
@@ -145,7 +145,8 @@ void PreRegisterVisitor::visit(TNode current, TNode parent) {
         }
       }
     }
-    if (useType) {
+    if (useType)
+    {
       if (!TheoryIdSetUtil::setContains(typeTheoryId, visitedTheories))
       {
         visitedTheories =
