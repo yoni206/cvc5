@@ -267,14 +267,14 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
     {
       // Not currently necessary, since we use the prop engine to look up values
       // set asserted
-      // ri->setAsserted(pol);
+      //ri->setAsserted(pol);
     }
     // otherwise we will assert if the literal gets marked as relevant
   }
   else
   {
     // mark as asserted
-    // ri->setAsserted(pol);
+    //ri->setAsserted(pol);
     // if now relevant
     if (nrlv)
     {
@@ -497,6 +497,9 @@ void SatRelevancy::setRelevantInternal(TNode atom,
   // be asserted now
   bool hasValue;
   bool value;
+#ifdef USE_ASSERT_MARKS
+  hasValue = ri->isAsserted(value);
+#else
   if (input)
   {
     // The caller indicated that this is an input formula. It is important that
@@ -517,6 +520,7 @@ void SatRelevancy::setRelevantInternal(TNode atom,
   {
     hasValue = hasSatValue(atom, value);
   }
+#endif
   // do we already have a value?
   if (hasValue)
   {
@@ -527,8 +531,9 @@ void SatRelevancy::setRelevantInternal(TNode atom,
 
 bool SatRelevancy::hasSatValue(TNode node, bool& value)
 {
+#ifdef USE_ASSERT_MARKS
   // TODO: could use explicit assertion tracking here
-  /*
+  
   bool pol = node.getKind()!=NOT;
   TNode atom = pol ? node : node[0];
   // TODO: pass ri
@@ -539,7 +544,8 @@ bool SatRelevancy::hasSatValue(TNode node, bool& value)
     return true;
   }
   return false;
-  */
+#endif
+  
 
   SatLiteral lit = d_cnfStream->getLiteral(node);
   SatValue v = d_satSolver->value(lit);

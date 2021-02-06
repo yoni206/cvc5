@@ -525,8 +525,9 @@ struct HasSkolemTag
 struct HasSkolemComputedTag
 {
 };
-/** Attribute true for expressions with bound variables in them */
+/** Attribute true for nodes with skolems in them */
 typedef expr::Attribute<HasSkolemTag, bool> HasSkolemAttr;
+/** Attribute true for nodes where we have computed the above attribute */
 typedef expr::Attribute<HasSkolemComputedTag, bool> HasSkolemComputedAttr;
 
 bool RemoveTermFormulas::hasSkolems(TNode n) const
