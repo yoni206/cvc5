@@ -267,14 +267,14 @@ void SatRelevancy::notifyAsserted(const SatLiteral& l,
     {
       // Not currently necessary, since we use the prop engine to look up values
       // set asserted
-      //ri->setAsserted(pol);
+      // ri->setAsserted(pol);
     }
     // otherwise we will assert if the literal gets marked as relevant
   }
   else
   {
     // mark as asserted
-    //ri->setAsserted(pol);
+    // ri->setAsserted(pol);
     // if now relevant
     if (nrlv)
     {
@@ -533,19 +533,18 @@ bool SatRelevancy::hasSatValue(TNode node, bool& value)
 {
 #ifdef USE_ASSERT_MARKS
   // TODO: could use explicit assertion tracking here
-  
-  bool pol = node.getKind()!=NOT;
+
+  bool pol = node.getKind() != NOT;
   TNode atom = pol ? node : node[0];
   // TODO: pass ri
-  RlvInfo * ri = getOrMkRlvInfo(atom);
+  RlvInfo* ri = getOrMkRlvInfo(atom);
   if (ri->isAsserted(value))
   {
-    value = (value==pol);
+    value = (value == pol);
     return true;
   }
   return false;
 #endif
-  
 
   SatLiteral lit = d_cnfStream->getLiteral(node);
   SatValue v = d_satSolver->value(lit);
