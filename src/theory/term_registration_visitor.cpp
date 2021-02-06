@@ -32,31 +32,12 @@ std::string PreRegisterVisitor::toString() const {
   return ss.str();
 }
 
-bool PreRegisterVisitor::alreadyVisited(TNode current, TNode parent) {
-
-  Debug("register::internal") << "PreRegisterVisitor::alreadyVisited(" << current << "," << parent << ")" << std::endl;
-
-  if ((parent.isClosure()
-       || parent.getKind() == kind::SEP_STAR
-       || parent.getKind() == kind::SEP_WAND
-       || (parent.getKind() == kind::SEP_LABEL && current.getType().isBoolean())
-       // parent.getKind() == kind::CARDINALITY_CONSTRAINT
-       )
-      && current != parent)
-  {
-    Debug("register::internal") << "quantifier:true" << std::endl;
-    return true;
-  }
-  
-  // Get the theories that have already visited this node
-  TNodeToTheorySetMap::iterator find = d_visited.find(current);
-  if (find == d_visited.end()) {
-    // not visited at all, return false
-    return false;
-  }
-
-  TheoryIdSet visitedTheories = (*find).second;
-  d_theories = TheoryIdSetUtil::setUnion(visitedTheories, d_theories);
+/**
+ * Return true if we should visit current from parent, given that the
+ * set of theories in visitedTheories has already visited current.
+ */
+bool shouldVisit(TheoryIdSet visitedTheories, TNode current, TNode parent)
+{
   TheoryId currentTheoryId = Theory::theoryOf(current);
   if (!TheoryIdSetUtil::setContains(currentTheoryId, visitedTheories))
   {
@@ -90,6 +71,34 @@ bool PreRegisterVisitor::alreadyVisited(TNode current, TNode parent) {
   return TheoryIdSetUtil::setContains(typeTheoryId, visitedTheories);
 }
 
+bool PreRegisterVisitor::alreadyVisited(TNode current, TNode parent) {
+
+  Debug("register::internal") << "PreRegisterVisitor::alreadyVisited(" << current << "," << parent << ")" << std::endl;
+
+  if ((parent.isClosure()
+       || parent.getKind() == kind::SEP_STAR
+       || parent.getKind() == kind::SEP_WAND
+       || (parent.getKind() == kind::SEP_LABEL && current.getType().isBoolean())
+       // parent.getKind() == kind::CARDINALITY_CONSTRAINT
+       )
+      && current != parent)
+  {
+    Debug("register::internal") << "quantifier:true" << std::endl;
+    return true;
+  }
+  
+  // Get the theories that have already visited this node
+  TNodeToTheorySetMap::iterator find = d_visited.find(current);
+  if (find == d_visited.end()) {
+    // not visited at all, return false
+    return false;
+  }
+
+  TheoryIdSet visitedTheories = (*find).second;
+  d_theories = TheoryIdSetUtil::setUnion(visitedTheories, d_theories);
+  return shouldVisit(visitedTheories, current, parent);
+}
+
 void PreRegisterVisitor::visit(TNode current, TNode parent) {
 
   Debug("register") << "PreRegisterVisitor::visit(" << current << "," << parent << ")" << std::endl;
@@ -111,11 +120,6 @@ void PreRegisterVisitor::visit(TNode current, TNode parent) {
         << "PreRegisterVisitor::visit(" << current << "," << parent
         << "): adding " << currentTheoryId << std::endl;
   }
-
-  Debug("register::internal")
-      << "PreRegisterVisitor::visit(" << current << "," << parent
-      << "): previously registered with "
-      << TheoryIdSetUtil::setToString(visitedTheories) << std::endl;
 
   if (current != parent)
   {
@@ -194,59 +198,14 @@ bool SharedTermsVisitor::alreadyVisited(TNode current, TNode parent) const {
     return true;
   }
   TNodeVisitedMap::const_iterator find = d_visited.find(current);
-
   // If node is not visited at all, just return false
   if (find == d_visited.end()) {
     Debug("register::internal") << "1:false" << std::endl;
     return false;
   }
 
-  TheoryIdSet theories = (*find).second;
-
-  TheoryId currentTheoryId = Theory::theoryOf(current);
-  TheoryId parentTheoryId  = Theory::theoryOf(parent);
-
-  // Should we use the theory of the type
-  bool useType = false;
-  TheoryId typeTheoryId = THEORY_LAST;
-
-  if (current != parent) {
-    if (currentTheoryId != parentTheoryId) {
-      // If enclosed by different theories it's shared -- in read(a, f(a)) f(a) should be shared with integers
-      TypeNode type = current.getType();
-      useType = true;
-      typeTheoryId = Theory::theoryOf(type);
-    } else {
-      TypeNode type = current.getType();
-      typeTheoryId = Theory::theoryOf(type);
-      if (typeTheoryId != currentTheoryId) {
-        if (type.isInterpretedFinite()) {
-          useType = true;
-        }
-      }
-    }
-  }
-
-  if (TheoryIdSetUtil::setContains(currentTheoryId, theories))
-  {
-    if (TheoryIdSetUtil::setContains(parentTheoryId, theories))
-    {
-      if (useType)
-      {
-        return TheoryIdSetUtil::setContains(typeTheoryId, theories);
-      }
-      else
-      {
-        return true;
-      }
-    }
-    else
-    {
-      return false;
-    }
-  } else {
-    return false;
-  }
+  TheoryIdSet visitedTheories = (*find).second;
+  return shouldVisit(visitedTheories, current, parent);
 }
 
 void SharedTermsVisitor::visit(TNode current, TNode parent) {
