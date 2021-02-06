@@ -219,15 +219,16 @@ void SharedTermsVisitor::visit(TNode current, TNode parent) {
   // consider current
   TheoryId currentTheoryId = Theory::theoryOf(current);
   visitedTheories =
-          TheoryIdSetUtil::setInsert(currentTheoryId, visitedTheories);
-        
+      TheoryIdSetUtil::setInsert(currentTheoryId, visitedTheories);
+
   if (current != parent) {
     // consider parent
-    TheoryId parentTheoryId  = Theory::theoryOf(parent);
+    TheoryId parentTheoryId = Theory::theoryOf(parent);
     visitedTheories =
         TheoryIdSetUtil::setInsert(parentTheoryId, visitedTheories);
 
-    // consider type if current and parent are different theories, or type is finite
+    // consider type if current and parent are different theories, or type is
+    // finite
     TypeNode type = current.getType();
     if (currentTheoryId != parentTheoryId || type.isInterpretedFinite())
     {
@@ -265,4 +266,4 @@ void SharedTermsVisitor::clear() {
   d_visited.clear();
 }
 
-}
+}  // namespace CVC4
