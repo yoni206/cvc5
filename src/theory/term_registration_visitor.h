@@ -85,6 +85,9 @@ class PreRegisterVisitor {
    * Notifies the engine of all the theories used.
    */
   void done(TNode node) {}
+  
+  /** Preregister */
+  static void preregister(TheoryEngine* te, theory::TheoryIdSet& visitedTheories, TNode current, TNode parent);
 };
 
 

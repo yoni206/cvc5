@@ -49,6 +49,10 @@ void SharedSolver::preRegisterShared(TNode t)
     // This calls Theory::addSharedTerm, possibly multiple times
     NodeVisitor<SharedTermsVisitor>::run(d_sharedTermsVisitor, t);
   }
+  else
+  {
+    // just use the normal preregister visitor TODO
+  }
 }
 
 void SharedSolver::preNotifySharedFact(TNode atom)
