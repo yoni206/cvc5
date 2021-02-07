@@ -296,7 +296,7 @@ void TheoryEngine::preRegister(TNode preprocessed) {
       Assert(!expr::hasFreeVar(preprocessed));
       // should not have witness
       Assert(!expr::hasSubtermKind(kind::WITNESS, preprocessed));
-      
+
       // pre-register with the shared solver, which also handles
       // calling prepregister on individual theories.
       Assert(d_sharedSolver != nullptr);

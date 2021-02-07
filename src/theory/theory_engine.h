@@ -157,7 +157,7 @@ class TheoryEngine {
   std::unique_ptr<theory::DecisionManager> d_decManager;
   /** The relevance manager */
   std::unique_ptr<theory::RelevanceManager> d_relManager;
-  
+
   /** are we in eager model building mode? (see setEagerModelBuilding). */
   bool d_eager_model_building;
 

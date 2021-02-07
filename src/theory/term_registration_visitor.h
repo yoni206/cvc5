@@ -122,8 +122,10 @@ public:
 
   typedef void return_type;
 
-  SharedTermsVisitor(TheoryEngine * te, SharedTermsDatabase& sharedTerms)
-  : d_engine(te), d_sharedTerms(sharedTerms) {}
+  SharedTermsVisitor(TheoryEngine* te, SharedTermsDatabase& sharedTerms)
+      : d_engine(te), d_sharedTerms(sharedTerms)
+  {
+  }
 
   /**
    * Returns true is current has already been pre-registered with both current and parent theories.
@@ -149,7 +151,8 @@ public:
    * Clears the internal state.
    */   
   void clear();
-private:
+
+ private:
   /** The engine */
   TheoryEngine* d_engine;
   /** The shared terms database */
