@@ -65,9 +65,8 @@ class SharedSolver
    * theories.
    *
    * @param t The term to preregister
-   * @param multipleTheories Whether multiple theories are present in t.
    */
-  void preRegisterShared(TNode t, bool multipleTheories);
+  void preRegisterShared(TNode t);
   /**
    * Pre-notify assertion fact with the given atom. This is called when any
    * fact is asserted in TheoryEngine, just before it is dispatched to the

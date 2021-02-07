@@ -96,14 +96,7 @@ bool PreRegisterVisitor::alreadyVisited(TNode current, TNode parent) {
   }
 
   TheoryIdSet visitedTheories = (*find).second;
-  if (shouldVisit(visitedTheories, current, parent))
-  {
-    return false;
-  }
-  // mark that the term we are visiting belongs to the theories that have
-  // already preregistered current
-  d_theories = TheoryIdSetUtil::setUnion(visitedTheories, d_theories);
-  return true;
+  return !shouldVisit(visitedTheories, current, parent);
 }
 
 void PreRegisterVisitor::visit(TNode current, TNode parent) {
@@ -167,16 +160,12 @@ void PreRegisterVisitor::visit(TNode current, TNode parent) {
       << TheoryIdSetUtil::setToString(visitedTheories) << std::endl;
   // update the theories set for current
   d_visited[current] = visitedTheories;
-  // update the entire set of theories seen
-  d_theories = TheoryIdSetUtil::setUnion(visitedTheories, d_theories);
   Assert(d_visited.find(current) != d_visited.end());
   Assert(alreadyVisited(current, parent));
 }
 
 void PreRegisterVisitor::start(TNode node)
 {
-  // reset the set of theories we have seen
-  d_theories = 0;
 }
 
 std::string SharedTermsVisitor::toString() const {
