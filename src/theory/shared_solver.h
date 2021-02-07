@@ -123,6 +123,8 @@ class SharedSolver
   const LogicInfo& d_logicInfo;
   /** The database of shared terms.*/
   SharedTermsDatabase d_sharedTerms;
+  /** Default visitor for pre-registration */
+  PreRegisterVisitor d_preRegistrationVisitor;
   /** Visitor for collecting shared terms */
   SharedTermsVisitor d_sharedTermsVisitor;
 };

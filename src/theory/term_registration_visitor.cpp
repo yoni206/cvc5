@@ -221,32 +221,14 @@ void SharedTermsVisitor::visit(TNode current, TNode parent) {
   }
   TheoryIdSet visitedTheories = d_visited[current];
 
-  // consider current
-  TheoryId currentTheoryId = Theory::theoryOf(current);
-  visitedTheories =
-      TheoryIdSetUtil::setInsert(currentTheoryId, visitedTheories);
-
-  if (current != parent) {
-    // consider parent
-    TheoryId parentTheoryId = Theory::theoryOf(parent);
-    visitedTheories =
-        TheoryIdSetUtil::setInsert(parentTheoryId, visitedTheories);
-
-    // consider type if current and parent are different theories, or type is
-    // finite
-    TypeNode type = current.getType();
-    if (currentTheoryId != parentTheoryId || type.isInterpretedFinite())
-    {
-      TheoryId typeTheoryId = Theory::theoryOf(type);
-      visitedTheories =
-          TheoryIdSetUtil::setInsert(typeTheoryId, visitedTheories);
-    }
-  }
+  // preregister the term with the current, parent or type theories, as needed
+  PreRegisterVisitor::preregister(d_engine, visitedTheories, current, parent);
 
   // Record the new theories that we visited
   d_visited[current] = visitedTheories;
 
   // If there is more than two theories and a new one has been added notify the shared terms database
+  TheoryId currentTheoryId = Theory::theoryOf(current);  // TODO: remove
   if (TheoryIdSetUtil::setDifference(
           visitedTheories, TheoryIdSetUtil::setInsert(currentTheoryId)))
   {

@@ -224,7 +224,6 @@ TheoryEngine::TheoryEngine(context::Context* context,
       d_quantEngine(nullptr),
       d_decManager(new DecisionManager(userContext)),
       d_relManager(nullptr),
-      d_preRegistrationVisitor(this, context),
       d_eager_model_building(false),
       d_inConflict(context, false),
       d_inSatMode(false),
@@ -297,10 +296,7 @@ void TheoryEngine::preRegister(TNode preprocessed) {
       Assert(!expr::hasFreeVar(preprocessed));
       // should not have witness
       Assert(!expr::hasSubtermKind(kind::WITNESS, preprocessed));
-
-      // Pre-register the terms in the atom
-      NodeVisitor<PreRegisterVisitor>::run(d_preRegistrationVisitor,
-                                           preprocessed);
+      
       // pre-register with the shared solver, which also handles
       // calling prepregister on individual theories.
       Assert(d_sharedSolver != nullptr);

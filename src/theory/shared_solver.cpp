@@ -30,7 +30,8 @@ SharedSolver::SharedSolver(TheoryEngine& te, ProofNodeManager* pnm)
     : d_te(te),
       d_logicInfo(te.getLogicInfo()),
       d_sharedTerms(&d_te, d_te.getSatContext(), d_te.getUserContext(), pnm),
-      d_sharedTermsVisitor(d_sharedTerms)
+      d_preRegistrationVisitor(&te, d_te.getSatContext()),
+      d_sharedTermsVisitor(&te, d_sharedTerms)
 {
 }
 
@@ -51,7 +52,8 @@ void SharedSolver::preRegisterShared(TNode t)
   }
   else
   {
-    // just use the normal preregister visitor TODO
+    // just use the normal preregister visitor
+    NodeVisitor<PreRegisterVisitor>::run(d_preRegistrationVisitor, t);
   }
 }
 
