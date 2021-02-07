@@ -164,9 +164,7 @@ void PreRegisterVisitor::visit(TNode current, TNode parent) {
   Assert(alreadyVisited(current, parent));
 }
 
-void PreRegisterVisitor::start(TNode node)
-{
-}
+void PreRegisterVisitor::start(TNode node) {}
 
 std::string SharedTermsVisitor::toString() const {
   std::stringstream ss;

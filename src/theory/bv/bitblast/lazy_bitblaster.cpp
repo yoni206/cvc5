@@ -541,7 +541,8 @@ bool TLazyBitblaster::collectModelValues(TheoryModel* m,
     if (d_variables.find(var) == d_variables.end())
       continue;
 
-    Assert(Theory::theoryOf(var) == theory::THEORY_BV || isSharedTerm(var)) << "Bad variable: " << var << std::endl;
+    Assert(Theory::theoryOf(var) == theory::THEORY_BV || isSharedTerm(var))
+        << "Bad variable: " << var << std::endl;
     // only shared terms could not have been bit-blasted
     Assert(hasBBTerm(var) || isSharedTerm(var));
 

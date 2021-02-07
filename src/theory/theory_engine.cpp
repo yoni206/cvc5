@@ -299,8 +299,8 @@ void TheoryEngine::preRegister(TNode preprocessed) {
       Assert(!expr::hasSubtermKind(kind::WITNESS, preprocessed));
 
       // Pre-register the terms in the atom
-      NodeVisitor<PreRegisterVisitor>::run(
-          d_preRegistrationVisitor, preprocessed);
+      NodeVisitor<PreRegisterVisitor>::run(d_preRegistrationVisitor,
+                                           preprocessed);
       // pre-register with the shared solver, which also handles
       // calling prepregister on individual theories.
       Assert(d_sharedSolver != nullptr);
