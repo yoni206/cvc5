@@ -111,7 +111,7 @@ void PreRegisterVisitor::visit(TNode current, TNode parent) {
 
   // call the preregistration on current, parent or type theories and update
   // visitedTheories.
-  preregister( d_engine, visitedTheories, current, parent);
+  preregister(d_engine, visitedTheories, current, parent);
 
   Debug("register::internal")
       << "PreRegisterVisitor::visit(" << current << "," << parent
@@ -123,7 +123,10 @@ void PreRegisterVisitor::visit(TNode current, TNode parent) {
   Assert(alreadyVisited(current, parent));
 }
 
-void PreRegisterVisitor::preregister(TheoryEngine* te, TheoryIdSet& visitedTheories, TNode current, TNode parent)
+void PreRegisterVisitor::preregister(TheoryEngine* te,
+                                     TheoryIdSet& visitedTheories,
+                                     TNode current,
+                                     TNode parent)
 {
   // Preregister with the current theory, if necessary
   TheoryId currentTheoryId = Theory::theoryOf(current);
