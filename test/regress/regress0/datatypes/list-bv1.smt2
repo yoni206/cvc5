@@ -4,7 +4,7 @@
 (set-logic ALL)
 (set-info :status unsat)
 (declare-datatypes ((list 0)) (
-((cons (head Bool) (tail list)) (nil))
+((cons (head (_ BitVec 1)) (tail list)) (nil))
 ))
 (declare-fun x1 () list)
 (declare-fun x2 () list)
