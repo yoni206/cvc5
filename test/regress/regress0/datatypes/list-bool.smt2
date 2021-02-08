@@ -1,3 +1,6 @@
+; COMMAND-LINE: --polite-optimize=none
+; COMMAND-LINE: --polite-optimize=coarse
+; COMMAND-LINE: --polite-optimize=fine
 (set-logic ALL)
 (set-info :status unsat)
 (declare-datatypes ((list 0)) (

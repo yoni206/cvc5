@@ -63,6 +63,7 @@ void SharedSolver::preRegisterShared(TNode t)
     theory->getAuxiliarySharedTerms(t, sharedTerms);
     for (Node n : sharedTerms)
     {
+      Assert (!n.getType().isBoolean() || n.getKind()==kind::BOOLEAN_TERM_VARIABLE);
       Trace("polite-optimization")
           << "preRegisterShared: really adding shared term: " << n << std::endl;
       Trace("polite-optimization")
@@ -78,6 +79,15 @@ void SharedSolver::preRegisterShared(TNode t)
           << TheoryIdSetUtil::setToString(theories) << std::endl;
       d_keep.insert(n);
       d_sharedTerms.addSharedTerm(t, n, theories);
+      
+      if (n.getKind() == kind::BOOLEAN_TERM_VARIABLE) {
+        // add a lemma about the Boolean variable
+        NodeManager* nm = NodeManager::currentNM();
+        Node pos = n;
+        Node neg = nm->mkNode(kind::NOT, n);
+        Node lemma = nm->mkNode(kind::OR, pos, neg);
+        sendLemma(TrustNode::mkTrustLemma(lemma), TheoryId::THEORY_BOOL);
+      }
     }
   }
   else
