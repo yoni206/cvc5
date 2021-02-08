@@ -92,6 +92,7 @@ void TheoryDatatypes::getAuxiliarySharedTerms(Node atom,
   if (options::politeOptimize() == options::PoliteOptimizationMode::FINE) {
     if (atom.getKind() == APPLY_TESTER)
     {
+      Trace("polite-optimization") << "processing atom: " << atom << std::endl;
       // atom = is_c(x)
       // dtTerm := x
       Node dtTerm = atom[0];
@@ -103,9 +104,11 @@ void TheoryDatatypes::getAuxiliarySharedTerms(Node atom,
       const DType& dt = utils::datatypeOf(atom.getOperator());
       Node instCons = getInstantiateCons(dtTerm, dt, cindex);
       Node pp = d_valuation.getPreprocessedTerm(instCons);
+      Trace("polite-optimization")
+          << "preprocessed constructor: " << pp << std::endl;
       for (Node child : pp)
       {
-        Assert(child.getKind() == kind::APPLY_SELECTOR_TOTAL);
+        Trace("polite-optimization") << "child: " << child << std::endl;
         if (child.getType().isFinite() && !child.getType().isDatatype())
         {
           Trace("polite-optimization")

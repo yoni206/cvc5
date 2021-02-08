@@ -1,5 +1,6 @@
+; COMMAND-LINE: --polite-optimize=fine
 (set-logic ALL)
-(set-info :status unsat)
+;(set-info :status unsat)
 (declare-datatypes ((list 0)) (
 ((cons (head Bool) (tail list)) (nil))
 ))

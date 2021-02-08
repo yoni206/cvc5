@@ -15,6 +15,8 @@
 #include "theory/shared_solver.h"
 
 #include "expr/node_visitor.h"
+#include "options/datatypes_options.h"
+#include "options/smt_options.h"
 #include "theory/theory_engine.h"
 
 namespace CVC4 {
@@ -47,14 +49,20 @@ bool SharedSolver::needsEqualityEngine(theory::EeSetupInfo& esi)
 
 void SharedSolver::preRegisterShared(TNode t, bool multipleTheories)
 {
+  Trace("polite-optimization")
+      << "preRegisterShared: multipleTheories: " << multipleTheories
+      << "  t: " << t << std::endl;
   // register it with the equality engine manager if sharing is enabled
   if (d_logicInfo.isSharingEnabled())
   {
     preRegisterSharedInternal(t);
   }
   // if multiple theories are present in t
-  if (multipleTheories)
+  if (multipleTheories
+      || options::politeOptimize() == options::PoliteOptimizationMode::FINE)
   {
+    Trace("polite-optimization")
+        << "preRegisterShared multiple theories t = " << t << std::endl;
     // Collect the shared terms if there are multiple theories
     // This calls Theory::addSharedTerm, possibly multiple times
     NodeVisitor<SharedTermsVisitor>::run(d_sharedTermsVisitor, t);
@@ -72,9 +80,10 @@ void SharedSolver::preRegisterShared(TNode t, bool multipleTheories)
           << "preRegisterShared: the shared term was added via atom: " << t
           << std::endl;
       TheoryIdSet theories = 0;
+      theories = TheoryIdSetUtil::setInsert(Theory::theoryOf(t), theories);
+      theories = TheoryIdSetUtil::setInsert(Theory::theoryOf(n), theories);
       theories =
           TheoryIdSetUtil::setInsert(Theory::theoryOf(n.getType()), theories);
-      theories = TheoryIdSetUtil::setInsert(Theory::theoryOf(n), theories);
       Trace("polite-optimization")
           << "preRegisterShared: theories: "
           << TheoryIdSetUtil::setToString(theories) << std::endl;
