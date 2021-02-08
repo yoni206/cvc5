@@ -33,7 +33,7 @@ SharedSolver::SharedSolver(TheoryEngine& te, ProofNodeManager* pnm)
       d_logicInfo(te.getLogicInfo()),
       d_sharedTerms(&d_te, d_te.getSatContext(), d_te.getUserContext(), pnm),
       d_preRegistrationVisitor(&te, d_te.getSatContext()),
-      d_sharedTermsVisitor(&te, d_sharedTerms)
+      d_sharedTermsVisitor(&te, d_sharedTerms),
       d_keep(d_te.getUserContext())
 {
   d_valuation = new Valuation(&d_te);
