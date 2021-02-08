@@ -50,15 +50,10 @@ bool SharedSolver::needsEqualityEngine(theory::EeSetupInfo& esi)
 
 void SharedSolver::preRegisterShared(TNode t)
 {
-  Trace("polite-optimization")
-      << "preRegisterShared: multipleTheories: " << multipleTheories
-      << "  t: " << t << std::endl;
   // register it with the equality engine manager if sharing is enabled
   if (d_logicInfo.isSharingEnabled())
   {
     preRegisterSharedInternal(t);
-    // Collect the shared terms if there are multiple theories
-    // This calls Theory::addSharedTerm, possibly multiple times
     NodeVisitor<SharedTermsVisitor>::run(d_sharedTermsVisitor, t);
 
     // additionally, directly add auxiliary shared terms
