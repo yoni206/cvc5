@@ -224,7 +224,6 @@ TheoryEngine::TheoryEngine(context::Context* context,
       d_quantEngine(nullptr),
       d_decManager(new DecisionManager(userContext)),
       d_relManager(nullptr),
-      d_preRegistrationVisitor(this, context),
       d_eager_model_building(false),
       d_inConflict(context, false),
       d_inSatMode(false),
@@ -242,8 +241,7 @@ TheoryEngine::TheoryEngine(context::Context* context,
       d_resourceManager(rm),
       d_inPreregister(false),
       d_factsAsserted(context, false),
-      d_attr_handle(),
-      d_arithSubstitutionsAdded("theory::arith::zzz::arith::substitutions", 0)
+      d_attr_handle()
 {
   for(TheoryId theoryId = theory::THEORY_FIRST; theoryId != theory::THEORY_LAST;
       ++ theoryId)
@@ -255,8 +253,6 @@ TheoryEngine::TheoryEngine(context::Context* context,
   smtStatisticsRegistry()->registerStat(&d_combineTheoriesTime);
   d_true = NodeManager::currentNM()->mkConst<bool>(true);
   d_false = NodeManager::currentNM()->mkConst<bool>(false);
-
-  smtStatisticsRegistry()->registerStat(&d_arithSubstitutionsAdded);
 }
 
 TheoryEngine::~TheoryEngine() {
@@ -270,7 +266,6 @@ TheoryEngine::~TheoryEngine() {
   }
 
   smtStatisticsRegistry()->unregisterStat(&d_combineTheoriesTime);
-  smtStatisticsRegistry()->unregisterStat(&d_arithSubstitutionsAdded);
 }
 
 void TheoryEngine::interrupt() { d_interrupted = true; }
@@ -290,7 +285,7 @@ void TheoryEngine::preRegister(TNode preprocessed) {
 
     // Process the pre-registration queue
     while (!d_preregisterQueue.empty()) {
-      Assert (!d_inConflict);
+      Assert(!d_inConflict);
       // Get the next atom to pre-register
       preprocessed = d_preregisterQueue.front();
       d_preregisterQueue.pop();
@@ -302,47 +297,10 @@ void TheoryEngine::preRegister(TNode preprocessed) {
       // should not have witness
       Assert(!expr::hasSubtermKind(kind::WITNESS, preprocessed));
 
-      // Pre-register the terms in the atom
-      theory::TheoryIdSet theories = NodeVisitor<PreRegisterVisitor>::run(
-          d_preRegistrationVisitor, preprocessed);
-      theories = TheoryIdSetUtil::setRemove(THEORY_BOOL, theories);
-      // Remove the top theory, if any more that means multiple theories were
-      // involved
-      bool multipleTheories =
-          TheoryIdSetUtil::setRemove(Theory::theoryOf(preprocessed), theories);
-      if (Configuration::isAssertionBuild())
-      {
-        TheoryId i;
-        // This should never throw an exception, since theories should be
-        // guaranteed to be initialized.
-        // These checks don't work with finite model finding, because it
-        // uses Rational constants to represent cardinality constraints,
-        // even though arithmetic isn't actually involved.
-        if (!options::finiteModelFind())
-        {
-          while ((i = TheoryIdSetUtil::setPop(theories)) != THEORY_LAST)
-          {
-            if (!d_logicInfo.isTheoryEnabled(i))
-            {
-              LogicInfo newLogicInfo = d_logicInfo.getUnlockedCopy();
-              newLogicInfo.enableTheory(i);
-              newLogicInfo.lock();
-              std::stringstream ss;
-              ss << "The logic was specified as " << d_logicInfo.getLogicString()
-                << ", which doesn't include " << i
-                << ", but found a term in that theory." << std::endl
-                << "You might want to extend your logic to "
-                << newLogicInfo.getLogicString() << std::endl;
-              throw LogicException(ss.str());
-            }
-          }
-        }
-      }
-
       // pre-register with the shared solver, which also handles
       // calling prepregister on individual theories.
       Assert(d_sharedSolver != nullptr);
-      d_sharedSolver->preRegisterShared(preprocessed, multipleTheories);
+      d_sharedSolver->preRegisterShared(preprocessed);
     }
 
     // Leaving pre-register
@@ -514,7 +472,9 @@ void TheoryEngine::check(Theory::Effort effort) {
       propagate(effort);
 
       // We do combination if all has been processed and we are in fullcheck
-      if (Theory::fullEffort(effort) && d_logicInfo.isSharingEnabled() && !d_factsAsserted && !d_lemmasAdded && !d_inConflict) {
+      if (Theory::fullEffort(effort) && d_logicInfo.isSharingEnabled()
+          && !d_factsAsserted && !needCheck() && !d_inConflict)
+      {
         // Do the combination
         Debug("theory") << "TheoryEngine::check(" << effort << "): running combination" << endl;
         {
@@ -1626,6 +1586,9 @@ theory::TrustNode TheoryEngine::getExplanation(
       Trace("te-proof-exp")
           << "- t-explained[" << toExplain.d_theory << "]: " << toExplain.d_node
           << " by " << texplanation.getNode() << std::endl;
+      // should prove the propagation we asked for
+      Assert(texplanation.getKind() == TrustNodeKind::PROP_EXP
+             && texplanation.getProven()[1] == toExplain.d_node);
       // if not a trivial explanation
       if (!CDProof::isSame(texplanation.getNode(), toExplain.d_node))
       {
