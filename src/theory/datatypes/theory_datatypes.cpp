@@ -114,7 +114,18 @@ void TheoryDatatypes::getAuxiliarySharedTerms(Node atom,
           Trace("polite-optimization")
               << "getAuxiliarySharedTerms: adding shared term:" << child
               << std::endl;
+
+          // add the term
           sharedTerms.push_back(child);
+
+          // add a lemma about the term
+          NodeManager* nm = NodeManager::currentNM();
+          std::vector<Node> lemmas;
+          Node pos = child;
+          Node neg = nm->mkNode(kind::NOT, child);
+          Node lemma = nm->mkNode(kind::OR, pos, neg);
+          lemmas.push_back(lemma);
+          d_im.sendLemmas(lemmas);
         }
       }
     }
