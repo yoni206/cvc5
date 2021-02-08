@@ -32,7 +32,8 @@ SharedSolver::SharedSolver(TheoryEngine& te, ProofNodeManager* pnm)
     : d_te(te),
       d_logicInfo(te.getLogicInfo()),
       d_sharedTerms(&d_te, d_te.getSatContext(), d_te.getUserContext(), pnm),
-      d_sharedTermsVisitor(d_sharedTerms),
+      d_preRegistrationVisitor(&te, d_te.getSatContext()),
+      d_sharedTermsVisitor(&te, d_sharedTerms)
       d_keep(d_te.getUserContext())
 {
   d_valuation = new Valuation(&d_te);
@@ -47,7 +48,7 @@ bool SharedSolver::needsEqualityEngine(theory::EeSetupInfo& esi)
   return false;
 }
 
-void SharedSolver::preRegisterShared(TNode t, bool multipleTheories)
+void SharedSolver::preRegisterShared(TNode t)
 {
   Trace("polite-optimization")
       << "preRegisterShared: multipleTheories: " << multipleTheories
@@ -56,13 +57,6 @@ void SharedSolver::preRegisterShared(TNode t, bool multipleTheories)
   if (d_logicInfo.isSharingEnabled())
   {
     preRegisterSharedInternal(t);
-  }
-  // if multiple theories are present in t
-  if (multipleTheories
-      || options::politeOptimize() == options::PoliteOptimizationMode::FINE)
-  {
-    Trace("polite-optimization")
-        << "preRegisterShared multiple theories t = " << t << std::endl;
     // Collect the shared terms if there are multiple theories
     // This calls Theory::addSharedTerm, possibly multiple times
     NodeVisitor<SharedTermsVisitor>::run(d_sharedTermsVisitor, t);
@@ -90,6 +84,11 @@ void SharedSolver::preRegisterShared(TNode t, bool multipleTheories)
       d_keep.insert(n);
       d_sharedTerms.addSharedTerm(t, n, theories);
     }
+  }
+  else
+  {
+    // just use the normal preregister visitor
+    NodeVisitor<PreRegisterVisitor>::run(d_preRegistrationVisitor, t);
   }
 }
 

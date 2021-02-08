@@ -66,9 +66,8 @@ class SharedSolver
    * theories.
    *
    * @param t The term to preregister
-   * @param multipleTheories Whether multiple theories are present in t.
    */
-  void preRegisterShared(TNode t, bool multipleTheories);
+  void preRegisterShared(TNode t);
   /**
    * Pre-notify assertion fact with the given atom. This is called when any
    * fact is asserted in TheoryEngine, just before it is dispatched to the
@@ -125,6 +124,8 @@ class SharedSolver
   const LogicInfo& d_logicInfo;
   /** The database of shared terms.*/
   SharedTermsDatabase d_sharedTerms;
+  /** Default visitor for pre-registration */
+  PreRegisterVisitor d_preRegistrationVisitor;
   /** Visitor for collecting shared terms */
   SharedTermsVisitor d_sharedTermsVisitor;
 

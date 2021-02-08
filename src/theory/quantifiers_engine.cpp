@@ -40,14 +40,15 @@ QuantifiersEngine::QuantifiersEngine(
       d_qim(qim),
       d_te(nullptr),
       d_decManager(nullptr),
-      d_eq_query(new quantifiers::EqualityQueryQuantifiersEngine(qstate, this)),
+      d_qreg(),
       d_tr_trie(new inst::TriggerTrie),
       d_model(nullptr),
       d_builder(nullptr),
       d_term_util(new quantifiers::TermUtil),
       d_term_db(new quantifiers::TermDb(qstate, qim, this)),
+      d_eq_query(nullptr),
       d_sygus_tdb(nullptr),
-      d_quant_attr(new quantifiers::QuantAttributes(this)),
+      d_quant_attr(new quantifiers::QuantAttributes),
       d_instantiate(new quantifiers::Instantiate(this, qstate, pnm)),
       d_skolemize(new quantifiers::Skolemize(this, qstate, pnm)),
       d_term_enum(new quantifiers::TermEnumeration),
@@ -57,12 +58,9 @@ QuantifiersEngine::QuantifiersEngine(
       d_ierCounter_c(qstate.getSatContext()),
       d_presolve(qstate.getUserContext(), true),
       d_presolve_in(qstate.getUserContext()),
-      d_presolve_cache(qstate.getUserContext()),
-      d_presolve_cache_wq(qstate.getUserContext()),
-      d_presolve_cache_wic(qstate.getUserContext())
+      d_presolve_cache(qstate.getUserContext())
 {
   //---- utilities
-  d_util.push_back(d_eq_query.get());
   // term util must come before the other utilities
   d_util.push_back(d_term_util.get());
   d_util.push_back(d_term_db.get());
@@ -75,7 +73,6 @@ QuantifiersEngine::QuantifiersEngine(
 
   d_util.push_back(d_instantiate.get());
 
-  d_curr_effort_level = QuantifiersModule::QEFFORT_NONE;
   d_hasAddedLemma = false;
   //don't add true lemma
   d_lemmas_produced_c[d_term_util->d_true] = true;
@@ -116,6 +113,9 @@ QuantifiersEngine::QuantifiersEngine(
     d_model.reset(
         new quantifiers::FirstOrderModel(this, qstate, "FirstOrderModel"));
   }
+  d_eq_query.reset(new quantifiers::EqualityQueryQuantifiersEngine(
+      qstate, d_term_db.get(), d_model.get()));
+  d_util.insert(d_util.begin(), d_eq_query.get());
 }
 
 QuantifiersEngine::~QuantifiersEngine() {}
@@ -126,7 +126,7 @@ void QuantifiersEngine::finishInit(TheoryEngine* te, DecisionManager* dm)
   d_decManager = dm;
   // Initialize the modules and the utilities here.
   d_qmodules.reset(new quantifiers::QuantifiersModules);
-  d_qmodules->initialize(this, d_qstate, d_qim, d_modules);
+  d_qmodules->initialize(this, d_qstate, d_qim, d_qreg, d_modules);
   if (d_qmodules->d_rel_dom.get())
   {
     d_util.push_back(d_qmodules->d_rel_dom.get());
@@ -194,49 +194,6 @@ quantifiers::TermEnumeration* QuantifiersEngine::getTermEnumeration() const
 inst::TriggerTrie* QuantifiersEngine::getTriggerDatabase() const
 {
   return d_tr_trie.get();
-}
-
-QuantifiersModule * QuantifiersEngine::getOwner( Node q ) {
-  std::map< Node, QuantifiersModule * >::iterator it = d_owner.find( q );
-  if( it==d_owner.end() ){
-    return NULL;
-  }else{
-    return it->second;
-  }
-}
-
-void QuantifiersEngine::setOwner( Node q, QuantifiersModule * m, int priority ) {
-  QuantifiersModule * mo = getOwner( q );
-  if( mo!=m ){
-    if( mo!=NULL ){
-      if( priority<=d_owner_priority[q] ){
-        Trace("quant-warn") << "WARNING: setting owner of " << q << " to " << ( m ? m->identify() : "null" ) << ", but already has owner " << mo->identify() << " with higher priority!" << std::endl;
-        return;
-      }
-    }
-    d_owner[q] = m;
-    d_owner_priority[q] = priority;
-  }
-}
-
-void QuantifiersEngine::setOwner(Node q, quantifiers::QAttributes& qa)
-{
-  if (qa.d_sygus || (options::sygusRecFun() && !qa.d_fundef_f.isNull()))
-  {
-    if (d_qmodules->d_synth_e.get() == nullptr)
-    {
-      Trace("quant-warn") << "WARNING : synth engine is null, and we have : "
-                          << q << std::endl;
-    }
-    // set synth engine as owner since this is either a conjecture or a function
-    // definition to be used by sygus
-    setOwner(q, d_qmodules->d_synth_e.get(), 2);
-  }
-}
-
-bool QuantifiersEngine::hasOwnership( Node q, QuantifiersModule * m ) {
-  QuantifiersModule * mo = getOwner( q );
-  return mo==m || mo==NULL;
 }
 
 bool QuantifiersEngine::isFiniteBound(Node q, Node v) const
@@ -312,10 +269,12 @@ void QuantifiersEngine::presolve() {
   d_term_db->presolve();
   d_presolve = false;
   //add all terms to database
-  if( options::incrementalSolving() ){
+  if (options::incrementalSolving() && !options::termDbCd())
+  {
     Trace("quant-engine-proc") << "Add presolve cache " << d_presolve_cache.size() << std::endl;
-    for( unsigned i=0; i<d_presolve_cache.size(); i++ ){
-      addTermToDatabase( d_presolve_cache[i], d_presolve_cache_wq[i], d_presolve_cache_wic[i] );
+    for (const Node& t : d_presolve_cache)
+    {
+      addTermToDatabase(t);
     }
     Trace("quant-engine-proc") << "Done add presolve cache " << std::endl;
   }
@@ -503,7 +462,6 @@ void QuantifiersEngine::check( Theory::Effort e ){
     {
       QuantifiersModule::QEffort quant_e =
           static_cast<QuantifiersModule::QEffort>(qef);
-      d_curr_effort_level = quant_e;
       // Force the theory engine to build the model if any module requested it.
       if (needsModelE == quant_e)
       {
@@ -590,7 +548,7 @@ void QuantifiersEngine::check( Theory::Effort e ){
                 for( unsigned i=0; i<d_model->getNumAssertedQuantifiers(); i++ ){
                   bool hasCompleteM = false;
                   Node q = d_model->getAssertedQuantifier( i );
-                  QuantifiersModule * qmd = getOwner( q );
+                  QuantifiersModule* qmd = d_qreg.getOwner(q);
                   if( qmd!=NULL ){
                     hasCompleteM = qmd->checkCompleteFor( q );
                   }else{
@@ -621,7 +579,6 @@ void QuantifiersEngine::check( Theory::Effort e ){
         }
       }
     }
-    d_curr_effort_level = QuantifiersModule::QEFFORT_NONE;
     Trace("quant-engine-debug") << "Done check modules that needed check." << std::endl;
     // debug print
     if (d_hasAddedLemma)
@@ -717,7 +674,7 @@ void QuantifiersEngine::registerQuantifierInternal(Node f)
                            << "..." << std::endl;
       mdl->checkOwnership(f);
     }
-    QuantifiersModule* qm = getOwner(f);
+    QuantifiersModule* qm = d_qreg.getOwner(f);
     Trace("quant") << " Owner : " << (qm == nullptr ? "[none]" : qm->identify())
                    << std::endl;
     // register with each module
@@ -797,26 +754,27 @@ void QuantifiersEngine::assertQuantifier( Node f, bool pol ){
   addTermToDatabase(d_term_util->getInstConstantBody(f), true);
 }
 
-void QuantifiersEngine::addTermToDatabase( Node n, bool withinQuant, bool withinInstClosure ){
-  if( options::incrementalSolving() ){
+void QuantifiersEngine::addTermToDatabase(Node n, bool withinQuant)
+{
+  // don't add terms in quantifier bodies
+  if (withinQuant && !options::registerQuantBodyTerms())
+  {
+    return;
+  }
+  if (options::incrementalSolving() && !options::termDbCd())
+  {
     if( d_presolve_in.find( n )==d_presolve_in.end() ){
       d_presolve_in.insert( n );
       d_presolve_cache.push_back( n );
-      d_presolve_cache_wq.push_back( withinQuant );
-      d_presolve_cache_wic.push_back( withinInstClosure );
     }
   }
   //only wait if we are doing incremental solving
-  if( !d_presolve || !options::incrementalSolving() ){
-    std::set< Node > added;
-    d_term_db->addTerm(n, added, withinQuant, withinInstClosure);
-
-    if (!withinQuant)
+  if (!d_presolve || !options::incrementalSolving() || options::termDbCd())
+  {
+    d_term_db->addTerm(n);
+    if (d_sygus_tdb && options::sygusEvalUnfold())
     {
-      if (d_sygus_tdb && options::sygusEvalUnfold())
-      {
-        d_sygus_tdb->getEvalUnfold()->registerEvalTerm(n);
-      }
+      d_sygus_tdb->getEvalUnfold()->registerEvalTerm(n);
     }
   }
 }
