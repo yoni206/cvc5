@@ -86,7 +86,7 @@ void SharedSolver::preRegisterShared(TNode t)
         Node pos = n;
         Node neg = nm->mkNode(kind::NOT, n);
         Node lemma = nm->mkNode(kind::OR, pos, neg);
-        sendLemma(TrustNode::mkTrustLemma(lemma), TheoryId::THEORY_BOOL);
+        sendLemma(TrustNode::mkTrustLemma(lemma));
       }
     }
   }
