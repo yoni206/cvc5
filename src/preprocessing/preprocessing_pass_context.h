@@ -24,6 +24,7 @@
 #include "context/cdo.h"
 #include "context/context.h"
 #include "decision/decision_engine.h"
+#include "preprocessing/learned_literal_manager.h"
 #include "preprocessing/util/ite_utilities.h"
 #include "smt/smt_engine.h"
 #include "smt/term_formula_removal.h"
@@ -54,6 +55,9 @@ class PreprocessingPassContext
     return d_circuitPropagator;
   }
 
+  /** Get the learned literal manager */
+  LearnedLiteralManager* getLearnedLiteralManager();
+
   context::CDHashSet<Node, NodeHashFunction>& getSymsInAssertions()
   {
     return d_symsInAssertions;
@@ -83,6 +87,18 @@ class PreprocessingPassContext
    */
   void recordSymbolsInAssertions(const std::vector<Node>& assertions);
 
+  /**
+   * Notify learned literal. This method is called when a literal is
+   * entailed by the current set of assertions.
+   *
+   * It should be rewritten, and such that top level substitutions have
+   * been applied to it.
+   */
+  void notifyLearnedLiteral(Node lit);
+  /**
+   * Get the learned literals
+   */
+  std::vector<Node>& getLearnedLiterals();
   /** The the proof node manager associated with this context, if it exists */
   ProofNodeManager* getProofNodeManager();
 
@@ -100,6 +116,11 @@ class PreprocessingPassContext
   theory::booleans::CircuitPropagator* d_circuitPropagator;
   /** Pointer to the proof node manager, if it exists */
   ProofNodeManager* d_pnm;
+
+  /**
+   * The learned literal manager
+   */
+  LearnedLiteralManager d_llm;
 
   /**
    * The (user-context-dependent) set of symbols that occur in at least one

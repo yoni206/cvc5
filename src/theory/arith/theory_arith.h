@@ -145,14 +145,13 @@ class TheoryArith : public Theory {
   ArithState d_astate;
   /** The arith::InferenceManager. */
   InferenceManager d_inferenceManager;
-
+  /** The preprocess utility */
+  ArithPreprocess d_arithPreproc;
   /**
    * The non-linear extension, responsible for all approaches for non-linear
    * arithmetic.
    */
   std::unique_ptr<nl::NonlinearExtension> d_nonlinearExtension;
-  /** The preprocess utility */
-  ArithPreprocess d_arithPreproc;
   /** The theory rewriter for this theory. */
   ArithRewriter d_rewriter;
 

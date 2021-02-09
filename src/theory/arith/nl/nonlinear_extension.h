@@ -24,6 +24,7 @@
 #include "context/cdlist.h"
 #include "expr/kind.h"
 #include "expr/node.h"
+#include "theory/arith/arith_preprocess.h"
 #include "theory/arith/inference_manager.h"
 #include "theory/arith/nl/cad_solver.h"
 #include "theory/arith/nl/ext/factoring_check.h"

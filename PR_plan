@@ -1,0 +1,13 @@
+PR done:
+
+(1) Better arithmetic rewriting
+(5) No expand definitions
+
+PR current:
+
+
+PR planned:
+
+~ (2) Learned literal manager
+~ (3) Skolem manager purify UF
+(4) Delay expand definitions (req 3)

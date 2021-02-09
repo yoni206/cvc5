@@ -59,6 +59,12 @@ NonlinearExtension::NonlinearExtension(TheoryArith& containing,
       d_iandSlv(d_im, state, d_model),
       d_builtModel(containing.getSatContext(), false)
 {
+  d_extTheory.addFunctionKind(kind::DIVISION);
+  d_extTheory.addFunctionKind(kind::DIVISION_TOTAL);
+  d_extTheory.addFunctionKind(kind::INTS_DIVISION);
+  d_extTheory.addFunctionKind(kind::INTS_DIVISION_TOTAL);
+  d_extTheory.addFunctionKind(kind::INTS_MODULUS);
+  d_extTheory.addFunctionKind(kind::INTS_MODULUS_TOTAL);
   d_extTheory.addFunctionKind(kind::NONLINEAR_MULT);
   d_extTheory.addFunctionKind(kind::EXPONENTIAL);
   d_extTheory.addFunctionKind(kind::SINE);
@@ -82,7 +88,7 @@ void NonlinearExtension::preRegisterTerm(TNode n)
 {
   // register terms with extended theory, to find extended terms that can be
   // eliminated by context-depedendent simplification.
-  d_extTheory.registerTermRec(n);
+  d_extTheory.registerTerm(n);
 }
 
 void NonlinearExtension::sendLemmas(const std::vector<NlLemma>& out)
@@ -200,6 +206,15 @@ void NonlinearExtension::getAssertions(std::vector<Node>& assertions)
     Trace("nl-ext-assert-debug")
         << "Loaded " << assertion.d_assertion << " from theory" << std::endl;
     Node lit = assertion.d_assertion;
+    bool pol = lit.getKind() != NOT;
+    Node atom_orig = lit.getKind() == NOT ? lit[0] : lit;
+    /*
+    if (d_preproc.isReduced(atom_orig))
+    {
+      // it was reduced by the preprocessing module, skip
+      continue;
+    }
+    */
     if (useRelevance && !v.isRelevant(lit))
     {
       // not relevant, skip

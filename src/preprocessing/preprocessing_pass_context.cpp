@@ -29,6 +29,7 @@ PreprocessingPassContext::PreprocessingPassContext(
       d_resourceManager(smt->getResourceManager()),
       d_topLevelSubstitutions(smt->getUserContext(), pnm),
       d_circuitPropagator(circuitPropagator),
+      d_llm(smt, this, smt->getUserContext()),
       d_pnm(pnm),
       d_symsInAssertions(smt->getUserContext())
 {
@@ -67,6 +68,15 @@ void PreprocessingPassContext::recordSymbolsInAssertions(
   }
 }
 
+void PreprocessingPassContext::notifyLearnedLiteral(Node lit)
+{
+  d_llm.notifyLearnedLiteral(lit);
+}
+
+std::vector<Node>& PreprocessingPassContext::getLearnedLiterals()
+{
+  return d_llm.getLearnedLiterals();
+}
 ProofNodeManager* PreprocessingPassContext::getProofNodeManager()
 {
   return d_pnm;

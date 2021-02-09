@@ -18,6 +18,7 @@
 #include <utility>
 
 #include "expr/node_manager_attributes.h"
+#include "expr/skolem_manager.h"
 #include "options/arith_options.h"
 #include "options/base_options.h"
 #include "options/bv_options.h"
@@ -290,6 +291,11 @@ bool ProcessAssertions::apply(Assertions& as)
     d_passes["static-learning"]->apply(&assertions);
   }
   Debug("smt") << " assertions     : " << assertions.size() << endl;
+
+  if (options::learnedRewrite())
+  {
+    d_passes["learned-rewrite"]->apply(&assertions);
+  }
 
   if (options::earlyIteRemoval())
   {

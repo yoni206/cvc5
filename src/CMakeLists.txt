@@ -48,6 +48,8 @@ libcvc4_add_sources(
   lib/strtok_r.h
   preprocessing/assertion_pipeline.cpp
   preprocessing/assertion_pipeline.h
+  preprocessing/learned_literal_manager.cpp
+  preprocessing/learned_literal_manager.h
   preprocessing/passes/ackermann.cpp
   preprocessing/passes/ackermann.h
   preprocessing/passes/apply_substs.cpp
@@ -82,6 +84,8 @@ libcvc4_add_sources(
   preprocessing/passes/ite_removal.h
   preprocessing/passes/ite_simp.cpp
   preprocessing/passes/ite_simp.h
+  preprocessing/passes/learned_rewrite.cpp
+  preprocessing/passes/learned_rewrite.h
   preprocessing/passes/miplib_trick.cpp
   preprocessing/passes/miplib_trick.h
   preprocessing/passes/nl_ext_purify.cpp
@@ -735,6 +739,8 @@ libcvc4_add_sources(
   theory/quantifiers/quantifiers_inference_manager.h
   theory/quantifiers/quantifiers_modules.cpp
   theory/quantifiers/quantifiers_modules.h
+  theory/quantifiers/quantifiers_registry.cpp
+  theory/quantifiers/quantifiers_registry.h
   theory/quantifiers/quantifiers_rewriter.cpp
   theory/quantifiers/quantifiers_rewriter.h
   theory/quantifiers/quantifiers_state.cpp

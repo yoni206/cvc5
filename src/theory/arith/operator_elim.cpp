@@ -52,6 +52,8 @@ TrustNode OperatorElim::eliminate(Node n, bool partialOnly)
   Node nn = eliminateOperators(n, tg, partialOnly);
   if (nn != n)
   {
+    Trace("arith-elim") << "OperatorElim::eliminate: " << n << std::endl;
+    Trace("arith-elim") << "               returned: " << nn << std::endl;
     // since elimination may introduce new operators to eliminate, we must
     // recursively eliminate result
     Node nnr = eliminateOperatorsRec(nn, tg, partialOnly);
@@ -194,6 +196,7 @@ Node OperatorElim::eliminateOperators(Node node,
         // not eliminating total operators
         return node;
       }
+      Node zero = nm->mkConst(Rational(0));
       Node den = Rewriter::rewrite(node[1]);
       Node num = Rewriter::rewrite(node[0]);
       Node intVar;
@@ -245,7 +248,7 @@ Node OperatorElim::eliminateOperators(Node node,
               AND,
               nm->mkNode(
                   IMPLIES,
-                  nm->mkNode(GT, den, nm->mkConst(Rational(0))),
+                  nm->mkNode(GT, den, zero),
                   nm->mkNode(
                       AND,
                       leqNum,
@@ -258,7 +261,7 @@ Node OperatorElim::eliminateOperators(Node node,
                               nm->mkNode(PLUS, v, nm->mkConst(Rational(1))))))),
               nm->mkNode(
                   IMPLIES,
-                  nm->mkNode(LT, den, nm->mkConst(Rational(0))),
+                  nm->mkNode(LT, den, zero),
                   nm->mkNode(
                       AND,
                       leqNum,
@@ -286,8 +289,8 @@ Node OperatorElim::eliminateOperators(Node node,
       }
       if (k == INTS_MODULUS_TOTAL)
       {
-        Node nn = nm->mkNode(MINUS, num, nm->mkNode(MULT, den, intVar));
-        return nn;
+        return nm->mkNode(MINUS, num, nm->mkNode(MULT, den, intVar));
+        ;
       }
       else
       {
@@ -383,6 +386,14 @@ Node OperatorElim::eliminateOperators(Node node,
         Node modZeroNum = getArithSkolemApp(num, ArithSkolemId::MOD_BY_ZERO);
         Node denEq0 = nm->mkNode(EQUAL, den, nm->mkConst(Rational(0)));
         ret = nm->mkNode(ITE, denEq0, modZeroNum, ret);
+      }
+      // if option is set, we case split on whether there is any overflow
+      if (options::modSplitOverflow())
+      {
+        Node zero = nm->mkConst(Rational(0));
+        Node cond = nm->mkNode(
+            AND, nm->mkNode(LEQ, zero, num), nm->mkNode(LT, num, den));
+        ret = nm->mkNode(ITE, cond, num, ret);
       }
       return ret;
       break;

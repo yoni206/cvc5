@@ -46,8 +46,8 @@ TheoryArith::TheoryArith(context::Context* c,
       d_ppPfGen(pnm, c, "Arith::ppRewrite"),
       d_astate(*d_internal, c, u, valuation),
       d_inferenceManager(*this, d_astate, pnm),
-      d_nonlinearExtension(nullptr),
-      d_arithPreproc(d_astate, d_inferenceManager, pnm, logicInfo)
+      d_arithPreproc(d_astate, d_inferenceManager, pnm, logicInfo),
+      d_nonlinearExtension(nullptr)
 {
   smtStatisticsRegistry()->registerStat(&d_ppRewriteTimer);
 
@@ -213,6 +213,18 @@ void TheoryArith::postCheck(Effort level)
 bool TheoryArith::preNotifyFact(
     TNode atom, bool pol, TNode fact, bool isPrereg, bool isInternal)
 {
+  if (options::arithPreprocess() == options::ArithPreprocessMode::EAGER)
+  {
+    if (d_arithPreproc.reduceAssertion(atom))
+    {
+      // atom contained extended operators that were eliminated, we can
+      // ignore this atom. Right now, just ignore is_int.
+      if (atom.getKind() == kind::IS_INTEGER)
+      {
+        return true;
+      }
+    }
+  }
   Trace("arith-check") << "TheoryArith::preNotifyFact: " << fact
                        << ", isPrereg=" << isPrereg
                        << ", isInternal=" << isInternal << std::endl;
