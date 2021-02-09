@@ -22,6 +22,7 @@
 #include "context/context.h"
 #include "expr/node.h"
 #include "expr/node_manager.h"
+#include "options/arith_options.h"
 #include "options/smt_options.h"
 #include "smt/smt_engine.h"
 #include "smt/smt_engine_scope.h"
@@ -191,6 +192,8 @@ class TheoryBVIntBlastWhite : public CxxTest::TestSuite
                     && left[0].getKind() == kind::GEQ
                     && right.getKind() == kind::GEQ));
     }
+
+    delete ib;
   }
 
 
@@ -322,6 +325,20 @@ class TheoryBVIntBlastWhite : public CxxTest::TestSuite
       Node intToBVOp = d_nm->mkConst<IntToBitVector>(IntToBitVector(bvsize));
       TS_ASSERT(it->second.getOperator() == intToBVOp);
     }
+
+    delete ib;
+  }
+
+  // verify that nl-ext-tplanes is on
+  // after int-blaster is created
+  void testNlExt()
+  {
+    std::cout << "making sure nl-ext-tplanes is on" << std::endl;
+    IntBlaster* ib = new IntBlaster(
+        d_smt->getUserContext(), options::SolveBVAsIntMode::IAND, 1, false);
+    TS_ASSERT(options::nlExtTangentPlanes());
+    std::cout << "option nl-ext-tplanes is on" << std::endl;
+    delete ib;
   }
 
   // tests that the skolems are the BV variables
