@@ -90,30 +90,33 @@ void TheoryDatatypes::getAuxiliarySharedTerms(Node atom,
                                               std::vector<Node>& sharedTerms)
 {
   if (options::politeOptimize() == options::PoliteOptimizationMode::FINE) {
-    NodeManager* nm = NodeManager::currentNM(); 
     if (atom.getKind() == APPLY_TESTER)
     {
-      // get the constructor and datatype related to the tester
-      size_t cindex = utils::isTester(atom);
-      Assert(cindex >= 0);
-      const DType& dt = utils::datatypeOf(atom.getOperator());
-      const DTypeConstructor& c = dt[cindex];
+      Trace("polite-optimization") << "processing atom: " << atom << std::endl;
       // atom = is_c(x)
       // dtTerm := x
       Node dtTerm = atom[0];
       TypeNode tn = dtTerm.getType();
-      for (unsigned i = 0, nargs = c.getNumArgs(); i < nargs; i++)
+
+      // get the constructor and datatype related to the tester
+      size_t cindex = utils::isTester(atom);
+      Assert(cindex >= 0);
+      const DType& dt = utils::datatypeOf(atom.getOperator());
+      Node instCons = getInstantiateCons(dtTerm, dt, cindex);
+      Node pp = d_valuation.getPreprocessedTerm(instCons);
+      Trace("polite-optimization")
+          << "preprocessed constructor: " << pp << std::endl;
+      for (Node child : pp)
       {
-        Node st = nm->mkNode(
-            APPLY_SELECTOR_TOTAL, c.getSelectorInternal(tn, i), dtTerm);
-        Trace("polite-optimization")
-            << "getAuxiliarySharedTerms: considering adding shared term:" << st
-            << std::endl;
-        if (st.getType().isFinite() && !st.getType().isDatatype()) {
+        Trace("polite-optimization") << "child: " << child << std::endl;
+        if (child.getType().isFinite() && !child.getType().isDatatype())
+        {
           Trace("polite-optimization")
-              << "getAuxiliarySharedTerms: adding shared term:" << st
+              << "getAuxiliarySharedTerms: adding shared term:" << child
               << std::endl;
-          sharedTerms.push_back(st);
+
+          // add the term
+          sharedTerms.push_back(child);
         }
       }
     }

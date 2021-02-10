@@ -113,7 +113,7 @@ class SharedSolver
                                TNode b,
                                bool value);
   /** Send lemma to the theory engine, atomsTo is the theory to send atoms to */
-  void sendLemma(TrustNode trn, TheoryId atomsTo);
+  void sendLemma(TrustNode trn, TheoryId atomsTo=theory::THEORY_LAST);
 
  protected:
   /** Solver-specific pre-register shared */

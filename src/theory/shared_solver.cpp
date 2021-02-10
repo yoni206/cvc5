@@ -15,6 +15,8 @@
 #include "theory/shared_solver.h"
 
 #include "expr/node_visitor.h"
+#include "options/datatypes_options.h"
+#include "options/smt_options.h"
 #include "theory/theory_engine.h"
 
 namespace CVC4 {
@@ -52,8 +54,6 @@ void SharedSolver::preRegisterShared(TNode t)
   if (d_logicInfo.isSharingEnabled())
   {
     preRegisterSharedInternal(t);
-    // Collect the shared terms if there are multiple theories
-    // This calls Theory::addSharedTerm, possibly multiple times
     NodeVisitor<SharedTermsVisitor>::run(d_sharedTermsVisitor, t);
 
     // additionally, directly add auxiliary shared terms
@@ -63,21 +63,31 @@ void SharedSolver::preRegisterShared(TNode t)
     theory->getAuxiliarySharedTerms(t, sharedTerms);
     for (Node n : sharedTerms)
     {
-      n = d_valuation->getPreprocessedTerm(n);
+      Assert (!n.getType().isBoolean() || n.getKind()==kind::BOOLEAN_TERM_VARIABLE);
       Trace("polite-optimization")
           << "preRegisterShared: really adding shared term: " << n << std::endl;
       Trace("polite-optimization")
           << "preRegisterShared: the shared term was added via atom: " << t
           << std::endl;
       TheoryIdSet theories = 0;
+      theories = TheoryIdSetUtil::setInsert(Theory::theoryOf(t), theories);
+      theories = TheoryIdSetUtil::setInsert(Theory::theoryOf(n), theories);
       theories =
           TheoryIdSetUtil::setInsert(Theory::theoryOf(n.getType()), theories);
-      theories = TheoryIdSetUtil::setInsert(Theory::theoryOf(n), theories);
       Trace("polite-optimization")
           << "preRegisterShared: theories: "
           << TheoryIdSetUtil::setToString(theories) << std::endl;
       d_keep.insert(n);
       d_sharedTerms.addSharedTerm(t, n, theories);
+      
+      if (n.getKind() == kind::BOOLEAN_TERM_VARIABLE) {
+        // add a lemma about the Boolean variable
+        NodeManager* nm = NodeManager::currentNM();
+        Node pos = n;
+        Node neg = nm->mkNode(kind::NOT, n);
+        Node lemma = nm->mkNode(kind::OR, pos, neg);
+        sendLemma(TrustNode::mkTrustLemma(lemma));
+      }
     }
   }
   else
