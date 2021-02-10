@@ -73,9 +73,7 @@ class TheoryProxy : public Registrar
   void finishInit(CDCLTSatSolverInterface* satSolver, CnfStream* cnfStream);
 
   /** Notify (preprocessed) assertions. */
-  void notifyPreprocessedAssertions(const std::vector<Node>& assertions,
-                                    const std::vector<Node>& ppLemmas,
-                                    const std::vector<Node>& ppSkolems);
+  void notifyPreprocessedAssertions(const std::vector<Node>& assertions);
 
   void presolve();
 

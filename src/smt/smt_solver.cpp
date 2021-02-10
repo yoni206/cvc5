@@ -288,7 +288,7 @@ void SmtSolver::processAssertions(Assertions& as)
   {
     Chat() << "notifying theory engine and decision engine..." << std::endl;
     d_propEngine->notifyPreprocessedAssertions(
-        assertions, newSkolems, newSkDefs);
+        assertions);
   }
 
   {

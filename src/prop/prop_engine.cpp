@@ -172,15 +172,11 @@ theory::TrustNode PropEngine::removeItes(
 }
 
 void PropEngine::notifyPreprocessedAssertions(
-    const std::vector<Node>& assertions,
-    const std::vector<Node>& ppLemmas,
-    const std::vector<Node>& ppSkolems)
+    const std::vector<Node>& assertions)
 {
-  Trace("prop-summary") << "Preprocessed assertions: " << assertions.size()
-                        << " input / " << ppLemmas.size()
-                        << " skolem definitions" << std::endl;
+  Trace("prop-summary") << "Preprocessed assertions, size = " << assertions.size() << std::endl;
   // notify the theory engine of preprocessed assertions
-  d_theoryProxy->notifyPreprocessedAssertions(assertions, ppLemmas, ppSkolems);
+  d_theoryProxy->notifyPreprocessedAssertions(assertions);
 }
 
 void PropEngine::assertFormula(TNode node) {

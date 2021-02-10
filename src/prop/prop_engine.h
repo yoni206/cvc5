@@ -125,16 +125,27 @@ class PropEngine
    * assertions are asserted to this prop engine. This method notifies the
    * decision engine and the theory engine of the assertions in ap.
    */
-  void notifyPreprocessedAssertions(const std::vector<Node>& assertions,
-                                    const std::vector<Node>& ppLemmas,
-                                    const std::vector<Node>& ppSkolems);
+  void notifyPreprocessedAssertions(const std::vector<Node>& assertions);
 
   /**
    * Converts the given formula to CNF and assert the CNF to the SAT solver.
-   * The formula is asserted permanently for the current context.
+   * The formula is asserted permanently for the current context. Note the
+   * formula should correspond to an input formula and not a lemma introduced
+   * by term formula removal (which instead should use the interface below).
    * @param node the formula to assert
    */
-  void assertFormula(TNode node);
+  void assertFormula(TNode node);  
+  /**
+   * Same as above, but node corresponds to the skolem definition of the given
+   * skolem.
+   * @param node the formula to assert
+   * @param skolem the skolem that this lemma defines.
+   * 
+   * For example, if k is introduced by ITE removal of (ite C x y), then node
+   * is the formula (ite C (= k x) (= k y)).  It is important to distinguish
+   * these kinds of lemmas from input assertions, as the justification decision
+   * heuristic treates them specially.
+   */
   void assertSkolemDefinition(TNode node, TNode skolem);
 
   /**
