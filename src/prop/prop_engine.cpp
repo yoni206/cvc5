@@ -174,7 +174,8 @@ theory::TrustNode PropEngine::removeItes(
 void PropEngine::notifyPreprocessedAssertions(
     const std::vector<Node>& assertions)
 {
-  Trace("prop-summary") << "Preprocessed assertions, size = " << assertions.size() << std::endl;
+  Trace("prop-summary") << "Preprocessed assertions, size = "
+                        << assertions.size() << std::endl;
   // notify the theory engine of preprocessed assertions
   d_theoryProxy->notifyPreprocessedAssertions(assertions);
 }

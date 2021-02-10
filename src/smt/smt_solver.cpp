@@ -287,8 +287,7 @@ void SmtSolver::processAssertions(Assertions& as)
   if (noConflict)
   {
     Chat() << "notifying theory engine and decision engine..." << std::endl;
-    d_propEngine->notifyPreprocessedAssertions(
-        assertions);
+    d_propEngine->notifyPreprocessedAssertions(assertions);
   }
 
   {
