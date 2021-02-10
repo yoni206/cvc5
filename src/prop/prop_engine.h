@@ -315,6 +315,15 @@ class PropEngine
    * on an activity heuristic
    */
   void assertTrustedLemmaInternal(theory::TrustNode trn, bool removable);
+  /**
+   * Assert node as a formula to the CNF stream
+   * @param node The formula to assert
+   * @param negated Whether to assert the negation of node
+   * @param removable Whether the formula is removable
+   * @param input Whether the formula came from the input
+   * @param pg Pointer to a proof generator that can provide a proof of node
+   * (or its negation if negated is true).
+   */
   void assertInternal(TNode node,
                       bool negated,
                       bool removable,
