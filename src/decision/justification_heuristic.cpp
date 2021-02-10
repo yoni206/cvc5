@@ -183,15 +183,14 @@ void JustificationHeuristic::addAssertion(TNode assertion)
   // assertion to be satisifed. However, we also have to make sure that we pick
   // a value for `b` that is not in conflict with the other assignments (we can
   // only choose `b` to be `true` otherwise the model is incorrect).
-  d_assertions.push_back(assertion);  
+  d_assertions.push_back(assertion);
 }
 
 void JustificationHeuristic::addSkolemDefinition(TNode lem, TNode skolem)
 {
-  Trace("decision::jh::ite") << " jh-ite: " << skolem << " maps to "
-                              << lem << std::endl;
+  Trace("decision::jh::ite")
+      << " jh-ite: " << skolem << " maps to " << lem << std::endl;
   d_skolemAssertions[skolem] = lem;
-
 }
 
 SatLiteral JustificationHeuristic::findSplitter(TNode node,

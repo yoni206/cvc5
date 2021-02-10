@@ -157,7 +157,8 @@ class DecisionEngine {
   Node getNode(SatLiteral l) {
     return d_cnfStream->getNode(l);
   }
-private:
+
+ private:
   /** The ITE decision strategy we have allocated */
   std::unique_ptr<ITEDecisionStrategy> d_enabledITEStrategy;
 };/* DecisionEngine class */

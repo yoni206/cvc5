@@ -84,7 +84,7 @@ void DecisionEngine::addAssertion(TNode assertion)
 {
   // new assertions, reset whatever result we knew
   d_result = SAT_VALUE_UNKNOWN;
-  if (d_enabledITEStrategy!=nullptr)
+  if (d_enabledITEStrategy != nullptr)
   {
     d_enabledITEStrategy->addAssertion(assertion);
   }
@@ -94,11 +94,10 @@ void DecisionEngine::addSkolemDefinition(TNode lem, TNode skolem)
 {
   // new assertions, reset whatever result we knew
   d_result = SAT_VALUE_UNKNOWN;
-  if (d_enabledITEStrategy!=nullptr)
+  if (d_enabledITEStrategy != nullptr)
   {
     d_enabledITEStrategy->addSkolemDefinition(lem, skolem);
   }
-  
 }
 
 }/* CVC4 namespace */

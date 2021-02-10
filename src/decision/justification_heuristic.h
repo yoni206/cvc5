@@ -131,7 +131,7 @@ public:
    * the current assertions.
    */
   void addSkolemDefinition(TNode lem, TNode skolem) override;
-  
+
  private:
   /* getNext with an option to specify threshold */
   prop::SatLiteral getNextThresh(bool &stopSearch, DecisionWeight threshold);
