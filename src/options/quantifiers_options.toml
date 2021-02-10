@@ -1770,17 +1770,6 @@ header = "options/quantifiers_options.h"
   default    = "true"
   help       = "compute inverse for concat over equalities rather than producing an invertibility condition"
 
-### Local theory extensions options
-
-[[option]]
-  name       = "lteRestrictInstClosure"
-  category   = "regular"
-  long       = "lte-restrict-inst-closure"
-  type       = "bool"
-  default    = "false"
-  read_only  = true
-  help       = "treat arguments of inst closure as restricted terms for instantiation"
-
 ### Reduction options
 
 [[option]]
@@ -1883,16 +1872,6 @@ header = "options/quantifiers_options.h"
   default    = "true"
   read_only  = false
   help       = "use store axiom during ho-elim"
-
-### Proof options
-
-[[option]]
-  name       = "trackInstLemmas"
-  category   = "regular"
-  long       = "track-inst-lemmas"
-  type       = "bool"
-  default    = "false"
-  help       = "track instantiation lemmas (for proofs, unsat cores, qe and synthesis minimization)"
 
 ### Output options
 

@@ -172,23 +172,18 @@ theory::TrustNode PropEngine::removeItes(
 }
 
 void PropEngine::notifyPreprocessedAssertions(
-    const std::vector<Node>& assertions,
-    const std::vector<Node>& ppLemmas,
-    const std::vector<Node>& ppSkolems)
+    const std::vector<Node>& assertions)
 {
-  Trace("prop-summary") << "Preprocessed assertions: " << assertions.size()
-                        << " input / " << ppLemmas.size()
-                        << " skolem definitions" << std::endl;
+  Trace("prop-summary") << "Preprocessed assertions, size = "
+                        << assertions.size() << std::endl;
   // notify the theory engine of preprocessed assertions
-  d_theoryProxy->notifyPreprocessedAssertions(assertions, ppLemmas, ppSkolems);
-
-  // Add assertions to decision engine
-  d_decisionEngine->addAssertions(assertions, ppLemmas, ppSkolems);
+  d_theoryProxy->notifyPreprocessedAssertions(assertions);
 }
 
 void PropEngine::assertFormula(TNode node) {
   Assert(!d_inCheckSat) << "Sat solver in solve()!";
   Debug("prop") << "assertFormula(" << node << ")" << endl;
+  d_decisionEngine->addAssertion(node);
   assertInternal(node, false, false, true);
   // notify theory proxy of the assertion
   d_theoryProxy->notifyAssertion(node);
@@ -198,6 +193,7 @@ void PropEngine::assertSkolemDefinition(TNode node, TNode skolem)
 {
   Assert(!d_inCheckSat) << "Sat solver in solve()!";
   Debug("prop") << "assertFormula(" << node << ")" << endl;
+  d_decisionEngine->addSkolemDefinition(node, skolem);
   assertInternal(node, false, false, true);
   // notify theory proxy of the assertion
   d_theoryProxy->notifyAssertion(node, skolem);
@@ -291,22 +287,19 @@ void PropEngine::assertLemmasInternal(
   if (!removable)
   {
     // also add to the decision engine, where notice we don't need proofs
-    std::vector<Node> assertions;
     if (!trn.isNull())
     {
-      assertions.push_back(trn.getProven());
       // notify the theory proxy of the lemma
       d_theoryProxy->notifyLemma(trn.getProven());
+      d_decisionEngine->addAssertion(trn.getProven());
     }
     Assert(ppSkolems.size() == ppLemmas.size());
-    std::vector<Node> ppLemmasF;
     for (size_t i = 0, lsize = ppLemmas.size(); i < lsize; ++i)
     {
       Node lem = ppLemmas[i].getProven();
-      ppLemmasF.push_back(lem);
       d_theoryProxy->notifyLemma(lem, ppSkolems[i]);
+      d_decisionEngine->addSkolemDefinition(lem, ppSkolems[i]);
     }
-    d_decisionEngine->addAssertions(assertions, ppLemmasF, ppSkolems);
   }
 }
 
