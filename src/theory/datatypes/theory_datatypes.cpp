@@ -1597,7 +1597,7 @@ void TheoryDatatypes::instantiate( EqcInfo* eqc, Node n ){
   // regress0/datatypes/list-bool.smt2).
   bool forceLemma;
   if (options::politeOptimize() == options::PoliteOptimizationMode::NONE) {
-    forceLemma = true;
+    forceLemma = dt.involvesExternalType();
   } else if (options::politeOptimize() == options::PoliteOptimizationMode::COARSE) {
     forceLemma = dt[index].hasFiniteExternalArgType(ttn);
   } else {
