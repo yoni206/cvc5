@@ -421,7 +421,13 @@ Node IntBlaster::translateWithChildren(
       uint64_t bvsize = original[0].getType().getBitVectorSize();
       Node plus = d_nm->mkNode(kind::PLUS, translated_children);
       Node p2 = pow2(bvsize);
-      returnNode = d_nm->mkNode(kind::INTS_MODULUS_TOTAL, plus, p2);
+      std::ostringstream os;
+      os << "__intblast_plus_sigma_";
+      Node sigma = d_nm->mkSkolem(os.str(), d_nm->integerType(), "bv2int plus sigma");
+      addRangeConstraint(sigma, 1, lemmas);
+      Node multSig = d_nm->mkNode(kind::MULT, sigma, p2);
+      returnNode = d_nm->mkNode(kind::MINUS, plus, multSig);
+      addRangeConstraint(returnNode, bvsize, lemmas);
       break;
     }
     case kind::BITVECTOR_MULT:
@@ -430,7 +436,13 @@ Node IntBlaster::translateWithChildren(
       uint64_t bvsize = original[0].getType().getBitVectorSize();
       Node mult = d_nm->mkNode(kind::MULT, translated_children);
       Node p2 = pow2(bvsize);
-      returnNode = d_nm->mkNode(kind::INTS_MODULUS_TOTAL, mult, p2);
+      std::ostringstream os;
+      os << "__intblast_mult_sigma_";
+      Node sigma = d_nm->mkSkolem(os.str(), d_nm->integerType(), "bv2int mult sigma");
+      addRangeConstraint(sigma, bvsize, lemmas);
+      Node multSig = d_nm->mkNode(kind::MULT, sigma, p2);
+      returnNode = d_nm->mkNode(kind::MINUS, mult, multSig);
+      addRangeConstraint(returnNode, bvsize, lemmas);
       break;
     }
     case kind::BITVECTOR_UDIV_TOTAL:
