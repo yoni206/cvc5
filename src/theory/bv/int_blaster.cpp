@@ -3,7 +3,7 @@
  ** \verbatim
  ** Top contributors (to current version):
  **   Yoni Zohar, Andrew Reynolds, Andres Noetzli
- ** This file is part of the CVC4 project.
+ ** This file is part of the cvc5 project.
  ** Copyright (c) 2009-2020 by the authors listed in the file AUTHORS
  ** in the top-level source directory and their institutional affiliations.
  ** All rights reserved.  See the file COPYING in the top-level source
@@ -16,6 +16,7 @@
  **/
 
 #include "theory/bv/int_blaster.h"
+#include "options/option_exception.h"
 
 #include <cmath>
 #include <string>
@@ -30,10 +31,10 @@
 #include "theory/bv/theory_bv_rewrite_rules_simplification.h"
 #include "theory/rewriter.h"
 
-namespace CVC4 {
+namespace cvc5 {
 
-using namespace CVC4::theory;
-using namespace CVC4::theory::bv;
+using namespace cvc5::theory;
+using namespace cvc5::theory::bv;
 
 namespace {
 
@@ -157,7 +158,7 @@ Node IntBlaster::makeBinary(Node n)
     else if (numChildren > 0)
     {
       // current has children, but we do not binarize it
-      NodeBuilder<> builder(k);
+      NodeBuilder builder(k);
       if (current.getMetaKind() == kind::metakind::PARAMETERIZED)
       {
         builder << current.getOperator();
@@ -195,7 +196,7 @@ Node IntBlaster::eliminationPass(Node n)
     current = toVisit.back();
     // assert that the node is binarized
     // The following variable is only used in assertions
-    CVC4_UNUSED kind::Kind_t k = current.getKind();
+    CVC5_UNUSED kind::Kind_t k = current.getKind();
     uint64_t numChildren = current.getNumChildren();
     Assert((numChildren == 2)
            || !(k == kind::BITVECTOR_PLUS || k == kind::BITVECTOR_MULT
@@ -261,7 +262,7 @@ Node IntBlaster::eliminationPass(Node n)
         {
           // The main operator is replaced, and the children
           // are replaced with their eliminated counterparts.
-          NodeBuilder<> builder(current.getKind());
+          NodeBuilder builder(current.getKind());
           if (current.getMetaKind() == kind::metakind::PARAMETERIZED)
           {
             builder << current.getOperator();
@@ -416,7 +417,7 @@ Node IntBlaster::translateWithChildren(
   // Exists is eliminated using Forall
   Assert(oldKind != kind::EXISTS);
   // The following variable will only be used in assertions.
-  CVC4_UNUSED uint64_t originalNumChildren = original.getNumChildren();
+  CVC5_UNUSED uint64_t originalNumChildren = original.getNumChildren();
   Node returnNode;
   switch (oldKind)
   {
@@ -1000,7 +1001,8 @@ Node IntBlaster::translateFunctionSymbol(Node bvUF,
   }
   std::ostringstream os;
   os << "__intblast_fun_" << bvUF << "_int";
-  intUF = d_nm->mkSkolem(
+  SkolemManager* sm = d_nm->getSkolemManager();
+  intUF = sm->mkDummySkolem(
       os.str(), d_nm->mkFunctionType(intDomain, intRange), "bv2int function");
   // add definition of old function symbol to skolems
   Node lambda = defineBVUFAsIntUF(bvUF, intUF);
@@ -1059,7 +1061,7 @@ Node IntBlaster::reconstructNode(Node originalNode,
   // first, we adjust the children of the node as needed.
   // re-construct the term with the adjusted children.
   kind::Kind_t oldKind = originalNode.getKind();
-  NodeBuilder<> builder(oldKind);
+  NodeBuilder builder(oldKind);
   if (originalNode.getMetaKind() == kind::metakind::PARAMETERIZED)
   {
     builder << originalNode.getOperator();
@@ -1171,4 +1173,4 @@ Node IntBlaster::createBVNotNode(Node n, uint64_t bvsize)
   return d_nm->mkNode(kind::MINUS, maxInt(bvsize), n);
 }
 
-}  // namespace CVC4
+}  // namespace cvc5

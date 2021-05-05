@@ -235,7 +235,7 @@ void setDefaults(LogicInfo& logic, bool isInternalSubsolver)
       logic.enableTheory(THEORY_ARITH);
       logic.arithNonLinear();
       logic.lock();
-      options::nlExtTangentPlanes.set(true);
+      opts.set(options::nlExtTangentPlanes, true);
     }
   }
 
