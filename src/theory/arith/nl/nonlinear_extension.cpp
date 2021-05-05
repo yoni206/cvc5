@@ -1,19 +1,20 @@
-/*********************                                                        */
-/*! \file nonlinear_extension.cpp
- ** \verbatim
- ** Top contributors (to current version):
- **   Andrew Reynolds, Gereon Kremer, Tim King
- ** This file is part of the CVC4 project.
- ** Copyright (c) 2009-2021 by the authors listed in the file AUTHORS
- ** in the top-level source directory and their institutional affiliations.
- ** All rights reserved.  See the file COPYING in the top-level source
- ** directory for licensing information.\endverbatim
- **
- ** \brief [[ Add one-line brief description here ]]
- **
- ** [[ Add lengthier description here ]]
- ** \todo document this file
- **/
+/******************************************************************************
+ * Top contributors (to current version):
+ *   Andrew Reynolds, Gereon Kremer, Tim King
+ *
+ * This file is part of the cvc5 project.
+ *
+ * Copyright (c) 2009-2021 by the authors listed in the file AUTHORS
+ * in the top-level source directory and their institutional affiliations.
+ * All rights reserved.  See the file COPYING in the top-level source
+ * directory for licensing information.
+ * ****************************************************************************
+ *
+ * [[ Add one-line brief description here ]]
+ *
+ * [[ Add lengthier description here ]]
+ * \todo document this file
+ */
 
 #include "theory/arith/nl/nonlinear_extension.h"
 
@@ -27,9 +28,9 @@
 #include "theory/rewriter.h"
 #include "theory/theory_model.h"
 
-using namespace CVC4::kind;
+using namespace cvc5::kind;
 
-namespace CVC4 {
+namespace cvc5 {
 namespace theory {
 namespace arith {
 namespace nl {
@@ -248,7 +249,6 @@ void NonlinearExtension::check(Theory::Effort e)
   Trace("nl-ext") << "NonlinearExtension::check, effort = " << e << std::endl;
   if (e == Theory::EFFORT_FULL)
   {
-    d_extTheory.clearCache();
     d_needsLastCall = true;
     if (options::nlExtRewrites())
     {
@@ -489,7 +489,8 @@ Result::Sat NonlinearExtension::modelBasedRefinement(const std::set<Node>& termS
         Trace("nl-ext") << "...failed to send lemma in "
                            "NonLinearExtension, set incomplete"
                         << std::endl;
-        d_containing.getOutputChannel().setIncomplete();
+        d_containing.getOutputChannel().setIncomplete(IncompleteId::ARITH_NL);
+        return Result::Sat::SAT_UNKNOWN;
       }
     }
     d_im.clearWaitingLemmas();
@@ -621,4 +622,4 @@ void NonlinearExtension::runStrategy(Theory::Effort effort,
 }  // namespace nl
 }  // namespace arith
 }  // namespace theory
-}  // namespace CVC4
+}  // namespace cvc5

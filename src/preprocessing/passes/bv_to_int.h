@@ -12,10 +12,10 @@
  ** \brief The BVToInt preprocessing pass
  **/
 
-#include "cvc4_private.h"
+#include "cvc5_private.h"
 
-#ifndef __CVC4__PREPROCESSING__PASSES__BV_TO_INT_H
-#define __CVC4__PREPROCESSING__PASSES__BV_TO_INT_H
+#ifndef __CVC5__PREPROCESSING__PASSES__BV_TO_INT_H
+#define __CVC5__PREPROCESSING__PASSES__BV_TO_INT_H
 
 #include "context/cdhashmap.h"
 #include "context/cdo.h"
@@ -24,7 +24,7 @@
 #include "preprocessing/preprocessing_pass_context.h"
 #include "theory/bv/int_blaster.h"
 
-namespace CVC4 {
+namespace cvc5 {
 namespace preprocessing {
 namespace passes {
 
@@ -49,6 +49,6 @@ class BVToInt : public PreprocessingPass
 
 }  // namespace passes
 }  // namespace preprocessing
-}  // namespace CVC4
+}  // namespace cvc5
 
-#endif /* __CVC4__PREPROCESSING__PASSES__BV_TO_INT_H */
+#endif /* __CVC5__PREPROCESSING__PASSES__BV_TO_INT_H */

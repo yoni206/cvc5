@@ -1,16 +1,19 @@
-#####################
-## CMakeLists.txt
-## Top contributors (to current version):
-##   Aina Niemetz, Andrew Reynolds, Mathias Preiner
-## This file is part of the CVC4 project.
-## Copyright (c) 2009-2021 by the authors listed in the file AUTHORS
-## in the top-level source directory and their institutional affiliations.
-## All rights reserved.  See the file COPYING in the top-level source
-## directory for licensing information.
+###############################################################################
+# Top contributors (to current version):
+#   Aina Niemetz, Andrew Reynolds, Mathias Preiner
+#
+# This file is part of the cvc5 project.
+#
+# Copyright (c) 2009-2021 by the authors listed in the file AUTHORS
+# in the top-level source directory and their institutional affiliations.
+# All rights reserved.  See the file COPYING in the top-level source
+# directory for licensing information.
+# #############################################################################
+#
+# The build system configuration.
 ##
-#-----------------------------------------------------------------------------#
-# Regression level 0 tests
 
+# Regression level 0 tests
 set(regress_0_tests
   regress0/arith/ackermann.real.smt2
   regress0/arith/arith-eq.smt2
@@ -571,10 +574,16 @@ set(regress_0_tests
   regress0/fp/abs-unsound2.smt2
   regress0/fp/down-cast-RNA.smt2
   regress0/fp/ext-rew-test.smt2
+  regress0/fp/from_ubv.smt2
+  regress0/fp/from_sbv.smt2
   regress0/fp/issue-5524.smt2
   regress0/fp/issue3536.smt2
+  regress0/fp/issue3582.smt2
   regress0/fp/issue3619.smt2
   regress0/fp/issue4277-assign-func.smt2
+  regress0/fp/issue5511.smt2
+  regress0/fp/issue5734.smt2
+  regress0/fp/issue6164.smt2
   regress0/fp/rti_3_5_bug.smt2
   regress0/fp/simple.smt2
   regress0/fp/wrong-model.smt2
@@ -636,6 +645,7 @@ set(regress_0_tests
   regress0/issue5187-div-justification.smt2
   regress0/issue5370.smt2
   regress0/issue5462.smt2
+  regress0/issue5473.smt2
   regress0/issue5540-2-dump-model.smt2
   regress0/issue5540-model-decls.smt2
   regress0/issue5550-num-children.smt2
@@ -708,6 +718,7 @@ set(regress_0_tests
   regress0/nl/very-easy-sat.smt2
   regress0/nl/very-simple-unsat.smt2
   regress0/opt-abd-no-use.smt2
+  regress0/options/ast-and-sexpr.smt2
   regress0/options/invalid_dump.smt2
   regress0/options/set-and-get-options.smt2
   regress0/parallel-let.smt2
@@ -775,6 +786,7 @@ set(regress_0_tests
   regress0/printer/let_shadowing.smt2
   regress0/printer/symbol_starting_w_digit.smt2
   regress0/printer/tuples_and_records.cvc
+  regress0/proofs/scope.smt2
   regress0/push-pop/boolean/fuzz_12.smt2
   regress0/push-pop/boolean/fuzz_13.smt2
   regress0/push-pop/boolean/fuzz_14.smt2
@@ -847,6 +859,7 @@ set(regress_0_tests
   regress0/quantifiers/issue5645-dt-cm-spurious.smt2
   regress0/quantifiers/issue5693-prenex.smt2
   regress0/quantifiers/lra-triv-gn.smt2
+  regress0/quantifiers/macro-back-subs-sat.smt2
   regress0/quantifiers/macros-int-real.smt2
   regress0/quantifiers/macros-real-arg.smt2
   regress0/quantifiers/matching-lia-1arg.smt2
@@ -1112,6 +1125,7 @@ set(regress_0_tests
   regress0/strings/issue5771-eager-pp.smt2
   regress0/strings/issue5816-re-kind.smt2
   regress0/strings/issue5915-repl-ctn-rewrite.smt2
+  regress0/strings/issue6203-3-unfold-trivial-true.smt2
   regress0/strings/itos-entail.smt2
   regress0/strings/large-model.smt2
   regress0/strings/leadingzero001.smt2
@@ -1171,6 +1185,7 @@ set(regress_0_tests
   regress0/sygus/issue4383-cache-fv-id.sy
   regress0/sygus/issue4790-dtd.sy
   regress0/sygus/issue5512-vvv.sy
+  regress0/sygus/issue6298-par.sy
   regress0/sygus/let-ringer.sy
   regress0/sygus/let-simp.sy
   regress0/sygus/no-logic.sy
@@ -1198,6 +1213,7 @@ set(regress_0_tests
   regress0/tptp/MGT019+2.p
   regress0/tptp/MGT041-2.p
   regress0/tptp/PUZ131_1.p
+  regress0/tptp/parse-neg-rational.p
   regress0/tptp/SYN000_1.p
   regress0/tptp/SYN000_2.p
   regress0/tptp/SYN000-1.p
@@ -1523,7 +1539,6 @@ set(regress_1_tests
   regress1/fmf/issue5738-dt-interp-finite.smt2
   regress1/fmf/issue916-fmf-or.smt2
   regress1/fmf/jasmin-cdt-crash.smt2
-  regress1/fmf/ko-bound-set.cvc
   regress1/fmf/loopy_coda.smt2
   regress1/fmf/lst-no-self-rev-exp.smt2
   regress1/fmf/memory_model-R_cpp-dd.cvc
@@ -1558,6 +1573,7 @@ set(regress_1_tests
   regress1/issue3990-sort-inference.smt2
   regress1/issue4273-ext-rew-cache.smt2
   regress1/issue4335-unsat-core.smt2
+  regress1/issue5101-alira-subtypes.smt2
   regress1/issue5739-rtf-processed.smt2
   regress1/lemmas/clocksynchro_5clocks.main_invar.base.smtv1.smt2
   regress1/lemmas/pursuit-safety-8.smtv1.smt2
@@ -1577,7 +1593,6 @@ set(regress_1_tests
   regress1/nl/disj-eval.smt2
   regress1/nl/dist-big.smt2
   regress1/nl/div-mod-partial.smt2
-  regress1/nl/dumortier_llibre_artes_ex_5_13.transcendental.k2.smt2
   regress1/nl/exp-4.5-lt.smt2
   regress1/nl/exp-approx.smt2
   regress1/nl/exp-soundness-bound.smt2
@@ -1728,6 +1743,7 @@ set(regress_1_tests
   regress1/quantifiers/constfunc.cvc
   regress1/quantifiers/dt-tc-opt-small.smt2
   regress1/quantifiers/dump-inst-i.smt2
+  regress1/quantifiers/dump-inst-proof.smt2
   regress1/quantifiers/dump-inst.smt2
   regress1/quantifiers/eqrange_ex_1.smt2
   regress1/quantifiers/ext-ex-deq-trigger.smt2
@@ -1759,6 +1775,10 @@ set(regress_1_tests
   regress1/quantifiers/issue4062-cegqi-aux.smt2
   regress1/quantifiers/issue4243-prereg-inc.smt2
   regress1/quantifiers/issue4290-cegqi-r.smt2
+  regress1/quantifiers/issue4328-nqe.smt2
+  regress1/quantifiers/issue4400-2-already-conf.smt2
+  regress1/quantifiers/issue4412-cegqi-type.smt2
+  regress1/quantifiers/issue4420-order-sensitive.smt2
   regress1/quantifiers/issue4433-nqe.smt2
   regress1/quantifiers/issue4620-erq-witness-unsound.smt2
   regress1/quantifiers/issue4685-wrewrite.smt2
@@ -1777,10 +1797,12 @@ set(regress_1_tests
   regress1/quantifiers/issue5507-qe.smt2
   regress1/quantifiers/issue5658-qe.smt2
   regress1/quantifiers/issue5766-wrong-sel-trigger.smt2
+  regress1/quantifiers/issue5899-qe.smt2
   regress1/quantifiers/issue993.smt2
   regress1/quantifiers/javafe.ast.StmtVec.009.smt2
   regress1/quantifiers/lia-witness-div-pp.smt2
   regress1/quantifiers/lra-vts-inf.smt2
+  regress1/quantifiers/macro-geo-small-3.smt2
   regress1/quantifiers/min-ppgt-em-incomplete.smt2
   regress1/quantifiers/min-ppgt-em-incomplete2.smt2
   regress1/quantifiers/mix-coeff.smt2
@@ -1790,6 +1812,7 @@ set(regress_1_tests
   regress1/quantifiers/nra-interleave-inst.smt2
   regress1/quantifiers/opisavailable-12.smt2
   regress1/quantifiers/parametric-lists.smt2
+  regress1/quantifiers/pool-example.smt2
   regress1/quantifiers/prenex-scholl-smt08_RNDPRE_RNDPRE_4_6.smt2
   regress1/quantifiers/psyco-001-bv.smt2
   regress1/quantifiers/psyco-107-bv.smt2
@@ -1916,6 +1939,7 @@ set(regress_1_tests
   regress1/sets/choose2.smt2
   regress1/sets/choose3.smt2
   regress1/sets/choose4.smt2
+  regress1/sets/issue5705-cg-subtyping.smt2
   regress1/sets/ListElem.hs.fqout.cvc4.38.smt2
   regress1/sets/ListElts.hs.fqout.cvc4.317.smt2
   regress1/sets/TalkingAboutSets.hs.fqout.cvc4.3577.smt2
@@ -1965,11 +1989,14 @@ set(regress_1_tests
   regress1/sets/issue2568.smt2
   regress1/sets/issue2904.smt2
   regress1/sets/issue4124-need-check.smt2
+  regress1/sets/issue4370-2-lemma-ee-iter.smt2
+  regress1/sets/issue4370-4-lemma-ee-iter.smt2
   regress1/sets/issue4391-card-lasso.smt2
   regress1/sets/issue5271.smt2
   regress1/sets/issue5309.smt2
   regress1/sets/issue5342.smt2
   regress1/sets/issue5342_difference_version.smt2
+  regress1/sets/issue5942-witness.smt2
   regress1/sets/lemmabug-ListElts317minimized.smt2
   regress1/sets/remove_check_free_31_6.smt2
   regress1/sets/sets-disequal.smt2
@@ -2039,6 +2066,15 @@ set(regress_1_tests
   regress1/strings/issue6075-repl-len-one-rr.smt2
   regress1/strings/issue6132-non-unique-skolem.smt2
   regress1/strings/issue6142-repl-inv-rew.smt2
+  regress1/strings/issue6191-replace-all.smt2
+  regress1/strings/issue6203-1-substr-ctn-strip.smt2
+  regress1/strings/issue6203-2-re-ccache.smt2
+  regress1/strings/issue6214-2-sym-re-inc.smt2
+  regress1/strings/issue6214-3-sym-re-inc.smt2
+  regress1/strings/issue6214-4-sym-re-inc.smt2
+  regress1/strings/issue6270.smt2
+  regress1/strings/issue6271-rnf.smt2
+  regress1/strings/issue6271-2-rnf.smt2
   regress1/strings/kaluza-fl.smt2
   regress1/strings/loop002.smt2
   regress1/strings/loop003.smt2
@@ -2144,6 +2180,7 @@ set(regress_1_tests
   regress1/sygus/double.sy
   regress1/sygus/dt-test-ns.sy
   regress1/sygus/dup-op.sy
+  regress1/sygus/eq-sub-obs.sy
   regress1/sygus/error1-dt.sy
   regress1/sygus/eval-uc.sy
   regress1/sygus/extract.sy
@@ -2345,7 +2382,6 @@ set(regress_2_tests
   regress2/ho/SYO362^5.p
   regress2/hole7.cvc
   regress2/hole8.cvc
-  regress2/hole10.cvc
   regress2/instance_1444.smtv1.smt2
   regress2/issue3687-check-models.smt2
   regress2/issue4707-bv-to-bool-large.smt2
@@ -2445,6 +2481,7 @@ set(regress_3_tests
   regress3/friedman_n4_i5.smtv1.smt2
   regress3/friedman_n6_i4.smtv1.smt2
   regress3/hole9.cvc
+  regress3/hole10.cvc
   regress3/incorrect1.smtv1.smt2
   regress3/interpol2.smt2
   regress3/inv_gen_n_c11.sy
@@ -2519,10 +2556,14 @@ set(regression_disabled_tests
   ###
   regress1/bug472.smt2
   regress1/datatypes/non-simple-rec-set.smt2
+  # TODO: fix models (projects #276)
+  regress1/fmf/ko-bound-set.cvc
   # results in an assertion failure (see issue #1650).
   regress1/ho/hoa0102.smt2
   # slow on some builds after changes to tangent planes
   regress1/nl/approx-sqrt-unsat.smt2
+  # times out after update to circuit propagator
+  regress1/nl/dumortier_llibre_artes_ex_5_13.transcendental.k2.smt2
   # times out after update to tangent planes
   regress1/nl/NAVIGATION2.smt2
   # sat or unknown in different builds
@@ -2531,8 +2572,6 @@ set(regression_disabled_tests
   regress1/quantifiers/anti-sk-simp.smt2
   # no longer support snorm option
   regress1/quantifiers/arith-snorm.smt2
-  # until we have support for minimizing instantiations based on unsat core
-  regress1/quantifiers/dump-inst-proof.smt2
   # ajreynol: different error messages on production and debug:
   regress1/quantifiers/macro-subtype-param.smt2
   # times out with competition build, ok with other builds:
@@ -2584,10 +2623,10 @@ set(regression_disabled_tests
 # Add target 'regress', builds and runs
 # > regression tests of levels 0 and 1
 
-get_target_property(path_to_cvc4 cvc4-bin RUNTIME_OUTPUT_DIRECTORY)
+get_target_property(path_to_cvc5 cvc5-bin RUNTIME_OUTPUT_DIRECTORY)
 set(run_regress_script ${CMAKE_CURRENT_LIST_DIR}/run_regression.py)
 
-add_custom_target(build-regress DEPENDS cvc4-bin)
+add_custom_target(build-regress DEPENDS cvc5-bin)
 add_dependencies(build-tests build-regress)
 
 add_custom_target(regress
@@ -2595,11 +2634,11 @@ add_custom_target(regress
     ctest --output-on-failure -L "regress[0-2]" -j${CTEST_NTHREADS} $$ARGS
   DEPENDS build-regress)
 
-macro(cvc4_add_regression_test level file)
+macro(cvc5_add_regression_test level file)
   add_test(${file}
     ${run_regress_script}
     ${RUN_REGRESSION_ARGS}
-    ${path_to_cvc4}/cvc4 ${CMAKE_CURRENT_LIST_DIR}/${file})
+    ${path_to_cvc5}/cvc5 ${CMAKE_CURRENT_LIST_DIR}/${file})
   set_tests_properties(${file} PROPERTIES LABELS "regress${level}")
 
   # For CMake 3.9.0 and newer, skipped tests do not count as a failure anymore:
@@ -2614,26 +2653,26 @@ endmacro()
 if(NOT ${CMAKE_VERSION} VERSION_LESS "3.9.0")
   # For CMake 3.9.0 and newer, we want the regression script to return 77 for
   # skipped tests, such that we can mark them as skipped. See the
-  # `cvc4_add_regression_test` macro for more details.
+  # `cvc5_add_regression_test` macro for more details.
   set(RUN_REGRESSION_ARGS ${RUN_REGRESSION_ARGS} --use-skip-return-code)
 endif()
 
 foreach(file ${regress_0_tests})
-  cvc4_add_regression_test(0 ${file})
+  cvc5_add_regression_test(0 ${file})
 endforeach()
 
 foreach(file ${regress_1_tests})
-  cvc4_add_regression_test(1 ${file})
+  cvc5_add_regression_test(1 ${file})
 endforeach()
 
 foreach(file ${regress_2_tests})
-  cvc4_add_regression_test(2 ${file})
+  cvc5_add_regression_test(2 ${file})
 endforeach()
 
 foreach(file ${regress_3_tests})
-  cvc4_add_regression_test(3 ${file})
+  cvc5_add_regression_test(3 ${file})
 endforeach()
 
 foreach(file ${regress_4_tests})
-  cvc4_add_regression_test(4 ${file})
+  cvc5_add_regression_test(4 ${file})
 endforeach()
