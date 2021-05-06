@@ -91,8 +91,17 @@ void BVToInt::addSkolemDefinitions(const std::map<Node, Node>& skolems)
     {
       body = definition;
     }
-    d_preprocContext->getSmt()->defineFunction(
-        originalSkolem, args, body, true);
+
+    // add the substitution to the preprocessing context, which ensures the
+    // model for bvUF is correct, as well as substituting it in the input
+    // assertions when necessary.
+    if (!args.empty())
+    {
+      NodeManager* nm = NodeManager::currentNM();
+      body = nm->mkNode(
+          kind::LAMBDA, nm->mkNode(kind::BOUND_VAR_LIST, args), body);
+    }
+    d_preprocContext->addSubstitution(originalSkolem, body);
   }
 }
 
