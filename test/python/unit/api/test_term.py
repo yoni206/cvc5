@@ -48,19 +48,6 @@ def test_get_id(solver):
     z = solver.mkVar(solver.getIntegerSort(), "z")
     assert x.getId() != z.getId()
 
-
-def test_get_id(solver):
-  n = Term(solver)
-  with pytest.raises(RuntimeError):
-      n.getId()
-  x = solver.mkVar(solver.getIntegerSort(), "x")
-  x.getId()
-  y = x
-  assert x.getId() == y.getId()
-
-  z = solver.mkVar(solver.getIntegerSort(), "z")
-  assert x.getId() != z.getId()
-
 def test_get_kind(solver):
     uSort = solver.mkUninterpretedSort("u")
     intSort = solver.getIntegerSort()
