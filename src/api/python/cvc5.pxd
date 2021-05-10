@@ -32,6 +32,7 @@ cdef extern from "api/cpp/cvc5.h" namespace "cvc5::api":
         DatatypeConstructor operator[](const string& name) except +
         DatatypeConstructor getConstructor(const string& name) except +
         Term getConstructorTerm(const string& name) except +
+        DatatypeSelector getSelector(const string& name) except +
         size_t getNumConstructors() except +
         bint isParametric() except +
         bint isCodatatype() except +
@@ -89,6 +90,7 @@ cdef extern from "api/cpp/cvc5.h" namespace "cvc5::api":
         DatatypeSelector() except +
         string getName() except +
         Term getSelectorTerm() except +
+        Term getUpdaterTerm() except +
         Sort getRangeSort() except +
         string toString() except +
 
@@ -349,7 +351,6 @@ cdef extern from "api/cpp/cvc5.h" namespace "cvc5::api":
         uint64_t getId() except +
         Kind getKind() except +
         Sort getSort() except +
-        Term substitute(const Term& e, const Term& replacement) except +
         Term substitute(const vector[Term] & es, const vector[Term] & reps) except +
         bint hasOp() except +
         Op getOp() except +

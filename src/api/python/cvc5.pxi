@@ -109,6 +109,12 @@ cdef class Datatype:
         term.cterm = self.cd.getConstructorTerm(name.encode())
         return term
 
+    def getSelector(self, str name):
+        """Return a selector by name."""
+        cdef DatatypeSelector ds = DatatypeSelector(self.solver)
+        ds.cds = self.cd.getSelector(name.encode())
+        return ds
+
     def getNumConstructors(self):
         """:return: number of constructors."""
         return self.cd.getNumConstructors()
@@ -265,6 +271,11 @@ cdef class DatatypeSelector:
     def getSelectorTerm(self):
         cdef Term term = Term(self.solver)
         term.cterm = self.cds.getSelectorTerm()
+        return term
+
+    def getUpdaterTerm(self):
+        cdef Term term = Term(self.solver)
+        term.cterm = self.cds.getUpdaterTerm()
         return term
 
     def getRangeSort(self):
@@ -1502,11 +1513,13 @@ cdef class Term:
         return sort
 
     def substitute(self, term_or_list_1, term_or_list_2):
+        # The resulting term after substitution
         cdef Term term = Term(self.solver)
-        cdef Term ce = Term(self.solver)
-        cdef Term creplacement = Term(self.solver)
+        # lists for substitutions
         cdef vector[c_Term] ces
         cdef vector[c_Term] creplacements
+        
+        # normalize the input parameters to be lists
         if isinstance(term_or_list_1, list):
             assert isinstance(term_or_list_2, list)
             es = term_or_list_1
@@ -1520,13 +1533,13 @@ cdef class Term:
                 ces.push_back((<Term?> e).cterm)
                 creplacements.push_back((<Term?> r).cterm)
 
-            term.cterm = self.cterm.substitute(ces, creplacements)
         else:
-            e = term_or_list_1
-            replacement = term_or_list_2
-            ce.cterm = (<Term?>e).cterm
-            creplacement.cterm = (<Term?>replacement).cterm
-            term.cterm = self.cterm.substitute(ce.cterm, creplacement.cterm)
+            # add the single elements to the vectors
+            ces.push_back((<Term?> term_or_list_1).cterm)
+            creplacements.push_back((<Term?> term_or_list_2).cterm)
+        
+        # call the API substitute method with lists
+        term.cterm = self.cterm.substitute(ces, creplacements)
         return term
 
     def hasOp(self):
@@ -1648,6 +1661,7 @@ cdef class Term:
             else:
                 assert string_repr == "false"
                 res = False
+
         elif sort.isInteger():
             updated_string_repr = string_repr.strip('()').replace(' ', '')
             try:
@@ -1655,10 +1669,11 @@ cdef class Term:
             except:
                 raise ValueError("Failed to convert"
                                  " {} to an int".format(string_repr))
+
         elif sort.isReal():
             updated_string_repr = string_repr
             try:
-                # expecting format (/ a b)
+                # rational format (/ a b) most likely
                 # note: a or b could be negated: (- a)
                 splits = [s.strip('()/')
                           for s in updated_string_repr.strip('()/') \
@@ -1668,8 +1683,12 @@ cdef class Term:
                 den = int(splits[1])
                 res = Fraction(num, den)
             except:
-                raise ValueError("Failed to convert "
-                                 "{} to a Fraction".format(string_repr))
+                try:
+                    # could be exact: e.g., 1.0
+                    res = Fraction(updated_string_repr)
+                except:
+                    raise ValueError("Failed to convert "
+                                     "{} to a Fraction".format(string_repr))
 
         elif sort.isBitVector():
             # expecting format #b<bits>
@@ -1680,6 +1699,7 @@ cdef class Term:
             except:
                 raise ValueError("Failed to convert bitvector "
                                  "{} to an int".format(string_repr))
+
         elif sort.isArray():
             keys = []
             values = []
@@ -1706,6 +1726,7 @@ cdef class Term:
             res = defaultdict(lambda : base_value)
             for k, v in zip(keys, values):
                 res[k] = v
+
         elif sort.isString():
             # Strip leading and trailing double quotes and replace double
             # double quotes by single quotes
