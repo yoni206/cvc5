@@ -366,15 +366,16 @@ cdef extern from "api/cpp/cvc5.h" namespace "cvc5::api":
         Term iteTerm(const Term& then_t, const Term& else_t) except +
         string toString() except +
         cppclass const_iterator:
-        const_iterator() except +
-        bint operator==(const const_iterator& it) except +
-        bint operator!=(const const_iterator& it) except +
-        const_iterator& operator++();
-        Term operator*() except +
+            const_iterator() except +
+            bint operator==(const const_iterator& it) except +
+            bint operator!=(const const_iterator& it) except +
+            const_iterator& operator++();
+            Term operator*() except +
         const_iterator begin() except +
         const_iterator end() except +
     #TODO handle!    
     #    wstring getString() except +
+        bint isString() except +
         bint isInteger() except +
 
     cdef cppclass TermHashFunction:
