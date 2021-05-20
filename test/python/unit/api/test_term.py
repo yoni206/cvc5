@@ -974,11 +974,10 @@ def test_is_integer(solver):
   assert int11.isInteger()
 
 
-#TODO!!!
-#def test_get_string(solver):
-#  s1 = solver.mkString("abcde")
-#  assert s1.isString()
-#  assert s1.getString() == str("abcde")
+def test_get_string(solver):
+  s1 = solver.mkString("abcde")
+  assert s1.isStringValue()
+  assert s1.getStringValue() == str("abcde")
 
 def test_const_array(solver):
     intsort = solver.getIntegerSort()

@@ -4,6 +4,7 @@ import sys
 
 from libc.stdint cimport int32_t, int64_t, uint32_t, uint64_t
 from libc.stddef cimport wchar_t
+from cpython.ref cimport PyObject
 
 from libcpp.pair cimport pair
 from libcpp.set cimport set
@@ -33,6 +34,7 @@ from cvc5kinds cimport Kind as c_Kind
 
 cdef extern from "Python.h":
     wchar_t* PyUnicode_AsWideCharString(object, Py_ssize_t *)
+    PyObject* PyUnicode_FromWideChar(object, Py_ssize_t *)
     void PyMem_Free(void*)
 
 ################################## DECORATORS #################################
@@ -1599,9 +1601,9 @@ cdef class Term:
     def isStringValue(self):
         return self.cterm.isStringValue()
 
-# TODO handle!    
-#    def getString(self):
-#        return self.cterm.getString()
+    def getStringValue(self):
+        cdef Py_ssize_t size
+        return PyUnicode_FromWideChar(self.cterm.getStringValue(), size)
 
     def isInteger(self):
         return self.cterm.isIntegerValue()
