@@ -4,7 +4,6 @@ import sys
 
 from libc.stdint cimport int32_t, int64_t, uint32_t, uint64_t
 from libc.stddef cimport wchar_t
-from cpython.ref cimport PyObject
 
 from libcpp.pair cimport pair
 from libcpp.set cimport set
