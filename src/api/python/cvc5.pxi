@@ -34,7 +34,7 @@ from cvc5kinds cimport Kind as c_Kind
 
 cdef extern from "Python.h":
     wchar_t* PyUnicode_AsWideCharString(object, Py_ssize_t *)
-    PyObject* PyUnicode_FromWideChar(object, Py_ssize_t *)
+    object PyUnicode_FromWideChar(const wchar_t*, Py_ssize_t)
     void PyMem_Free(void*)
 
 ################################## DECORATORS #################################
@@ -1603,7 +1603,8 @@ cdef class Term:
 
     def getStringValue(self):
         cdef Py_ssize_t size
-        return PyUnicode_FromWideChar(self.cterm.getStringValue(), size)
+        cdef c_wstring s = self.cterm.getStringValue()
+        return PyUnicode_FromWideChar(s.data(), s.size())
 
     def isInteger(self):
         return self.cterm.isIntegerValue()

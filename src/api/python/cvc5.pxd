@@ -22,7 +22,10 @@ cdef extern from "<functional>" namespace "std" nogil:
 
 cdef extern from "<string>" namespace "std":
     cdef cppclass wstring:
+        wstring() except +
         wstring(const wchar_t*, size_t) except +
+        const wchar_t* data() except +
+        size_t size() except +
 
 cdef extern from "api/cpp/cvc5.h" namespace "cvc5":
     cdef cppclass Options:
