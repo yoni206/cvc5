@@ -163,7 +163,7 @@ const static std::unordered_map<Kind, cvc5::Kind> s_kinds{
     {BITVECTOR_XNOR, cvc5::Kind::BITVECTOR_XNOR},
     {BITVECTOR_COMP, cvc5::Kind::BITVECTOR_COMP},
     {BITVECTOR_MULT, cvc5::Kind::BITVECTOR_MULT},
-    {BITVECTOR_PLUS, cvc5::Kind::BITVECTOR_PLUS},
+    {BITVECTOR_ADD, cvc5::Kind::BITVECTOR_ADD},
     {BITVECTOR_SUB, cvc5::Kind::BITVECTOR_SUB},
     {BITVECTOR_NEG, cvc5::Kind::BITVECTOR_NEG},
     {BITVECTOR_UDIV, cvc5::Kind::BITVECTOR_UDIV},
@@ -442,7 +442,7 @@ const static std::unordered_map<cvc5::Kind, Kind, cvc5::kind::KindHashFunction>
         {cvc5::Kind::BITVECTOR_XNOR, BITVECTOR_XNOR},
         {cvc5::Kind::BITVECTOR_COMP, BITVECTOR_COMP},
         {cvc5::Kind::BITVECTOR_MULT, BITVECTOR_MULT},
-        {cvc5::Kind::BITVECTOR_PLUS, BITVECTOR_PLUS},
+        {cvc5::Kind::BITVECTOR_ADD, BITVECTOR_ADD},
         {cvc5::Kind::BITVECTOR_SUB, BITVECTOR_SUB},
         {cvc5::Kind::BITVECTOR_NEG, BITVECTOR_NEG},
         {cvc5::Kind::BITVECTOR_UDIV, BITVECTOR_UDIV},
@@ -2305,25 +2305,6 @@ bool Term::isNull() const
   CVC5_API_TRY_CATCH_BEGIN;
   //////// all checks before this line
   return isNullHelper();
-  ////////
-  CVC5_API_TRY_CATCH_END;
-}
-
-std::vector<Term> Term::getConstSequenceElements() const
-{
-  CVC5_API_TRY_CATCH_BEGIN;
-  CVC5_API_CHECK_NOT_NULL;
-  CVC5_API_CHECK(d_node->getKind() == cvc5::Kind::CONST_SEQUENCE)
-      << "Expecting a CONST_SEQUENCE Term when calling "
-         "getConstSequenceElements()";
-  //////// all checks before this line
-  const std::vector<Node>& elems = d_node->getConst<Sequence>().getVec();
-  std::vector<Term> terms;
-  for (const Node& t : elems)
-  {
-    terms.push_back(Term(d_solver, t));
-  }
-  return terms;
   ////////
   CVC5_API_TRY_CATCH_END;
 }
@@ -7452,15 +7433,6 @@ std::vector<Term> Solver::getSynthSolutions(
   }
 
   return synthSolution;
-  ////////
-  CVC5_API_TRY_CATCH_END;
-}
-
-void Solver::printSynthSolution(std::ostream& out) const
-{
-  CVC5_API_TRY_CATCH_BEGIN;
-  //////// all checks before this line
-  d_smtEngine->printSynthSolution(out);
   ////////
   CVC5_API_TRY_CATCH_END;
 }
