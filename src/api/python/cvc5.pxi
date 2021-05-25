@@ -1716,18 +1716,16 @@ cdef class Term:
     def isSetValue(self):
         return self.cterm.isSetValue()
 
-# TODO
-# c_set[Term] getSetValue() except +
-#    def getSetValue(self):
-#        result = set([])
-#        for a in self.csolver.getSetValue():
-#            term = Term(self)
-#            term.cterm = a
-#            result.insert(term)
-#        return result
-
     def isSequenceValue(self):
         return self.cterm.isSequenceValue()
+
+    def getSetValue(self):
+        elems = []
+        for e in self.cterm.getSetValue():
+            term = Term(self.solver)
+            term.cterm = e
+            elems.append(term)
+        return set(elems)
 
     def getSequenceValue(self):
         elems = []
@@ -1739,15 +1737,24 @@ cdef class Term:
 
     def isUninterpretedValue(self):
         return self.cterm.isUninterpretedValue()
-# TODO
-#     def getUninterpretedValue(self):
-#         return self.cterm.getUninterpretedValue()
+     
+    def getUninterpretedValue(self):
+        cdef pair[c_Sort, int32_t] p = self.cterm.getUninterpretedValue()
+        cdef Sort sort = Sort(self.solver)
+        sort.csort = p.first
+        i = p.second
+        return (sort, i)
 
     def isTupleValue(self):
         return self.cterm.isTupleValue()
 
-#TODO
-# gettuplevalue
+    def getTupleValue(self):
+        elems = []
+        for e in self.cterm.getTupleValue():
+            term = Term(self.solver)
+            term.cterm = e
+            elems.append(term)
+        return elems
 
 
 # Generate rounding modes

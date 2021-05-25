@@ -403,17 +403,15 @@ cdef extern from "api/cpp/cvc5.h" namespace "cvc5::api":
         # tuple[uint32_t, uint32_t, Term] getFloatingPointValue() except +
         bint isSetValue() except +
         # TODO
-        # c_set[Term] getSetValue() except +
+        c_set[Term] getSetValue() except +
         bint isSequenceValue() except +
         # TODO
         # c_set[Term] getSetValue() except +
         vector[Term] getSequenceValue() except +
         bint isUninterpretedValue() except +
-        # TODO
-        # pair[Sort, int32_t] getUninterpretedValue() except +
+        pair[Sort, int32_t] getUninterpretedValue() except +
         bint isTupleValue() except +
-        #TODO
-        # getTupleValue
+        vector[Term] getTupleValue() except +
 
 
     cdef cppclass TermHashFunction:

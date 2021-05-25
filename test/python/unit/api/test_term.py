@@ -1099,8 +1099,7 @@ def test_get_tuple(solver):
   tup = solver.mkTuple([s1, s2, s3], [t1, t2, t3]);
 
   assert tup.isTupleValue()
-  # TODO
-  # assert [t1, t2, t3] == tup.getTupleValue()
+  assert [t1, t2, t3] == tup.getTupleValue()
 
 def test_get_floating_point(solver):
   bvval = solver.mkBitVector("0000110000000011");
@@ -1141,12 +1140,11 @@ def test_get_set(solver):
   s5 = solver.simplify(s5);
   assert s5.isSetValue()
 
-# TODO
-#   assert set([]) == s1.getSetValue()
-#   assert set([i1]) == s2.getSetValue()
-#   assert set([i1]) == s3.getSetValue()
-#   assert set([i2]) == s4.getSetValue()
-#   assert set([i1, i2]) == s5.getSetValue()
+  assert set([]) == s1.getSetValue()
+  assert set([i1]) == s2.getSetValue()
+  assert set([i1]) == s3.getSetValue()
+  assert set([i2]) == s4.getSetValue()
+  assert set([i1, i2]) == s5.getSetValue()
 
 def test_get_sequence(solver):
   s = solver.mkSequenceSort(solver.getIntegerSort());
@@ -1172,12 +1170,11 @@ def test_get_sequence(solver):
   s4 = solver.simplify(s4);
   s5 = solver.simplify(s5);
 
-# TODO
-#   assert [] == s1.getSequenceValue()
-#   assert [i1] == s2.getSequenceValue()
-#   assert [i1] == s3.getSequenceValue()
-#   assert [i2] == s4.getSequenceValue()
-#   assert [i1, i1, i2] == s5.getSequenceValue()
+  assert [] == s1.getSequenceValue()
+  assert [i1] == s2.getSequenceValue()
+  assert [i1] == s3.getSequenceValue()
+  assert [i2] == s4.getSequenceValue()
+  assert [i1, i1, i2] == s5.getSequenceValue()
 
 def test_get_uninterpreted_const(solver):
   s = solver.mkUninterpretedSort("test");
@@ -1187,9 +1184,8 @@ def test_get_uninterpreted_const(solver):
   assert t1.isUninterpretedValue()
   assert t2.isUninterpretedValue()
 
-# TODO
-#  assert (s, 3) == t1.getUninterpretedValue()
-#  assert (s, 5) == t2.getUninterpretedValue()
+  assert (s, 3) == t1.getUninterpretedValue()
+  assert (s, 5) == t2.getUninterpretedValue()
 
 
 def test_const_array(solver):
