@@ -2,7 +2,7 @@
 from cython.operator cimport dereference as deref, preincrement as inc
 from libc.stdint cimport int32_t, int64_t, uint32_t, uint64_t
 from libc.stddef cimport wchar_t
-from libcpp.set cimport set
+from libcpp.set cimport set as c_set
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 from libcpp.pair cimport pair
@@ -151,7 +151,7 @@ cdef extern from "api/cpp/cvc5.h" namespace "cvc5::api":
         Sort mkFloatingPointSort(uint32_t exp, uint32_t sig) except +
         Sort mkDatatypeSort(DatatypeDecl dtypedecl) except +
         vector[Sort] mkDatatypeSorts(const vector[DatatypeDecl]& dtypedecls,
-                                     const set[Sort]& unresolvedSorts) except +
+                                     const c_set[Sort]& unresolvedSorts) except +
         Sort mkFunctionSort(Sort domain, Sort codomain) except +
         Sort mkFunctionSort(const vector[Sort]& sorts, Sort codomain) except +
         Sort mkParamSort(const string& symbol) except +
@@ -165,6 +165,7 @@ cdef extern from "api/cpp/cvc5.h" namespace "cvc5::api":
         Sort mkTupleSort(const vector[Sort]& sorts) except +
         Term mkTerm(Op op) except +
         Term mkTerm(Op op, const vector[Term]& children) except +
+        Term mkTuple(const vector[Sort]& sorts, const vector[Term]& terms) except +
         Op mkOp(Kind kind) except +
         Op mkOp(Kind kind, Kind k) except +
         Op mkOp(Kind kind, const string& arg) except +
@@ -380,10 +381,42 @@ cdef extern from "api/cpp/cvc5.h" namespace "cvc5::api":
         const_iterator begin() except +
         const_iterator end() except +
 
-        wstring getStringValue() except +
+        bint isConstArray() except +
+        bint isBooleanValue() except +
+        bint getBooleanValue() except +
         bint isStringValue() except +
-        bint isInteger() except +
+        wstring getStringValue() except +
         bint isIntegerValue() except +
+        string getIntegerValue() except +
+        bint isRealValue() except +
+        string getRealValue() except +
+        bint isBitVectorValue() except +
+        string getBitVectorValue(uint32_t base) except +
+        bint isAbstractValue() except +
+        string getAbstractValue() except +
+        bint isFloatingPointPosZero() except +
+        bint isFloatingPointNegZero() except +
+        bint isFloatingPointPosInf() except +
+        bint isFloatingPointNegInf() except +
+        bint isFloatingPointNaN() except +
+        bint isFloatingPointValue() except +
+
+        # TODO
+        # tuple[uint32_t, uint32_t, Term] getFloatingPointValue() except +
+        bint isSetValue() except +
+        # TODO
+        # c_set[Term] getSetValue() except +
+        bint isSequenceValue() except +
+        # TODO
+        # c_set[Term] getSetValue() except +
+        vector[Term] getSequenceValue() except +
+        bint isUninterpretedValue() except +
+        # TODO
+        # pair[Sort, int32_t] getUninterpretedValue() except +
+        bint isTupleValue() except +
+        #TODO
+        # getTupleValue
+
 
     cdef cppclass TermHashFunction:
         TermHashFunction() except +

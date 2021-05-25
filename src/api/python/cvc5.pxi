@@ -6,7 +6,7 @@ from libc.stdint cimport int32_t, int64_t, uint32_t, uint64_t
 from libc.stddef cimport wchar_t
 
 from libcpp.pair cimport pair
-from libcpp.set cimport set
+from libcpp.set cimport set as c_set
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
@@ -508,12 +508,12 @@ cdef class Solver:
         for decl in dtypedecls:
             decls.push_back((<DatatypeDecl?> decl).cdd)
 
-        cdef set[c_Sort] usorts
+        cdef c_set[c_Sort] usorts
         for usort in unresolvedSorts:
             usorts.insert((<Sort?> usort).csort)
 
         csorts = self.csolver.mkDatatypeSorts(
-            <const vector[c_DatatypeDecl]&> decls, <const set[c_Sort]&> usorts)
+            <const vector[c_DatatypeDecl]&> decls, <const c_set[c_Sort]&> usorts)
         for csort in csorts:
           sort = Sort(self)
           sort.csort = csort
@@ -646,6 +646,19 @@ cdef class Solver:
             term.cterm = self.csolver.mkTerm((<Op?> op).cop, v)
         return term
 
+    def mkTuple(self, sorts, terms):
+        cdef vector[c_Sort] csorts
+        cdef vector[c_Term] cterms
+    
+        for s in sorts:
+            csorts.push_back((<Sort?> s).csort)
+        for s in terms:
+            cterms.push_back((<Term?> s).cterm)
+        cdef Term result = Term(self)
+        result.cterm = self.csolver.mkTuple(csorts, cterms)
+        return result
+            
+
     def mkOp(self, kind k, arg0=None, arg1 = None):
         '''
         Supports the following uses:
@@ -759,6 +772,47 @@ cdef class Solver:
         cdef Term term = Term(self)
         term.cterm = self.csolver.mkUniverseSet(sort.csort)
         return term
+
+    @expand_list_arg(num_req_args=0)
+    def mkBitVector(self, *args):
+        '''
+            Supports the following arguments:
+            Term mkBitVector(int size, int val=0)
+            Term mkBitVector(string val, int base = 2)
+            Term mkBitVector(int size, string val, int base)
+         '''
+        cdef Term term = Term(self)
+        if len(args) == 1:
+            size_or_val = args[0]
+            if isinstance(args[0], int):
+                size = args[0]
+                term.cterm = self.csolver.mkBitVector(<uint32_t> size)
+            else:
+                assert isinstance(args[0], str)
+                val = args[0]
+                term.cterm = self.csolver.mkBitVector(<const string&> str(val).encode())
+        elif len(args) == 2:
+            if isinstance(args[0], int):
+                size = args[0]
+                assert isinstance(args[1], int)
+                val = args[1]
+                term.cterm = self.csolver.mkBitVector(<uint32_t> size, <uint32_t> val)
+            else:
+                assert isinstance(args[0], str)
+                assert isinstance(args[1], int)
+                val = args[0]
+                base = args[1]
+                term.cterm = self.csolver.mkBitVector(<const string&> str(val).encode(), <uint32_t> base)
+        elif len(args) == 3:
+                assert isinstance(args[0], int)
+                assert isinstance(args[1], str)
+                assert isinstance(args[2], int)
+                size = args[0]
+                val = args[1]
+                base = args[2]
+                term.cterm = self.csolver.mkBitVector(<uint32_t> size, <const string&> str(val).encode(), <uint32_t> base)
+        return term
+
 
     def mkBitVector(self, size_or_str, val = None):
         cdef Term term = Term(self)
@@ -1594,6 +1648,16 @@ cdef class Term:
         term.cterm = self.cterm.iteTerm(then_t.cterm, else_t.cterm)
         return term
 
+    def isConstArray(self):
+        return self.cterm.isConstArray()
+
+
+    def isBooleanValue(self):
+        return self.cterm.isBooleanValue()
+
+    def getBooleanValue(self):
+        return self.cterm.getBooleanValue()
+
     def isStringValue(self):
         return self.cterm.isStringValue()
 
@@ -1602,9 +1666,90 @@ cdef class Term:
         cdef c_wstring s = self.cterm.getStringValue()
         return PyUnicode_FromWideChar(s.data(), s.size())
 
-    def isInteger(self):
+    def isIntegerValue(self):
         return self.cterm.isIntegerValue()
     
+    def getIntegerValue(self):
+        return self.cterm.getIntegerValue().decode() 
+
+    def isRealValue(self):
+        return self.cterm.isRealValue()
+
+    def getRealValue(self):
+        return self.cterm.getRealValue().decode() 
+
+    def isBitVectorValue(self):
+        return self.cterm.isBitVectorValue()
+
+    def getBitVectorValue(self, base = 2):
+        return self.cterm.getBitVectorValue(base).decode()
+
+    def isAbstractValue(self):
+        return self.cterm.isAbstractValue()
+
+    def getAbstractValue(self):
+        return self.cterm.getAbstractValue().decode()
+
+    def isFloatingPointPosZero(self):
+        return self.cterm.isFloatingPointPosZero()
+    
+    def isFloatingPointNegZero(self):
+        return self.cterm.isFloatingPointNegZero()
+    
+    def isFloatingPointPosInf(self):
+        return self.cterm.isFloatingPointPosInf()
+    
+    def isFloatingPointNegInf(self):
+        return self.cterm.isFloatingPointNegInf()
+    
+    def isFloatingPointNaN(self):
+        return self.cterm.isFloatingPointNaN()
+    
+    def isFloatingPointValue(self):
+        return self.cterm.isFloatingPointValue()
+# TODO
+#    def getFloatingPointValue(self):
+#        return self.cterm.getFloatingPointValue()
+
+    def isSetValue(self):
+        return self.cterm.isSetValue()
+
+# TODO
+# c_set[Term] getSetValue() except +
+#    def getSetValue(self):
+#        result = set([])
+#        for a in self.csolver.getSetValue():
+#            term = Term(self)
+#            term.cterm = a
+#            result.insert(term)
+#        return result
+
+    def isSequenceValue(self):
+        return self.cterm.isSequenceValue()
+
+# TODO
+# c_set[Term] getSetValue() except +
+#    def getSequenceValue(self):
+#        result = []
+#        for a in self.csolver.getSequenceValue():
+#            term = Term(self)
+#            term.cterm = a
+#            result.append(term)
+#        return result
+
+    def isUninterpretedValue(self):
+        return self.cterm.isUninterpretedValue()
+# TODO
+#     def getUninterpretedValue(self):
+#         return self.cterm.getUninterpretedValue()
+
+    def isTupleValue(self):
+        return self.cterm.isTupleValue()
+
+#TODO
+# gettuplevalue
+
+
 # Generate rounding modes
 cdef __rounding_modes = {
     <int> ROUND_NEAREST_TIES_TO_EVEN: "RoundNearestTiesToEven",
