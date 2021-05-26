@@ -27,6 +27,27 @@ cdef extern from "<string>" namespace "std":
         const wchar_t* data() except +
         size_t size() except +
 
+cdef extern from "<tuple>" namespace "std" nogil:
+    cdef cppclass tuple[T, U, S]:
+        ctypedef T first_type
+        ctypedef U second_type
+        ctypedef S third_type
+        T first
+        U second
+        S third
+        tuple() except +
+        tuple(tuple&) except +
+        tuple(T&, U&, S&) except +
+        bint operator==(tuple&, tuple&)
+        bint operator!=(tuple&, tuple&)
+        bint operator<(tuple&, tuple&)
+        bint operator>(tuple&, tuple&)
+        bint operator<=(tuple&, tuple&)
+        bint operator>=(tuple&, tuple&)
+
+cdef extern from "<tuple>" namespace "std":
+    T get[i,T,U,S](tuple[T,U,S])
+
 cdef extern from "api/cpp/cvc5.h" namespace "cvc5":
     cdef cppclass Options:
         pass
@@ -399,8 +420,7 @@ cdef extern from "api/cpp/cvc5.h" namespace "cvc5::api":
         bint isFloatingPointNaN() except +
         bint isFloatingPointValue() except +
 
-        # TODO
-        # tuple[uint32_t, uint32_t, Term] getFloatingPointValue() except +
+        tuple[uint32_t, uint32_t, Term] getFloatingPointValue() except +
         bint isSetValue() except +
         # TODO
         c_set[Term] getSetValue() except +

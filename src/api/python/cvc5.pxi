@@ -28,7 +28,8 @@ from cvc5 cimport ROUND_NEAREST_TIES_TO_AWAY
 from cvc5 cimport Term as c_Term
 from cvc5 cimport hash as c_hash
 from cvc5 cimport wstring as c_wstring
-
+from cvc5 cimport tuple as c_tuple
+from cvc5 cimport get
 from cvc5kinds cimport Kind as c_Kind
 
 cdef extern from "Python.h":
@@ -1709,9 +1710,12 @@ cdef class Term:
     
     def isFloatingPointValue(self):
         return self.cterm.isFloatingPointValue()
-# TODO
-#    def getFloatingPointValue(self):
-#        return self.cterm.getFloatingPointValue()
+
+    def getFloatingPointValue(self):
+        cdef c_tuple[uint32_t, uint32_t, c_Term] t = self.cterm.getFloatingPointValue()
+        cdef Term term = Term(self.solver)
+        term.cterm = get[3,uint32_t,uint32_t,c_Term](t)
+        return (t.first, t.second, term)
 
     def isSetValue(self):
         return self.cterm.isSetValue()

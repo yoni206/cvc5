@@ -1111,8 +1111,7 @@ def test_get_floating_point(solver):
   assert not fp.isFloatingPointPosInf()
   assert not fp.isFloatingPointNegInf()
   assert not fp.isFloatingPointNaN()
-  # TODO
-  # assert (5, 11, bvval) == fp.getFloatingPointValue()
+  assert (5, 11, bvval) == fp.getFloatingPointValue()
 
   assert solver.mkPosZero(5, 11).isFloatingPointPosZero()
   assert solver.mkNegZero(5, 11).isFloatingPointNegZero()
