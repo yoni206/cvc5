@@ -29,7 +29,7 @@ from cvc5 cimport Term as c_Term
 from cvc5 cimport hash as c_hash
 from cvc5 cimport wstring as c_wstring
 from cvc5 cimport tuple as c_tuple
-from cvc5 cimport get
+from cvc5 cimport get0, get1, get2
 from cvc5kinds cimport Kind as c_Kind
 
 cdef extern from "Python.h":
@@ -1714,8 +1714,8 @@ cdef class Term:
     def getFloatingPointValue(self):
         cdef c_tuple[uint32_t, uint32_t, c_Term] t = self.cterm.getFloatingPointValue()
         cdef Term term = Term(self.solver)
-        term.cterm = get[3,uint32_t,uint32_t,c_Term](t)
-        return (t.first, t.second, term)
+        term.cterm = get2(t)
+        return (get0(t), get1(t), term)
 
     def isSetValue(self):
         return self.cterm.isSetValue()

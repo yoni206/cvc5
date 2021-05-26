@@ -45,8 +45,14 @@ cdef extern from "<tuple>" namespace "std" nogil:
         bint operator<=(tuple&, tuple&)
         bint operator>=(tuple&, tuple&)
 
+ctypedef fused uint32_t_or_Term:
+    uint32_t
+    Term
+
 cdef extern from "<tuple>" namespace "std":
-    T get[i,T,U,S](tuple[T,U,S])
+    uint32_t get0 "std::get<0>"(tuple[uint32_t,uint32_t,Term]) except +
+    uint32_t get1 "std::get<1>"(tuple[uint32_t,uint32_t,Term]) except +
+    Term get2 "std::get<2>"(tuple[uint32_t,uint32_t,Term]) except +
 
 cdef extern from "api/cpp/cvc5.h" namespace "cvc5":
     cdef cppclass Options:
