@@ -180,7 +180,7 @@ cdef class DatatypeConstructor:
         if isinstance(index, int) and index >= 0:
             ds.cds = self.cdc[(<int?> index)]
         elif isinstance(index, str):
-            ds.cds = self.cdc[(<const string &> name.encode())]
+            ds.cds = self.cdc[(<const string &> index.encode())]
         else:
             raise ValueError("Expecting a non-negative integer or string")
         return ds
@@ -1671,22 +1671,6 @@ cdef class Term:
 
     def isIntegerValue(self):
         return self.cterm.isIntegerValue()
-    
-    def getIntegerValue(self):
-        return self.cterm.getIntegerValue().decode() 
-
-    def isRealValue(self):
-        return self.cterm.isRealValue()
-
-    def getRealValue(self):
-        return self.cterm.getRealValue().decode() 
-
-    def isBitVectorValue(self):
-        return self.cterm.isBitVectorValue()
-
-    def getBitVectorValue(self, base = 2):
-        return self.cterm.getBitVectorValue(base).decode()
-
     def isAbstractValue(self):
         return self.cterm.isAbstractValue()
 
@@ -1759,6 +1743,75 @@ cdef class Term:
             term.cterm = e
             elems.append(term)
         return elems
+
+    def getIntegerValue(self):
+        return int(self.cterm.getIntegerValue().decode())
+
+    def isRealValue(self):
+        return self.cterm.isRealValue()
+
+    def getRealValue(self):
+        return float(Fraction(self.cterm.getRealValue().decode()))
+
+    def isBitVectorValue(self):
+        return self.cterm.isBitVectorValue()
+
+    def getBitVectorValue(self, base = 2):
+        return self.cterm.getBitVectorValue(base).decode()
+
+    def toPythonObj(self):
+        '''
+        Converts a constant value Term to a Python object.
+
+        Currently supports:
+          Boolean -- returns a Python bool
+          Int     -- returns a Python int
+          Real    -- returns a Python Fraction
+          BV      -- returns a Python int (treats BV as unsigned)
+          String  -- returns a Python Unicode string
+          Array   -- returns a Python dict mapping indices to values
+                  -- the constant base is returned as the default value
+        '''
+
+        if self.isBooleanValue():
+            return self.getBooleanValue()
+        elif self.isIntegerValue():
+            return self.getIntegerValue()
+        elif self.isRealValue():
+            return self.getRealValue()
+        elif self.isBitVectorValue():
+            return int(self.getBitVectorValue(), 2)
+        elif self.isStringValue():
+            return self.getStringValue()
+        elif self.getSort().isArray():
+            res = None
+            keys = []
+            values = []
+            base_value = None
+            to_visit = [self]
+            # Array models are represented as a series of store operations
+            # on a constant array
+            while to_visit:
+                t = to_visit.pop()
+                if t.getKind() == kinds.Store:
+                    # save the mappings
+                    keys.append(t[1].toPythonObj())
+                    values.append(t[2].toPythonObj())
+                    to_visit.append(t[0])
+                else:
+                    assert t.getKind() == kinds.ConstArray
+                    base_value = t.getConstArrayBase().toPythonObj()
+
+            assert len(keys) == len(values)
+            assert base_value is not None
+
+            # put everything in a dictionary with the constant
+            # base as the result for any index not included in the stores
+            res = defaultdict(lambda : base_value)
+            for k, v in zip(keys, values):
+                res[k] = v
+
+            return res
 
 
 # Generate rounding modes
