@@ -2,7 +2,7 @@
 from cython.operator cimport dereference as deref, preincrement as inc
 from libc.stdint cimport int32_t, int64_t, uint32_t, uint64_t
 from libc.stddef cimport wchar_t
-from libcpp.set cimport set as c_set
+from libcpp.set cimport set
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 from libcpp.pair cimport pair
@@ -178,7 +178,7 @@ cdef extern from "api/cpp/cvc5.h" namespace "cvc5::api":
         Sort mkFloatingPointSort(uint32_t exp, uint32_t sig) except +
         Sort mkDatatypeSort(DatatypeDecl dtypedecl) except +
         vector[Sort] mkDatatypeSorts(const vector[DatatypeDecl]& dtypedecls,
-                                     const c_set[Sort]& unresolvedSorts) except +
+                                     const set[Sort]& unresolvedSorts) except +
         Sort mkFunctionSort(Sort domain, Sort codomain) except +
         Sort mkFunctionSort(const vector[Sort]& sorts, Sort codomain) except +
         Sort mkParamSort(const string& symbol) except +
@@ -428,11 +428,8 @@ cdef extern from "api/cpp/cvc5.h" namespace "cvc5::api":
 
         tuple[uint32_t, uint32_t, Term] getFloatingPointValue() except +
         bint isSetValue() except +
-        # TODO
-        c_set[Term] getSetValue() except +
+        set[Term] getSetValue() except +
         bint isSequenceValue() except +
-        # TODO
-        # c_set[Term] getSetValue() except +
         vector[Term] getSequenceValue() except +
         bint isUninterpretedValue() except +
         pair[Sort, int32_t] getUninterpretedValue() except +
