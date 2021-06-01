@@ -965,24 +965,6 @@ def test_get_tuple(solver):
   assert tup.isTupleValue()
   assert [t1, t2, t3] == tup.getTupleValue()
 
-def test_get_floating_point(solver):
-  bvval = solver.mkBitVector("0000110000000011");
-  fp = solver.mkFloatingPoint(5, 11, bvval);
-
-  assert fp.isFloatingPointValue()
-  assert not fp.isFloatingPointPosZero()
-  assert not fp.isFloatingPointNegZero()
-  assert not fp.isFloatingPointPosInf()
-  assert not fp.isFloatingPointNegInf()
-  assert not fp.isFloatingPointNaN()
-  assert (5, 11, bvval) == fp.getFloatingPointValue()
-
-  assert solver.mkPosZero(5, 11).isFloatingPointPosZero()
-  assert solver.mkNegZero(5, 11).isFloatingPointNegZero()
-  assert solver.mkPosInf(5, 11).isFloatingPointPosInf()
-  assert solver.mkNegInf(5, 11).isFloatingPointNegInf()
-  assert solver.mkNaN(5, 11).isFloatingPointNaN()
-
 def test_get_set(solver):
   s = solver.mkSetSort(solver.getIntegerSort());
 
@@ -1049,6 +1031,24 @@ def test_get_uninterpreted_const(solver):
 
   assert (s, 3) == t1.getUninterpretedValue()
   assert (s, 5) == t2.getUninterpretedValue()
+
+def test_get_floating_point(solver):
+    bvval = solver.mkBitVector("0000110000000011")
+    fp = solver.mkFloatingPoint(5, 11, bvval)
+
+    assert fp.isFloatingPointValue()
+    assert not fp.isFloatingPointPosZero()
+    assert not fp.isFloatingPointNegZero()
+    assert not fp.isFloatingPointPosInf()
+    assert not fp.isFloatingPointNegInf()
+    assert not fp.isFloatingPointNaN()
+    assert (5, 11, bvval) == fp.getFloatingPointValue()
+
+    assert solver.mkPosZero(5, 11).isFloatingPointPosZero()
+    assert solver.mkNegZero(5, 11).isFloatingPointNegZero()
+    assert solver.mkPosInf(5, 11).isFloatingPointPosInf()
+    assert solver.mkNegInf(5, 11).isFloatingPointNegInf()
+    assert solver.mkNaN(5, 11).isFloatingPointNaN()
 
 def test_is_integer(solver):
     int1 = solver.mkInteger("-18446744073709551616")
@@ -1138,11 +1138,11 @@ def test_get_real(solver):
     assert 0 == real1.getRealValue()
     assert 0 == real2.getRealValue()
     assert -17 == real3.getRealValue()
-    assert -3/5 == real4.getRealValue()
-    assert 127/10 == real5.getRealValue()
-    assert 1/4294967297 == real6.getRealValue()
+    assert -3 / 5 == real4.getRealValue()
+    assert 127 / 10 == real5.getRealValue()
+    assert 1 / 4294967297 == real6.getRealValue()
     assert 4294967297 == real7.getRealValue()
-    assert 1/18446744073709551617 == real8.getRealValue()
+    assert 1 / 18446744073709551617 == real8.getRealValue()
     assert float(18446744073709551617) == real9.getRealValue()
 
 
