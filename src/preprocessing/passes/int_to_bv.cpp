@@ -105,23 +105,35 @@ Node intToBVMakeBinary(TNode n, NodeMap& cache)
 
 Node IntToBV::intToBV(TNode n, NodeMap& cache)
 {
+  // size of bit-vector variables and constants given by the user.
   int size = options::solveIntAsBV();
   AlwaysAssert(size > 0);
   AlwaysAssert(!options::incrementalSolving());
 
   NodeManager* nm = NodeManager::currentNM();
   SkolemManager* sm = nm->getSkolemManager();
+
+  // binarize node
   NodeMap binaryCache;
   Node n_binary = intToBVMakeBinary(n, binaryCache);
 
+  // traverse node and translate. Skip nodes already in the cache.
   for (TNode current : NodeDfsIterable(n_binary, VisitOrder::POSTORDER,
            [&cache](TNode nn) { return cache.count(nn) > 0; }))
   {
     if (current.getNumChildren() > 0)
     {
       // Not a leaf
+      // translated children of current
       vector<Node> children;
+      // 
+      // maximal bit-width observed within children, or needed
+      // to prevent overflow. when `size` is smaller, the bit-vector will be padded
+      // using signed extension.
       uint64_t max = 0;
+      
+      // compute the maximal size of the children, and store
+      // stranslated children in `children`.
       for (const Node& nc : current)
       {
         Assert(cache.find(nc) != cache.end());
@@ -141,6 +153,7 @@ Node IntToBV::intToBV(TNode n, NodeMap& cache)
       kind::Kind_t newKind = current.getKind();
       if (max > 0)
       {
+	// determine the translated operation
         switch (newKind)
         {
           case kind::PLUS:
@@ -169,6 +182,7 @@ Node IntToBV::intToBV(TNode n, NodeMap& cache)
           case kind::GT: newKind = kind::BITVECTOR_SGT; break;
           case kind::GEQ: newKind = kind::BITVECTOR_SGE; break;
           case kind::EQUAL:
+          case kind::APPLY_UF:
           case kind::ITE: break;
           default:
             if (childrenTypesChanged(current, cache)) {
@@ -178,6 +192,8 @@ Node IntToBV::intToBV(TNode n, NodeMap& cache)
             }
             break;
         }
+
+	// pad children with sign extension according to max
         for (size_t i = 0, csize = children.size(); i < csize; ++i)
         {
           TypeNode type = children[i].getType();
@@ -212,14 +228,54 @@ Node IntToBV::intToBV(TNode n, NodeMap& cache)
       Node result = current;
       if (current.isVar())
       {
-        if (current.getType() == nm->integerType())
+	TypeNode type = current.getType();
+        if (type == nm->integerType())
         {
           result = sm->mkDummySkolem("__intToBV_var",
                                      nm->mkBitVectorType(size),
                                      "Variable introduced in intToBV pass");
           Node bv2nat = nm->mkNode(kind::BITVECTOR_TO_NAT, result);
           d_preprocContext->addSubstitution(current, bv2nat);
-        }
+        } else if (type.isFunction()) {
+	    std::vector<TypeNode> originalArgTypes = type.getArgTypes();
+	    TypeNode originalRangeType = type.getRangeType();
+	    std::vector<TypeNode> newArgTypes;
+	    TypeNode newRangeType;
+	    for (TypeNode tn : originalArgTypes) {
+		if (tn == nm->integerType()) {
+			newArgTypes.push_back(nm->mkBitVectorType(size));
+		} else {
+			newArgTypes.push_back(tn);
+		}
+	    }
+	    if (originalRangeType == nm->integerType()) {
+		    newRangeType = nm->mkBitVectorType(size);
+	    } else {
+		      newRangeType = originalRangeType;
+	    }
+	    result = sm->mkDummySkolem("__intToBV_uf",
+			    nm->mkFunctionType(newArgTypes, newRangeType),
+			    "Function symbol introduced in intToBV pass");
+	    vector<Node> args;
+	    vector<Node> achildren;
+	    achildren.push_back(result);
+	    for (const TypeNode& d : originalArgTypes) {
+		    Node freshBoundVar = nm->mkBoundVar(d);
+		    args.push_back(freshBoundVar);
+		    Node casted = freshBoundVar;
+		    if (d.isInteger()) {
+    			Node intToBVOp = nm->mkConst<IntToBitVector>(IntToBitVector(size));
+			casted = nm->mkNode(intToBVOp, casted);
+		    }
+		    achildren.push_back(casted);	
+	    }
+	    Node app = nm->mkNode(kind::APPLY_UF, achildren);
+	    if (originalRangeType.isInteger()) {
+		app = nm->mkConst<IntToBitVector>(IntToBitVector(size));
+	    }
+	    Node lambda = nm->mkNode(kind::LAMBDA, nm->mkNode(kind::BOUND_VAR_LIST, args), app);
+	    d_preprocContext->addSubstitution(current, lambda);
+	}
       }
       else if (current.isConst())
       {
