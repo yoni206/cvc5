@@ -103,6 +103,72 @@ Node intToBVMakeBinary(TNode n, NodeMap& cache)
 }
 }  // namespace
 
+void IntToBV::translateUF(Node uf,
+                          std::vector<Node> children,
+                          NodeMap& cache,
+                          uint64_t max)
+{
+  if (cache.find(uf) != cache.end() ) {
+    return;
+  }
+  NodeManager* nm = NodeManager::currentNM();
+  SkolemManager* sm = nm->getSkolemManager();
+  TypeNode type = uf.getType();
+  std::vector<TypeNode> originalArgTypes = type.getArgTypes();
+  TypeNode originalRangeType = type.getRangeType();
+  std::vector<TypeNode> newArgTypes;
+  TypeNode newRangeType;
+  for (uint64_t i = 0, length = originalArgTypes.size(); i < length; i++)
+  {
+    TypeNode tn = originalArgTypes[i];
+    if (tn == nm->integerType())
+    {
+      TypeNode ctn = children[i].getType();
+      Assert(ctn.isBitVector());
+      newArgTypes.push_back(ctn);
+    }
+    else
+    {
+      newArgTypes.push_back(tn);
+    }
+  }
+  if (originalRangeType == nm->integerType())
+  {
+    newRangeType = nm->mkBitVectorType(max);
+  }
+  else
+  {
+    newRangeType = originalRangeType;
+  }
+  Node result = sm->mkDummySkolem("__intToBV_uf",
+                             nm->mkFunctionType(newArgTypes, newRangeType),
+                             "Function symbol introduced in intToBV pass");
+  vector<Node> args;
+  vector<Node> achildren;
+  achildren.push_back(result);
+  for (uint64_t i=0, len = originalArgTypes.size(); i<len; i++) {
+    TypeNode& d = originalArgTypes[i];
+    Node freshBoundVar = nm->mkBoundVar(d);
+    args.push_back(freshBoundVar);
+    Node casted = freshBoundVar;
+    if (d.isInteger())
+    {
+      Node intToBVOp = nm->mkConst<IntToBitVector>(newArgTypes[i].getBitVectorSize());
+      casted = nm->mkNode(intToBVOp, casted);
+    }
+    achildren.push_back(casted);
+  }
+  Node app = nm->mkNode(kind::APPLY_UF, achildren);
+  if (originalRangeType.isInteger())
+  {
+    app = nm->mkConst<IntToBitVector>(IntToBitVector(newRangeType.getBitVectorSize()));
+  }
+  Node lambda =
+      nm->mkNode(kind::LAMBDA, nm->mkNode(kind::BOUND_VAR_LIST, args), app);
+  d_preprocContext->addSubstitution(uf, lambda);
+  cache[uf] = result;
+}
+
 Node IntToBV::intToBV(TNode n, NodeMap& cache)
 {
   // size of bit-vector variables and constants given by the user.
@@ -121,6 +187,7 @@ Node IntToBV::intToBV(TNode n, NodeMap& cache)
   for (TNode current : NodeDfsIterable(n_binary, VisitOrder::POSTORDER,
            [&cache](TNode nn) { return cache.count(nn) > 0; }))
   {
+    Trace("int-to-bv-debug") << "current: " << current << std::endl;
     if (current.getNumChildren() > 0)
     {
       // Not a leaf
@@ -213,7 +280,10 @@ Node IntToBV::intToBV(TNode n, NodeMap& cache)
       }
       NodeBuilder builder(newKind);
       if (current.getMetaKind() == kind::metakind::PARAMETERIZED) {
-        builder << current.getOperator();
+        Assert(current.getKind() == kind::APPLY_UF);
+        Node uf = current.getOperator();
+        translateUF(uf, children, cache, max);
+        builder << cache[uf];
       }
       builder.append(children);
       // Mark the substitution and continue
@@ -236,45 +306,6 @@ Node IntToBV::intToBV(TNode n, NodeMap& cache)
                                      "Variable introduced in intToBV pass");
           Node bv2nat = nm->mkNode(kind::BITVECTOR_TO_NAT, result);
           d_preprocContext->addSubstitution(current, bv2nat);
-        } else if (type.isFunction()) {
-	    std::vector<TypeNode> originalArgTypes = type.getArgTypes();
-	    TypeNode originalRangeType = type.getRangeType();
-	    std::vector<TypeNode> newArgTypes;
-	    TypeNode newRangeType;
-	    for (TypeNode tn : originalArgTypes) {
-		if (tn == nm->integerType()) {
-			newArgTypes.push_back(nm->mkBitVectorType(size));
-		} else {
-			newArgTypes.push_back(tn);
-		}
-	    }
-	    if (originalRangeType == nm->integerType()) {
-		    newRangeType = nm->mkBitVectorType(size);
-	    } else {
-		      newRangeType = originalRangeType;
-	    }
-	    result = sm->mkDummySkolem("__intToBV_uf",
-			    nm->mkFunctionType(newArgTypes, newRangeType),
-			    "Function symbol introduced in intToBV pass");
-	    vector<Node> args;
-	    vector<Node> achildren;
-	    achildren.push_back(result);
-	    for (const TypeNode& d : originalArgTypes) {
-		    Node freshBoundVar = nm->mkBoundVar(d);
-		    args.push_back(freshBoundVar);
-		    Node casted = freshBoundVar;
-		    if (d.isInteger()) {
-    			Node intToBVOp = nm->mkConst<IntToBitVector>(IntToBitVector(size));
-			casted = nm->mkNode(intToBVOp, casted);
-		    }
-		    achildren.push_back(casted);	
-	    }
-	    Node app = nm->mkNode(kind::APPLY_UF, achildren);
-	    if (originalRangeType.isInteger()) {
-		app = nm->mkConst<IntToBitVector>(IntToBitVector(size));
-	    }
-	    Node lambda = nm->mkNode(kind::LAMBDA, nm->mkNode(kind::BOUND_VAR_LIST, args), app);
-	    d_preprocContext->addSubstitution(current, lambda);
 	}
       }
       else if (current.isConst())
@@ -307,6 +338,8 @@ Node IntToBV::intToBV(TNode n, NodeMap& cache)
       }
       cache[current] = result;
     }
+    Trace("int-to-bv-debug")
+        << "cache[current] " << cache[current] << std::endl;
   }
   Trace("int-to-bv-debug") << "original: " << n << std::endl;
   Trace("int-to-bv-debug") << "binary: " << n_binary << std::endl;

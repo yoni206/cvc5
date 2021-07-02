@@ -36,6 +36,10 @@ class IntToBV : public PreprocessingPass
  public:
   IntToBV(PreprocessingPassContext* preprocContext);
   Node intToBV(TNode n, NodeMap& cache);
+  void translateUF(Node uf,
+                          std::vector<Node> children,
+                          NodeMap& cache,
+                          uint64_t max);
 
  protected:
   PreprocessingPassResult applyInternal(
