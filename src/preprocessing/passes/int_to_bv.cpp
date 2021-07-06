@@ -167,6 +167,7 @@ void IntToBV::translateUF(Node uf,
       nm->mkNode(kind::LAMBDA, nm->mkNode(kind::BOUND_VAR_LIST, args), app);
   d_preprocContext->addSubstitution(uf, lambda);
   cache[uf] = result;
+  ufs[result] = uf;
 }
 
 Node IntToBV::intToBV(TNode n, NodeMap& cache)
@@ -344,7 +345,21 @@ Node IntToBV::intToBV(TNode n, NodeMap& cache)
   Trace("int-to-bv-debug") << "original: " << n << std::endl;
   Trace("int-to-bv-debug") << "binary: " << n_binary << std::endl;
   Trace("int-to-bv-debug") << "result: " << cache[n_binary] << std::endl;
+  NodeMap& ufcache;
+  cache[n_binary] = unifyUFs(cache[u_binary], ufcache);
   return cache[n_binary];
+}
+
+IntToBV::unifyUFs(Node n, NodeMap& ufcache, NodeMap& cache) {
+  for (TNode current : NodeDfsIterable(n, VisitOrder::POSTORDER,
+           [&ufcache](TNode nn) { return ufcache.count(nn) > 0; }))
+  {
+    if (n.getKind() == kind::APPLY_UF) {
+      Node uf = n.getOperator();
+      Node unifyUf = ufs[uf];
+      Node result
+    } 
+  }
 }
 
 IntToBV::IntToBV(PreprocessingPassContext* preprocContext)
