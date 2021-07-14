@@ -167,7 +167,10 @@ void IntToBV::translateUF(Node uf,
       nm->mkNode(kind::LAMBDA, nm->mkNode(kind::BOUND_VAR_LIST, args), app);
   d_preprocContext->addSubstitution(uf, lambda);
   cache[uf] = result;
-  ufs[result] = uf;
+  if (ufs.find(uf) == ufs.end()) {
+	  ufs[uf] = {};
+  }
+  ufs[uf].push_back(result);
 }
 
 Node IntToBV::intToBV(TNode n, NodeMap& cache)
@@ -351,13 +354,39 @@ Node IntToBV::intToBV(TNode n, NodeMap& cache)
 }
 
 IntToBV::unifyUFs(Node n, NodeMap& ufcache, NodeMap& cache) {
+  NodeMap& unifiedUfs;
+  for (auto i : ufs) {
+    Node original = i.first;
+    std::vector<Node> candidates = i.second;
+    std::vector<TypeNode> finalArgTypes(candidates[0].getFunctionArgs().size(), TypeNode());
+
+    for (Node candidate : candidates) {
+	std::vector<TypeNode> vtn = candidate.getType().getFunctionArgs();
+	for (uint64_t i=0, len=vtn.size(); i<len; i++) {
+		if (finalArgTypes[i].isNull()) {
+				finalArgTypes[i] = vtn[i];
+		} else if (vtn[i].isBitVector()) {
+				Assert(finalArgTypes[i].isBitVector());
+				if (finalArgTypes[i].getBitVectorSize() < vtn[i].getBitVectorSize()) {
+					finalArgTypes[i] = vtn[i];
+				}
+			}
+		
+
+	}
+	// TODO i am here, populate unifiedUFs.
+
+    }
+
+  }
   for (TNode current : NodeDfsIterable(n, VisitOrder::POSTORDER,
            [&ufcache](TNode nn) { return ufcache.count(nn) > 0; }))
   {
     if (n.getKind() == kind::APPLY_UF) {
       Node uf = n.getOperator();
-      Node unifyUf = ufs[uf];
-      Node result
+      Node originUf = ufToUfMap[uf];
+      vector<Node>& candidateUFs = ufToListMap[originUf];
+      Node unifiedUF = createUnifyUF(candidateUFs);
     } 
   }
 }
