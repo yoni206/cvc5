@@ -106,6 +106,7 @@ Node intToBVMakeBinary(TNode n, NodeMap& cache)
 void IntToBV::translateUF(Node uf,
                           std::vector<Node> children,
                           NodeMap& cache,
+                          std::map<Node, std::vector<Node>>& ufs,
                           uint64_t max)
 {
   if (cache.find(uf) != cache.end() ) {
@@ -173,7 +174,7 @@ void IntToBV::translateUF(Node uf,
   ufs[uf].push_back(result);
 }
 
-Node IntToBV::intToBV(TNode n, NodeMap& cache)
+Node IntToBV::intToBV(TNode n, NodeMap& cache, std::map<Node, std::vector<Node>> ufs)
 {
   // size of bit-vector variables and constants given by the user.
   int size = options::solveIntAsBV();
@@ -286,7 +287,7 @@ Node IntToBV::intToBV(TNode n, NodeMap& cache)
       if (current.getMetaKind() == kind::metakind::PARAMETERIZED) {
         Assert(current.getKind() == kind::APPLY_UF);
         Node uf = current.getOperator();
-        translateUF(uf, children, cache, max);
+        translateUF(uf, children, cache, ufs, max);
         builder << cache[uf];
       }
       builder.append(children);
@@ -348,27 +349,27 @@ Node IntToBV::intToBV(TNode n, NodeMap& cache)
   Trace("int-to-bv-debug") << "original: " << n << std::endl;
   Trace("int-to-bv-debug") << "binary: " << n_binary << std::endl;
   Trace("int-to-bv-debug") << "result: " << cache[n_binary] << std::endl;
-  NodeMap& ufcache;
-  cache[n_binary] = unifyUFs(cache[u_binary], ufcache);
+  NodeMap ufcache;
+  cache[n_binary] = unifyUFs(cache[n_binary], ufcache, ufs);
   return cache[n_binary];
 }
 
-IntToBV::unifyUFs(Node n, NodeMap& ufcache, NodeMap& cache) {
-  NodeMap& unifiedUfs;
+Node IntToBV::unifyUFs(Node n, NodeMap& ufcache, std::map<Node, std::vector<Node>>& ufs) {
+  NodeMap unifiedUfs;
   for (auto i : ufs) {
     Node original = i.first;
     std::vector<Node> candidates = i.second;
-    std::vector<TypeNode> finalArgTypes(candidates[0].getFunctionArgs().size(), TypeNode());
+    std::vector<TypeNode> finalArgTypes(candidates[0].getType().getParamTypes().size(), TypeNode());
 
     for (Node candidate : candidates) {
-	std::vector<TypeNode> vtn = candidate.getType().getFunctionArgs();
-	for (uint64_t i=0, len=vtn.size(); i<len; i++) {
-		if (finalArgTypes[i].isNull()) {
-				finalArgTypes[i] = vtn[i];
-		} else if (vtn[i].isBitVector()) {
-				Assert(finalArgTypes[i].isBitVector());
-				if (finalArgTypes[i].getBitVectorSize() < vtn[i].getBitVectorSize()) {
-					finalArgTypes[i] = vtn[i];
+	std::vector<TypeNode> vtn = candidate.getType().getParamTypes();
+	for (uint64_t j=0, len=vtn.size(); j<len; j++) {
+		if (finalArgTypes[j].isNull()) {
+				finalArgTypes[j] = vtn[j];
+		} else if (vtn[j].isBitVector()) {
+				Assert(finalArgTypes[j].isBitVector());
+				if (finalArgTypes[j].getBitVectorSize() < vtn[j].getBitVectorSize()) {
+					finalArgTypes[j] = vtn[j];
 				}
 			}
 		
@@ -384,8 +385,8 @@ IntToBV::unifyUFs(Node n, NodeMap& ufcache, NodeMap& cache) {
   {
     if (n.getKind() == kind::APPLY_UF) {
       Node uf = n.getOperator();
-      Node originUf = ufToUfMap[uf];
-      vector<Node>& candidateUFs = ufToListMap[originUf];
+      Node originUf = ufcache[uf];
+      vector<Node>& candidateUFs = ufs[originUf];
       Node unifiedUF = createUnifyUF(candidateUFs);
     } 
   }
