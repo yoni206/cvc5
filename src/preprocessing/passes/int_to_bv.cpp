@@ -104,46 +104,75 @@ Node intToBVMakeBinary(TNode n, NodeMap& cache)
 }  // namespace
 
 void IntToBV::translateUF(Node uf,
-                          std::vector<Node> children,
+                          vector<Node> children,
                           NodeMap& cache,
-                          std::map<Node, std::vector<Node>>& ufs,
+                          std::map<Node, vector<Node>>& ufToUFs,
                           uint64_t max)
 {
+  // nothing to do if already processed
   if (cache.find(uf) != cache.end() ) {
     return;
   }
+  
+  // obtain node and skolem managers
   NodeManager* nm = NodeManager::currentNM();
   SkolemManager* sm = nm->getSkolemManager();
+
+  // obtain the types relevant to the original (Integer) UF
   TypeNode type = uf.getType();
-  std::vector<TypeNode> originalArgTypes = type.getArgTypes();
+  vector<TypeNode> originalArgTypes = type.getArgTypes();
   TypeNode originalRangeType = type.getRangeType();
-  std::vector<TypeNode> newArgTypes;
+
+  // declare types relevant to the translated (BV) UF
+  vector<TypeNode> newArgTypes;
   TypeNode newRangeType;
+
+  // compute the new types
   for (uint64_t i = 0, length = originalArgTypes.size(); i < length; i++)
   {
     TypeNode tn = originalArgTypes[i];
+    // integer types are translated to BV types
     if (tn == nm->integerType())
     {
+      // obtain argument type from the translated children
       TypeNode ctn = children[i].getType();
       Assert(ctn.isBitVector());
       newArgTypes.push_back(ctn);
     }
     else
     {
+      // non-integer types remain intact
       newArgTypes.push_back(tn);
     }
   }
+  // integer range types become BV rante types,
+  // according to `max`.
   if (originalRangeType == nm->integerType())
   {
     newRangeType = nm->mkBitVectorType(max);
   }
   else
   {
+    // non integer types remain intact.
     newRangeType = originalRangeType;
   }
+
+  // a fresh function symbol with the new type
   Node result = sm->mkDummySkolem("__intToBV_uf",
                              nm->mkFunctionType(newArgTypes, newRangeType),
                              "Function symbol introduced in intToBV pass");
+  
+  // store new UF in cache
+  cache[uf] = result;
+  // add uf and its translation to the UF map
+  if (ufToUFs.find(uf) == ufToUFs.end()) {
+	  ufToUFs[uf] = {};
+  }
+  ufToUFs[uf].push_back(result);
+}
+
+void IntToBV::addSubstitution(Node uf, Node result, vector<TypeNode> originalArgTypes, vector<TypeNode> newArgTypes, TypeNode originalRangeType, TypeNode newRangeType) {
+  NodeManager* nm = NodeManager::currentNM();
   vector<Node> args;
   vector<Node> achildren;
   achildren.push_back(result);
@@ -167,20 +196,17 @@ void IntToBV::translateUF(Node uf,
   Node lambda =
       nm->mkNode(kind::LAMBDA, nm->mkNode(kind::BOUND_VAR_LIST, args), app);
   d_preprocContext->addSubstitution(uf, lambda);
-  cache[uf] = result;
-  if (ufs.find(uf) == ufs.end()) {
-	  ufs[uf] = {};
-  }
-  ufs[uf].push_back(result);
 }
 
-Node IntToBV::intToBV(TNode n, NodeMap& cache, std::map<Node, std::vector<Node>> ufs)
+Node IntToBV::intToBV(TNode n, NodeMap& cache, std::map<Node, vector<Node>> ufs)
 {
   // size of bit-vector variables and constants given by the user.
   int size = options::solveIntAsBV();
   AlwaysAssert(size > 0);
+  // int-to-bv does not support incremental solving
   AlwaysAssert(!options::incrementalSolving());
 
+  // get node and skolem managers
   NodeManager* nm = NodeManager::currentNM();
   SkolemManager* sm = nm->getSkolemManager();
 
@@ -195,17 +221,16 @@ Node IntToBV::intToBV(TNode n, NodeMap& cache, std::map<Node, std::vector<Node>>
     Trace("int-to-bv-debug") << "current: " << current << std::endl;
     if (current.getNumChildren() > 0)
     {
-      // Not a leaf
-      // translated children of current
-      vector<Node> children;
+      // Not a leaf. Children were already translated.
       // 
       // maximal bit-width observed within children, or needed
       // to prevent overflow. when `size` is smaller, the bit-vector will be padded
       // using signed extension.
       uint64_t max = 0;
       
-      // compute the maximal size of the children, and store
-      // stranslated children in `children`.
+      // compute the maximal size of the children.
+      // store translated children in `children`
+      vector<Node> children;
       for (const Node& nc : current)
       {
         Assert(cache.find(nc) != cache.end());
@@ -222,68 +247,70 @@ Node IntToBV::intToBV(TNode n, NodeMap& cache, std::map<Node, std::vector<Node>>
         children.push_back(childRes);
       }
 
+      // translate current according to its kind
       kind::Kind_t newKind = current.getKind();
-      if (max > 0)
+      // bit-widths are at least 1
+      Assert(max > 0);
+      // determine the translated operation
+      switch (newKind)
       {
-	// determine the translated operation
-        switch (newKind)
-        {
-          case kind::PLUS:
-            Assert(children.size() == 2);
-            newKind = kind::BITVECTOR_ADD;
-            max = max + 1;
-            break;
-          case kind::MULT:
-          case kind::NONLINEAR_MULT:
-            Assert(children.size() == 2);
-            newKind = kind::BITVECTOR_MULT;
-            max = max * 2;
-            break;
-          case kind::MINUS:
-            Assert(children.size() == 2);
-            newKind = kind::BITVECTOR_SUB;
-            max = max + 1;
-            break;
-          case kind::UMINUS:
-            Assert(children.size() == 1);
-            newKind = kind::BITVECTOR_NEG;
-            max = max + 1;
-            break;
-          case kind::LT: newKind = kind::BITVECTOR_SLT; break;
-          case kind::LEQ: newKind = kind::BITVECTOR_SLE; break;
-          case kind::GT: newKind = kind::BITVECTOR_SGT; break;
-          case kind::GEQ: newKind = kind::BITVECTOR_SGE; break;
-          case kind::EQUAL:
-          case kind::APPLY_UF:
-          case kind::ITE: break;
-          default:
-            if (childrenTypesChanged(current, cache)) {
-              throw TypeCheckingExceptionPrivate(
-                  current,
-                  string("Cannot translate to BV: ") + current.toString());
-            }
-            break;
-        }
+        case kind::PLUS:
+          Assert(children.size() == 2);
+          newKind = kind::BITVECTOR_ADD;
+          max = max + 1;
+          break;
+        case kind::MULT:
+        case kind::NONLINEAR_MULT:
+          Assert(children.size() == 2);
+          newKind = kind::BITVECTOR_MULT;
+          max = max * 2;
+          break;
+        case kind::MINUS:
+          Assert(children.size() == 2);
+          newKind = kind::BITVECTOR_SUB;
+          max = max + 1;
+          break;
+        case kind::UMINUS:
+          Assert(children.size() == 1);
+          newKind = kind::BITVECTOR_NEG;
+          max = max + 1;
+          break;
+        case kind::LT: newKind = kind::BITVECTOR_SLT; break;
+        case kind::LEQ: newKind = kind::BITVECTOR_SLE; break;
+        case kind::GT: newKind = kind::BITVECTOR_SGT; break;
+        case kind::GEQ: newKind = kind::BITVECTOR_SGE; break;
+        case kind::EQUAL:
+        case kind::APPLY_UF:
+        case kind::ITE: break;
+        default:
+          if (childrenTypesChanged(current, cache)) {
+            throw TypeCheckingExceptionPrivate(
+                current,
+                string("Cannot translate to BV: ") + current.toString());
+          }
+          break;
+      }
 
-	// pad children with sign extension according to max
-        for (size_t i = 0, csize = children.size(); i < csize; ++i)
+      // pad children with sign extension according to max
+      for (size_t i = 0, csize = children.size(); i < csize; ++i)
+      {
+        TypeNode type = children[i].getType();
+        if (!type.isBitVector())
         {
-          TypeNode type = children[i].getType();
-          if (!type.isBitVector())
-          {
-            continue;
-          }
-          uint32_t bvsize = type.getBitVectorSize();
-          if (bvsize < max)
-          {
-            // sign extend
-            Node signExtendOp = nm->mkConst<BitVectorSignExtend>(
-                BitVectorSignExtend(max - bvsize));
-            children[i] = nm->mkNode(signExtendOp, children[i]);
-          }
+          continue;
+        }
+        uint32_t bvsize = type.getBitVectorSize();
+        if (bvsize < max)
+        {
+          // sign extend
+          Node signExtendOp = nm->mkConst<BitVectorSignExtend>(
+              BitVectorSignExtend(max - bvsize));
+          children[i] = nm->mkNode(signExtendOp, children[i]);
         }
       }
+      // build translated node
       NodeBuilder builder(newKind);
+      // uninterpreted functions are treated in a special manner
       if (current.getMetaKind() == kind::metakind::PARAMETERIZED) {
         Assert(current.getKind() == kind::APPLY_UF);
         Node uf = current.getOperator();
@@ -291,9 +318,7 @@ Node IntToBV::intToBV(TNode n, NodeMap& cache, std::map<Node, std::vector<Node>>
         builder << cache[uf];
       }
       builder.append(children);
-      // Mark the substitution and continue
       Node result = builder;
-
       result = Rewriter::rewrite(result);
       cache[current] = result;
     }
@@ -349,48 +374,60 @@ Node IntToBV::intToBV(TNode n, NodeMap& cache, std::map<Node, std::vector<Node>>
   Trace("int-to-bv-debug") << "original: " << n << std::endl;
   Trace("int-to-bv-debug") << "binary: " << n_binary << std::endl;
   Trace("int-to-bv-debug") << "result: " << cache[n_binary] << std::endl;
-  NodeMap ufcache;
-  cache[n_binary] = unifyUFs(cache[n_binary], ufcache, ufs);
+  NodeMap finalUFCache;
+  unifyUFs(ufToUFs, finalUFCache);
+  cache[n_binary] = updateUFs(cache[n_binary], finalUFCache, ufToUFs);
   return cache[n_binary];
 }
 
-Node IntToBV::unifyUFs(Node n, NodeMap& ufcache, std::map<Node, std::vector<Node>>& ufs) {
-  NodeMap unifiedUfs;
-  for (auto i : ufs) {
-    Node original = i.first;
-    std::vector<Node> candidates = i.second;
-    std::vector<TypeNode> finalArgTypes(candidates[0].getType().getParamTypes().size(), TypeNode());
-
-    for (Node candidate : candidates) {
-	std::vector<TypeNode> vtn = candidate.getType().getParamTypes();
-	for (uint64_t j=0, len=vtn.size(); j<len; j++) {
-		if (finalArgTypes[j].isNull()) {
-				finalArgTypes[j] = vtn[j];
-		} else if (vtn[j].isBitVector()) {
-				Assert(finalArgTypes[j].isBitVector());
-				if (finalArgTypes[j].getBitVectorSize() < vtn[j].getBitVectorSize()) {
-					finalArgTypes[j] = vtn[j];
-				}
-			}
-		
-
-	}
-	// TODO i am here, populate unifiedUFs.
-
-    }
-
-  }
-  for (TNode current : NodeDfsIterable(n, VisitOrder::POSTORDER,
-           [&ufcache](TNode nn) { return ufcache.count(nn) > 0; }))
+void IntToBV::unifyUFs(map<Node, vector<Node> ufToUFs, NodeMap& finalUFCache) 
+{
+  for (pair<Node, vector<Node>> p : ufToUFs)
   {
-    if (n.getKind() == kind::APPLY_UF) {
-      Node uf = n.getOperator();
-      Node originUf = ufcache[uf];
-      vector<Node>& candidateUFs = ufs[originUf];
-      Node unifiedUF = createUnifyUF(candidateUFs);
-    } 
+    Node intUF = p.first;
+    Node bvUFs = p.second;
+    Assert(bvUFs.size() > 0);
+    vector<TypeNode> finalArgTypes = bvUFs[0].getArgTypes();
+    uint64_t numOfArgs = finalArgTypes.size();
+    TypeNode finalRangeType = bvUFs[0].getRangeType();
+    for (uint64_t i=1, len = bvUFs.size(); i++; i < len) {
+      // initialize arguments bit-widths to numOfArgs zeros.
+      Node bvUF = bvUFs[i];
+      TypeNode type = bvUF.getType();
+      vector<TypeNode> argTypes = type.getArgTypes();
+      TypeNode rangeType = type.getRangeType();
+      Assert(argTypes.size() == numOfArgs);
+      for (uint64_t i=0; i < numOfArgs; i++) {
+        if (argTypes[i].isBitVectorType() && finalArgTypes[i].getBitVectorSize() < argTypes[i].getBitVectorSize()) {
+	  finalArgTypes[i] = argTypes[i];
+	}
+      }
+      if (rangeType.isBitVectorType() && finalRangeType.getBitVectorSize() < rangeType.getBitVectorSize()) 
+      {
+        finalRangeType = type.getRangeType();
+      }
+      Node finalBVUF = sm->mkDummySkolem("__intToBV_uf",
+                                 nm->mkFunctionType(newArgTypes, newRangeType),
+                                 "Function symbol introduced in intToBV pass");
+      finalUFCache[intUF] = finalBVUF;
+      // a fresh function symbol with the new type
+      addsubstitution(intUF, finalBVUF, originalArgTypes, newArgTypes, originalRangeType, newRangeType);
+    }
   }
 }
+  
+void IntToBV::updateUFs(Node n, const NodeMap& finalUFCache, const vector<Node, vector<Node>>& ufToUFs, NodeMap& cache);
+{
+  for (TNode current : NodeDfsIterable(n, VisitOrder::POSTORDER,
+           [&cache](TNode nn) { return cache.count(nn) > 0; }))
+  {
+    
+  }
+  
+}
+	
+
+
 
 IntToBV::IntToBV(PreprocessingPassContext* preprocContext)
     : PreprocessingPass(preprocContext, "int-to-bv"){};
