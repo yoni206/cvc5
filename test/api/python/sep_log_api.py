@@ -33,85 +33,73 @@ def validate_exception():
   slv.setOption("incremental", "false")
 
   # Our integer type
-  Sort integer = slv.getIntegerSort()
+  integer = slv.getIntegerSort()
 
   # we intentionally do not set the separation logic heap
 
   # Our SMT constants
-  Term x = slv.mkConst(integer, "x")
-  Term y = slv.mkConst(integer, "y")
+  x = slv.mkConst(integer, "x")
+  y = slv.mkConst(integer, "y")
 
   # y > x
-  Term y_gt_x(slv.mkTerm(Kind::GT, y, x))
+  y_gt_x  = slv.mkTerm(kinds.Gt, y, x)
 
   # assert it
   slv.assertFormula(y_gt_x)
 
   # check
-  Result r(slv.checkSat())
+  r = slv.checkSat()
 
   # If this is UNSAT, we have an issue so bail-out
-  if (!r.isSat())
-  {
+  if not r.isSat():
+  
     return -1
-  }
+  
 
   # We now try to obtain our separation logic expressions from the solver --
   # we want to validate that we get our expected exceptions.
   
-  bool caught_on_heap(false)
-  bool caught_on_nil(false)
+  caught_on_heap = False
+  caught_on_nil = False
 
   # The exception message we expect to obtain
-  std::string expected(
-      "Cannot obtain separation logic expressions if not using the separation "
-      "logic theory.")
+  expected = \
+      "Cannot obtain separation logic expressions if not using the separation " \
+      "logic theory."
 
   # test the heap expression
-  try
-  {
-    Term heap_expr = slv.getSeparationHeap()
-  }
-  catch (const CVC5ApiException& e)
-  {
-    caught_on_heap = true
+  try:
+    heap_expr = slv.getSeparationHeap()
+  except RuntimeError as e:
+    caught_on_heap = True
+    # Check we get the correct exception string
+    if str(e) != expected:
+      return -1
+    
+  # test the nil expression
+  try:
+    nil_expr = slv.getSeparationNilTerm()
+  except RuntimeError as e:
+    caught_on_nil = True
 
     # Check we get the correct exception string
-    if (e.what() != expected)
-    {
+    if str(e) != expected:
       return -1
-    }
-  }
+  
 
-  # test the nil expression
-  try
-  {
-    Term nil_expr = slv.getSeparationNilTerm()
-  }
-  catch (const CVC5ApiException& e)
-  {
-    caught_on_nil = true
-
-    Check we get the correct exception string
-    if (e.what() != expected)
-    {
-      return -1
-    }
-  }
-
-  if (!caught_on_heap || !caught_on_nil)
-  {
+  if not caught_on_heap or not caught_on_nil:
+  
     return -1
-  }
+  
 
   # All tests pass!
   return 0
-}
+
 
 # Test function to demonstrate the use of, and validate the capability, of
 # obtaining the heap/nil expressions when using separation logic.
 def validate_getters():
-  Solver slv
+  slv = pycvc5.Solver()
 
   # Setup some options for cvc5 
   slv.setLogic("QF_ALL")
@@ -119,39 +107,39 @@ def validate_getters():
   slv.setOption("incremental", "false")
 
   # Our integer type 
-  Sort integer = slv.getIntegerSort()
+  integer = slv.getIntegerSort()
 
   #* Declare the separation logic heap types 
   slv.declareSeparationHeap(integer, integer)
 
   # A "random" constant 
-  Term random_constant = slv.mkInteger(0xDEADBEEF)
+  random_constant = slv.mkInteger(0xDEAD)
 
   # Another random constant 
-  Term expr_nil_val = slv.mkInteger(0xFBADBEEF)
+  expr_nil_val = slv.mkInteger(0xFBAD)
 
   # Our nil term 
-  Term nil = slv.mkSepNil(integer)
+  nil = slv.mkSepNil(integer)
 
   # Our SMT constants 
-  Term x = slv.mkConst(integer, "x")
-  Term y = slv.mkConst(integer, "y")
-  Term p1 = slv.mkConst(integer, "p1")
-  Term p2 = slv.mkConst(integer, "p2")
+  x = slv.mkConst(integer, "x")
+  y = slv.mkConst(integer, "y")
+  p1 = slv.mkConst(integer, "p1")
+  p2 = slv.mkConst(integer, "p2")
 
   # Constraints on x and y 
-  Term x_equal_const = slv.mkTerm(Kind::EQUAL, x, random_constant)
-  Term y_gt_x = slv.mkTerm(Kind::GT, y, x)
+  x_equal_const = slv.mkTerm(kinds.Equal, x, random_constant)
+  y_gt_x = slv.mkTerm(kinds.Gt, y, x)
 
   # Points-to expressions 
-  Term p1_to_x = slv.mkTerm(Kind::SEP_PTO, p1, x)
-  Term p2_to_y = slv.mkTerm(Kind::SEP_PTO, p2, y)
+  p1_to_x = slv.mkTerm(kinds.SepPto, p1, x)
+  p2_to_y = slv.mkTerm(kinds.SepPto, p2, y)
 
   # Heap -- the points-to have to be "starred"! 
-  Term heap = slv.mkTerm(Kind::SEP_STAR, p1_to_x, p2_to_y)
+  heap = slv.mkTerm(kinds.SepStar, p1_to_x, p2_to_y)
 
   # Constain "nil" to be something random 
-  Term fix_nil = slv.mkTerm(Kind::EQUAL, nil, expr_nil_val)
+  fix_nil = slv.mkTerm(kinds.Equal, nil, expr_nil_val)
 
   # Add it all to the solver! 
   slv.assertFormula(x_equal_const)
@@ -162,60 +150,59 @@ def validate_getters():
   # Incremental is disabled due to using separation logic, so don't query
   # twice!
    
-  Result r(slv.checkSat())
+  r = (slv.checkSat())
 
   # If this is UNSAT, we have an issue so bail-out 
-  if (!r.isSat()):
+  if not r.isSat():
     return -1
 
   # Obtain our separation logic terms from the solver 
-  Term heap_expr = slv.getSeparationHeap()
-  Term nil_expr = slv.getSeparationNilTerm()
+  heap_expr = slv.getSeparationHeap()
+  nil_expr = slv.getSeparationNilTerm()
 
   # If the heap is not a separating conjunction, bail-out 
-  if (heap_expr.getKind() != Kind::SEP_STAR):
+  if (heap_expr.getKind() != kinds.SepStar):
     return -1
 
   # If nil is not a direct equality, bail-out 
-  if (nil_expr.getKind() != Kind::EQUAL):
+  if (nil_expr.getKind() != kinds.Equal):
     return -1
 
   # Obtain the values for our "pointers" 
-  Term val_for_p1 = slv.getValue(p1)
-  Term val_for_p2 = slv.getValue(p2)
+  val_for_p1 = slv.getValue(p1)
+  val_for_p2 = slv.getValue(p2)
 
   # We need to make sure we find both pointers in the heap 
-  bool checked_p1(false)
-  bool checked_p2(false)
+  checked_p1 = False 
+  checked_p2 = False
 
   # Walk all the children 
-  for (const Term& child : heap_expr):
+  for child in heap_expr:
     # If we don't have a PTO operator, bail-out 
-    if (child.getKind() != Kind::SEP_PTO):
+    if (child.getKind() != kinds.SepPto):
       return -1
 
     # Find both sides of the PTO operator 
-    Term addr = slv.getValue(child[0])
-    Term value = slv.getValue(child[1])
+    addr = slv.getValue(child[0])
+    value = slv.getValue(child[1])
 
     # If the current address is the value for p1
     if (addr == val_for_p1):
-      checked_p1 = true
+      checked_p1 = True
 
       # If it doesn't match the random constant, we have a problem
-      if (value != random_constant):
+      if value != random_constant:
         return -1
       continue
 
     if (addr == val_for_p2):
-      checked_p2 = true
+      checked_p2 = True
 
       # Our earlier constraint was that what p2 points to must be *greater*
       # than the random constant -- if we get a value that is LTE, then
       # something has gone wrong!
       
-      if (std::stoll(value.toString())
-          <= std::stoll(random_constant.toString())):
+      if int(str(value)) <= int(str(random_constant)):
         return -1
       continue
 
@@ -227,11 +214,11 @@ def validate_getters():
 
   # If we complete the loop and we haven't validated both p1 and p2, then we
   # have a problem
-  if (!checked_p1 || !checked_p2):
+  if (not checked_p1 or not checked_p2):
     return -1
 
   # We now get our value for what nil is
-  Term value_for_nil = slv.getValue(nil_expr[1])
+  value_for_nil = slv.getValue(nil_expr[1])
 
   
   # The value for nil from the solver should be the value we originally tied
@@ -244,13 +231,13 @@ def validate_getters():
   return 0
 
 # check that we get an exception when we should
-int check_exception(validate_exception())
+check_exception = validate_exception()
 
-if (check_exception):
-  return check_exception
+if check_exception:
+  assert False
 
 # check the getters
-check_getters(validate_getters())
+check_getters = validate_getters()
 
-if (check_getters):
-  return check_getters
+if check_getters:
+    assert False
