@@ -35,12 +35,14 @@ concat_result_43 = solver.mkConst(bvsort8, "concat_result_43")
 
 args2 = []
 args2.append(concat_result_42)
-args2.append(solver.mkTerm(solver.mkOp(kinds.BVExtract, 7, 4), [concat_result_43]))
+args2.append(
+    solver.mkTerm(solver.mkOp(kinds.BVExtract, 7, 4), [concat_result_43]))
 solver.assertFormula(solver.mkTerm(kinds.Equal, args2))
 
 args3 = []
 args3.append(concat_result_42)
-args3.append(solver.mkTerm(solver.mkOp(kinds.BVExtract, 3, 0), [concat_result_43]))
+args3.append(
+    solver.mkTerm(solver.mkOp(kinds.BVExtract, 3, 0), [concat_result_43]))
 solver.assertFormula(solver.mkTerm(kinds.Equal, args3))
 
 print(solver.checkSat())

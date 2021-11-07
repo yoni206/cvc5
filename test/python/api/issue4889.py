@@ -9,7 +9,7 @@
 # All rights reserved.  See the file COPYING in the top-level source
 # directory for licensing information.
 # ############################################################################
-# 
+#
 # Test for issue #4889
 ##
 

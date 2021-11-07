@@ -22,5 +22,3 @@ import pycvc5
 slv = pycvc5.Solver()
 r = slv.checkEntailed(slv.mkBoolean(True))
 r.isEntailed()
-
-

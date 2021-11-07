@@ -20,4 +20,3 @@ s2 = pycvc5.Solver()
 r = s1.checkEntailed(s1.mkBoolean(True))
 r2 = s2.checkEntailed(s2.mkBoolean(True))
 print(0 if r.isEntailed() and r2.isEntailed() else 1)
-

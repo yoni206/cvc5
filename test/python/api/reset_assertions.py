@@ -9,9 +9,9 @@
 # All rights reserved.  See the file COPYING in the top-level source
 # directory for licensing information.
 # ############################################################################
-# 
+#
 # A simple test for SolverEngine::resetAssertions()
-# 
+#
 # This program indirectly also tests some corner cases w.r.t.
 # context-dependent datastructures: resetAssertions() pops the contexts to
 # zero but some context-dependent datastructures are created at leevel 1,
@@ -20,25 +20,25 @@
 
 import pycvc5
 from pycvc5 import kinds
-  
-slv = pycvc5.Solver()
-slv.setOption("incremental", "true");
 
-real = slv.getRealSort();
-x = slv.mkConst(real, "x");
-four = slv.mkInteger(4);
-xEqFour = slv.mkTerm(kinds.Equal, x, four);
-slv.assertFormula(xEqFour);
+slv = pycvc5.Solver()
+slv.setOption("incremental", "true")
+
+real = slv.getRealSort()
+x = slv.mkConst(real, "x")
+four = slv.mkInteger(4)
+xEqFour = slv.mkTerm(kinds.Equal, x, four)
+slv.assertFormula(xEqFour)
 print(slv.checkSat())
 
-slv.resetAssertions();
+slv.resetAssertions()
 
-elementType = slv.getIntegerSort();
-indexType = slv.getIntegerSort();
-arrayType = slv.mkArraySort(indexType, elementType);
-array = slv.mkConst(arrayType, "array");
-arrayAtFour = slv.mkTerm(kinds.Select, array, four);
-ten = slv.mkInteger(10);
-arrayAtFour_eq_ten = slv.mkTerm(kinds.Equal, arrayAtFour, ten);
-slv.assertFormula(arrayAtFour_eq_ten);
+elementType = slv.getIntegerSort()
+indexType = slv.getIntegerSort()
+arrayType = slv.mkArraySort(indexType, elementType)
+array = slv.mkConst(arrayType, "array")
+arrayAtFour = slv.mkTerm(kinds.Select, array, four)
+ten = slv.mkInteger(10)
+arrayAtFour_eq_ten = slv.mkTerm(kinds.Equal, arrayAtFour, ten)
+slv.assertFormula(arrayAtFour_eq_ten)
 print(slv.checkSat())
