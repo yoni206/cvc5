@@ -69,7 +69,7 @@ def validate_exception():
 
   # test the heap expression
   try:
-    heap_expr = slv.getSeparationHeap()
+    heap_expr = slv.getValueSepHeap()
   except RuntimeError as e:
     caught_on_heap = True
     # Check we get the correct exception string
@@ -78,7 +78,7 @@ def validate_exception():
     
   # test the nil expression
   try:
-    nil_expr = slv.getSeparationNilTerm()
+    nil_expr = slv.getValueSepNil()
   except RuntimeError as e:
     caught_on_nil = True
 
@@ -110,7 +110,7 @@ def validate_getters():
   integer = slv.getIntegerSort()
 
   #* Declare the separation logic heap types 
-  slv.declareSeparationHeap(integer, integer)
+  slv.declareSepHeap(integer, integer)
 
   # A "random" constant 
   random_constant = slv.mkInteger(0xDEAD)
@@ -157,8 +157,8 @@ def validate_getters():
     return -1
 
   # Obtain our separation logic terms from the solver 
-  heap_expr = slv.getSeparationHeap()
-  nil_expr = slv.getSeparationNilTerm()
+  heap_expr = slv.getValueSepHeap()
+  nil_expr = slv.getValueSepNil()
 
   # If the heap is not a separating conjunction, bail-out 
   if (heap_expr.getKind() != kinds.SepStar):
