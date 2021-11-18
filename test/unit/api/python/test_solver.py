@@ -346,7 +346,8 @@ def test_mk_bit_vector(solver):
     with pytest.raises(RuntimeError):
         solver.mkBitVector(8, "fzff", 16)
 
-    assert solver.mkBitVector(8, "0101", 2) == solver.mkBitVector(8, "00000101", 2)
+    assert solver.mkBitVector(8, "0101",
+                              2) == solver.mkBitVector(8, "00000101", 2)
     assert solver.mkBitVector(4, "1010", 2) == solver.mkBitVector(4, "10", 10)
     assert solver.mkBitVector(4, "1010", 2) == solver.mkBitVector(4, "a", 16)
     assert str(solver.mkBitVector(8, "01010101", 2)) == "#b01010101"
@@ -422,6 +423,7 @@ def test_mk_floating_point(solver):
     with pytest.raises(RuntimeError):
         slv.mkFloatingPoint(3, 5, t1)
 
+
 def test_mk_cardinality_constraint(solver):
     su = solver.mkUninterpretedSort("u")
     si = solver.getIntegerSort()
@@ -433,6 +435,7 @@ def test_mk_cardinality_constraint(solver):
     slv = pycvc5.Solver()
     with pytest.raises(RuntimeError):
         slv.mkCardinalityConstraint(su, 3)
+
 
 def test_mk_empty_set(solver):
     slv = pycvc5.Solver()
@@ -854,7 +857,8 @@ def test_mk_true(solver):
 
 
 def test_mk_tuple(solver):
-    solver.mkTuple([solver.mkBitVectorSort(3)], [solver.mkBitVector(3, "101", 2)])
+    solver.mkTuple([solver.mkBitVectorSort(3)],
+                   [solver.mkBitVector(3, "101", 2)])
     solver.mkTuple([solver.getRealSort()], [solver.mkInteger("5")])
 
     with pytest.raises(RuntimeError):
@@ -866,9 +870,11 @@ def test_mk_tuple(solver):
         solver.mkTuple([solver.getIntegerSort()], [solver.mkReal("5.3")])
     slv = pycvc5.Solver()
     with pytest.raises(RuntimeError):
-        slv.mkTuple([solver.mkBitVectorSort(3)], [slv.mkBitVector(3, "101", 2)])
+        slv.mkTuple([solver.mkBitVectorSort(3)],
+                    [slv.mkBitVector(3, "101", 2)])
     with pytest.raises(RuntimeError):
-        slv.mkTuple([slv.mkBitVectorSort(3)], [solver.mkBitVector(3, "101", 2)])
+        slv.mkTuple([slv.mkBitVectorSort(3)],
+                    [solver.mkBitVector(3, "101", 2)])
 
 
 def test_mk_universe_set(solver):
@@ -1883,13 +1889,6 @@ def test_get_synth_solution(solver):
         slv.getSynthSolution(f)
 
 
-
-
-
-
-
-
-
 ######################################################################
 ######################################################################
 #                               MISSING TESTS
@@ -1897,98 +1896,82 @@ def test_get_synth_solution(solver):
 ######################################################################
 
 
-
-
-
-
-
-
-
 def test_add_sygus_assume(solver):
-  nullTerm = Term(solver)
-  boolTerm = solver.mkBoolean(false)
-  intTerm = solver.mkInteger(1)
+    nullTerm = Term(solver)
+    boolTerm = solver.mkBoolean(false)
+    intTerm = solver.mkInteger(1)
 
-  solver.addSygusAssume(boolTerm)
-  with pytest.raises(RuntimeError):
-      solver.addSygusAssume(nullTerm)
-  with pytest.raises(RuntimeError):
-      solver.addSygusAssume(intTerm)
+    solver.addSygusAssume(boolTerm)
+    with pytest.raises(RuntimeError):
+        solver.addSygusAssume(nullTerm)
+    with pytest.raises(RuntimeError):
+        solver.addSygusAssume(intTerm)
 
-  slv = pycvc5.Solver()
-  with pytest.raises(RuntimeError):
-      slv.addSygusAssume(boolTerm)
-
+    slv = pycvc5.Solver()
+    with pytest.raises(RuntimeError):
+        slv.addSygusAssume(boolTerm)
 
 
 def test_block_model1(solver):
-  solver.setOption("produce-models", "true")
-  x = solver.mkConst(solver.getBooleanSort(), "x")
-  solver.assertFormula(x.eqTerm(x))
-  solver.checkSat()
-  with pytest.raises(RuntimeError):
-      solver.blockModel()
-
-
-
+    solver.setOption("produce-models", "true")
+    x = solver.mkConst(solver.getBooleanSort(), "x")
+    solver.assertFormula(x.eqTerm(x))
+    solver.checkSat()
+    with pytest.raises(RuntimeError):
+        solver.blockModel()
 
 
 def test_block_model2(solver):
-  solver.setOption("block-models", "literals")
-  x = solver.mkConst(solver.getBooleanSort(), "x")
-  solver.assertFormula(x.eqTerm(x))
-  solver.checkSat()
-  with pytest.raises(RuntimeError):
-      solver.blockModel()
-
-
-
-
+    solver.setOption("block-models", "literals")
+    x = solver.mkConst(solver.getBooleanSort(), "x")
+    solver.assertFormula(x.eqTerm(x))
+    solver.checkSat()
+    with pytest.raises(RuntimeError):
+        solver.blockModel()
 
 
 def test_block_model3(solver):
-  solver.setOption("produce-models", "true")
-  solver.setOption("block-models", "literals")
-  x = solver.mkConst(solver.getBooleanSort(), "x")
-  solver.assertFormula(x.eqTerm(x))
-  with pytest.raises(RuntimeError):
-      solver.blockModel()
-
-
-
+    solver.setOption("produce-models", "true")
+    solver.setOption("block-models", "literals")
+    x = solver.mkConst(solver.getBooleanSort(), "x")
+    solver.assertFormula(x.eqTerm(x))
+    with pytest.raises(RuntimeError):
+        solver.blockModel()
 
 
 def test_block_model4(solver):
-  solver.setOption("produce-models", "true")
-  solver.setOption("block-models", "literals")
-  x = solver.mkConst(solver.getBooleanSort(), "x")
-  solver.assertFormula(x.eqTerm(x))
-  solver.checkSat()
-  solver.blockModel()
-
-
-
+    solver.setOption("produce-models", "true")
+    solver.setOption("block-models", "literals")
+    x = solver.mkConst(solver.getBooleanSort(), "x")
+    solver.assertFormula(x.eqTerm(x))
+    solver.checkSat()
+    solver.blockModel()
 
 
 def test_block_model_values1(solver):
-  solver.setOption("produce-models", "true")
-  solver.setOption("block-models", "literals")
-  x = solver.mkConst(solver.getBooleanSort(), "x")
-  solver.assertFormula(x.eqTerm(x))
-  solver.checkSat()
-  with pytest.raises(RuntimeError):
-      solver.blockModelValues()
-  with pytest.raises(RuntimeError):
-      solver.blockModelValues(Term())
-  with pytest.raises(RuntimeError):
-      solver.blockModelValues(Solver().mkBoolean(false))
-
-
-
-
-
-  def test_block_model_values2(solver):
     solver.setOption("produce-models", "true")
+    solver.setOption("block-models", "literals")
+    x = solver.mkConst(solver.getBooleanSort(), "x")
+    solver.assertFormula(x.eqTerm(x))
+    solver.checkSat()
+    with pytest.raises(RuntimeError):
+        solver.blockModelValues()
+    with pytest.raises(RuntimeError):
+        solver.blockModelValues(Term())
+    with pytest.raises(RuntimeError):
+        solver.blockModelValues(Solver().mkBoolean(false))
+
+    def test_block_model_values2(solver):
+        solver.setOption("produce-models", "true")
+        x = solver.mkConst(solver.getBooleanSort(), "x")
+        solver.assertFormula(x.eqTerm(x))
+        solver.checkSat()
+        with pytest.raises(RuntimeError):
+            solver.blockModelValues(x)
+
+
+def test_block_model_values3(solver):
+    solver.setOption("block-models", "literals")
     x = solver.mkConst(solver.getBooleanSort(), "x")
     solver.assertFormula(x.eqTerm(x))
     solver.checkSat()
@@ -1996,884 +1979,717 @@ def test_block_model_values1(solver):
         solver.blockModelValues(x)
 
 
-
-
-
-def test_block_model_values3(solver):
-  solver.setOption("block-models", "literals")
-  x = solver.mkConst(solver.getBooleanSort(), "x")
-  solver.assertFormula(x.eqTerm(x))
-  solver.checkSat()
-  with pytest.raises(RuntimeError):
-      solver.blockModelValues(x)
-
-
-
-
-
 def test_block_model_values4(solver):
-  solver.setOption("produce-models", "true")
-  solver.setOption("block-models", "literals")
-  x = solver.mkConst(solver.getBooleanSort(), "x")
-  solver.assertFormula(x.eqTerm(x))
-  with pytest.raises(RuntimeError):
-      solver.blockModelValues(x)
-
-
-
+    solver.setOption("produce-models", "true")
+    solver.setOption("block-models", "literals")
+    x = solver.mkConst(solver.getBooleanSort(), "x")
+    solver.assertFormula(x.eqTerm(x))
+    with pytest.raises(RuntimeError):
+        solver.blockModelValues(x)
 
 
 def test_block_model_values5(solver):
-  solver.setOption("produce-models", "true")
-  solver.setOption("block-models", "literals")
-  x = solver.mkConst(solver.getBooleanSort(), "x")
-  solver.assertFormula(x.eqTerm(x))
-  solver.checkSat()
-  solver.blockModelValues(x)
-
-
-
+    solver.setOption("produce-models", "true")
+    solver.setOption("block-models", "literals")
+    x = solver.mkConst(solver.getBooleanSort(), "x")
+    solver.assertFormula(x.eqTerm(x))
+    solver.checkSat()
+    solver.blockModelValues(x)
 
 
 def test_declare_datatype(solver):
-  nil = solver.mkDatatypeConstructorDecl("nil")
-  ctors1 = [nil]
-  solver.declareDatatype("a", ctors1)
-  cons = solver.mkDatatypeConstructorDecl("cons")
-  nil2 = solver.mkDatatypeConstructorDecl("nil")
-  ctors2 = [cons, nil2]
-  solver.declareDatatype("b", ctors2)
-  cons2 = solver.mkDatatypeConstructorDecl("cons")
-  nil3 = solver.mkDatatypeConstructorDecl("nil")
-  ctors3 = [cons2, nil3]
-  solver.declareDatatype("", ctors3)
-  ctors4 = []
-  with pytest.raises(RuntimeError):
-      solver.declareDatatype("c")
-  with pytest.raises(RuntimeError):
-      solver.declareDatatype("")
-  slv = pycvc5.Solver()
-  with pytest.raises(RuntimeError):
-      slv.declareDatatype("a")
-
-
-
+    nil = solver.mkDatatypeConstructorDecl("nil")
+    ctors1 = [nil]
+    solver.declareDatatype("a", ctors1)
+    cons = solver.mkDatatypeConstructorDecl("cons")
+    nil2 = solver.mkDatatypeConstructorDecl("nil")
+    ctors2 = [cons, nil2]
+    solver.declareDatatype("b", ctors2)
+    cons2 = solver.mkDatatypeConstructorDecl("cons")
+    nil3 = solver.mkDatatypeConstructorDecl("nil")
+    ctors3 = [cons2, nil3]
+    solver.declareDatatype("", ctors3)
+    ctors4 = []
+    with pytest.raises(RuntimeError):
+        solver.declareDatatype("c")
+    with pytest.raises(RuntimeError):
+        solver.declareDatatype("")
+    slv = pycvc5.Solver()
+    with pytest.raises(RuntimeError):
+        slv.declareDatatype("a")
 
 
 def test_declare_pool(solver):
-  intSort = solver.getIntegerSort()
-  setSort = solver.mkSetSort(intSort)
-  zero = solver.mkInteger(0)
-  x = solver.mkConst(intSort, "x")
-  y = solver.mkConst(intSort, "y")
-  # declare a pool with initial value  0, x, y 
-  p = solver.declarePool("p", intSort, zero, x, y)
-  # pool should have the same sort
-  assert p.getSort() == setSort
-  # cannot pass null sort
-  nullSort
-  with pytest.raises(RuntimeError):
-      solver.declarePool("i", nullSort, )
-
-
-
+    intSort = solver.getIntegerSort()
+    setSort = solver.mkSetSort(intSort)
+    zero = solver.mkInteger(0)
+    x = solver.mkConst(intSort, "x")
+    y = solver.mkConst(intSort, "y")
+    # declare a pool with initial value  0, x, y
+    p = solver.declarePool("p", intSort, zero, x, y)
+    # pool should have the same sort
+    assert p.getSort() == setSort
+    # cannot pass null sort
+    nullSort
+    with pytest.raises(RuntimeError):
+        solver.declarePool(
+            "i",
+            nullSort,
+        )
 
 
 def test_declare_sep_heap(solver):
-  solver.setLogic("ALL")
-  integer = solver.getIntegerSort()
-  solver.declareSepHeap(integer, integer)
-  # cannot declare separation logic heap more than once
-  with pytest.raises(RuntimeError):
-      solver.declareSepHeap(integer, integer)
-
-
-
+    solver.setLogic("ALL")
+    integer = solver.getIntegerSort()
+    solver.declareSepHeap(integer, integer)
+    # cannot declare separation logic heap more than once
+    with pytest.raises(RuntimeError):
+        solver.declareSepHeap(integer, integer)
 
 
 def test_define_fun_global(solver):
-  bSort = solver.getBooleanSort()
+    bSort = solver.getBooleanSort()
 
-  bTrue = solver.mkBoolean(true)
-  # (define-fun f () Bool true)
-  f = solver.defineFun("f", [] , bSort, bTrue, true)
-  b = solver.mkVar(bSort, "b")
-  # (define-fun g (b Bool) Bool b)
-  g = solver.defineFun("g", b, bSort, b, true)
+    bTrue = solver.mkBoolean(true)
+    # (define-fun f () Bool true)
+    f = solver.defineFun("f", [], bSort, bTrue, true)
+    b = solver.mkVar(bSort, "b")
+    # (define-fun g (b Bool) Bool b)
+    g = solver.defineFun("g", b, bSort, b, true)
 
-  # (assert (or (not f) (not (g true))))
-  solver.assertFormula(solver.mkTerm(
-      OR, f.notTerm(), solver.mkTerm(APPLY_UF, g, bTrue).notTerm()))
-  assert solver.checkSat().isUnsat()
-  solver.resetAssertions()
-  # (assert (or (not f) (not (g true))))
-  solver.assertFormula(solver.mkTerm(
-      OR, f.notTerm(), solver.mkTerm(APPLY_UF, g, bTrue).notTerm()))
-  assert solver.checkSat().isUnsat()
-
-
-
+    # (assert (or (not f) (not (g true))))
+    solver.assertFormula(
+        solver.mkTerm(OR, f.notTerm(),
+                      solver.mkTerm(APPLY_UF, g, bTrue).notTerm()))
+    assert solver.checkSat().isUnsat()
+    solver.resetAssertions()
+    # (assert (or (not f) (not (g true))))
+    solver.assertFormula(
+        solver.mkTerm(OR, f.notTerm(),
+                      solver.mkTerm(APPLY_UF, g, bTrue).notTerm()))
+    assert solver.checkSat().isUnsat()
 
 
 def test_define_fun_rec_global(solver):
-  bSort = solver.getBooleanSort()
-  fSort = solver.mkFunctionSort(bSort, bSort)
+    bSort = solver.getBooleanSort()
+    fSort = solver.mkFunctionSort(bSort, bSort)
 
-  solver.push()
-  bTrue = solver.mkBoolean(true)
-  # (define-fun f () Bool true)
-  f = solver.defineFunRec("f", [] , bSort, bTrue, true)
-  b = solver.mkVar(bSort, "b")
-  gSym = solver.mkConst(fSort, "g")
-  # (define-fun g (b Bool) Bool b)
-  g = solver.defineFunRec(gSym, b, b, true)
+    solver.push()
+    bTrue = solver.mkBoolean(true)
+    # (define-fun f () Bool true)
+    f = solver.defineFunRec("f", [], bSort, bTrue, true)
+    b = solver.mkVar(bSort, "b")
+    gSym = solver.mkConst(fSort, "g")
+    # (define-fun g (b Bool) Bool b)
+    g = solver.defineFunRec(gSym, b, b, true)
 
-  # (assert (or (not f) (not (g true))))
-  solver.assertFormula(solver.mkTerm(
-      OR, f.notTerm(), solver.mkTerm(APPLY_UF, g, bTrue).notTerm()))
-  assert solver.checkSat().isUnsat()
-  solver.pop()
-  # (assert (or (not f) (not (g true))))
-  solver.assertFormula(solver.mkTerm(
-      OR, f.notTerm(), solver.mkTerm(APPLY_UF, g, bTrue).notTerm()))
-  assert solver.checkSat().isUnsat()
-
-
-
+    # (assert (or (not f) (not (g true))))
+    solver.assertFormula(
+        solver.mkTerm(OR, f.notTerm(),
+                      solver.mkTerm(APPLY_UF, g, bTrue).notTerm()))
+    assert solver.checkSat().isUnsat()
+    solver.pop()
+    # (assert (or (not f) (not (g true))))
+    solver.assertFormula(
+        solver.mkTerm(OR, f.notTerm(),
+                      solver.mkTerm(APPLY_UF, g, bTrue).notTerm()))
+    assert solver.checkSat().isUnsat()
 
 
 def test_define_funs_rec(solver):
-  uSort = solver.mkUninterpretedSort("u")
-  bvSort = solver.mkBitVectorSort(32)
-  funSort1 = solver.mkFunctionSort(bvSort, bvSort, bvSort)
-  funSort2 = solver.mkFunctionSort(uSort, solver.getIntegerSort())
-  b1 = solver.mkVar(bvSort, "b1")
-  b11 = solver.mkVar(bvSort, "b1")
-  b2 = solver.mkVar(solver.getIntegerSort(), "b2")
-  b3 = solver.mkVar(funSort2, "b3")
-  b4 = solver.mkVar(uSort, "b4")
-  v1 = solver.mkConst(bvSort, "v1")
-  v2 = solver.mkConst(solver.getIntegerSort(), "v2")
-  v3 = solver.mkConst(funSort2, "v3")
-  v4 = solver.mkConst(uSort, "v4")
-  f1 = solver.mkConst(funSort1, "f1")
-  f2 = solver.mkConst(funSort2, "f2")
-  f3 = solver.mkConst(bvSort, "f3")
- 
-  solver.defineFunsRec(f1, f2, [[b1, b11], [b4]], [v1, v2])
-  with pytest.raises(RuntimeError):
-          solver.defineFunsRec(f1, f2, {{v1, b11}, {b4}}, {v1, v2})
-  with pytest.raises(RuntimeError):
-          solver.defineFunsRec(f1, f3, {{b1, b11}, {b4}}, {v1, v2})
-  with pytest.raises(RuntimeError):
-          solver.defineFunsRec(f1, f2, {{b1}, {b4}}, {v1, v2})
-  with pytest.raises(RuntimeError):
-          solver.defineFunsRec(f1, f2, {{b1, b2}, {b4}}, {v1, v2})
-  with pytest.raises(RuntimeError):
-          solver.defineFunsRec(f1, f2, {{b1, b11}, {b4}}, {v1, v4})
+    uSort = solver.mkUninterpretedSort("u")
+    bvSort = solver.mkBitVectorSort(32)
+    funSort1 = solver.mkFunctionSort(bvSort, bvSort, bvSort)
+    funSort2 = solver.mkFunctionSort(uSort, solver.getIntegerSort())
+    b1 = solver.mkVar(bvSort, "b1")
+    b11 = solver.mkVar(bvSort, "b1")
+    b2 = solver.mkVar(solver.getIntegerSort(), "b2")
+    b3 = solver.mkVar(funSort2, "b3")
+    b4 = solver.mkVar(uSort, "b4")
+    v1 = solver.mkConst(bvSort, "v1")
+    v2 = solver.mkConst(solver.getIntegerSort(), "v2")
+    v3 = solver.mkConst(funSort2, "v3")
+    v4 = solver.mkConst(uSort, "v4")
+    f1 = solver.mkConst(funSort1, "f1")
+    f2 = solver.mkConst(funSort2, "f2")
+    f3 = solver.mkConst(bvSort, "f3")
 
-  slv = pycvc5.Solver()
-  uSort2 = slv.mkUninterpretedSort("u")
-  bvSort2 = slv.mkBitVectorSort(32)
-  funSort12 = slv.mkFunctionSort(bvSort2, bvSort2, bvSort2)
-  funSort22 = slv.mkFunctionSort(uSort2, slv.getIntegerSort())
-  b12 = slv.mkVar(bvSort2, "b1")
-  b112 = slv.mkVar(bvSort2, "b1")
-  b42 = slv.mkVar(uSort2, "b4")
-  v12 = slv.mkConst(bvSort2, "v1")
-  v22 = slv.mkConst(slv.getIntegerSort(), "v2")
-  f12 = slv.mkConst(funSort12, "f1")
-  f22 = slv.mkConst(funSort22, "f2")
- 
-  slv.defineFunsRec(f12, f22, [[b12, b112], [b42]], [v12, v22])
-  with pytest.raises(RuntimeError):
-          slv.defineFunsRec(f1, f22, {{b12, b112}, {b42}}, {v12, v22})
-  with pytest.raises(RuntimeError):
-          slv.defineFunsRec(f12, f2, {{b12, b112}, {b42}}, {v12, v22})
-  with pytest.raises(RuntimeError):
-          slv.defineFunsRec(f12, f22, {{b1, b112}, {b42}}, {v12, v22})
-  with pytest.raises(RuntimeError):
-          slv.defineFunsRec(f12, f22, {{b12, b11}, {b42}}, {v12, v22})
-  with pytest.raises(RuntimeError):
-          slv.defineFunsRec(f12, f22, {{b12, b112}, {b4}}, {v12, v22})
-  with pytest.raises(RuntimeError):
-          slv.defineFunsRec(f12, f22, {{b12, b112}, {b42}}, {v1, v22})
-  with pytest.raises(RuntimeError):
-          slv.defineFunsRec(f12, f22, {{b12, b112}, {b42}}, {v12, v2})
+    solver.defineFunsRec(f1, f2, [[b1, b11], [b4]], [v1, v2])
+    with pytest.raises(RuntimeError):
+        solver.defineFunsRec(f1, f2, {{v1, b11}, {b4}}, {v1, v2})
+    with pytest.raises(RuntimeError):
+        solver.defineFunsRec(f1, f3, {{b1, b11}, {b4}}, {v1, v2})
+    with pytest.raises(RuntimeError):
+        solver.defineFunsRec(f1, f2, {{b1}, {b4}}, {v1, v2})
+    with pytest.raises(RuntimeError):
+        solver.defineFunsRec(f1, f2, {{b1, b2}, {b4}}, {v1, v2})
+    with pytest.raises(RuntimeError):
+        solver.defineFunsRec(f1, f2, {{b1, b11}, {b4}}, {v1, v4})
 
+    slv = pycvc5.Solver()
+    uSort2 = slv.mkUninterpretedSort("u")
+    bvSort2 = slv.mkBitVectorSort(32)
+    funSort12 = slv.mkFunctionSort(bvSort2, bvSort2, bvSort2)
+    funSort22 = slv.mkFunctionSort(uSort2, slv.getIntegerSort())
+    b12 = slv.mkVar(bvSort2, "b1")
+    b112 = slv.mkVar(bvSort2, "b1")
+    b42 = slv.mkVar(uSort2, "b4")
+    v12 = slv.mkConst(bvSort2, "v1")
+    v22 = slv.mkConst(slv.getIntegerSort(), "v2")
+    f12 = slv.mkConst(funSort12, "f1")
+    f22 = slv.mkConst(funSort22, "f2")
 
+    slv.defineFunsRec(f12, f22, [[b12, b112], [b42]], [v12, v22])
+    with pytest.raises(RuntimeError):
+        slv.defineFunsRec(f1, f22, {{b12, b112}, {b42}}, {v12, v22})
+    with pytest.raises(RuntimeError):
+        slv.defineFunsRec(f12, f2, {{b12, b112}, {b42}}, {v12, v22})
+    with pytest.raises(RuntimeError):
+        slv.defineFunsRec(f12, f22, {{b1, b112}, {b42}}, {v12, v22})
+    with pytest.raises(RuntimeError):
+        slv.defineFunsRec(f12, f22, {{b12, b11}, {b42}}, {v12, v22})
+    with pytest.raises(RuntimeError):
+        slv.defineFunsRec(f12, f22, {{b12, b112}, {b4}}, {v12, v22})
+    with pytest.raises(RuntimeError):
+        slv.defineFunsRec(f12, f22, {{b12, b112}, {b42}}, {v1, v22})
+    with pytest.raises(RuntimeError):
+        slv.defineFunsRec(f12, f22, {{b12, b112}, {b42}}, {v12, v2})
 
+    def test_define_funs_rec_global(solver):
+        bSort = solver.getBooleanSort()
+        fSort = solver.mkFunctionSort(bSort, bSort)
 
+        solver.push()
+        bTrue = solver.mkBoolean(true)
+        b = solver.mkVar(bSort, "b")
+        gSym = solver.mkConst(fSort, "g")
+        # (define-funs-rec ((g ((b Bool)) Bool)) (b))
+        solver.defineFunsRec(gSym, {{b}}, {b}, true)
 
-  def test_define_funs_rec_global(solver):
-      bSort = solver.getBooleanSort()
-      fSort = solver.mkFunctionSort(bSort, bSort)
-
-      solver.push()
-      bTrue = solver.mkBoolean(true)
-      b = solver.mkVar(bSort, "b")
-      gSym = solver.mkConst(fSort, "g")
-      # (define-funs-rec ((g ((b Bool)) Bool)) (b))
-      solver.defineFunsRec(gSym, {{b}}, {b}, true)
-
-      # (assert (not (g true)))
-      solver.assertFormula(solver.mkTerm(APPLY_UF, gSym, bTrue).notTerm())
-      assert solver.checkSat().isUnsat()
-      solver.pop()
-      # (assert (not (g true)))
-      solver.assertFormula(solver.mkTerm(APPLY_UF, gSym, bTrue).notTerm())
-      assert solver.checkSat().isUnsat()
-
-
-
+        # (assert (not (g true)))
+        solver.assertFormula(solver.mkTerm(APPLY_UF, gSym, bTrue).notTerm())
+        assert solver.checkSat().isUnsat()
+        solver.pop()
+        # (assert (not (g true)))
+        solver.assertFormula(solver.mkTerm(APPLY_UF, gSym, bTrue).notTerm())
+        assert solver.checkSat().isUnsat()
 
 
 def test_define_funs_rec_wrong_logic(solver):
-  solver.setLogic("QF_BV")
-  uSort = solver.mkUninterpretedSort("u")
-  bvSort = solver.mkBitVectorSort(32)
-  funSort1 = solver.mkFunctionSort(bvSort, bvSort, bvSort)
-  funSort2 = solver.mkFunctionSort(uSort, solver.getIntegerSort())
-  b = solver.mkVar(bvSort, "b")
-  u = solver.mkVar(uSort, "u")
-  v1 = solver.mkConst(bvSort, "v1")
-  v2 = solver.mkConst(solver.getIntegerSort(), "v2")
-  f1 = solver.mkConst(funSort1, "f1")
-  f2 = solver.mkConst(funSort2, "f2")
-  with pytest.raises(RuntimeError):
-          solver.defineFunsRec(f1, f2, {{b, b}, {u}}, {v1, v2})
+    solver.setLogic("QF_BV")
+    uSort = solver.mkUninterpretedSort("u")
+    bvSort = solver.mkBitVectorSort(32)
+    funSort1 = solver.mkFunctionSort(bvSort, bvSort, bvSort)
+    funSort2 = solver.mkFunctionSort(uSort, solver.getIntegerSort())
+    b = solver.mkVar(bvSort, "b")
+    u = solver.mkVar(uSort, "u")
+    v1 = solver.mkConst(bvSort, "v1")
+    v2 = solver.mkConst(solver.getIntegerSort(), "v2")
+    f1 = solver.mkConst(funSort1, "f1")
+    f2 = solver.mkConst(funSort2, "f2")
+    with pytest.raises(RuntimeError):
+        solver.defineFunsRec(f1, f2, {{b, b}, {u}}, {v1, v2})
 
+    def test_define_sort(solver):
+        sortVar0 = solver.mkParamSort("T0")
+        sortVar1 = solver.mkParamSort("T1")
+        intSort = solver.getIntegerSort()
+        realSort = solver.getRealSort()
+        arraySort0 = solver.mkArraySort(sortVar0, sortVar0)
+        arraySort1 = solver.mkArraySort(sortVar0, sortVar1)
+        # Now create instantiations of the defined sorts
+        arraySort0.substitute(sortVar0, intSort)
 
+        arraySort1.substitute(sortVar0, sortVar1, [intSort, realSort])
 
+    def test_get_abduct(solver):
+        solver.setLogic("QF_LIA")
+        solver.setOption("produce-abducts", "true")
+        solver.setOption("incremental", "false")
 
+        intSort = solver.getIntegerSort()
+        zero = solver.mkInteger(0)
+        x = solver.mkConst(intSort, "x")
+        y = solver.mkConst(intSort, "y")
 
-  def test_define_sort(solver):
-      sortVar0 = solver.mkParamSort("T0")
-      sortVar1 = solver.mkParamSort("T1")
-      intSort = solver.getIntegerSort()
-      realSort = solver.getRealSort()
-      arraySort0 = solver.mkArraySort(sortVar0, sortVar0)
-      arraySort1 = solver.mkArraySort(sortVar0, sortVar1)
-      # Now create instantiations of the defined sorts
-      arraySort0.substitute(sortVar0, intSort)
- 
-      arraySort1.substitute(sortVar0, sortVar1, [intSort, realSort])
+        # Assumptions for abduction: x > 0
+        solver.assertFormula(solver.mkTerm(GT, x, zero))
+        # Conjecture for abduction: y > 0
+        conj = solver.mkTerm(GT, y, zero)
+        output
+        # Call the abduction api, while the resulting abduct is the output
+        assert solver.getAbduct(conj, output)
+        # We expect the resulting output to be a boolean formula
+        assert not output.isNull() and output.getSort().isBoolean()
 
-
-
-
-
-  def test_get_abduct(solver):
-      solver.setLogic("QF_LIA")
-      solver.setOption("produce-abducts", "true")
-      solver.setOption("incremental", "false")
-
-      intSort = solver.getIntegerSort()
-      zero = solver.mkInteger(0)
-      x = solver.mkConst(intSort, "x")
-      y = solver.mkConst(intSort, "y")
-
-      # Assumptions for abduction: x > 0
-      solver.assertFormula(solver.mkTerm(GT, x, zero))
-      # Conjecture for abduction: y > 0
-      conj = solver.mkTerm(GT, y, zero)
-      output
-      # Call the abduction api, while the resulting abduct is the output
-      assert solver.getAbduct(conj, output)
-      # We expect the resulting output to be a boolean formula
-      assert not output.isNull() and output.getSort().isBoolean()
-
-      # try with a grammar, a simple grammar admitting true
-      boolean = solver.getBooleanSort()
-      truen = solver.mkBoolean(true)
-      start = solver.mkVar(boolean)
-      output2
-      g = solver.mkSygusGrammar([], {start})
-      conj2 = solver.mkTerm(GT, x, zero)
-      g.addRule(start, truen)
-      # Call the abduction api, while the resulting abduct is the output
-      assert solver.getAbduct(conj2, g, output2)
-      # abduct must be true
-      assert output2 == truen
-
-
-
+        # try with a grammar, a simple grammar admitting true
+        boolean = solver.getBooleanSort()
+        truen = solver.mkBoolean(true)
+        start = solver.mkVar(boolean)
+        output2
+        g = solver.mkSygusGrammar([], {start})
+        conj2 = solver.mkTerm(GT, x, zero)
+        g.addRule(start, truen)
+        # Call the abduction api, while the resulting abduct is the output
+        assert solver.getAbduct(conj2, g, output2)
+        # abduct must be true
+        assert output2 == truen
 
 
 def test_get_abduct2(solver):
-  solver.setLogic("QF_LIA")
-  solver.setOption("incremental", "false")
-  intSort = solver.getIntegerSort()
-  zero = solver.mkInteger(0)
-  x = solver.mkConst(intSort, "x")
-  y = solver.mkConst(intSort, "y")
-  # Assumptions for abduction: x > 0
-  solver.assertFormula(solver.mkTerm(GT, x, zero))
-  # Conjecture for abduction: y > 0
-  conj = solver.mkTerm(GT, y, zero)
-  output
-  # Fails due to option not set
-  with pytest.raises(RuntimeError):
-          solver.getAbduct(conj, output)
-
-
-
+    solver.setLogic("QF_LIA")
+    solver.setOption("incremental", "false")
+    intSort = solver.getIntegerSort()
+    zero = solver.mkInteger(0)
+    x = solver.mkConst(intSort, "x")
+    y = solver.mkConst(intSort, "y")
+    # Assumptions for abduction: x > 0
+    solver.assertFormula(solver.mkTerm(GT, x, zero))
+    # Conjecture for abduction: y > 0
+    conj = solver.mkTerm(GT, y, zero)
+    output
+    # Fails due to option not set
+    with pytest.raises(RuntimeError):
+        solver.getAbduct(conj, output)
 
 
 def test_get_difficulty(solver):
-  solver.setOption("produce-difficulty", "true")
-  # cannot ask before a check sat
-  with pytest.raises(RuntimeError):
-          solver.getDifficulty()
-  solver.checkSat()
-  solver.getDifficulty()
-
-
-
+    solver.setOption("produce-difficulty", "true")
+    # cannot ask before a check sat
+    with pytest.raises(RuntimeError):
+        solver.getDifficulty()
+    solver.checkSat()
+    solver.getDifficulty()
 
 
 def test_get_difficulty2(solver):
-  solver.checkSat()
-  # option is not set
-  with pytest.raises(RuntimeError):
-      solver.getDifficulty()
-
-
-
+    solver.checkSat()
+    # option is not set
+    with pytest.raises(RuntimeError):
+        solver.getDifficulty()
 
 
 def test_get_difficulty3(solver):
-  solver.setOption("produce-difficulty", "true")
-  intSort = solver.getIntegerSort()
-  x = solver.mkConst(intSort, "x")
-  zero = solver.mkInteger(0)
-  ten = solver.mkInteger(10)
-  f0 = solver.mkTerm(GEQ, x, ten)
-  f1 = solver.mkTerm(GEQ, zero, x)
-  solver.checkSat()
-  dmap = solver.getDifficulty()
-  # difficulty should map assertions to integer values
-  for t in dmap:
-    assert t == f0 or t == f1
-    assert dmap[t].getKind() == CONST_RATIONAL
-  
-
-
-
+    solver.setOption("produce-difficulty", "true")
+    intSort = solver.getIntegerSort()
+    x = solver.mkConst(intSort, "x")
+    zero = solver.mkInteger(0)
+    ten = solver.mkInteger(10)
+    f0 = solver.mkTerm(GEQ, x, ten)
+    f1 = solver.mkTerm(GEQ, zero, x)
+    solver.checkSat()
+    dmap = solver.getDifficulty()
+    # difficulty should map assertions to integer values
+    for t in dmap:
+        assert t == f0 or t == f1
+        assert dmap[t].getKind() == CONST_RATIONAL
 
 
 def test_get_interpolant(solver):
-  solver.setLogic("QF_LIA")
-  solver.setOption("produce-interpols", "default")
-  solver.setOption("incremental", "false")
+    solver.setLogic("QF_LIA")
+    solver.setOption("produce-interpols", "default")
+    solver.setOption("incremental", "false")
 
-  intSort = solver.getIntegerSort()
-  zero = solver.mkInteger(0)
-  x = solver.mkConst(intSort, "x")
-  y = solver.mkConst(intSort, "y")
-  z = solver.mkConst(intSort, "z")
+    intSort = solver.getIntegerSort()
+    zero = solver.mkInteger(0)
+    x = solver.mkConst(intSort, "x")
+    y = solver.mkConst(intSort, "y")
+    z = solver.mkConst(intSort, "z")
 
-  # Assumptions for interpolation: x + y > 0 /\ x < 0
-  solver.assertFormula(
-      solver.mkTerm(GT, solver.mkTerm(PLUS, x, y), zero))
-  solver.assertFormula(solver.mkTerm(LT, x, zero))
-  # Conjecture for interpolation: y + z > 0 \/ z < 0
-  conj =\
-      solver.mkTerm(OR,
-                      solver.mkTerm(GT, solver.mkTerm(PLUS, y, z), zero),
-                      solver.mkTerm(LT, z, zero))
-  output = Term(solver)
-  # Call the interpolation api, while the resulting interpolant is the output
-  solver.getInterpolant(conj, output)
+    # Assumptions for interpolation: x + y > 0 /\ x < 0
+    solver.assertFormula(solver.mkTerm(GT, solver.mkTerm(PLUS, x, y), zero))
+    solver.assertFormula(solver.mkTerm(LT, x, zero))
+    # Conjecture for interpolation: y + z > 0 \/ z < 0
+    conj =\
+        solver.mkTerm(OR,
+                        solver.mkTerm(GT, solver.mkTerm(PLUS, y, z), zero),
+                        solver.mkTerm(LT, z, zero))
+    output = Term(solver)
+    # Call the interpolation api, while the resulting interpolant is the output
+    solver.getInterpolant(conj, output)
 
-  # We expect the resulting output to be a boolean formula
-  assert output.getSort().isBoolean()
-
-
-
+    # We expect the resulting output to be a boolean formula
+    assert output.getSort().isBoolean()
 
 
 def test_get_model_domain_elements(solver):
-  solver.setOption("produce-models", "true")
-  uSort = solver.mkUninterpretedSort("u")
-  intSort = solver.getIntegerSort()
-  x = solver.mkConst(uSort, "x")
-  y = solver.mkConst(uSort, "y")
-  z = solver.mkConst(uSort, "z")
-  f = solver.mkTerm(DISTINCT, x, y, z)
-  solver.assertFormula(f)
-  solver.checkSat()
-  solver.getModelDomainElements(uSort)
-  assert solver.getModelDomainElements(uSort).size() >= 3
-  with pytest.raises(RuntimeError):
-          solver.getModelDomainElements(intSort)
-
-
-
+    solver.setOption("produce-models", "true")
+    uSort = solver.mkUninterpretedSort("u")
+    intSort = solver.getIntegerSort()
+    x = solver.mkConst(uSort, "x")
+    y = solver.mkConst(uSort, "y")
+    z = solver.mkConst(uSort, "z")
+    f = solver.mkTerm(DISTINCT, x, y, z)
+    solver.assertFormula(f)
+    solver.checkSat()
+    solver.getModelDomainElements(uSort)
+    assert solver.getModelDomainElements(uSort).size() >= 3
+    with pytest.raises(RuntimeError):
+        solver.getModelDomainElements(intSort)
 
 
 def test_get_model2(solver):
-  solver.setOption("produce-models", "true")
-  sorts = []
-  terms = []
-  with pytest.raises(RuntimeError):
-          solver.getModel(sorts, terms)
-
-
-
+    solver.setOption("produce-models", "true")
+    sorts = []
+    terms = []
+    with pytest.raises(RuntimeError):
+        solver.getModel(sorts, terms)
 
 
 def test_get_model3(solver):
-  solver.setOption("produce-models", "true")
-  sorts = []
-  terms = []
-  solver.checkSat()
-  solver.getModel(sorts, terms)
-  integer = solver.getIntegerSort()
-  sorts.push_back(integer)
-  with pytest.raises(RuntimeError):
-          solver.getModel(sorts, terms)
-
-
-
+    solver.setOption("produce-models", "true")
+    sorts = []
+    terms = []
+    solver.checkSat()
+    solver.getModel(sorts, terms)
+    integer = solver.getIntegerSort()
+    sorts.push_back(integer)
+    with pytest.raises(RuntimeError):
+        solver.getModel(sorts, terms)
 
 
 def test_get_model_domain_elements(solver):
-  solver.setOption("produce-models", "true")
-  uSort = solver.mkUninterpretedSort("u")
-  intSort = solver.getIntegerSort()
-  x = solver.mkConst(uSort, "x")
-  y = solver.mkConst(uSort, "y")
-  z = solver.mkConst(uSort, "z")
-  f = solver.mkTerm(DISTINCT, x, y, z)
-  solver.assertFormula(f)
-  solver.checkSat()
-  solver.getModelDomainElements(uSort)
-  assert solver.getModelDomainElements(uSort).size() >= 3
-  with pytest.raises(RuntimeError):
-          solver.getModelDomainElements(intSort)
-
-
-
+    solver.setOption("produce-models", "true")
+    uSort = solver.mkUninterpretedSort("u")
+    intSort = solver.getIntegerSort()
+    x = solver.mkConst(uSort, "x")
+    y = solver.mkConst(uSort, "y")
+    z = solver.mkConst(uSort, "z")
+    f = solver.mkTerm(DISTINCT, x, y, z)
+    solver.assertFormula(f)
+    solver.checkSat()
+    solver.getModelDomainElements(uSort)
+    assert solver.getModelDomainElements(uSort).size() >= 3
+    with pytest.raises(RuntimeError):
+        solver.getModelDomainElements(intSort)
 
 
 def test_get_model_domain_elements2(solver):
-  solver.setOption("produce-models", "true")
-  solver.setOption("finite-model-find", "true")
-  uSort = solver.mkUninterpretedSort("u")
-  x = solver.mkVar(uSort, "x")
-  y = solver.mkVar(uSort, "y")
-  eq = solver.mkTerm(EQUAL, x, y)
-  bvl = solver.mkTerm(VARIABLE_LIST, x, y)
-  f = solver.mkTerm(FORALL, bvl, eq)
-  solver.assertFormula(f)
-  solver.checkSat()
-  solver.getModelDomainElements(uSort)
-  # a model for the above must interpret u as size 1
-  assert solver.getModelDomainElements(uSort).size() == 1
-
-
-
-
-
-  
-
-
+    solver.setOption("produce-models", "true")
+    solver.setOption("finite-model-find", "true")
+    uSort = solver.mkUninterpretedSort("u")
+    x = solver.mkVar(uSort, "x")
+    y = solver.mkVar(uSort, "y")
+    eq = solver.mkTerm(EQUAL, x, y)
+    bvl = solver.mkTerm(VARIABLE_LIST, x, y)
+    f = solver.mkTerm(FORALL, bvl, eq)
+    solver.assertFormula(f)
+    solver.checkSat()
+    solver.getModelDomainElements(uSort)
+    # a model for the above must interpret u as size 1
+    assert solver.getModelDomainElements(uSort).size() == 1
 
 
 def test_get_option_names(solver):
-  names = solver.getOptionNames()
-  assert names.size() > 100
-  assert "verbose" in names
-  assert "foobar" not in names
-
-
-
+    names = solver.getOptionNames()
+    assert names.size() > 100
+    assert "verbose" in names
+    assert "foobar" not in names
 
 
 def test_get_quantifier_elimination(solver):
-  x = solver.mkVar(solver.getBooleanSort(), "x")
-  forall =\
-      solver.mkTerm(FORALL,\
-                      solver.mkTerm(VARIABLE_LIST, x),\
-                      solver.mkTerm(OR, x, solver.mkTerm(NOT, x)))
-  with pytest.raises(RuntimeError):
-              solver.getQuantifierElimination(Term())
-  with pytest.raises(RuntimeError):
-          solver.getQuantifierElimination(Solver().mkBoolean(false))
-  solver.getQuantifierElimination(forall)
-
-
-
+    x = solver.mkVar(solver.getBooleanSort(), "x")
+    forall =\
+        solver.mkTerm(FORALL,\
+                        solver.mkTerm(VARIABLE_LIST, x),\
+                        solver.mkTerm(OR, x, solver.mkTerm(NOT, x)))
+    with pytest.raises(RuntimeError):
+        solver.getQuantifierElimination(Term())
+    with pytest.raises(RuntimeError):
+        solver.getQuantifierElimination(Solver().mkBoolean(false))
+    solver.getQuantifierElimination(forall)
 
 
 def test_get_quantifier_elimination_disjunct(solver):
-  x = solver.mkVar(solver.getBooleanSort(), "x")
-  forall =\
-      solver.mkTerm(FORALL,\
-                      solver.mkTerm(VARIABLE_LIST, x),\
-                      solver.mkTerm(OR, x, solver.mkTerm(NOT, x)))
-  with pytest.raises(RuntimeError):
-              solver.getQuantifierEliminationDisjunct(Term())
-  with pytest.raises(RuntimeError):
-      solver.getQuantifierEliminationDisjunct(Solver().mkBoolean(false))
-  solver.getQuantifierEliminationDisjunct(forall)
-
-
-
+    x = solver.mkVar(solver.getBooleanSort(), "x")
+    forall =\
+        solver.mkTerm(FORALL,\
+                        solver.mkTerm(VARIABLE_LIST, x),\
+                        solver.mkTerm(OR, x, solver.mkTerm(NOT, x)))
+    with pytest.raises(RuntimeError):
+        solver.getQuantifierEliminationDisjunct(Term())
+    with pytest.raises(RuntimeError):
+        solver.getQuantifierEliminationDisjunct(Solver().mkBoolean(false))
+    solver.getQuantifierEliminationDisjunct(forall)
 
 
 def test_get_synth_solutions(solver):
-  solver.setOption("lang", "sygus2")
-  solver.setOption("incremental", "false")
+    solver.setOption("lang", "sygus2")
+    solver.setOption("incremental", "false")
 
-  nullTerm
-  x = solver.mkBoolean(false)
-  f = solver.synthFun("f", [] , solver.getBooleanSort())
+    nullTerm
+    x = solver.mkBoolean(false)
+    f = solver.synthFun("f", [], solver.getBooleanSort())
 
-  with pytest.raises(RuntimeError):
-          solver.getSynthSolutions()
-  with pytest.raises(RuntimeError):
-          solver.getSynthSolutions(f)
+    with pytest.raises(RuntimeError):
+        solver.getSynthSolutions()
+    with pytest.raises(RuntimeError):
+        solver.getSynthSolutions(f)
 
-  solver.checkSynth()
+    solver.checkSynth()
 
-  solver.getSynthSolutions(f)
-  solver.getSynthSolutions(f, f)
+    solver.getSynthSolutions(f)
+    solver.getSynthSolutions(f, f)
 
-  with pytest.raises(RuntimeError):
-          solver.getSynthSolutions()
-  with pytest.raises(RuntimeError):
-          solver.getSynthSolutions(nullTerm)
-  with pytest.raises(RuntimeError):
-          solver.getSynthSolutions(x)
+    with pytest.raises(RuntimeError):
+        solver.getSynthSolutions()
+    with pytest.raises(RuntimeError):
+        solver.getSynthSolutions(nullTerm)
+    with pytest.raises(RuntimeError):
+        solver.getSynthSolutions(x)
 
-  slv
-  with pytest.raises(RuntimeError):
-          slv.getSynthSolutions(x)
-
-
-
+    slv
+    with pytest.raises(RuntimeError):
+        slv.getSynthSolutions(x)
 
 
 def test_get_value_sep_heap1(solver):
-  solver.setLogic("QF_BV")
-  solver.setOption("incremental", "false")
-  solver.setOption("produce-models", "true")
-  t = solver.mkTrue()
-  solver.assertFormula(t)
-  with pytest.raises(RuntimeError):
-          solver.getValueSepHeap()
-
-
-
+    solver.setLogic("QF_BV")
+    solver.setOption("incremental", "false")
+    solver.setOption("produce-models", "true")
+    t = solver.mkTrue()
+    solver.assertFormula(t)
+    with pytest.raises(RuntimeError):
+        solver.getValueSepHeap()
 
 
 def test_get_value_sep_heap2(solver):
-  solver.setLogic("ALL")
-  solver.setOption("incremental", "false")
-  solver.setOption("produce-models", "false")
-  checkSimpleSeparationConstraints(solver)
-  with pytest.raises(RuntimeError):
-          solver.getValueSepHeap()
-
-
-
+    solver.setLogic("ALL")
+    solver.setOption("incremental", "false")
+    solver.setOption("produce-models", "false")
+    checkSimpleSeparationConstraints(solver)
+    with pytest.raises(RuntimeError):
+        solver.getValueSepHeap()
 
 
 def test_get_value_sep_heap3(solver):
-  solver.setLogic("ALL")
-  solver.setOption("incremental", "false")
-  solver.setOption("produce-models", "true")
-  t = solver.mkFalse()
-  solver.assertFormula(t)
-  solver.checkSat()
-  with pytest.raises(RuntimeError):
-          solver.getValueSepHeap()
-
-
-
+    solver.setLogic("ALL")
+    solver.setOption("incremental", "false")
+    solver.setOption("produce-models", "true")
+    t = solver.mkFalse()
+    solver.assertFormula(t)
+    solver.checkSat()
+    with pytest.raises(RuntimeError):
+        solver.getValueSepHeap()
 
 
 def test_get_value_sep_heap4(solver):
-  solver.setLogic("ALL")
-  solver.setOption("incremental", "false")
-  solver.setOption("produce-models", "true")
-  t = solver.mkTrue()
-  solver.assertFormula(t)
-  solver.checkSat()
-  with pytest.raises(RuntimeError):
-          solver.getValueSepHeap()
-
-
-
+    solver.setLogic("ALL")
+    solver.setOption("incremental", "false")
+    solver.setOption("produce-models", "true")
+    t = solver.mkTrue()
+    solver.assertFormula(t)
+    solver.checkSat()
+    with pytest.raises(RuntimeError):
+        solver.getValueSepHeap()
 
 
 def test_get_value_sep_heap5(solver):
-  solver.setLogic("ALL")
-  solver.setOption("incremental", "false")
-  solver.setOption("produce-models", "true")
-  checkSimpleSeparationConstraints(solver)
-  solver.getValueSepHeap()
-
-
-
+    solver.setLogic("ALL")
+    solver.setOption("incremental", "false")
+    solver.setOption("produce-models", "true")
+    checkSimpleSeparationConstraints(solver)
+    solver.getValueSepHeap()
 
 
 def test_get_value_sep_nil1(solver):
-  solver.setLogic("QF_BV")
-  solver.setOption("incremental", "false")
-  solver.setOption("produce-models", "true")
-  t = solver.mkTrue()
-  solver.assertFormula(t)
-  with pytest.raises(RuntimeError):
-          solver.getValueSepNil()
-
-
-
+    solver.setLogic("QF_BV")
+    solver.setOption("incremental", "false")
+    solver.setOption("produce-models", "true")
+    t = solver.mkTrue()
+    solver.assertFormula(t)
+    with pytest.raises(RuntimeError):
+        solver.getValueSepNil()
 
 
 def test_get_value_sep_nil2(solver):
-  solver.setLogic("ALL")
-  solver.setOption("incremental", "false")
-  solver.setOption("produce-models", "false")
-  checkSimpleSeparationConstraints(solver)
-  with pytest.raises(RuntimeError):
-          solver.getValueSepNil()
-
-
-
+    solver.setLogic("ALL")
+    solver.setOption("incremental", "false")
+    solver.setOption("produce-models", "false")
+    checkSimpleSeparationConstraints(solver)
+    with pytest.raises(RuntimeError):
+        solver.getValueSepNil()
 
 
 def test_get_value_sep_nil3(solver):
-  solver.setLogic("ALL")
-  solver.setOption("incremental", "false")
-  solver.setOption("produce-models", "true")
-  t = solver.mkFalse()
-  solver.assertFormula(t)
-  solver.checkSat()
-  with pytest.raises(RuntimeError):
-          solver.getValueSepNil()
-
-
-
+    solver.setLogic("ALL")
+    solver.setOption("incremental", "false")
+    solver.setOption("produce-models", "true")
+    t = solver.mkFalse()
+    solver.assertFormula(t)
+    solver.checkSat()
+    with pytest.raises(RuntimeError):
+        solver.getValueSepNil()
 
 
 def test_get_value_sep_nil4(solver):
-  solver.setLogic("ALL")
-  solver.setOption("incremental", "false")
-  solver.setOption("produce-models", "true")
-  t = solver.mkTrue()
-  solver.assertFormula(t)
-  solver.checkSat()
-  with pytest.raises(RuntimeError):
-          solver.getValueSepNil()
-
-
-
+    solver.setLogic("ALL")
+    solver.setOption("incremental", "false")
+    solver.setOption("produce-models", "true")
+    t = solver.mkTrue()
+    solver.assertFormula(t)
+    solver.checkSat()
+    with pytest.raises(RuntimeError):
+        solver.getValueSepNil()
 
 
 def test_get_value_sep_nil5(solver):
-  solver.setLogic("ALL")
-  solver.setOption("incremental", "false")
-  solver.setOption("produce-models", "true")
-  checkSimpleSeparationConstraints(solver)
-  solver.getValueSepNil()
-
-
-
+    solver.setLogic("ALL")
+    solver.setOption("incremental", "false")
+    solver.setOption("produce-models", "true")
+    checkSimpleSeparationConstraints(solver)
+    solver.getValueSepNil()
 
 
 def test_is_model_core_symbol(solver):
-  solver.setOption("produce-models", "true")
-  solver.setOption("model-cores", "simple")
-  uSort = solver.mkUninterpretedSort("u")
-  x = solver.mkConst(uSort, "x")
-  y = solver.mkConst(uSort, "y")
-  z = solver.mkConst(uSort, "z")
-  zero = solver.mkInteger(0)
-  f = solver.mkTerm(NOT, solver.mkTerm(EQUAL, x, y))
-  solver.assertFormula(f)
-  solver.checkSat()
-  assert solver.isModelCoreSymbol(x)
-  assert solver.isModelCoreSymbol(y)
-  assert not solver.isModelCoreSymbol(z)
-  with pytest.raises(RuntimeError):
-          solver.isModelCoreSymbol(zero)
-
-
-
+    solver.setOption("produce-models", "true")
+    solver.setOption("model-cores", "simple")
+    uSort = solver.mkUninterpretedSort("u")
+    x = solver.mkConst(uSort, "x")
+    y = solver.mkConst(uSort, "y")
+    z = solver.mkConst(uSort, "z")
+    zero = solver.mkInteger(0)
+    f = solver.mkTerm(NOT, solver.mkTerm(EQUAL, x, y))
+    solver.assertFormula(f)
+    solver.checkSat()
+    assert solver.isModelCoreSymbol(x)
+    assert solver.isModelCoreSymbol(y)
+    assert not solver.isModelCoreSymbol(z)
+    with pytest.raises(RuntimeError):
+        solver.isModelCoreSymbol(zero)
 
 
 def test_issue5893(solver):
-  slv = pycvc5.Solver()
-  bvsort4 = solver.mkBitVectorSort(4)
-  bvsort8 = solver.mkBitVectorSort(8)
-  arrsort = solver.mkArraySort(bvsort4, bvsort8)
-  arr = solver.mkConst(arrsort, "arr")
-  idx = solver.mkConst(bvsort4, "idx")
-  ten = solver.mkBitVector(8, "10", 10)
-  sel = solver.mkTerm(SELECT, arr, idx)
-  distinct = solver.mkTerm(DISTINCT, sel, ten)
-  distinct.getOp()
-
-
-
+    slv = pycvc5.Solver()
+    bvsort4 = solver.mkBitVectorSort(4)
+    bvsort8 = solver.mkBitVectorSort(8)
+    arrsort = solver.mkArraySort(bvsort4, bvsort8)
+    arr = solver.mkConst(arrsort, "arr")
+    idx = solver.mkConst(bvsort4, "idx")
+    ten = solver.mkBitVector(8, "10", 10)
+    sel = solver.mkTerm(SELECT, arr, idx)
+    distinct = solver.mkTerm(DISTINCT, sel, ten)
+    distinct.getOp()
 
 
 def test_issue7000(solver):
-  s1 = solver.getIntegerSort()
-  s2 = solver.mkFunctionSort(s1, s1)
-  s3 = solver.getRealSort()
-  t4 = solver.mkPi()
-  t7 = solver.mkConst(s3, "_x5")
-  t37 = solver.mkConst(s2, "_x32")
-  t59 = solver.mkConst(s2, "_x51")
-  t72 = solver.mkTerm(EQUAL, t37, t59)
-  t74 = solver.mkTerm(GT, t4, t7)
-  # throws logic exception since logic is not higher order by default
-  with pytest.raises(RuntimeError):
-          solver.checkEntailed(t72, t74, t72, t72)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    s1 = solver.getIntegerSort()
+    s2 = solver.mkFunctionSort(s1, s1)
+    s3 = solver.getRealSort()
+    t4 = solver.mkPi()
+    t7 = solver.mkConst(s3, "_x5")
+    t37 = solver.mkConst(s2, "_x32")
+    t59 = solver.mkConst(s2, "_x51")
+    t72 = solver.mkTerm(EQUAL, t37, t59)
+    t74 = solver.mkTerm(GT, t4, t7)
+    # throws logic exception since logic is not higher order by default
+    with pytest.raises(RuntimeError):
+        solver.checkEntailed(t72, t74, t72, t72)
 
 
 def test_mk_sygus_var(solver):
-  boolSort = solver.getBooleanSort()
-  intSort = solver.getIntegerSort()
-  funSort = solver.mkFunctionSort(intSort, boolSort)
+    boolSort = solver.getBooleanSort()
+    intSort = solver.getIntegerSort()
+    funSort = solver.mkFunctionSort(intSort, boolSort)
 
-  solver.mkSygusVar(boolSort)
-  solver.mkSygusVar(funSort)
-  solver.mkSygusVar(boolSort, "b")
-  solver.mkSygusVar(funSort, "")
-  with pytest.raises(RuntimeError):
-          solver.mkSygusVar(Sort())
-  with pytest.raises(RuntimeError):
-          solver.mkSygusVar(solver.getNullSort(), "a")
-  slv
-  with pytest.raises(RuntimeError):
-          slv.mkSygusVar(boolSort)
-
-
-
-
-
-
-
-
+    solver.mkSygusVar(boolSort)
+    solver.mkSygusVar(funSort)
+    solver.mkSygusVar(boolSort, "b")
+    solver.mkSygusVar(funSort, "")
+    with pytest.raises(RuntimeError):
+        solver.mkSygusVar(Sort())
+    with pytest.raises(RuntimeError):
+        solver.mkSygusVar(solver.getNullSort(), "a")
+    slv
+    with pytest.raises(RuntimeError):
+        slv.mkSygusVar(boolSort)
 
 
 def test_synth_fun(solver):
-  null = solver.getNullSort()
-  boolean = solver.getBooleanSort()
-  integer = solver.getIntegerSort()
+    null = solver.getNullSort()
+    boolean = solver.getBooleanSort()
+    integer = solver.getIntegerSort()
 
-  nullTerm
-  x = solver.mkVar(boolean)
+    nullTerm
+    x = solver.mkVar(boolean)
 
-  start1 = solver.mkVar(boolean)
-  start2 = solver.mkVar(integer)
+    start1 = solver.mkVar(boolean)
+    start2 = solver.mkVar(integer)
 
-  g1 = solver.mkSygusGrammar(x, {start1})
-  g1.addRule(start1, solver.mkBoolean(false)) 
+    g1 = solver.mkSygusGrammar(x, {start1})
+    g1.addRule(start1, solver.mkBoolean(false))
 
-  g2 = solver.mkSygusGrammar(x, {start2})
-  g2.addRule(start2, solver.mkInteger(0))
+    g2 = solver.mkSygusGrammar(x, {start2})
+    g2.addRule(start2, solver.mkInteger(0))
 
-  solver.synthFun("", [] , boolean)
-  solver.synthFun("f1", x, boolean)
-  solver.synthFun("f2", x, boolean, g1)
-
-  with pytest.raises(RuntimeError):
-          solver.synthFun("f3", nullTerm, boolean)
-  with pytest.raises(RuntimeError):
-          solver.synthFun("f4", [] , null)
-  with pytest.raises(RuntimeError):
-          solver.synthFun("f6", x, boolean, g2)
-  slv
-  x2 = slv.mkVar(slv.getBooleanSort())
-  slv.synthFun("f1", x2, slv.getBooleanSort())
-  with pytest.raises(RuntimeError):
-          slv.synthFun("", [] , solver.getBooleanSort())
-  with pytest.raises(RuntimeError):
-          slv.synthFun("f1", x, solver.getBooleanSort())
-
-
-
-
-
-  def test_tuple_project(solver):
-    sorts = [solver.getBooleanSort(),\
-                               solver.getIntegerSort(),\
-                               solver.getStringSort(),\
-                               solver.mkSetSort(solver.getStringSort())]
-    elements = [\
-        solver.mkBoolean(true), \
-        solver.mkInteger(3),\
-        solver.mkString("C"),\
-        solver.mkTerm(SET_SINGLETON, solver.mkString("Z"))]
-
-    tuple = solver.mkTuple(sorts, elements)
-
-    indices1 = []
-    indices2 = [0]
-    indices3 = [0, 1]
-    indices4 = [0, 0, 2, 2, 3, 3, 0]
-    indices5 = [4]
-    indices6 = [0, 4]
-
- 
-    solver.mkTerm(solver.mkOp(TUPLE_PROJECT, indices1), tuple)
- 
-    solver.mkTerm(solver.mkOp(TUPLE_PROJECT, indices2), tuple)
- 
-    solver.mkTerm(solver.mkOp(TUPLE_PROJECT, indices3), tuple)
- 
-    solver.mkTerm(solver.mkOp(TUPLE_PROJECT, indices4), tuple)
+    solver.synthFun("", [], boolean)
+    solver.synthFun("f1", x, boolean)
+    solver.synthFun("f2", x, boolean, g1)
 
     with pytest.raises(RuntimeError):
+        solver.synthFun("f3", nullTerm, boolean)
+    with pytest.raises(RuntimeError):
+        solver.synthFun("f4", [], null)
+    with pytest.raises(RuntimeError):
+        solver.synthFun("f6", x, boolean, g2)
+    slv
+    x2 = slv.mkVar(slv.getBooleanSort())
+    slv.synthFun("f1", x2, slv.getBooleanSort())
+    with pytest.raises(RuntimeError):
+        slv.synthFun("", [], solver.getBooleanSort())
+    with pytest.raises(RuntimeError):
+        slv.synthFun("f1", x, solver.getBooleanSort())
+
+    def test_tuple_project(solver):
+        sorts = [solver.getBooleanSort(),\
+                                   solver.getIntegerSort(),\
+                                   solver.getStringSort(),\
+                                   solver.mkSetSort(solver.getStringSort())]
+        elements = [\
+            solver.mkBoolean(true), \
+            solver.mkInteger(3),\
+            solver.mkString("C"),\
+            solver.mkTerm(SET_SINGLETON, solver.mkString("Z"))]
+
+        tuple = solver.mkTuple(sorts, elements)
+
+        indices1 = []
+        indices2 = [0]
+        indices3 = [0, 1]
+        indices4 = [0, 0, 2, 2, 3, 3, 0]
+        indices5 = [4]
+        indices6 = [0, 4]
+
+        solver.mkTerm(solver.mkOp(TUPLE_PROJECT, indices1), tuple)
+
+        solver.mkTerm(solver.mkOp(TUPLE_PROJECT, indices2), tuple)
+
+        solver.mkTerm(solver.mkOp(TUPLE_PROJECT, indices3), tuple)
+
+        solver.mkTerm(solver.mkOp(TUPLE_PROJECT, indices4), tuple)
+
+        with pytest.raises(RuntimeError):
             solver.mkTerm(solver.mkOp(TUPLE_PROJECT, indices5), tuple)
-    with pytest.raises(RuntimeError):
+        with pytest.raises(RuntimeError):
             solver.mkTerm(solver.mkOp(TUPLE_PROJECT, indices6), tuple)
 
-    indices = [0, 3, 2, 0, 1, 2]
+        indices = [0, 3, 2, 0, 1, 2]
 
-    op = solver.mkOp(TUPLE_PROJECT, indices)
-    projection = solver.mkTerm(op, tuple)
+        op = solver.mkOp(TUPLE_PROJECT, indices)
+        projection = solver.mkTerm(op, tuple)
 
-    datatype = tuple.getSort().getDatatype()
-    constructor = datatype[0]
+        datatype = tuple.getSort().getDatatype()
+        constructor = datatype[0]
 
-    for i in range(indices.size()):
-    
-     selectorTerm = constructor[indices[i]].getSelectorTerm()
-     selectedTerm = solver.mkTerm(APPLY_SELECTOR, selectorTerm, tuple)
-     simplifiedTerm = solver.simplify(selectedTerm)
-     assert elements[indices[i]] == simplifiedTerm
-    
+        for i in range(indices.size()):
 
-     assert "((_ tuple_project 0 3 2 0 1 2) (tuple true 3 \"C\" (set.singleton \"Z\")))" == str(projection)
+            selectorTerm = constructor[indices[i]].getSelectorTerm()
+            selectedTerm = solver.mkTerm(APPLY_SELECTOR, selectorTerm, tuple)
+            simplifiedTerm = solver.simplify(selectedTerm)
+            assert elements[indices[i]] == simplifiedTerm
 
+            assert "((_ tuple_project 0 3 2 0 1 2) (tuple true 3 \"C\" (set.singleton \"Z\")))" == str(
+                projection)
 
 
 # TODO!!!!!!!!!!!! fix these
@@ -2887,19 +2703,19 @@ def test_synth_fun(solver):
 #   solver.setOption("output", "inst")
 #   assert solver.isOutputOn("inst")
 #   assert cvc5::null_os.rdbuf() == solver.getOutput("inst").rdbuf()
-# 
-# 
+#
+#
 # def test_get_option_info(solver):
-#   
+#
 #     EXPECT_THROW(solver.getOptionInfo("asdf-invalid")
-#   
-#   
+#
+#
 #     api::OptionInfo info = solver.getOptionInfo("verbose")
 #     EXPECT_EQ("verbose", info.name)
 #     EXPECT_EQ([], info.aliases)
 #     EXPECT_TRUE(std::holds_alternative<OptionInfo::VoidInfo>(info.valueInfo))
-#   
-#   
+#
+#
 #     # int64 type with default
 #     api::OptionInfo info = solver.getOptionInfo("verbosity")
 #     EXPECT_EQ("verbosity", info.name)
@@ -2911,8 +2727,8 @@ def test_synth_fun(solver):
 #     EXPECT_EQ(0, numInfo.currentValue)
 #     EXPECT_FALSE(numInfo.minimum || numInfo.maximum)
 #     assert info.intValue() == 0
-#   
-#   
+#
+#
 #     auto info = solver.getOptionInfo("random-freq")
 #     assert info.name == "random-freq"
 #     assert info.aliases == ["random-frequency"]
@@ -2925,8 +2741,8 @@ def test_synth_fun(solver):
 #     assert ni.minimum == 0.0
 #     assert ni.maximum == 1.0
 #     assert info.doubleValue() == 0.0
-#   
-#   
+#
+#
 #     # mode option
 #     api::OptionInfo info = solver.getOptionInfo("output")
 #     EXPECT_EQ("output", info.name)
