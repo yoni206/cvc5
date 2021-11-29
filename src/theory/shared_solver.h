@@ -126,7 +126,7 @@ class SharedSolver : protected EnvObj
                                TNode b,
                                bool value);
   /** Send lemma to the theory engine, atomsTo is the theory to send atoms to */
-  void sendLemma(TrustNode trn, TheoryId atomsTo=theory::THEORY_LAST, InferenceId id);
+  void sendLemma(TrustNode trn, TheoryId atomsTo=theory::THEORY_LAST, InferenceId id=InferenceId::UNKNOWN);
   /** Send conflict to the theory engine */
   void sendConflict(TrustNode trn, InferenceId id);
 
@@ -148,7 +148,7 @@ class SharedSolver : protected EnvObj
   /** making sure that newly created shared terms                                                                                                                                                                                                                     
    * are reference-counter.                                                                                                                                                                                                                                           
    */                                                                                                                                                                                                                                                                 
-  typedef context::CDHashSet<Node, NodeHashFunction> NodeSet;                                                                                                                                                                                                         
+  typedef context::CDHashSet<Node> NodeSet;                                                                                                                                                                                                         
   NodeSet d_keep;                                                                                                                                                                                                                                                     
                                                                                                                                                                                                                                                                       
   /** A Valuation object */                                                                                                                                                                                                                                           

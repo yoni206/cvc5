@@ -16,12 +16,12 @@
 #include "theory/shared_solver.h"
 
 #include "expr/node_visitor.h"
+#include "options/datatypes_options.h"
+#include "options/smt_options.h"
 #include "theory/ee_setup_info.h"
 #include "theory/logic_info.h"
 #include "theory/theory_engine.h"
 #include "theory/theory_inference_manager.h"
-#include "options/datatypes_options.h"                                                                                                                                                                                                                                
-#include "options/smt_options.h"            
 
 namespace cvc5 {
 namespace theory {
@@ -40,12 +40,12 @@ SharedSolver::SharedSolver(Env& env, TheoryEngine& te)
       d_preRegistrationVisitor(env, &te),
       d_sharedTermsVisitor(env, &te, d_sharedTerms),
       d_im(te.theoryOf(THEORY_BUILTIN)->getInferenceManager(),
-      d_keep(d_te.getUserContext())     ) 
+      d_keep(userContext())
 {
-	d_valuation = new Valuation(&d_te); 
+  d_valuation = new Valuation(&d_te); 
 }
 
-SharedSolver::~SharedSolver() {                                                                                                                                                                                                                                       
+SharedSolver::~SharedSolver() {
   delete d_valuation;                                                                                                                                                                                                                                                 
 }     
 
@@ -78,41 +78,41 @@ void SharedSolver::preRegister(TNode atom)
     // equality engine before atom is added. This avoids spurious notifications
     // from the equality engine.
     preRegisterSharedInternal(atom);
-    // additionally, directly add auxiliary shared terms                                                                                                                                                                                                              
-    // specified by the theory.                                                                                                                                                                                                                                       
-    std::vector<Node> sharedTerms;                                                                                                                                                                                                                                    
-    Theory* theory = d_te.theoryOf(t);                                                                                                                                                                                                                                
-    theory->getAuxiliarySharedTerms(t, sharedTerms);                                                                                                                                                                                                                  
-    for (Node n : sharedTerms)                                                                                                                                                                                                                                        
-    {                                                                                                                                                                                                                                                                 
-      Assert (!n.getType().isBoolean() || n.getKind()==kind::BOOLEAN_TERM_VARIABLE);                                                                                                                                                                                  
-      Trace("polite-optimization")                                                                                                                                                                                                                                    
-          << "preRegisterShared: really adding shared term: " << n << std::endl;                                                                                                                                                                                      
-      Trace("polite-optimization")                                                                                                                                                                                                                                    
-          << "preRegisterShared: the shared term was added via atom: " << t                                                                                                                                                                                           
-          << std::endl;                                                                                                                                                                                                                                               
-      TheoryIdSet theories = 0;                                                                                                                                                                                                                                       
-      theories = TheoryIdSetUtil::setInsert(Theory::theoryOf(t), theories);                                                                                                                                                                                           
-      theories = TheoryIdSetUtil::setInsert(Theory::theoryOf(n), theories);                                                                                                                                                                                           
-      theories =                                                                                                                                                                                                                                                      
-          TheoryIdSetUtil::setInsert(Theory::theoryOf(n.getType()), theories);                                                                                                                                                                                        
-      Trace("polite-optimization")                                                                                                                                                                                                                                    
-          << "preRegisterShared: theories: "                                                                                                                                                                                                                          
-          << TheoryIdSetUtil::setToString(theories) << std::endl;                                                                                                                                                                                                     
-      d_keep.insert(n);                                                                                                                                                                                                                                               
-      d_sharedTerms.addSharedTerm(t, n, theories);                                                                                                                                                                                                                    
-                                                                                                                                                                                                                                                                      
-      if (n.getKind() == kind::BOOLEAN_TERM_VARIABLE) {                                                                                                                                                                                                               
-        // add a lemma about the Boolean variable                                                                                                                                                                                                                     
-        NodeManager* nm = NodeManager::currentNM();                                                                                                                                                                                                                   
-        Node pos = n;                                                                                                                                                                                                                                                 
-        Node neg = nm->mkNode(kind::NOT, n);                                                                                                                                                                                                                          
-        Node lemma = nm->mkNode(kind::OR, pos, neg);                                                                                                                                                                                                                  
-        sendLemma(TrustNode::mkTrustLemma(lemma));                                                                                                                                                                                                                    
-      }                                                                                                                                                                                                                                                               
-    }                                                                                                                                 
+    // additionally, directly add auxiliary shared terms
+    // specified by the theory.
+    std::vector<Node> sharedTerms;
+    Theory* theory = d_te.theoryOf(t);
+    theory->getAuxiliarySharedTerms(t, sharedTerms);
+    for (Node n : sharedTerms)
+    {
+      Assert(!n.getType().isBoolean()
+             || n.getKind() == kind::BOOLEAN_TERM_VARIABLE);
+      Trace("polite-optimization")
+          << "preRegisterShared: really adding shared term: " << n << std::endl;
+      Trace("polite-optimization")
+          << "preRegisterShared: the shared term was added via atom: " << t
+          << std::endl;
+      TheoryIdSet theories = 0;
+      theories = TheoryIdSetUtil::setInsert(Theory::theoryOf(t), theories);
+      theories = TheoryIdSetUtil::setInsert(Theory::theoryOf(n), theories);
+      theories =
+          TheoryIdSetUtil::setInsert(Theory::theoryOf(n.getType()), theories);
+      Trace("polite-optimization")
+          << "preRegisterShared: theories: "
+          << TheoryIdSetUtil::setToString(theories) << std::endl;
+      d_keep.insert(n);
+      d_sharedTerms.addSharedTerm(t, n, theories);
 
-
+      if (n.getKind() == kind::BOOLEAN_TERM_VARIABLE)
+      {
+        // add a lemma about the Boolean variable
+        NodeManager* nm = NodeManager::currentNM();
+        Node pos = n;
+        Node neg = nm->mkNode(kind::NOT, n);
+        Node lemma = nm->mkNode(kind::OR, pos, neg);
+        sendLemma(TrustNode::mkTrustLemma(lemma));
+      }
+    }
   }
   else
   {
@@ -182,7 +182,8 @@ bool SharedSolver::propagateSharedEquality(theory::TheoryId theory,
   return true;
 }
 
-bool SharedSolver::isShared(TNode t) const { return d_sharedTerms.isShared(t); }
+bool SharedSolver::isShared(TNode t) const {
+  return d_sharedTerms.isShared(t); }
 
 void SharedSolver::sendLemma(TrustNode trn, TheoryId atomsTo, InferenceId id)
 {
