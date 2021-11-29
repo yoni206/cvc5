@@ -270,6 +270,12 @@ class Theory : protected EnvObj
   virtual void notifyInConflict();
 
  public:
+  virtual void getAuxiliarySharedTerms(Node atom,                                                                                                                                                                                                                     
+                                       std::vector<Node>& sharedTerms)                                                                                                                                                                                                
+  {                                                                                                                                                                                                                                                                   
+  }                                                                                                                                                                                                                                                                   
+                                                                            
+
   //--------------------------------- initialization
   /**
    * @return The theory rewriter associated with this theory.

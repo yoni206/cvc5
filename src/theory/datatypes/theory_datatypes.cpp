@@ -1480,15 +1480,16 @@ bool TheoryDatatypes::instantiate(EqcInfo* eqc, Node n)
   // may contribute to conflicts due to cardinality (good examples of this are
   // regress0/datatypes/dt-param-card4-bool-sat.smt2 and
   // regress0/datatypes/list-bool.smt2).
-  bool forceLemma;
-  if (options().datatypes.dtPoliteOptimize)
-  {
-    forceLemma = dt[index].hasFiniteExternalArgType(ttn);
-  }
-  else
-  {
-    forceLemma = dt.involvesExternalType();
-  }
+
+  bool forceLemma;                                                                                                                                                                                                                                                    
+  if (options::politeOptimize() == options::PoliteOptimizationMode::NONE) {                                                                                                                                                                                           
+    forceLemma = dt.involvesExternalType();                                                                                                                                                                                                                           
+  } else if (options::politeOptimize() == options::PoliteOptimizationMode::COARSE) {                                                                                                                                                                                  
+    forceLemma = dt[index].hasFiniteExternalArgType(ttn);                                                                                                                                                                                                             
+  } else {                                                                                                                                                                                                                                                            
+    Assert(options::politeOptimize() == options::PoliteOptimizationMode::FINE);                                                                                                                                                                                       
+    forceLemma = false;                                                                                                                                                                                                                                               
+  }                                                                                                    
   Trace("datatypes-infer-debug") << "DtInstantiate : " << eqc << " " << eq
                                  << " forceLemma = " << forceLemma << std::endl;
   Trace("datatypes-infer") << "DtInfer : instantiate : " << eq << " by " << exp
@@ -1939,6 +1940,44 @@ std::pair<bool, Node> TheoryDatatypes::entailmentCheck(TNode lit)
   }
   return make_pair(false, Node::null());
 }
+
+void TheoryDatatypes::getAuxiliarySharedTerms(Node atom,                                                                                                                                                                                                              
+                                              std::vector<Node>& sharedTerms)                                                                                                                                                                                         
+{                                                                                                                                                                                                                                                                     
+  if (options::politeOptimize() == options::PoliteOptimizationMode::FINE) {                                                                                                                                                                                           
+    if (atom.getKind() == APPLY_TESTER)                                                                                                                                                                                                                               
+    {                                                                                                                                                                                                                                                                 
+      Trace("polite-optimization") << "processing atom: " << atom << std::endl;                                                                                                                                                                                       
+      // atom = is_c(x)                                                                                                                                                                                                                                               
+      // dtTerm := x                                                                                                                                                                                                                                                  
+      Node dtTerm = atom[0];                                                                                                                                                                                                                                          
+      TypeNode tn = dtTerm.getType();                                                                                                                                                                                                                                 
+                                                                                                                                                                                                                                                                      
+      // get the constructor and datatype related to the tester                                                                                                                                                                                                       
+      size_t cindex = utils::isTester(atom);                                                                                                                                                                                                                          
+      Assert(cindex >= 0);                                                                                                                                                                                                                                            
+      const DType& dt = utils::datatypeOf(atom.getOperator());                                                                                                                                                                                                        
+      Node instCons = getInstantiateCons(dtTerm, dt, cindex);                                                                                                                                                                                                         
+      Node pp = d_valuation.getPreprocessedTerm(instCons);                                                                                                                                                                                                            
+      Trace("polite-optimization")                                                                                                                                                                                                                                    
+          << "preprocessed constructor: " << pp << std::endl;                                                                                                                                                                                                         
+      for (Node child : pp)                                                                                                                                                                                                                                           
+      {                                                                                                                                                                                                                                                               
+        Trace("polite-optimization") << "child: " << child << std::endl;                                                                                                                                                                                              
+        if (child.getType().isFinite() && !child.getType().isDatatype())                                                                                                                                                                                              
+        {                                                                                                                                                                                                                                                             
+          Trace("polite-optimization")                                                                                                                                                                                                                                
+              << "getAuxiliarySharedTerms: adding shared term:" << child                                                                                                                                                                                              
+              << std::endl;                                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                      
+          // add the term                                                                                                                                                                                                                                             
+          sharedTerms.push_back(child);                                                                                                                                                                                                                               
+        }                                                                                                                                                                                                                                                             
+      }                                                                                                                                                                                                                                                               
+    }                                                                                                                                                                                                                                                                 
+  }                                                                                                                                                                                                                                                                   
+}                                                                                                                        
+
 
 }  // namespace datatypes
 }  // namespace theory

@@ -25,6 +25,27 @@ name   = "SMT Layer"
   name = "batch"
   help = "Save up all ASSERTions; run nonclausal simplification and clausal (MiniSat) propagation for all of them only after reaching a querying command (CHECKSAT or QUERY or predicate SUBTYPE declaration)."
 
+
+[[option]]                                                                                                                                                                                                                                                            
+  name       = "politeOptimize"                                                                                                                                                                                                                                       
+  smt_name   = "polite-optimize"                                                                                                                                                                                                                                      
+  category   = "experimental"                                                                                                                                                                                                                                         
+  long       = "polite-optimize=MODE"                                                                                                                                                                                                                                 
+  type       = "PoliteOptimizationMode"                                                                                                                                                                                                                               
+  default    = "NONE"                                                                                                                                                                                                                                                 
+  read_only  = true                                                                                                                                                                                                                                                   
+  help       = "turn on optimization for polite combination with a mode"                                                                                                                                                                                              
+  help_mode       = "turn on optimization for polite combination with a mode"                                                                                                                                                                                         
+[[option.mode.NONE]]                                                                                                                                                                                                                                                  
+  name = "none"                                                                                                                                                                                                                                                       
+  help = "Do not optimize polite combination"                                                                                                                                                                                                                         
+[[option.mode.COARSE]]                                                                                                                                                                                                                                                
+  name = "coarse"                                                                                                                                                                                                                                                     
+  help = "Optimize only when no finite type exist"                                                                                                                                                                                                                    
+[[option.mode.FINE]]                                                                                                                                                                                                                                                  
+  name = "fine"                                                                                                                                                                                                                                                       
+  help = "Optimize whenever possible"                                    
+
 [[option]]
   name       = "doStaticLearning"
   category   = "regular"

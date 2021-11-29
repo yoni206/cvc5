@@ -24,6 +24,8 @@
 #include "theory/shared_terms_database.h"
 #include "theory/term_registration_visitor.h"
 #include "theory/valuation.h"
+#include "context/cdhashmap.h"                                                                                                                                                                                                                                        
+#include "context/cdhashset.h"       
 
 namespace cvc5 {
 
@@ -49,7 +51,8 @@ class SharedSolver : protected EnvObj
 {
  public:
   SharedSolver(Env& env, TheoryEngine& te);
-  virtual ~SharedSolver() {}
+  virtual ~SharedSolver();
+
   //------------------------------------- initialization
   /**
    * Returns true if we need an equality engine, this has the same contract
@@ -123,7 +126,7 @@ class SharedSolver : protected EnvObj
                                TNode b,
                                bool value);
   /** Send lemma to the theory engine, atomsTo is the theory to send atoms to */
-  void sendLemma(TrustNode trn, TheoryId atomsTo, InferenceId id);
+  void sendLemma(TrustNode trn, TheoryId atomsTo=theory::THEORY_LAST, InferenceId id);
   /** Send conflict to the theory engine */
   void sendConflict(TrustNode trn, InferenceId id);
 
@@ -142,6 +145,14 @@ class SharedSolver : protected EnvObj
   SharedTermsVisitor d_sharedTermsVisitor;
   /** Theory inference manager of theory builtin */
   TheoryInferenceManager* d_im;
+  /** making sure that newly created shared terms                                                                                                                                                                                                                     
+   * are reference-counter.                                                                                                                                                                                                                                           
+   */                                                                                                                                                                                                                                                                 
+  typedef context::CDHashSet<Node, NodeHashFunction> NodeSet;                                                                                                                                                                                                         
+  NodeSet d_keep;                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                      
+  /** A Valuation object */                                                                                                                                                                                                                                           
+  Valuation* d_valuation;                                              
 };
 
 }  // namespace theory
