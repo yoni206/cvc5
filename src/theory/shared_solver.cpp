@@ -42,12 +42,10 @@ SharedSolver::SharedSolver(Env& env, TheoryEngine& te)
       d_im(te.theoryOf(THEORY_BUILTIN)->getInferenceManager()),
       d_keep(context())
 {
-  d_valuation = new Valuation(&d_te); 
+  d_valuation = new Valuation(&d_te);
 }
 
-SharedSolver::~SharedSolver() {
-  delete d_valuation;                                                                                                                                                                                                                                                 
-}     
+SharedSolver::~SharedSolver() { delete d_valuation; }
 
 bool SharedSolver::needsEqualityEngine(theory::EeSetupInfo& esi)
 {
@@ -182,8 +180,7 @@ bool SharedSolver::propagateSharedEquality(theory::TheoryId theory,
   return true;
 }
 
-bool SharedSolver::isShared(TNode t) const {
-  return d_sharedTerms.isShared(t); }
+bool SharedSolver::isShared(TNode t) const { return d_sharedTerms.isShared(t); }
 
 void SharedSolver::sendLemma(TrustNode trn, TheoryId atomsTo, InferenceId id)
 {

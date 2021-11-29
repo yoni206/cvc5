@@ -270,11 +270,10 @@ class Theory : protected EnvObj
   virtual void notifyInConflict();
 
  public:
-  virtual void getAuxiliarySharedTerms(Node atom,                                                                                                                                                                                                                     
-                                       std::vector<Node>& sharedTerms)                                                                                                                                                                                                
-  {                                                                                                                                                                                                                                                                   
-  }                                                                                                                                                                                                                                                                   
-                                                                            
+  virtual void getAuxiliarySharedTerms(Node atom,
+                                       std::vector<Node>& sharedTerms)
+  {
+  }
 
   //--------------------------------- initialization
   /**

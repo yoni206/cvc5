@@ -268,12 +268,12 @@ private:
   Node getInstantiateCons(Node n, const DType& dt, int index);
   /** check instantiate, return true if an inference was generated. */
   bool instantiate(EqcInfo* eqc, Node n);
-                                                                                                                                                                                                                                                                     
- /** add selector terms to shared terms                                                                                                                                                                                                                              
-  * for every applied tester                                                                                                                                                                                                                                         
-  */                                                                                                                                                                                                                                                                 
- void getAuxiliarySharedTerms(Node atom,                                                                                                                                                                                                                             
-                              std::vector<Node>& sharedTerms) override;               
+
+  /** add selector terms to shared terms
+   * for every applied tester
+   */
+  void getAuxiliarySharedTerms(Node atom,
+                               std::vector<Node>& sharedTerms) override;
 
  private:
   //equality queries

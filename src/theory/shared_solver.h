@@ -18,14 +18,14 @@
 #ifndef CVC5__THEORY__SHARED_SOLVER__H
 #define CVC5__THEORY__SHARED_SOLVER__H
 
+#include "context/cdhashmap.h"
+#include "context/cdhashset.h"
 #include "expr/node.h"
 #include "smt/env_obj.h"
 #include "theory/inference_id.h"
 #include "theory/shared_terms_database.h"
 #include "theory/term_registration_visitor.h"
 #include "theory/valuation.h"
-#include "context/cdhashmap.h"                                                                                                                                                                                                                                        
-#include "context/cdhashset.h"       
 
 namespace cvc5 {
 
@@ -126,7 +126,9 @@ class SharedSolver : protected EnvObj
                                TNode b,
                                bool value);
   /** Send lemma to the theory engine, atomsTo is the theory to send atoms to */
-  void sendLemma(TrustNode trn, TheoryId atomsTo=theory::THEORY_LAST, InferenceId id=InferenceId::UNKNOWN);
+  void sendLemma(TrustNode trn,
+                 TheoryId atomsTo = theory::THEORY_LAST,
+                 InferenceId id = InferenceId::UNKNOWN);
   /** Send conflict to the theory engine */
   void sendConflict(TrustNode trn, InferenceId id);
 
@@ -145,14 +147,14 @@ class SharedSolver : protected EnvObj
   SharedTermsVisitor d_sharedTermsVisitor;
   /** Theory inference manager of theory builtin */
   TheoryInferenceManager* d_im;
-  /** making sure that newly created shared terms                                                                                                                                                                                                                     
-   * are reference-counter.                                                                                                                                                                                                                                           
-   */                                                                                                                                                                                                                                                                 
-  typedef context::CDHashSet<Node> NodeSet;                                                                                                                                                                                                         
-  NodeSet d_keep;                                                                                                                                                                                                                                                     
-                                                                                                                                                                                                                                                                      
-  /** A Valuation object */                                                                                                                                                                                                                                           
-  Valuation* d_valuation;                                              
+  /** making sure that newly created shared terms
+   * are reference-counter.
+   */
+  typedef context::CDHashSet<Node> NodeSet;
+  NodeSet d_keep;
+
+  /** A Valuation object */
+  Valuation* d_valuation;
 };
 
 }  // namespace theory
