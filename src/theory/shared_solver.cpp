@@ -39,8 +39,8 @@ SharedSolver::SharedSolver(Env& env, TheoryEngine& te)
       d_sharedTerms(env, &d_te),
       d_preRegistrationVisitor(env, &te),
       d_sharedTermsVisitor(env, &te, d_sharedTerms),
-      d_im(te.theoryOf(THEORY_BUILTIN)->getInferenceManager(),
-      d_keep(userContext())
+      d_im(te.theoryOf(THEORY_BUILTIN)->getInferenceManager()),
+      d_keep(context())
 {
   d_valuation = new Valuation(&d_te); 
 }
@@ -81,8 +81,8 @@ void SharedSolver::preRegister(TNode atom)
     // additionally, directly add auxiliary shared terms
     // specified by the theory.
     std::vector<Node> sharedTerms;
-    Theory* theory = d_te.theoryOf(t);
-    theory->getAuxiliarySharedTerms(t, sharedTerms);
+    Theory* theory = d_te.theoryOf(atom);
+    theory->getAuxiliarySharedTerms(atom, sharedTerms);
     for (Node n : sharedTerms)
     {
       Assert(!n.getType().isBoolean()
@@ -90,10 +90,10 @@ void SharedSolver::preRegister(TNode atom)
       Trace("polite-optimization")
           << "preRegisterShared: really adding shared term: " << n << std::endl;
       Trace("polite-optimization")
-          << "preRegisterShared: the shared term was added via atom: " << t
+          << "preRegisterShared: the shared term was added via atom: " << atom
           << std::endl;
       TheoryIdSet theories = 0;
-      theories = TheoryIdSetUtil::setInsert(Theory::theoryOf(t), theories);
+      theories = TheoryIdSetUtil::setInsert(Theory::theoryOf(atom), theories);
       theories = TheoryIdSetUtil::setInsert(Theory::theoryOf(n), theories);
       theories =
           TheoryIdSetUtil::setInsert(Theory::theoryOf(n.getType()), theories);
@@ -101,7 +101,7 @@ void SharedSolver::preRegister(TNode atom)
           << "preRegisterShared: theories: "
           << TheoryIdSetUtil::setToString(theories) << std::endl;
       d_keep.insert(n);
-      d_sharedTerms.addSharedTerm(t, n, theories);
+      d_sharedTerms.addSharedTerm(atom, n, theories);
 
       if (n.getKind() == kind::BOOLEAN_TERM_VARIABLE)
       {
