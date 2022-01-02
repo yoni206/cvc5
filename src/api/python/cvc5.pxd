@@ -296,6 +296,7 @@ cdef extern from "api/cpp/cvc5.h" namespace "cvc5::api":
         void setInfo(string& keyword, const string& value) except +
         void setLogic(const string& logic) except +
         void setOption(const string& option, const string& value) except +
+        void getInterpolant(const Term& conj, Term& output) except +
 
     cdef cppclass Grammar:
         Grammar() except +

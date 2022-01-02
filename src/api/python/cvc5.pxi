@@ -2235,6 +2235,23 @@ cdef class Solver:
         """
         self.csolver.setOption(option.encode(), value.encode())
 
+    def getInterpolant(self, Term conj, Term output):
+        result = self.csolver.getInterpolant(conj.cterm, output.cterm)
+        return result
+
+    def getInterpolantNext(self, Term output):
+        result = self.csolver.getInterpolantNext(output.cterm)
+	return result
+        
+    def getAbduct(self, Term conj, Term output):
+        result = self.csolver.getAbduct(conj.cterm, output.cterm)
+        return result
+
+    def getAbductNext(self, Term output):
+        result = self.csolver.getAbductNext(output.cterm)
+	return result
+
+
 
 cdef class Sort:
     """
