@@ -2235,21 +2235,38 @@ cdef class Solver:
         """
         self.csolver.setOption(option.encode(), value.encode())
 
-    def getInterpolant(self, Term conj, Term output):
-        result = self.csolver.getInterpolant(conj.cterm, output.cterm)
+    def getInterpolant(self, Term conj, *args):
+        result = False
+        if len(args) == 1:
+            assert isinstance(args[0], Term)
+            result = self.csolver.getInterpolant(conj.cterm, (<Term ?> args[0]).cterm)
+        else:
+            assert len(args) == 2
+            assert isinstance(args[0], Grammar)
+            assert isinstance(args[1], Term)
+            result = self.csolver.getInterpolant(conj.cterm, (<Grammar ?> args[0]).cgrammar, (<Term ?> args[1]).cterm)
         return result
+
 
     def getInterpolantNext(self, Term output):
         result = self.csolver.getInterpolantNext(output.cterm)
-	return result
+        return result
         
-    def getAbduct(self, Term conj, Term output):
-        result = self.csolver.getAbduct(conj.cterm, output.cterm)
+    def getAbduct(self, Term conj, *args):
+        result = False
+        if len(args) == 1:
+            assert isinstance(args[0], Term)
+            result = self.csolver.getAbduct(conj.cterm, (<Term ?> args[0]).cterm)
+        else:
+            assert len(args) == 2
+            assert isinstance(args[0], Grammar)
+            assert isinstance(args[1], Term)
+            result = self.csolver.getAbduct(conj.cterm, (<Grammar ?> args[0]).cgrammar, (<Term ?> args[1]).cterm)
         return result
 
     def getAbductNext(self, Term output):
         result = self.csolver.getAbductNext(output.cterm)
-	return result
+        return result
 
 
 

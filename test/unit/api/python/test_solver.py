@@ -1994,7 +1994,7 @@ def test_get_abduct(solver):
 
     intSort = solver.getIntegerSort()
     zero = solver.mkInteger(0)
-    x = xolver.mkConst(intSort, "x")
+    x = solver.mkConst(intSort, "x")
     y = solver.mkConst(intSort, "y")
 
     solver.assertFormula(solver.mkTerm(Kind.Gt, x, zero))
@@ -2004,15 +2004,14 @@ def test_get_abduct(solver):
     assert not output.isNull() and output.getSort().isBoolean()
 
     boolean = solver.getBooleanSort()
-    truen = solver.mkBoolean(true)
+    truen = solver.mkBoolean(True)
     start = solver.mkVar(boolean)
     output2 = pycvc5.Term(solver)
     g = solver.mkSygusGrammar([], [start])
     conj2 = solver.mkTerm(Kind.Gt, x, zero)
     g.addRule(start, truen)
-    assert solver.getAbduct(conj2, g, outtput2)
+    assert solver.getAbduct(conj2, g, output2)
     assert output2 == truen
-
 
 def test_get_abduct2(solver):
     solver.setLogic("QF_LIA")
@@ -2077,7 +2076,7 @@ def test_get_interpolant_next(solver):
 
     solver.assertFormula(solver.mkTerm(Kind.Gt, solver.mkTerm(Kind.Plus, x, y), zero))
     solver.assertFormula(solver.mkTerm(Kind.Lt, x, zero))
-    conj = solver.mkTerm(Kind.Or, solver.mkTerm(Kind.Gt, solver.mkTerm(Kid.Plus, y, z), zero), solver.mkTerm(Kind.Lt, z, zero))
+    conj = solver.mkTerm(Kind.Or, solver.mkTerm(Kind.Gt, solver.mkTerm(Kind.Plus, y, z), zero), solver.mkTerm(Kind.Lt, z, zero))
     output = pycvc5.Term(solver)
     solver.getInterpolant(conj, output)
     output2 = pycvc5.Term(solver)
@@ -2441,5 +2440,4 @@ def test_tuple_project(solver):
 
         assert "((_ tuple_project 0 3 2 0 1 2) (tuple true 3 \"C\" (set.singleton \"Z\")))" == str(
             projection)
-
 
