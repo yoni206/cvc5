@@ -185,6 +185,14 @@ enum class PfRule : uint32_t
   // where F' and G' are the result of each side of the equation above. Here,
   // original forms are used in a similar manner to MACRO_SR_PRED_INTRO above.
   MACRO_SR_PRED_TRANSFORM,
+  // ======== Annotation
+  // Children: (P1:F)
+  // Arguments: (a1 ... an)
+  // ----------------------------------------
+  // Conclusion: F
+  // The terms a1 ... an can be anything used to annotate the proof node, one
+  // example is where a1 is a theory::InferenceId.
+  ANNOTATION,
   //================================================= Processing rules
   // ======== Remove Term Formulas Axiom
   // Children: none
@@ -1371,7 +1379,7 @@ enum class PfRule : uint32_t
   // secant of p from l to u.
   ARITH_TRANS_SINE_APPROX_BELOW_POS,
 
-  // ================ CAD Lemmas
+  // ================ Coverings Lemmas
   // We use IRP for IndexedRootPredicate.
   //
   // A formula "Interval" describes that a variable (xn is none is given) is
@@ -1388,7 +1396,7 @@ enum class PfRule : uint32_t
   // A formula "Covering" is a set of Intervals, implying that xn can be in
   // neither of these intervals. To be a covering (of the real line), the union
   // of these intervals should be the real numbers.
-  // ======== CAD direct conflict
+  // ======== Coverings direct conflict
   // Children (Cell, A)
   // ---------------------
   // Conclusion: (false)
@@ -1396,15 +1404,15 @@ enum class PfRule : uint32_t
   // over a Cell (in variables x1...xn). It derives that A evaluates to false
   // over the Cell. In the actual algorithm, it means that xn can not be in the
   // topmost interval of the Cell.
-  ARITH_NL_CAD_DIRECT,
-  // ======== CAD recursive interval
+  ARITH_NL_COVERING_DIRECT,
+  // ======== Coverings recursive interval
   // Children (Cell, Covering)
   // ---------------------
   // Conclusion: (false)
   // A recursive interval is generated from a Covering (for xn) over a Cell
   // (in variables x1...xn-1). It generates the conclusion that no xn exists
   // that extends the Cell and satisfies all assumptions.
-  ARITH_NL_CAD_RECURSIVE,
+  ARITH_NL_COVERING_RECURSIVE,
 
   //================================================ Place holder for Lfsc rules
   // ======== Lfsc rule
