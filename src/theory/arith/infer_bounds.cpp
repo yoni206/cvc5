@@ -1,10 +1,10 @@
 /******************************************************************************
  * Top contributors (to current version):
- *   Tim King, Andrew Reynolds
+ *   Tim King, Andres Noetzli, Andrew Reynolds
  *
  * This file is part of the cvc5 project.
  *
- * Copyright (c) 2009-2021 by the authors listed in the file AUTHORS
+ * Copyright (c) 2009-2022 by the authors listed in the file AUTHORS
  * in the top-level source directory and their institutional affiliations.
  * All rights reserved.  See the file COPYING in the top-level source
  * directory for licensing information.
@@ -19,9 +19,9 @@
 #include "theory/arith/infer_bounds.h"
 #include "theory/rewriter.h"
 
-using namespace cvc5::kind;
+using namespace cvc5::internal::kind;
 
-namespace cvc5 {
+namespace cvc5::internal {
 namespace theory {
 namespace arith {
 
@@ -163,9 +163,7 @@ Node InferBoundsResult::getLiteral() const{
     Assert(getValue().infinitesimalSgn() >= 0);
     k = boundIsRational() ? kind::GEQ : kind::GT;
   }
-  Node atom = nm->mkNode(k, getTerm(), qnode);
-  Node lit = Rewriter::rewrite(atom);
-  return lit;
+  return nm->mkNode(k, getTerm(), qnode);
 }
 
 /* If there is a bound, this is a node that explains the bound. */
@@ -270,4 +268,4 @@ std::ostream& operator<<(std::ostream& os,  const Algorithms a){
 
 } /* namespace arith */
 } /* namespace theory */
-}  // namespace cvc5
+}  // namespace cvc5::internal
