@@ -1,6 +1,7 @@
 ; COMMAND-LINE:  --solve-bv-as-int=sum 
 ; COMMAND-LINE:  --solve-bv-as-int=sum  --bv-to-int-use-pow2
 ; EXPECT: sat
+; DISABLE-TESTER: model
 (set-logic BV)
 (declare-fun s () (_ BitVec 3))
 (declare-fun t () (_ BitVec 3))
