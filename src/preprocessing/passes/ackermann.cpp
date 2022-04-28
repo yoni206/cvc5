@@ -52,9 +52,9 @@ void addLemmaForPair(TNode args1,
                      NodeManager* nm)
 {
   Node args_eq;
-
   if (args1.getKind() == kind::APPLY_UF)
   {
+    Trace("ackermann-debug") << "kind is UF" <<std::endl;
     Assert(args1.getOperator() == func);
     Assert(args2.getKind() == kind::APPLY_UF && args2.getOperator() == func);
     Assert(args1.getNumChildren() == args2.getNumChildren());
@@ -77,6 +77,7 @@ void addLemmaForPair(TNode args1,
   }
   else
   {
+    Trace("ackermann-debug") << "kind is not UF" <<std::endl;
     Assert(args1.getKind() == kind::SELECT && args1.getOperator() == func);
     Assert(args2.getKind() == kind::SELECT && args2.getOperator() == func);
     Assert(args1.getNumChildren() == 2);
@@ -88,6 +89,7 @@ void addLemmaForPair(TNode args1,
   }
   Node func_eq = nm->mkNode(kind::EQUAL, args1, args2);
   Node lemma = nm->mkNode(kind::IMPLIES, args_eq, func_eq);
+  Trace("ackermann-debug") << "adding lemma:" << lemma << std::endl;
   assertionsToPreprocess->push_back(lemma);
 }
 
@@ -167,6 +169,9 @@ void collectFunctionsAndLemmas(FunctionToArgsMap& fun_to_args,
       TNode func;
       if (term.getKind() == kind::APPLY_UF || term.getKind() == kind::SELECT)
       {
+	Trace("ackermann-debug") << "storing function of term: " << term << std::endl;
+	Trace("ackermann-debug") << "operator: " << term.getOperator() << std::endl;
+	Trace("ackermann-debug") << "kind: " << term.getKind() << std::endl;
         storeFunctionAndAddLemmas(term.getOperator(),
                                   term,
                                   fun_to_args,
