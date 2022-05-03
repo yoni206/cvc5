@@ -17,6 +17,9 @@
 # Provides CMake files for Python bindings
 check_python_module("skbuild" "scikit-build")
 
+
+message("panda 1:")
+
 # setuptools for installing the module
 check_python_module("setuptools")
 
@@ -34,17 +37,30 @@ execute_process(
     RET_SKBUILD_CMAKE_MODULE_PATH
 )
 
+message("panda 2:")
+execute_process(COMMAND python3 "-c" "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))" OUTPUT_VARIABLE PYTHON_LIBRARY)
+message("panda 3: " ${PYTHON_LIBRARY})
+set(PYTHON_LIBRARIES ${PYTHON_LIBRARY})
+execute_process(COMMAND python3 "-c" "from distutils.sysconfig import get_python_inc; print(get_python_inc())" OUTPUT_VARIABLE PYTHON_INCLUDE_DIR)
+message("panda 3: " ${PYTHON_INCLUDE_DIR})
+
 if (NOT EXISTS ${SKBUILD_CMAKE_MODULE_PATH})
   message(FATAL_ERROR "Expected CMake module path from
                        scikit-build at ${SKBUILD_CMAKE_MODULE_PATH}")
 endif()
-
 # Add scikit-build cmake files to cmake module path
 # Required for Cython target below
 list(APPEND CMAKE_MODULE_PATH ${SKBUILD_CMAKE_MODULE_PATH})
+list(APPEND CMAKE_MODULE_PATH ${PYTHON_LIBRARY})
+#list(APPEND CMAKE_MODULE_PATH ${PYTHON_INCLUDE_DIR})
+ add_compile_definitions(PYTHON_LIBRARIES=${PYTHON_LIBRARY})
+# add_compile_definitions(PYTHON_INCLUDE_DIRS=${PYTHON_INCLUDE_DIR})
+message("panda 4")
 
 find_package(PythonExtensions REQUIRED)
+message("panda 5")
 find_package(Cython 0.29 REQUIRED)
+message("panda 6")
 
 set(CYTHON_FLAGS "-X embedsignature=True")
 
@@ -96,6 +112,7 @@ add_library(cvc5_python_base
             MODULE
             cvc5_python_base)
 add_dependencies(cvc5_python_base cvc5kinds cvc5types)
+
 
 target_include_directories(cvc5_python_base
   PRIVATE
