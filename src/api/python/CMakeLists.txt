@@ -44,6 +44,8 @@ set(PYTHON_LIBRARIES ${PYTHON_LIBRARY})
 execute_process(COMMAND python3 "-c" "from distutils.sysconfig import get_python_inc; print(get_python_inc())" OUTPUT_VARIABLE PYTHON_INCLUDE_DIR)
 message("panda 3: " ${PYTHON_INCLUDE_DIR})
 
+add_compile_definitions(PYTHON_LIBRARY=${PYTHON_LIBRARY} PYTHON_INCLUDE_DIR=${PYTHON_INCLUDE_DIR})
+
 if (NOT EXISTS ${SKBUILD_CMAKE_MODULE_PATH})
   message(FATAL_ERROR "Expected CMake module path from
                        scikit-build at ${SKBUILD_CMAKE_MODULE_PATH}")
@@ -52,7 +54,7 @@ endif()
 # Required for Cython target below
 list(APPEND CMAKE_MODULE_PATH ${SKBUILD_CMAKE_MODULE_PATH})
 list(APPEND CMAKE_MODULE_PATH ${PYTHON_LIBRARY})
-#list(APPEND CMAKE_MODULE_PATH ${PYTHON_INCLUDE_DIR})
+list(APPEND CMAKE_MODULE_PATH ${PYTHON_INCLUDE_DIR})
  add_compile_definitions(PYTHON_LIBRARIES=${PYTHON_LIBRARY})
 # add_compile_definitions(PYTHON_INCLUDE_DIRS=${PYTHON_INCLUDE_DIR})
 message("panda 4")
