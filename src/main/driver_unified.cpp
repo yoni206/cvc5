@@ -38,6 +38,7 @@
 #include "parser/api/cpp/command.h"
 #include "parser/parser.h"
 #include "parser/parser_builder.h"
+#include "prop/minisat/core/Dimacs.h"
 #include "smt/solver_engine.h"
 #include "util/result.h"
 
@@ -126,6 +127,8 @@ int runCvc5(int argc, char* argv[], std::unique_ptr<cvc5::Solver>& solver)
       size_t len = filenameStr.size();
       if(len >= 5 && !strcmp(".smt2", filename + len - 5)) {
         solver->setOption("input-language", "smt2");
+      else if (len >= 4 && !strcmp(".cnf", filename + len - 4)) {
+        solver->setOption("input-language", "dimacs");
       } else if((len >= 2 && !strcmp(".p", filename + len - 2))
                 || (len >= 5 && !strcmp(".tptp", filename + len - 5))) {
         solver->setOption("input-language", "tptp");
@@ -217,7 +220,6 @@ int runCvc5(int argc, char* argv[], std::unique_ptr<cvc5::Solver>& solver)
       {
         solver->setOption("wf-checking", "false");
       }
-
       ParserBuilder parserBuilder(
           pExecutor->getSolver(), pExecutor->getSymbolManager(), true);
       std::unique_ptr<Parser> parser(parserBuilder.build());
@@ -227,6 +229,11 @@ int runCvc5(int argc, char* argv[], std::unique_ptr<cvc5::Solver>& solver)
       }
       else
       {
+        if (solver->getOptionInfo("input-language") == "dimacs") {
+	    CDCLMinisatSovler satSolver = createCDCLMinisat(env, registry);
+            parse_DIMACS_main(filename, satSolver);
+	    satSolver.solve();
+        }
         parser->setInput(
             Input::newFileInput(solver->getOption("input-language"), filename));
       }
