@@ -493,6 +493,7 @@ Node StringsPreprocess::reduce(Node t,
   }
   else if (t.getKind() == kind::SEQ_NTH)
   {
+    std::cout << "panda nth case. t: " << t << std::endl;
     // processing term:  str.nth( s, n)
     // similar to substr.
     Node s = t[0];
@@ -535,7 +536,9 @@ Node StringsPreprocess::reduce(Node t,
     // We also ensure skt is a valid code point if s is of type String
     asserts.push_back(lemma);
     retNode = skt;
-  }
+    std::cout << "panda nth case. retNode: " << retNode << std::endl;
+    std::cout << "panda nth case. lemma: " << lemma << std::endl;
+ }
   else if (t.getKind() == kind::STRING_REPLACE)
   {
     // processing term: replace( x, y, z )
@@ -1078,12 +1081,14 @@ Node StringsPreprocess::simplifyRec(Node t, std::vector<Node>& asserts)
 }
 Node StringsPreprocess::mkCodePointAtIndex(Node x, Node i)
 {
+  Trace("strings-preprocess-debug") << "StringsPreprocess::mkCodePointAtIndex x: " << x << ";; u: " << i << std::endl;
   // we could use (SEQ_NTH, x, i) instead of
   // (STRING_TO_CODE, (STRING_SUBSTR, x, i, 1))
   NodeManager* nm = NodeManager::currentNM();
-  return nm->mkNode(
-      STRING_TO_CODE,
-      nm->mkNode(STRING_SUBSTR, x, i, nm->mkConstInt(Rational(1))));
+  // return nm->mkNode(
+  //     STRING_TO_CODE,
+  //     nm->mkNode(STRING_SUBSTR, x, i, nm->mkConstInt(Rational(1))));
+     return nm->mkNode(SEQ_NTH, x, i);
 }
 
 Node StringsPreprocess::processAssertion(Node n, std::vector<Node>& asserts)

@@ -1,0 +1,7 @@
+(set-logic QF_SLIA)
+(declare-const i Int)
+(declare-const n Int)
+(assert (>= n 0))
+(assert (= i (str.to_int (str.from_code n))))
+(assert (>= i 0))
+(check-sat)
