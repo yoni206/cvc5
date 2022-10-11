@@ -1082,6 +1082,7 @@ Node StringsPreprocess::mkCodePointAtIndex(Node x, Node i)
   // (STRING_TO_CODE, (STRING_SUBSTR, x, i, 1)) here. The former may be
   // converted to the latter during preprocessing based on our options.
   NodeManager* nm = NodeManager::currentNM();
+  std::cout << "panda here two" << std::endl;
   return nm->mkNode(SEQ_NTH, x, i);
 }
 

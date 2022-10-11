@@ -1776,14 +1776,23 @@ Node SequencesRewriter::rewriteSeqNth(Node node)
   {
     if (suffix.size() > 0)
     {
+      std::cout << "panda here five suffix: "<< suffix << std::endl;
       if (suffix[0].getKind() == SEQ_UNIT)
       {
         // (seq.nth (seq.++ prefix (seq.unit x) suffix) n) ---> x
         // if len(prefix) = n
         Node ret = suffix[0][0];
         return returnRewrite(node, ret, Rewrite::SEQ_NTH_EVAL_SYM);
-      }
-      // TODO: STRING_UNIT?
+      } else if (suffix[0].getKind() == STRING_UNIT)
+        {
+          NodeManager* nm = NodeManager::currentNM();
+          Node one = nm->mkConstInt(Rational(1));
+          Node neg_one = nm->mkConstInt(Rational(-1));
+          Node cond = nm->mkNode(EQUAL, nm->mkNode(STRING_LENGTH, s), one);
+          std::cout << "panda six, suffix[0][0]: " << suffix[0][0] << std::endl;
+          Node ret = nm->mkNode(ITE, cond, suffix[0][0], neg_one);
+          return returnRewrite(node, ret, Rewrite::SEQ_NTH_EVAL_SYM);
+        }
     }
   }
 
