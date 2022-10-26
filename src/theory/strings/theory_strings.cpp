@@ -273,10 +273,6 @@ struct SortSeqIndex
   {
     Assert(i.first.isConst() && i.first.getType().isInteger()
            && j.first.isConst() && j.first.getType().isInteger());
-    std::cout << "panda i.first: " << i.first << std::endl;
-    std::cout << "panda i.second: " << i.second << std::endl;
-    std::cout << "panda j.first: " << j.first << std::endl;
-    std::cout << "panda j.second: " << j.second << std::endl;
     Assert(i.first != j.first);
     return i.first.getConst<Rational>() < j.first.getConst<Rational>();
   }

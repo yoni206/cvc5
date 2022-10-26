@@ -1025,8 +1025,6 @@ Node RegExpOpr::reduceRegExpPos(Node mem,
   Node conc;
   if (k == REGEXP_CONCAT)
   {
-    std::cout << "panda here four r: " << r <<std::endl;
-    std::cout << "panda here four s: " << s <<std::endl;
     std::vector<Node> nvec;
     std::vector<Node> cc;
     SkolemManager* sm = nm->getSkolemManager();
