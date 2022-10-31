@@ -3586,5 +3586,19 @@ TEST_F(TestApiBlackSolver, multipleSolvers)
   }
 }
 
+TEST_F(TestApiBlackSolver, issueProj519)
+{
+  Solver solver;
+  solver.setLogic("BVFPNIA");
+  solver.setOption("incremental", "false");
+  // solver.setOption("solve-int-as-bv", "925956265872928556");
+  solver.setOption("solve-int-as-bv", "4294967295");
+  Sort s0 = solver.getIntegerSort();
+  Term t1 = solver.mkConst(s0, "_x35");
+  Op o2 = solver.mkOp(INTS_DIVISION);
+  Term t3 = solver.mkTerm(o2, {t1, t1});
+  solver.simplify(t3);
+}
+
 }  // namespace test
 }  // namespace cvc5::internal
