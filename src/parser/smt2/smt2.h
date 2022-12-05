@@ -18,6 +18,7 @@
 #ifndef CVC5__PARSER__SMT2_H
 #define CVC5__PARSER__SMT2_H
 
+#include <optional>
 #include <sstream>
 #include <stack>
 #include <string>
@@ -31,16 +32,22 @@
 
 namespace cvc5 {
 
-class Command;
 class Solver;
 
 namespace parser {
 
+class Command;
+
+/*
+ * This class is deprecated and used only for the ANTLR parser.
+ */
 class Smt2 : public Parser
 {
   friend class ParserBuilder;
 
  private:
+  /** Are we parsing a sygus file? */
+  bool d_isSygus;
   /** Has the logic been set (either by forcing it or a set-logic command)? */
   bool d_logicSet;
   /** Have we seen a set-logic command yet? */
@@ -64,7 +71,7 @@ class Smt2 : public Parser
   Smt2(cvc5::Solver* solver,
        SymbolManager* sm,
        bool strictMode = false,
-       bool parseOnly = false);
+       bool isSygus = false);
 
  public:
   ~Smt2();
@@ -100,7 +107,12 @@ class Smt2 : public Parser
 
   bool isOperatorEnabled(const std::string& name) const;
 
+  /** Parse block models mode */
   modes::BlockModelsMode getBlockModelsMode(const std::string& mode);
+  /** Parse learned literal type */
+  modes::LearnedLitType getLearnedLitType(const std::string& mode);
+  /** Parse proof component */
+  modes::ProofComponent getProofComponent(const std::string& pc);
 
   bool isTheoryEnabled(internal::theory::TheoryId theory) const;
 
@@ -228,6 +240,13 @@ class Smt2 : public Parser
   /** Are we using a sygus language? */
   bool sygus() const;
 
+  /**
+   * Are we using SyGuS grammars? This is true if the input is the SyGuS
+   * language or if produce-abducts or produce-interpolants is true. Enables
+   * grammar-specific token `Constant`.
+   */
+  bool hasGrammars() const;
+
   void checkThatLogicIsSet();
 
   /**
@@ -259,8 +278,6 @@ class Smt2 : public Parser
       parseError(ss.str());
     }
   }
-
-  void includeFile(const std::string& filename);
 
   void setLastNamedTerm(cvc5::Term e, std::string name)
   {
@@ -381,7 +398,31 @@ class Smt2 : public Parser
    * as a chain of HO_APPLY terms.
    */
   cvc5::Term applyParseOp(ParseOp& p, std::vector<cvc5::Term>& args);
+  /**
+   * Returns a (parameterized) sort, given a name and args.
+   */
+  Sort getParametricSort(const std::string& name,
+                         const std::vector<Sort>& args) override;
+  /**
+   * Returns a (indexed) sort, given a name and numeric indices.
+   */
+  Sort getIndexedSort(const std::string& name,
+                      const std::vector<uint32_t>& numerals);
   //------------------------- end processing parse operators
+
+  /**
+   * Handles a push command.
+   *
+   * @return An instance of `PushCommand`
+   */
+  std::unique_ptr<Command> handlePush(std::optional<uint32_t> nscopes);
+  /**
+   * Handles a pop command.
+   *
+   * @return An instance of `PopCommand`
+   */
+  std::unique_ptr<Command> handlePop(std::optional<uint32_t> nscopes);
+
  private:
 
   void addArithmeticOperators();

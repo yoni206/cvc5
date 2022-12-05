@@ -1,5 +1,5 @@
-; COMMAND-LINE:  --solve-bv-as-int=bv 
-; COMMAND-LINE:  --bvand-integer-granularity=1 --solve-bv-as-int=sum --full-saturate-quant --cegqi-all 
+; COMMAND-LINE:  --solve-bv-as-int=bv -q
+; COMMAND-LINE:  --bvand-integer-granularity=1 --solve-bv-as-int=sum --full-saturate-quant --cegqi-all -q
 ;EXPECT: sat
 ; DISABLE-TESTER: model
 (set-logic BV)
