@@ -84,7 +84,20 @@ bool LfscProofPostprocessCallback::update(Node res,
         // The arguments of the outer scope are definitions.
         if (d_numIgnoredScopes == 0)
         {
-          d_defs.insert(args.cbegin(), args.cend());
+          for (const Node& arg : args)
+          {
+            d_defs.insert(arg);
+            // Notes:
+            // - Some declarations only appear inside definitions and don't show
+            // up in assertions. To ensure that those declarations are printed,
+            // we need to process the definitions.
+            // - We process the definitions here before the rest of the proof to
+            // keep the indices of bound variables consistant between different
+            // queries that share the same definitions (e.g., incremental mode).
+            // Otherwise, bound variables will be assigned indices according to
+            // the order in which they appear in the proof.
+            d_tproc.convert(arg);
+          }
         }
         d_numIgnoredScopes++;
         // Note that we do not want to modify the top-most SCOPEs.
@@ -313,28 +326,14 @@ bool LfscProofPostprocessCallback::update(Node res,
       {
         // non n-ary kinds do not have null terminators
         Assert(nullTerm.isNull());
-        Node curL = op;
-        Node curR = op;
-        Node currEq = opEq;
-        for (size_t i = 0; i < nchildren; i++)
-        {
-          // CONG rules for each child
-          Node nextEq;
-          if (i + 1 == nchildren)
-          {
-            // if we are at the end, we prove the final equality
-            nextEq = res;
-          }
-          else
-          {
-            curL = nm->mkNode(HO_APPLY, curL, children[i][0]);
-            curR = nm->mkNode(HO_APPLY, curR, children[i][1]);
-            nextEq = curL.eqNode(curR);
-          }
-          addLfscRule(cdp, nextEq, {currEq, children[i]}, LfscRule::CONG, {});
-          currEq = nextEq;
-        }
+        updateCong(res, children, cdp, op);
       }
+    }
+    break;
+    case PfRule::HO_CONG:
+    {
+      // converted to chain of CONG, with no base operator
+      updateCong(res, children, cdp, Node::null());
     }
     break;
     case PfRule::AND_INTRO:
@@ -401,6 +400,48 @@ bool LfscProofPostprocessCallback::update(Node res,
   }
   AlwaysAssert(cdp->getProofFor(res)->getRule() != PfRule::ASSUME);
   return true;
+}
+
+void LfscProofPostprocessCallback::updateCong(Node res,
+                                              const std::vector<Node>& children,
+                                              CDProof* cdp,
+                                              Node startOp)
+{
+  Node currEq;
+  size_t i = 0;
+  size_t nchildren = children.size();
+  if (!startOp.isNull())
+  {
+    // start with reflexive equality on operator
+    currEq = startOp.eqNode(startOp);
+  }
+  else
+  {
+    // first child specifies (higher-order) operator equality
+    currEq = children[0];
+    i++;
+  }
+  Node curL = currEq[0];
+  Node curR = currEq[1];
+  NodeManager* nm = NodeManager::currentNM();
+  for (; i < nchildren; i++)
+  {
+    // CONG rules for each child
+    Node nextEq;
+    if (i + 1 == nchildren)
+    {
+      // if we are at the end, we prove the final equality
+      nextEq = res;
+    }
+    else
+    {
+      curL = nm->mkNode(HO_APPLY, curL, children[i][0]);
+      curR = nm->mkNode(HO_APPLY, curR, children[i][1]);
+      nextEq = curL.eqNode(curR);
+    }
+    addLfscRule(cdp, nextEq, {currEq, children[i]}, LfscRule::CONG, {});
+    currEq = nextEq;
+  }
 }
 
 void LfscProofPostprocessCallback::addLfscRule(

@@ -154,7 +154,7 @@ parseCommand returns [cvc5::parser::Command* cmd_return = NULL]
     /* This extended command has to be in the outermost production so that
      * the RPAREN_TOK is properly eaten and we are in a good state to read
      * the included file's tokens. */
-  | LPAREN_TOK INCLUDE_TOK str[name] RPAREN_TOK
+  | LPAREN_TOK INCLUDE_TOK str[name, true] RPAREN_TOK
     { if(!PARSER_STATE->canIncludeFile()) {
         PARSER_STATE->parseError("include-file feature was disabled for this "
                                  "run.");
@@ -163,7 +163,7 @@ parseCommand returns [cvc5::parser::Command* cmd_return = NULL]
         PARSER_STATE->parseError("Extended commands are not permitted while "
                                  "operating in strict compliance mode.");
       }
-      PARSER_STATE->includeFile(name);
+      PARSER_STATE->includeSmt2File(name);
       // The command of the included file will be produced at the next
       // parseCommand() call
       cmd.reset(new EmptyCommand("include::" + name));
@@ -336,7 +336,7 @@ command [std::unique_ptr<cvc5::parser::Command>* cmd]
   | DECLARE_DATATYPE_TOK datatypeDefCommand[false, cmd]
   | DECLARE_DATATYPES_TOK datatypesDefCommand[false, cmd]
   | /* value query */
-    GET_VALUE_TOK 
+    GET_VALUE_TOK
     {
       PARSER_STATE->checkThatLogicIsSet();
       // bind all symbols specific to the model, e.g. uninterpreted constant
@@ -414,7 +414,7 @@ command [std::unique_ptr<cvc5::parser::Command>* cmd]
     GET_DIFFICULTY_TOK { PARSER_STATE->checkThatLogicIsSet(); }
     { cmd->reset(new GetDifficultyCommand); }
   | /* get-learned-literals */
-    GET_LEARNED_LITERALS_TOK ( KEYWORD { readKeyword = true; } )? { 
+    GET_LEARNED_LITERALS_TOK ( KEYWORD { readKeyword = true; } )? {
       PARSER_STATE->checkThatLogicIsSet();
       modes::LearnedLitType llt = modes::LEARNED_LIT_INPUT;
       if (readKeyword)
@@ -767,7 +767,7 @@ smt25Command[std::unique_ptr<cvc5::parser::Command>* cmd]
 
     /* echo */
   | ECHO_TOK
-    ( str[s]
+    ( str[s, true]
       { cmd->reset(new EchoCommand(s)); }
     | { cmd->reset(new EchoCommand()); }
     )
@@ -1118,12 +1118,8 @@ simpleSymbolicExprNoKeyword[std::string& s]
     { s = AntlrInput::tokenText($HEX_LITERAL); }
   | BINARY_LITERAL
     { s = AntlrInput::tokenText($BINARY_LITERAL); }
-  | SIMPLE_SYMBOL
-    { s = AntlrInput::tokenText($SIMPLE_SYMBOL); }
-  | QUOTED_SYMBOL
-    { s = AntlrInput::tokenText($QUOTED_SYMBOL); }
-  | STRING_LITERAL
-    { s = AntlrInput::tokenText($STRING_LITERAL); }
+  | symbol[s, CHECK_NONE, SYM_VERBATIM]
+  | str[s, false]
   | tok=(ASSERT_TOK | CHECK_SAT_TOK | CHECK_SAT_ASSUMING_TOK | DECLARE_FUN_TOK
         | DECLARE_SORT_TOK
         | DEFINE_FUN_TOK | DEFINE_FUN_REC_TOK | DEFINE_FUNS_REC_TOK
@@ -1244,7 +1240,7 @@ termNonVariable[cvc5::Term& expr, cvc5::Term& expr2]
       expr = PARSER_STATE->applyParseOp(p, args);
     }
   | /* a let or sygus let binding */
-    LPAREN_TOK 
+    LPAREN_TOK
       LET_TOK LPAREN_TOK
       { PARSER_STATE->pushScope(); }
       ( LPAREN_TOK symbol[name,CHECK_NONE,SYM_VARIABLE]
@@ -1406,65 +1402,6 @@ termNonVariable[cvc5::Term& expr, cvc5::Term& expr2]
       PARSER_STATE->popScope();
       expr = MK_TERM(cvc5::LAMBDA, args);
     }
-  | LPAREN_TOK TUPLE_CONST_TOK termList[args,expr] RPAREN_TOK
-  {
-    std::vector<cvc5::Sort> sorts;
-    std::vector<cvc5::Term> terms;
-    for (const cvc5::Term& arg : args)
-    {
-      sorts.emplace_back(arg.getSort());
-      terms.emplace_back(arg);
-    }
-    expr = SOLVER->mkTuple(sorts, terms);
-  }
-  | LPAREN_TOK TUPLE_PROJECT_TOK term[expr,expr2] RPAREN_TOK
-  {
-    std::vector<uint32_t> indices;
-    cvc5::Op op = SOLVER->mkOp(cvc5::TUPLE_PROJECT, indices);
-    expr = SOLVER->mkTerm(op, {expr});
-  }
-  | LPAREN_TOK TABLE_PROJECT_TOK term[expr,expr2] RPAREN_TOK
-  {
-    std::vector<uint32_t> indices;
-    cvc5::Op op = SOLVER->mkOp(cvc5::TABLE_PROJECT, indices);
-    expr = SOLVER->mkTerm(op, {expr});
-  }
-  | LPAREN_TOK TABLE_AGGREGATE_TOK term[expr,expr2] RPAREN_TOK
-  {
-    std::vector<uint32_t> indices;
-    cvc5::Op op = SOLVER->mkOp(cvc5::TABLE_AGGREGATE, indices);
-    expr = SOLVER->mkTerm(op, {expr});
-  }
-  | LPAREN_TOK TABLE_JOIN_TOK term[expr,expr2] RPAREN_TOK
-  {
-    std::vector<uint32_t> indices;
-    cvc5::Op op = SOLVER->mkOp(cvc5::TABLE_JOIN, indices);
-    expr = SOLVER->mkTerm(op, {expr});
-  }
-  | LPAREN_TOK TABLE_GROUP_TOK term[expr,expr2] RPAREN_TOK
-  {
-    std::vector<uint32_t> indices;
-    cvc5::Op op = SOLVER->mkOp(cvc5::TABLE_GROUP, indices);
-    expr = SOLVER->mkTerm(op, {expr});
-  }
-  | LPAREN_TOK RELATION_GROUP_TOK term[expr,expr2] RPAREN_TOK
-  {
-    std::vector<uint32_t> indices;
-    cvc5::Op op = SOLVER->mkOp(cvc5::RELATION_GROUP, indices);
-    expr = SOLVER->mkTerm(op, {expr});
-  }
-  | LPAREN_TOK RELATION_AGGREGATE_TOK term[expr,expr2] RPAREN_TOK
-  {
-    std::vector<uint32_t> indices;
-    cvc5::Op op = SOLVER->mkOp(cvc5::RELATION_AGGREGATE, indices);
-    expr = SOLVER->mkTerm(op, {expr});
-  }
-  | LPAREN_TOK RELATION_PROJECT_TOK term[expr,expr2] RPAREN_TOK
-  {
-    std::vector<uint32_t> indices;
-    cvc5::Op op = SOLVER->mkOp(cvc5::RELATION_PROJECT, indices);
-    expr = SOLVER->mkTerm(op, {expr});
-  }
   | /* an atomic term (a term with no subterms) */
     termAtomic[atomTerm] { expr = atomTerm; }
   ;
@@ -1477,6 +1414,8 @@ termNonVariable[cvc5::Term& expr, cvc5::Term& expr2]
  * (2) A string name.
  * (3) An expression expr.
  * (4) A type t.
+ * (5) An operator
+ * (6) A list of indices.
  *
  * A qualified identifier is the generic case of function heads.
  * With respect to the standard definition (Section 3.6 of SMT-LIB version 2.6)
@@ -1493,13 +1432,11 @@ termNonVariable[cvc5::Term& expr, cvc5::Term& expr2]
  * - For declared functions f, we return (2).
  * - For indexed functions like testers (_ is C) and bitvector extract
  * (_ extract n m), we return (3) for the appropriate operator.
- * - For tuple selectors (_ tuple_select n) and updaters (_ tuple_update n), we
- * return (1) and (3). cvc5::Kind is set to APPLY_SELECTOR or APPLY_UPDATER
- * respectively, and expr is set to n, which is to be interpreted by the
- * caller as the n^th generic tuple selector or updater. We do this since there
- * is no AST expression representing generic tuple select, and we do not have
- * enough type information at this point to know the type of the tuple we will
- * be selecting from.
+ * - For floating-point conversion to_fp, tuple selectors (_ tuple_select n)
+ * and updaters (_ tuple_update n), we return (6). cvc5::Kind is set to
+ * UNDEFINED_KIND. We do this since there is no AST expression representing
+ * the generic version of these operators, and we do not have
+ * enough type information at this point to know the proper kind to use.
  *
  * (Ascripted Identifiers)
  *
@@ -1523,25 +1460,13 @@ termNonVariable[cvc5::Term& expr, cvc5::Term& expr2]
  */
 qualIdentifier[cvc5::ParseOp& p]
 @init {
-  cvc5::Kind k;
-  std::string baseName;
-  cvc5::Term f;
   cvc5::Sort type;
 }
 : identifier[p]
-  | LPAREN_TOK AS_TOK
-    ( CONST_TOK sortSymbol[type]
-      {
-        p.d_kind = cvc5::CONST_ARRAY;
-        PARSER_STATE->parseOpApplyTypeAscription(p, type);
-      }
-    | identifier[p]
-      sortSymbol[type]
-      {
-        PARSER_STATE->parseOpApplyTypeAscription(p, type);
-      }
-    )
-    RPAREN_TOK
+  | LPAREN_TOK AS_TOK identifier[p] sortSymbol[type] RPAREN_TOK
+    {
+      PARSER_STATE->parseOpApplyTypeAscription(p, type);
+    }
   ;
 
 /**
@@ -1599,96 +1524,20 @@ identifier[cvc5::ParseOp& p]
         // get the updater term
         p.d_expr = ds.getUpdaterTerm();
       }
-    | TUPLE_PROJECT_TOK nonemptyNumeralList[numerals]
-      {
-        // we adopt a special syntax (_ tuple.project i_1 ... i_n) where
-        // i_1, ..., i_n are numerals
-        p.d_kind = cvc5::TUPLE_PROJECT;
-        p.d_op = SOLVER->mkOp(cvc5::TUPLE_PROJECT, numerals);
-      }
-    | TABLE_PROJECT_TOK nonemptyNumeralList[numerals]
-      {
-        // we adopt a special syntax (_ table.project i_1 ... i_n) where
-        // i_1, ..., i_n are numerals
-        p.d_kind = cvc5::TABLE_PROJECT;
-        p.d_op = SOLVER->mkOp(cvc5::TABLE_PROJECT, numerals);
-       }
-    | TABLE_AGGREGATE_TOK nonemptyNumeralList[numerals]
-      {
-        // we adopt a special syntax (_ table.aggr i_1 ... i_n) where
-        // i_1, ..., i_n are numerals
-        p.d_kind = cvc5::TABLE_AGGREGATE;
-        p.d_op = SOLVER->mkOp(cvc5::TABLE_AGGREGATE, numerals);
-      }
-    | TABLE_JOIN_TOK nonemptyNumeralList[numerals]
-      {
-        // we adopt a special syntax (_ table.join i_1 j_1 ... i_n j_n) where
-        // i_1, ..., i_n, j_1, ..., j_n are numerals
-        p.d_kind = cvc5::TABLE_JOIN;
-        p.d_op = SOLVER->mkOp(cvc5::TABLE_JOIN, numerals);
-      }
-     | TABLE_GROUP_TOK nonemptyNumeralList[numerals]
-      {
-        // we adopt a special syntax (_ table.group i_1 ... i_n) where
-        // i_1, ..., j_n are numerals
-        p.d_kind = cvc5::TABLE_GROUP;
-        p.d_op = SOLVER->mkOp(cvc5::TABLE_GROUP, numerals);
-      }
-     | RELATION_GROUP_TOK nonemptyNumeralList[numerals]
-      {
-        // we adopt a special syntax (_ rel.group i_1 ... i_n) where
-        // i_1, ..., j_n are numerals
-        p.d_kind = cvc5::RELATION_GROUP;
-        p.d_op = SOLVER->mkOp(cvc5::RELATION_GROUP, numerals);
-      }
-     | RELATION_AGGREGATE_TOK nonemptyNumeralList[numerals]
-      {
-        // we adopt a special syntax (_ rel.aggr i_1 ... i_n) where
-        // i_1, ..., i_n are numerals
-        p.d_kind = cvc5::RELATION_AGGREGATE;
-        p.d_op = SOLVER->mkOp(cvc5::RELATION_AGGREGATE, numerals);
-      }
-     | RELATION_PROJECT_TOK nonemptyNumeralList[numerals]
-      {
-       // we adopt a special syntax (_ rel.project i_1 ... i_n) where
-       // i_1, ..., i_n are numerals
-       p.d_kind = cvc5::RELATION_PROJECT;
-       p.d_op = SOLVER->mkOp(cvc5::RELATION_PROJECT, numerals);
-      }
     | functionName[opName, CHECK_NONE] nonemptyNumeralList[numerals]
       {
         cvc5::Kind k = PARSER_STATE->getIndexedOpKind(opName);
         if (k == cvc5::UNDEFINED_KIND)
         {
           // We don't know which kind to use until we know the type of the
-          // arguments
+          // arguments. This case handles to_fp, tuple.select and tuple.update
           p.d_name = opName;
           p.d_indices = numerals;
           p.d_kind = cvc5::UNDEFINED_KIND;
         }
-        else if (k == cvc5::APPLY_SELECTOR || k == cvc5::APPLY_UPDATER)
-        {
-          // we adopt a special syntax (_ tuple_select n) and (_ tuple_update n)
-          // for tuple selectors and updaters
-          if (numerals.size() != 1)
-          {
-            PARSER_STATE->parseError(
-                "Unexpected syntax for tuple selector or updater.");
-          }
-          // The operator is dependent upon inferring the type of the arguments,
-          // and hence the type is not available yet. Hence, we remember the
-          // index as a numeral in the parse operator.
-          p.d_kind = k;
-          p.d_expr = SOLVER->mkInteger(numerals[0]);
-        }
-        else if (numerals.size() == 1 || numerals.size() == 2)
-        {
-          p.d_op = SOLVER->mkOp(k, numerals);
-        }
         else
         {
-          PARSER_STATE->parseError(
-              "Unexpected number of numerals for indexed symbol.");
+          p.d_op = SOLVER->mkOp(k, numerals);
         }
       }
     )
@@ -1754,16 +1603,7 @@ termAtomic[cvc5::Term& atomTerm]
     }
 
   // String constant
-  | str[s] { atomTerm = PARSER_STATE->mkStringConstant(s); }
-
-  // NOTE: Theory constants go here
-
-  // Empty tuple constant
-  | TUPLE_CONST_TOK
-    {
-      atomTerm = SOLVER->mkTuple(std::vector<cvc5::Sort>(),
-                                 std::vector<cvc5::Term>());
-    }
+  | str[s, true] { atomTerm = SOLVER->mkString(s, true); }
   ;
 
 /**
@@ -1786,7 +1626,7 @@ attribute[cvc5::Term& expr, cvc5::Term& retExpr]
   | ( ATTRIBUTE_PATTERN_TOK { k = cvc5::INST_PATTERN; } |
       ATTRIBUTE_POOL_TOK { k = cvc5::INST_POOL; }  |
       ATTRIBUTE_INST_ADD_TO_POOL_TOK { k = cvc5::INST_ADD_TO_POOL; }  |
-      ATTRIBUTE_SKOLEM_ADD_TO_POOL_TOK{ k = cvc5::SKOLEM_ADD_TO_POOL; } 
+      ATTRIBUTE_SKOLEM_ADD_TO_POOL_TOK{ k = cvc5::SKOLEM_ADD_TO_POOL; }
     )
     LPAREN_TOK
     ( term[patexpr, e2]
@@ -1818,11 +1658,6 @@ attribute[cvc5::Term& expr, cvc5::Term& retExpr]
   | ATTRIBUTE_NAMED_TOK symbol[s,CHECK_UNDECLARED,SYM_VARIABLE]
     {
       Trace("parser") << "Named: " << s << " for " << expr << std::endl;
-      // notify that expression was given a name
-      DefineFunctionCommand* defFunCmd =
-          new DefineFunctionCommand(s, expr.getSort(), expr);
-      defFunCmd->setMuted(true);
-      PARSER_STATE->preemptCommand(defFunCmd);
       PARSER_STATE->notifyNamedExpression(expr, s);
     }
   ;
@@ -1843,40 +1678,46 @@ termList[std::vector<cvc5::Term>& formulas, cvc5::Term& expr]
   ;
 
 /**
- * Matches a string, and strips off the quotes.
+ * Matches a string, and (optionally) strips off the quotes/unescapes the
+ * string when `unescape` is set to true.
  */
-str[std::string& s]
+str[std::string& s, bool unescape]
   : STRING_LITERAL
     {
       s = AntlrInput::tokenText($STRING_LITERAL);
-      /* strip off the quotes */
-      s = s.substr(1, s.size() - 2);
-      for (size_t i = 0; i < s.size(); i++)
+      if (unescape)
       {
-        if ((unsigned)s[i] > 127 && !isprint(s[i]))
+        /* strip off the quotes */
+        s = s.substr(1, s.size() - 2);
+        for (size_t i = 0; i < s.size(); i++)
         {
-          PARSER_STATE->parseError(
-              "Extended/unprintable characters are not "
-              "part of SMT-LIB, and they must be encoded "
-              "as escape sequences");
+          if ((unsigned)s[i] > 127 && !isprint(s[i]))
+          {
+            PARSER_STATE->parseError(
+                "Extended/unprintable characters are not "
+                "part of SMT-LIB, and they must be encoded "
+                "as escape sequences");
+          }
         }
-      }
-      char* p_orig = strdup(s.c_str());
-      char *p = p_orig, *q = p_orig;
-      while (*q != '\0')
-      {
-        if (*q == '"')
+        char* p_orig = strdup(s.c_str());
+        char *p = p_orig, *q = p_orig;
+        while (*q != '\0')
         {
-          // Handle SMT-LIB >=2.5 standard escape '""'.
-          ++q;
-          Assert(*q == '"');
+          if (*q == '"')
+          {
+            // Handle SMT-LIB >=2.5 standard escape '""'.
+            ++q;
+            Assert(*q == '"');
+          }
+          *p++ = *q++;
         }
-        *p++ = *q++;
+        *p = '\0';
+        s = p_orig;
+        free(p_orig);
       }
-      *p = '\0';
-      s = p_orig;
-      free(p_orig);
     }
+  | UNTERMINATED_STRING_LITERAL EOF
+    { PARSER_STATE->unexpectedEOF("unterminated string literal"); }
   ;
 
 quantOp[cvc5::Kind& kind]
@@ -1966,38 +1807,15 @@ sortSymbol[cvc5::Sort& t]
   | LPAREN_TOK (INDEX_TOK {indexed = true;} | {indexed = false;})
     symbol[name,CHECK_NONE,SYM_SORT]
     ( nonemptyNumeralList[numerals]
-      { 
-        if (!indexed) 
+      {
+        if (!indexed)
         {
           std::stringstream ss;
           ss << "SMT-LIB requires use of an indexed sort here, e.g. (_ " << name
              << " ...)";
           PARSER_STATE->parseError(ss.str());
         }
-        if( name == "BitVec" ) {
-          if( numerals.size() != 1 ) {
-            PARSER_STATE->parseError("Illegal bitvector type.");
-          }
-          if(numerals.front() == 0) {
-            PARSER_STATE->parseError("Illegal bitvector size: 0");
-          }
-          t = SOLVER->mkBitVectorSort(numerals.front());
-        } else if ( name == "FloatingPoint" ) {
-          if( numerals.size() != 2 ) {
-            PARSER_STATE->parseError("Illegal floating-point type.");
-          }
-          if(!internal::validExponentSize(numerals[0])) {
-            PARSER_STATE->parseError("Illegal floating-point exponent size");
-          }
-          if(!internal::validSignificandSize(numerals[1])) {
-            PARSER_STATE->parseError("Illegal floating-point significand size");
-          }
-          t = SOLVER->mkFloatingPointSort(numerals[0],numerals[1]);
-        } else {
-          std::stringstream ss;
-          ss << "unknown indexed sort symbol `" << name << "'";
-          PARSER_STATE->parseError(ss.str());
-        }
+        t = PARSER_STATE->getIndexedSort(name, numerals);
       }
     | sortList[args]
       { if( indexed ) {
@@ -2006,58 +1824,9 @@ sortSymbol[cvc5::Sort& t]
              << "', try leaving it out";
           PARSER_STATE->parseError(ss.str());
         }
-        if(args.empty()) {
-          PARSER_STATE->parseError("Extra parentheses around sort name not "
-                                   "permitted in SMT-LIB");
-        } else if(name == "Array" &&
-           PARSER_STATE->isTheoryEnabled(internal::theory::THEORY_ARRAYS) ) {
-          if(args.size() != 2) {
-            PARSER_STATE->parseError("Illegal array type.");
-          }
-          t = SOLVER->mkArraySort( args[0], args[1] );
-        } else if(name == "Set" &&
-                  PARSER_STATE->isTheoryEnabled(internal::theory::THEORY_SETS) ) {
-          if(args.size() != 1) {
-            PARSER_STATE->parseError("Illegal set type.");
-          }
-          t = SOLVER->mkSetSort( args[0] );
-        }
-        else if(name == "Bag" &&
-                  PARSER_STATE->isTheoryEnabled(internal::theory::THEORY_BAGS) ) {
-          if(args.size() != 1) {
-            PARSER_STATE->parseError("Illegal bag type.");
-          }
-          t = SOLVER->mkBagSort( args[0] );
-        }
-        else if(name == "Seq" && !PARSER_STATE->strictModeEnabled() &&
-                  PARSER_STATE->isTheoryEnabled(internal::theory::THEORY_STRINGS) ) {
-          if(args.size() != 1) {
-            PARSER_STATE->parseError("Illegal sequence type.");
-          }
-          t = SOLVER->mkSequenceSort( args[0] );
-        } else if (name == "Tuple" && !PARSER_STATE->strictModeEnabled()) {
-          t = SOLVER->mkTupleSort(args);
-        } else if (name == "Relation" && !PARSER_STATE->strictModeEnabled()) {
-          cvc5::Sort tupleSort = SOLVER->mkTupleSort(args);
-          t = SOLVER->mkSetSort(tupleSort);
-        } else if (name == "Table" && !PARSER_STATE->strictModeEnabled()) {
-          cvc5::Sort tupleSort = SOLVER->mkTupleSort(args);
-          t = SOLVER->mkBagSort(tupleSort);
-        } else {
-          t = PARSER_STATE->getSort(name, args);
-        }
+        t = PARSER_STATE->getParametricSort(name, args);
       }
     ) RPAREN_TOK
-  | LPAREN_TOK HO_ARROW_TOK sortList[args] RPAREN_TOK
-    {
-      if(args.size()<2) {
-        PARSER_STATE->parseError("Arrow types must have at least 2 arguments");
-      }
-      //flatten the type
-      cvc5::Sort rangeType = args.back();
-      args.pop_back();
-      t = PARSER_STATE->mkFlatFunctionType( args, rangeType );
-    }
   ;
 
 /**
@@ -2091,8 +1860,11 @@ symbol[std::string& id,
     }
   | QUOTED_SYMBOL
     { id = AntlrInput::tokenText($QUOTED_SYMBOL);
-      /* strip off the quotes */
-      id = id.substr(1, id.size() - 2);
+      if (type != SymbolType::SYM_VERBATIM)
+      {
+        /* strip off the quotes */
+        id = id.substr(1, id.size() - 2);
+      }
       if(!PARSER_STATE->isAbstractValue(id)) {
         // if an abstract value, SolverEngine handles declaration
         PARSER_STATE->checkDeclaration(id, check, type);
@@ -2164,7 +1936,7 @@ selector[cvc5::DatatypeConstructorDecl& ctor]
   cvc5::Sort t, t2;
 }
   : symbol[id,CHECK_NONE,SYM_SORT] sortSymbol[t]
-    { 
+    {
       ctor.addSelector(id, t);
       Trace("parser-idt") << "selector: " << id.c_str()
                           << " of type " << t << std::endl;
@@ -2205,7 +1977,6 @@ GET_OPTION_TOK : 'get-option';
 PUSH_TOK : 'push';
 POP_TOK : 'pop';
 AS_TOK : 'as';
-CONST_TOK : { !PARSER_STATE->strictModeEnabled() }? 'const';
 
 // extended commands
 DECLARE_CODATATYPE_TOK : 'declare-codatatype';
@@ -2216,7 +1987,7 @@ PAR_TOK : 'par';
 SET_COMPREHENSION_TOK : { PARSER_STATE->isTheoryEnabled(internal::theory::THEORY_SETS) }?'set.comprehension';
 TESTER_TOK : { PARSER_STATE->isTheoryEnabled(internal::theory::THEORY_DATATYPES) }?'is';
 UPDATE_TOK : { PARSER_STATE->isTheoryEnabled(internal::theory::THEORY_DATATYPES) }?'update';
-MATCH_TOK : { PARSER_STATE->isTheoryEnabled(internal::theory::THEORY_DATATYPES) }?'match';
+MATCH_TOK : 'match';
 GET_MODEL_TOK : 'get-model';
 BLOCK_MODEL_TOK : 'block-model';
 BLOCK_MODEL_VALUES_TOK : 'block-model-values';
@@ -2244,7 +2015,7 @@ CONSTRAINT_TOK : { PARSER_STATE->sygus()}?'constraint';
 ASSUME_TOK : { PARSER_STATE->sygus()}?'assume';
 INV_CONSTRAINT_TOK : { PARSER_STATE->sygus()}?'inv-constraint';
 SET_FEATURE_TOK : { PARSER_STATE->sygus() }? 'set-feature';
-SYGUS_CONSTANT_TOK : { PARSER_STATE->sygus() }? 'Constant';
+SYGUS_CONSTANT_TOK : { PARSER_STATE->hasGrammars() }? 'Constant';
 SYGUS_VARIABLE_TOK : { PARSER_STATE->sygus() }? 'Variable';
 
 // attributes
@@ -2262,18 +2033,8 @@ EXISTS_TOK        : 'exists';
 FORALL_TOK        : 'forall';
 
 CHAR_TOK : { PARSER_STATE->isTheoryEnabled(internal::theory::THEORY_STRINGS) }? 'char';
-TUPLE_CONST_TOK: { PARSER_STATE->isTheoryEnabled(internal::theory::THEORY_DATATYPES) }? 'tuple';
-TUPLE_PROJECT_TOK: { PARSER_STATE->isTheoryEnabled(internal::theory::THEORY_DATATYPES) }? 'tuple.project';
-TABLE_PROJECT_TOK: { PARSER_STATE->isTheoryEnabled(internal::theory::THEORY_BAGS) }? 'table.project';
-TABLE_AGGREGATE_TOK: { PARSER_STATE->isTheoryEnabled(internal::theory::THEORY_BAGS) }? 'table.aggr';
-TABLE_JOIN_TOK: { PARSER_STATE->isTheoryEnabled(internal::theory::THEORY_BAGS) }? 'table.join';
-TABLE_GROUP_TOK: { PARSER_STATE->isTheoryEnabled(internal::theory::THEORY_BAGS) }? 'table.group';
-RELATION_GROUP_TOK: { PARSER_STATE->isTheoryEnabled(internal::theory::THEORY_SETS) }? 'rel.group';
-RELATION_AGGREGATE_TOK: { PARSER_STATE->isTheoryEnabled(internal::theory::THEORY_SETS) }? 'rel.aggr';
-RELATION_PROJECT_TOK: { PARSER_STATE->isTheoryEnabled(internal::theory::THEORY_SETS) }? 'rel.project';
 FMF_CARD_TOK: { !PARSER_STATE->strictModeEnabled() && PARSER_STATE->hasCardinalityConstraints() }? 'fmf.card';
 
-HO_ARROW_TOK : { PARSER_STATE->isHoEnabled() }? '->';
 HO_LAMBDA_TOK : { PARSER_STATE->isHoEnabled() }? 'lambda';
 
 /**
@@ -2375,7 +2136,11 @@ BINARY_LITERAL
  * of the token text.  Use the str[] parser rule instead.
  */
 STRING_LITERAL
-  : '"' (~('"') | '""')* '"' 
+  : '"' (~('"') | '""')* '"'
+  ;
+
+UNTERMINATED_STRING_LITERAL
+  : '"' (~('"') | '""')*
   ;
 
 /**

@@ -21,6 +21,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "context/cdhashmap_forward.h"
@@ -30,11 +31,6 @@
 #include "theory/logic_info.h"
 #include "util/result.h"
 #include "util/synth_result.h"
-
-namespace cvc5::context {
-class Context;
-class UserContext;
-}  // namespace cvc5::context
 
 namespace cvc5 {
 
@@ -49,7 +45,6 @@ typedef NodeTemplate<false> TNode;
 class TypeNode;
 
 class Env;
-class TheoryEngine;
 class UnsatCore;
 class StatisticsRegistry;
 class Printer;
@@ -58,18 +53,11 @@ struct InstantiationList;
 
 /* -------------------------------------------------------------------------- */
 
-namespace prop {
-class PropEngine;
-}  // namespace prop
-
-/* -------------------------------------------------------------------------- */
-
 namespace smt {
 /** Utilities */
 class ContextManager;
 class SolverEngineState;
 class AbstractValues;
-class Assertions;
 class ResourceOutListener;
 class CheckModels;
 /** Subsolvers */
@@ -90,7 +78,6 @@ class UnsatCoreManager;
 
 namespace theory {
 class TheoryModel;
-class Rewriter;
 class QuantifiersEngine;
 }  // namespace theory
 
@@ -284,6 +271,8 @@ class CVC5_EXPORT SolverEngine
                       const std::vector<Node>& formals,
                       Node formula,
                       bool global = false);
+  /** Same as above, with lambda */
+  void defineFunction(Node func, Node lambda, bool global = false);
 
   /**
    * Define functions recursive
@@ -661,11 +650,16 @@ class CVC5_EXPORT SolverEngine
   void getInstantiationTermVectors(Node q,
                                    std::vector<std::vector<Node>>& tvecs);
   /**
-   * As above but only the instantiations that were relevant for the
-   * refutation.
+   * Adds the skolemizations and instantiations that were relevant
+   * for the refutation.
+   * @param insts The relevant instantiations
+   * @param sks The relevant skolemizations
+   * @param getDebugInfo If true, we add identifiers on instantiations that
+   * indicate their source (the strategy that invoked them)
    */
-  void getRelevantInstantiationTermVectors(
-      std::map<Node, InstantiationList>& insts, bool getDebugInfo = false);
+  void getRelevantQuantTermVectors(std::map<Node, InstantiationList>& insts,
+                                   std::map<Node, std::vector<Node>>& sks,
+                                   bool getDebugInfo = false);
   /**
    * Get instantiation term vectors, which maps each instantiated quantified
    * formula to the list of instantiations for that quantified formula. This
@@ -821,23 +815,9 @@ class CVC5_EXPORT SolverEngine
   Options& getOptions();
   const Options& getOptions() const;
 
-  /** Get a pointer to the UserContext owned by this SolverEngine. */
-  context::UserContext* getUserContext();
-
-  /** Get a pointer to the Context owned by this SolverEngine. */
-  context::Context* getContext();
-
-  /** Get a pointer to the TheoryEngine owned by this SolverEngine. */
-  TheoryEngine* getTheoryEngine();
-
-  /** Get a pointer to the PropEngine owned by this SolverEngine. */
-  prop::PropEngine* getPropEngine();
-
   /** Get the resource manager of this SMT engine */
   ResourceManager* getResourceManager() const;
 
-  /** Get a pointer to the Rewriter owned by this SolverEngine. */
-  theory::Rewriter* getRewriter();
   /**
    * Get substituted assertions.
    *

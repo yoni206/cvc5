@@ -20,7 +20,6 @@
 #include "preprocessing/assertion_pipeline.h"
 #include "proof/proof_node_algorithm.h"
 #include "proof/proof_node_manager.h"
-#include "smt/solver_engine.h"
 #include "theory/arith/arith_utilities.h"
 #include "theory/builtin/proof_checker.h"
 #include "theory/bv/bitblast/bitblast_proof_generator.h"
@@ -37,19 +36,19 @@ namespace cvc5::internal {
 namespace smt {
 
 ProofPostprocessCallback::ProofPostprocessCallback(Env& env,
-                                                   ProofGenerator* pppg,
                                                    rewriter::RewriteDb* rdb,
                                                    bool updateScopedAssumptions)
     : EnvObj(env),
-      d_pppg(pppg),
+      d_pppg(nullptr),
       d_wfpm(env),
       d_updateScopedAssumptions(updateScopedAssumptions)
 {
   d_true = NodeManager::currentNM()->mkConst(true);
 }
 
-void ProofPostprocessCallback::initializeUpdate()
+void ProofPostprocessCallback::initializeUpdate(ProofGenerator* pppg)
 {
+  d_pppg = pppg;
   d_assumpToProof.clear();
   d_wfAssumptions.clear();
 }
@@ -1264,11 +1263,10 @@ bool ProofPostprocessCallback::addToTransChildren(Node eq,
 }
 
 ProofPostprocess::ProofPostprocess(Env& env,
-                                   ProofGenerator* pppg,
                                    rewriter::RewriteDb* rdb,
                                    bool updateScopedAssumptions)
     : EnvObj(env),
-      d_cb(env, pppg, rdb, updateScopedAssumptions),
+      d_cb(env, rdb, updateScopedAssumptions),
       // the update merges subproofs
       d_updater(env, d_cb, options().proof.proofPpMerge),
       d_finalCb(env),
@@ -1278,11 +1276,12 @@ ProofPostprocess::ProofPostprocess(Env& env,
 
 ProofPostprocess::~ProofPostprocess() {}
 
-void ProofPostprocess::process(std::shared_ptr<ProofNode> pf)
+void ProofPostprocess::process(std::shared_ptr<ProofNode> pf,
+                               ProofGenerator* pppg)
 {
   // Initialize the callback, which computes necessary static information about
   // how to process, including how to process assumptions in pf.
-  d_cb.initializeUpdate();
+  d_cb.initializeUpdate(pppg);
   // now, process
   d_updater.process(pf);
   // take stats and check pedantic
