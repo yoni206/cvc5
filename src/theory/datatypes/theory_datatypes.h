@@ -86,6 +86,8 @@ private:
    context::CDO<Node> d_constructor;
    // all selectors whose argument is this eqc
    context::CDO<bool> d_selectors;
+   // labels
+   context::CDO<size_t> d_labels;
   };
   /** does eqc of n have a label (do we know its constructor)? */
   bool hasLabel( EqcInfo* eqc, Node n );
@@ -125,7 +127,6 @@ private:
    * optimization that ensures we don't need to pop data when changing SAT
    * contexts).
    */
-  NodeUIntMap d_labels;
   /** the tester applications */
   std::map< Node, std::vector< Node > > d_labels_data;
   /** the argument of each node in d_labels_data */

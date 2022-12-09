@@ -54,7 +54,6 @@ TheoryDatatypes::TheoryDatatypes(Env& env,
                                  Valuation valuation)
     : Theory(THEORY_DATATYPES, env, out, valuation),
       d_term_sk(userContext()),
-      d_labels(context()),
       d_selector_apps(context()),
       d_initialLemmaCache(userContext()),
       d_functionTerms(context()),
@@ -130,11 +129,10 @@ void TheoryDatatypes::finishInit()
 TheoryDatatypes::EqcInfo* TheoryDatatypes::getOrMakeEqcInfo( TNode n, bool doMake ){
   if( !hasEqcInfo( n ) ){
     if( doMake ){
-      //add to labels
-      d_labels[ n ] = 0;
 
       std::map< Node, EqcInfo* >::iterator eqc_i = d_eqc_info.find( n );
       EqcInfo* ei;
+      ei->d_labels = 0;
       if( eqc_i != d_eqc_info.end() ){
         ei = eqc_i->second;
       }else{
@@ -557,7 +555,7 @@ void TheoryDatatypes::merge( Node t1, Node t2 ){
 }
 
 TheoryDatatypes::EqcInfo::EqcInfo(context::Context* c)
-    : d_inst(c, false), d_constructor(c, Node::null()), d_selectors(c, false)
+    : d_inst(c, false), d_constructor(c, Node::null()), d_selectors(c, false), d_labels(c, 0)
 {}
 
 bool TheoryDatatypes::hasLabel( EqcInfo* eqc, Node n ){
