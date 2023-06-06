@@ -810,7 +810,7 @@ bool LfscPrinter::computeProofArgs(const ProofNode* pn,
     case PfRule::STRING_EAGER_REDUCTION:
     {
       Kind k = as[0].getKind();
-      if (k == STRING_TO_CODE || k == STRING_CONTAINS || k == STRING_INDEXOF)
+      if (k == STRING_TO_CODE || k == STRING_CONTAINS || k == STRING_INDEXOF || k == STRING_LASTINDEXOF)
       {
         pf << h << as[0] << as[0][0].getType();
       }
@@ -824,7 +824,7 @@ bool LfscPrinter::computeProofArgs(const ProofNode* pn,
     case PfRule::STRING_REDUCTION:
     {
       Kind k = as[0].getKind();
-      if (k == STRING_SUBSTR || k == STRING_INDEXOF)
+      if (k == STRING_SUBSTR || k == STRING_INDEXOF || k == STRING_LASTINDEXOF)
       {
         pf << h << as[0] << d_tproc.convertType(as[0][0].getType());
       }

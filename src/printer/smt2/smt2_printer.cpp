@@ -1287,6 +1287,7 @@ std::string Smt2Printer::smtKindString(Kind k)
     case kind::STRING_CONTAINS: return "str.contains";
     case kind::STRING_CHARAT: return "str.at";
     case kind::STRING_INDEXOF: return "str.indexof";
+    case kind::STRING_LASTINDEXOF: return "str.lastindexof";
     case kind::STRING_INDEXOF_RE: return "str.indexof_re";
     case kind::STRING_REPLACE: return "str.replace";
     case kind::STRING_REPLACE_ALL: return "str.replace_all";

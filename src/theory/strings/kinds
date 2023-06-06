@@ -22,6 +22,7 @@ operator STRING_CONTAINS 2 "string contains"
 operator STRING_LT 2 "string less than"
 operator STRING_LEQ 2 "string less than or equal"
 operator STRING_INDEXOF 3 "string index of substring"
+operator STRING_LASTINDEXOF 3 "string last index of substring"
 operator STRING_INDEXOF_RE 3 "string index of regular expression match"
 operator STRING_REPLACE 3 "string replace"
 operator STRING_REPLACE_ALL 3 "string replace all"
@@ -160,6 +161,7 @@ typerule STRING_UPDATE ::cvc5::internal::theory::strings::StringUpdateTypeRule
 typerule STRING_CHARAT ::cvc5::internal::theory::strings::StringAtTypeRule
 typerule STRING_CONTAINS ::cvc5::internal::theory::strings::StringRelationTypeRule
 typerule STRING_INDEXOF ::cvc5::internal::theory::strings::StringIndexOfTypeRule
+typerule STRING_LASTINDEXOF ::cvc5::internal::theory::strings::StringLastIndexOfTypeRule
 typerule STRING_INDEXOF_RE "SimpleTypeRule<RInteger, AString, ARegExp, AInteger>"
 typerule STRING_REPLACE ::cvc5::internal::theory::strings::StringReplaceTypeRule
 typerule STRING_REPLACE_ALL ::cvc5::internal::theory::strings::StringReplaceTypeRule
