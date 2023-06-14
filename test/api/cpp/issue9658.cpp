@@ -20,7 +20,7 @@ int main() {
   cvc5::Solver solver;
 
   // allow recursive datatype
-  solver.setOption("dt-cyclic", "true");
+  // solver.setOption("dt-cyclic", "true");
   solver.setOption("dt-nested-rec", "true");
 
   // the recursive datatype declaration:

@@ -389,6 +389,8 @@ Cardinality DType::computeCardinality(TypeNode t,
   Cardinality c = 0;
   for (std::shared_ptr<DTypeConstructor> ctor : d_constructors)
   {
+    std::cout << "panda ctor.get(): " << ctor.get() << std::endl;
+    std::cout << "panda ctor: " << ctor << std::endl;
     c += ctor->computeCardinality(t, processing);
   }
   d_card = c;
