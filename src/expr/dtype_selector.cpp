@@ -47,6 +47,9 @@ Node DTypeSelector::getConstructor() const
 TypeNode DTypeSelector::getType() const
 {
   Assert(!d_selector.isNull());
+  std::cout << "panda getType() -- d_name: " << d_name<< std::endl;
+  std::cout << "panda getType() -- d_constructor: " << d_constructor << std::endl;
+  std::cout << "panda getType() -- d_selector: " << d_selector << std::endl;
   return d_selector.getType();
 }
 
