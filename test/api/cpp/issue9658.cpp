@@ -21,7 +21,9 @@ int main() {
 
   // allow recursive datatype
   // solver.setOption("dt-cyclic", "true");
-  solver.setOption("dt-nested-rec", "true");
+  // solver.setOption("dt-nested-rec", "true");
+  solver.setOption("trace", "datatypes-prereg");
+
 
   // the recursive datatype declaration:
   // datatype A {
@@ -56,7 +58,9 @@ int main() {
   // update the array with a store
   auto term_a_array_updated =
       solver.mkTerm(cvc5::STORE, {term_array, term_v2, term_v2});
-
+  auto assertion = solver.mkTerm(cvc5::EQUAL, {term_a_array_updated, term_array});
+  solver.assertFormula(assertion);
+  solver.checkSat();
   // SIMPLIFICATION TRIGGERS A PANIC HERE!
   solver.simplify(term_a_array_updated);
 }

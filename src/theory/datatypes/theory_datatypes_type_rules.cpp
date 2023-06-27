@@ -286,6 +286,7 @@ TypeNode DatatypeAscriptionTypeRule::computeType(NodeManager* nodeManager,
 
 Cardinality ConstructorProperties::computeCardinality(TypeNode type)
 {
+  std::cout <<"panda" << std::endl;
   // Constructors aren't exactly functions, they're like
   // parameterized ground terms.  So the cardinality is more like
   // that of a tuple than that of a function.
