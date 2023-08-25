@@ -40,14 +40,9 @@ class AlfPrinter
   /**
    * Print the full proof of assertions => false by pfn.
    */
-  static void print(std::ostream& out, std::shared_ptr<ProofNode> pfn);
+    void print(std::ostream& out, std::shared_ptr<ProofNode> pfn);
 
  private:
-  /**
-   * Print user defined sorts and constants of those sorts
-   */
-  static void printSortsAndConstants(std::ostream& out,
-                                     std::shared_ptr<ProofNode> pfn);
 
   /**
    * For each proof node, the final AletheLF output's formatting depends on
@@ -58,15 +53,15 @@ class AlfPrinter
    * Prints proof node children before parents, unless we encounter the
    *  SCOPE rule, in which case we print "assume" and bind a new variable.
    */
-  static void printProof(std::ostream& out,
+ void printProof(std::ostream& out,
                          std::shared_ptr<ProofNode> pfn,
                          size_t& lastStep,
                          std::map<std::shared_ptr<ProofNode>, size_t>& stepMap);
 
   /* Returns the proof name normalized */
-  static std::string getRuleName(std::shared_ptr<ProofNode> pfn);
+  static std::string getRuleName(const ProofNode* pfn);
 
-  static void printOrdinaryStep(
+  void printOrdinaryStep(
       std::ostream& out,
       std::shared_ptr<ProofNode> pfn,
       const size_t& lastStep,
@@ -76,8 +71,25 @@ class AlfPrinter
   void printProofInternal(AlfPrintChannel* out,
                           const ProofNode* pn,
                           const LetBinding& lbind,
-                          const std::map<const ProofNode*, size_t>& pletMap,
+                          std::map<const ProofNode*, size_t>& pletMap,
                           std::map<Node, size_t>& passumeMap);
+  void printStepPre(AlfPrintChannel* out,
+                          const ProofNode* pn,
+                          const LetBinding& lbind,
+                          std::map<const ProofNode*, size_t>& pletMap,
+                          std::map<Node, size_t>& passumeMap);
+  void printStepPost(AlfPrintChannel* out,
+                          const ProofNode* pn,
+                          const LetBinding& lbind,
+                          std::map<const ProofNode*, size_t>& pletMap,
+                          std::map<Node, size_t>& passumeMap);
+  /** Allocate assume id, return true if was newly allocated */
+  size_t allocateAssumeId(const Node& n, std::map<Node, size_t>& passumeMap, bool& wasAlloc);
+  size_t allocateProofId(const ProofNode* pn, std::map<const ProofNode*, size_t>& pletMap, bool& wasAlloc);
+  /** Assume id counter */
+  size_t d_pfIdCounter;
+  /** Active scopes */
+  std::unordered_set<const ProofNode*> d_activeScopes;
 };
 
 }  // namespace proof

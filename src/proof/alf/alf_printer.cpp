@@ -24,12 +24,16 @@
 #include "expr/node_algorithm.h"
 #include "proof/alf/alf_proof_rule.h"
 #include "proof/proof_node_to_sexpr.h"
+#include "smt/print_benchmark.h"
+#include "printer/printer.h"
 
 namespace cvc5::internal {
 
 namespace proof {
 
-std::string AlfPrinter::getRuleName(std::shared_ptr<ProofNode> pfn)
+AlfPrinter::AlfPrinter() {}
+  
+std::string AlfPrinter::getRuleName(const ProofNode* pfn)
 {
   std::string name;
   if (pfn->getRule() == PfRule::ALF_RULE)
@@ -53,7 +57,7 @@ void AlfPrinter::printOrdinaryStep(
     std::map<std::shared_ptr<ProofNode>, size_t>& stepMap)
 {
   out << "(step t" << lastStep << " " << pfn->getResult() << " :rule "
-      << getRuleName(pfn);
+      << getRuleName(pfn.get());
 
   if (pfn->getChildren().size() == 0 && pfn->getArguments().size() > 0)
   {
@@ -139,49 +143,55 @@ void AlfPrinter::printProof(
   lastStep += 1;
 }
 
-void AlfPrinter::printSortsAndConstants(std::ostream& out,
-                                        std::shared_ptr<ProofNode> pfn)
-{
-  // TODO: this does something, I don't know what
-
-  // Print user defined sorts and constants of those sorts
-  std::unordered_set<Node> syms;
-  std::unordered_set<TNode> visited;
-  std::vector<Node> iasserts;
-
-  const std::vector<Node>& assertions = pfn->getArguments();
-  for (const Node& a : assertions)
-  {
-    expr::getSymbols(a, syms, visited);
-    iasserts.push_back(a);
-  }
-  int sortCount = 1;
-  int symCount = 1;
-  std::unordered_set<TypeNode> sts;
-  for (const Node& s : syms)
-  {
-    TypeNode st = s.getType();
-    if (st.isUninterpretedSort() && sts.find(st) == sts.end())
-    {
-      // declare a user defined sort, if that sort has not been encountered
-      // before
-      sts.insert(st);
-      out << "def " << st << " := sort.atom " << sortCount << std::endl;
-      sortCount += 1;
-    }
-    // declare a constant of a predefined sort
-    out << "def " << s << " := const " << symCount << " " << st << std::endl;
-    symCount += 1;
-  }
-}
-
 void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
 {
+  d_pfIdCounter = 0;
+
+  // [1] Get the definitions and assertions and print the declarations from them
+  const std::vector<Node>& definitions = pfn->getArguments();
+  const std::vector<Node>& assertions = pfn->getChildren()[0]->getArguments();
+  const ProofNode* pnBody = pfn->getChildren()[0]->getChildren()[0].get();
+  
+  // TODO: preprocess definitions/assertions with the term converter
+  smt::PrintBenchmark pb(Printer::getPrinter(out));
+  pb.printDeclarationsFrom(out, definitions, assertions);
+  
+  LetBinding lbind;
+  AlfPrintChannelPre aletify(lbind);
+  AlfPrintChannelOut aprint(out);
+  
+  std::map<const ProofNode*, size_t> pletMap;
+  std::map<Node, size_t> passumeMap;
+  
+  // [2] print assumptions
+  bool wasAlloc;
+  for (size_t i=0; i<2; i++)
+  {
+    AlfPrintChannel* aout;
+    if (i==0)
+    {
+      aout = &aletify;
+    }
+    else
+    {
+      aout = &aprint;
+    }
+    // TODO: not necessary
+    for (const Node& n : definitions)
+    {
+      size_t id = allocateAssumeId(n, passumeMap, wasAlloc);
+      aout->printAssume(n, id, false);
+    }
+    for (const Node& n : assertions)
+    {
+      size_t id = allocateAssumeId(n, passumeMap, wasAlloc);
+      aout->printAssume(n, id, false);
+    }
+    printProofInternal(aout, pnBody, lbind, pletMap, passumeMap);
+  }
   // outer method to print valid AletheLF output from a ProofNode
   std::map<std::shared_ptr<ProofNode>, size_t> stepMap;
-  size_t lastStep = 0;
-
-  printSortsAndConstants(out, pfn);
+  size_t lastStep;
   printProof(out, pfn, lastStep, stepMap);
   out << "\n";
 }
@@ -190,60 +200,42 @@ void AlfPrinter::printProofInternal(
     AlfPrintChannel* out,
     const ProofNode* pn,
     const LetBinding& lbind,
-    const std::map<const ProofNode*, size_t>& pletMap,
+    std::map<const ProofNode*, size_t>& pletMap,
     std::map<Node, size_t>& passumeMap)
 {
   // the stack
   std::vector<const ProofNode*> visit;
   // whether we have to process children
-  std::unordered_set<const ProofNode*> processingChildren;
+  std::unordered_map<const ProofNode*, bool> processingChildren;
   // helper iterators
-  std::unordered_set<const ProofNode*>::iterator pit;
-  std::map<const ProofNode*, size_t>::const_iterator pletIt;
-  std::map<Node, size_t>::iterator passumeIt;
-  Node curn;
-  TypeNode curtn;
+  std::unordered_map<const ProofNode*, bool>::iterator pit;
   const ProofNode* cur;
   visit.push_back(pn);
   do
   {
     cur = visit.back();
-    visit.pop_back();
-
-    PfRule r = cur->getRule();
     pit = processingChildren.find(cur);
     if (pit == processingChildren.end())
     {
-      if (r == PfRule::ALF_RULE)
-      {
-        Assert(!cur->getArguments().empty());
-        // LfscRule lr = getLfscRule(cur->getArguments()[0]);
-        // isLambda = (lr == LfscRule::LAMBDA);
-        Node rn = cur->getArguments()[0];
-        AletheLFRule r = getAletheLFRule(rn);
-        // TODO: if scope, do `push` with the assumption
-        if (r == AletheLFRule::SCOPE)
-        {
-          Assert(cur->getArguments().size() == 2);
-          Node a = cur->getArguments()[1];
-        }
-      }
-      else if (r == PfRule::ASSUME)
+      PfRule r = cur->getRule();
+      if (r == PfRule::ASSUME)
       {
         // ignore
+        visit.pop_back();
         continue;
       }
       else if (r == PfRule::ENCODE_PRED_TRANSFORM)
       {
         // just add child
+        visit.pop_back();
         visit.push_back(cur->getChildren()[0].get());
         continue;
       }
+      printStepPre(out, cur, lbind, pletMap, passumeMap);
       // a normal rule application, compute the proof arguments, which
       // notice in the case of PI also may modify our passumeMap.
-      processingChildren.insert(cur);
+      processingChildren[cur] = true;
       // will revisit this proof node
-      visit.push_back(cur);
       const std::vector<std::shared_ptr<ProofNode>>& children =
           cur->getChildren();
       // visit each child
@@ -251,14 +243,139 @@ void AlfPrinter::printProofInternal(
       {
         visit.push_back(c.get());
       }
+      continue;
     }
-    else
+    visit.pop_back();
+    if (pit->second)
     {
-      // TODO: print the step
-      // TODO: if scope, do `pop`
+      processingChildren[cur] = false;
+      printStepPost(out, cur, lbind, pletMap, passumeMap);
     }
   } while (!visit.empty());
 }
 
+void AlfPrinter::printStepPre(AlfPrintChannel* out,
+                        const ProofNode* pn,
+                        const LetBinding& lbind,
+                        std::map<const ProofNode*, size_t>& pletMap,
+                        std::map<Node, size_t>& passumeMap)
+{
+  // if we haven't yet allocated a proof id, do it now
+  PfRule r = pn->getRule();
+  if (r == PfRule::ALF_RULE)
+  {
+    Assert(!pn->getArguments().empty());
+    Node rn = pn->getArguments()[0];
+    AletheLFRule ar = getAletheLFRule(rn);
+    if (ar == AletheLFRule::SCOPE)
+    {
+      Assert(pn->getArguments().size() == 2);
+      Node a = pn->getArguments()[1];
+      bool wasAlloc = false;
+      size_t aid = allocateAssumeId(a, passumeMap, wasAlloc);
+      // if we assigned an id to the assumption,
+      if (wasAlloc)
+      {
+        d_activeScopes.insert(pn);
+      }
+      else
+      {
+        // otherwise we shadow, just use a dummy
+        d_pfIdCounter++;
+        aid = d_pfIdCounter;
+      }
+      // print a push
+      out->printAssume(a, aid, true);
+    }
+  }
+}
+void AlfPrinter::printStepPost(AlfPrintChannel* out,
+                        const ProofNode* pn,
+                        const LetBinding& lbind,
+                        std::map<const ProofNode*, size_t>& pletMap,
+                        std::map<Node, size_t>& passumeMap)
+{
+  // if we have yet to allocate a proof id, do it now
+  bool wasAlloc = false;
+  size_t id = allocateProofId(pn, pletMap, wasAlloc);
+  bool isPop = false;
+  PfRule r = pn->getRule();
+  std::vector<Node> args;
+  if (r == PfRule::ALF_RULE)
+  {
+    Node rn = pn->getArguments()[0];
+    AletheLFRule ar = getAletheLFRule(rn);
+    // if scope, do pop the assumption from passumeMap
+    if (ar == AletheLFRule::SCOPE)
+    {
+      isPop = true;
+      if (d_activeScopes.find(pn)!=d_activeScopes.end())
+      {
+        Node a = pn->getArguments()[1];
+        passumeMap.erase(a);
+      }
+    }
+    const std::vector<Node> aargs = pn->getArguments();
+    args.insert(args.end(), aargs.begin()+1, aargs.end());
+  }
+  else
+  {
+    args = pn->getArguments();
+  }
+  TNode conclusion = pn->getResult();
+  std::vector<size_t> premises;
+  const std::vector<std::shared_ptr<ProofNode>>& children =
+      pn->getChildren();
+  std::map<Node, size_t>::iterator ita;
+  std::map<const ProofNode*, size_t>::iterator itp;
+  for (const std::shared_ptr<ProofNode>& c : children)
+  {
+    size_t pid;
+    if (c->getRule()==PfRule::ASSUME)
+    {
+      ita = passumeMap.find(c->getResult());
+      Assert (ita!=passumeMap.end());
+      pid = ita->second;
+    }
+    else
+    {
+      itp = pletMap.find(c.get());
+      Assert (itp!=pletMap.end());
+      pid = itp->second;
+    }
+    premises.push_back(pid);
+  }
+  std::string rname = getRuleName(pn);
+  out->printStep(rname, conclusion, id, premises, args, isPop);
+}
+
+size_t AlfPrinter::allocateAssumeId(const Node& n, std::map<Node, size_t>& passumeMap, bool& wasAlloc)
+{
+  std::map<Node, size_t>::iterator it = passumeMap.find(n);
+  if (it!=passumeMap.end())
+  {
+    wasAlloc = false;
+    return it->second;
+  }
+  wasAlloc = true;
+  d_pfIdCounter++;
+  passumeMap[n] = d_pfIdCounter;
+  return d_pfIdCounter;
+}
+
+size_t AlfPrinter::allocateProofId(const ProofNode* pn, std::map<const ProofNode*, size_t>& pletMap, bool& wasAlloc)
+{
+  std::map<const ProofNode*, size_t>::iterator it = pletMap.find(pn);
+  if (it!=pletMap.end())
+  {
+    wasAlloc = false;
+    return it->second;
+  }
+  wasAlloc = true;
+  d_pfIdCounter++;
+  pletMap[pn] = d_pfIdCounter;
+  return d_pfIdCounter;
+}
+  
 }  // namespace proof
 }  // namespace cvc5::internal

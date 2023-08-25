@@ -24,7 +24,7 @@ using namespace cvc5::internal::kind;
 namespace cvc5::internal {
 namespace smt {
 
-void PrintBenchmark::printAssertions(std::ostream& out,
+void PrintBenchmark::printDeclarationsFrom(std::ostream& out,
                                      const std::vector<Node>& defs,
                                      const std::vector<Node>& assertions)
 {
@@ -135,13 +135,19 @@ void PrintBenchmark::printAssertions(std::ostream& out,
     expr::getSymbols(a, syms, visited);
   }
   printDeclaredFuns(out, syms, alreadyPrintedDecl);
-
+}
+void PrintBenchmark::printAssertions(std::ostream& out,
+                                     const std::vector<Node>& defs,
+                                     const std::vector<Node>& assertions)
+{
+  printDeclarationsFrom(out, defs, assertions);
   // print the assertions
   for (const Node& a : assertions)
   {
     d_printer->toStreamCmdAssert(out, a);
   }
 }
+
 void PrintBenchmark::printAssertions(std::ostream& out,
                                      const std::vector<Node>& assertions)
 {

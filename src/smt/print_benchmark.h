@@ -40,6 +40,11 @@ class PrintBenchmark
  public:
   PrintBenchmark(const Printer* p) : d_printer(p) {}
   /**
+   */
+  void printDeclarationsFrom(std::ostream& out, 
+                       const std::vector<Node>& defs, 
+                       const std::vector<Node>& assertions);
+  /**
    * Print assertions. This prints a parsable set of commands on the output
    * stream out that defines (recursive) functions in defs, and asserts
    * assertions. It does not print a set-logic or check-sat command.
