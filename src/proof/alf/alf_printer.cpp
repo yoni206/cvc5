@@ -77,10 +77,8 @@ void AlfPrinter::printOrdinaryStep(
     }
     out << ")";
   }
-  if ((pfn->getRule() == PfRule::ALF_RULE
-       && pfn->getArguments().size() > 1)
-      || (pfn->getRule() != PfRule::ALF_RULE
-          && pfn->getArguments().size() > 0))
+  if ((pfn->getRule() == PfRule::ALF_RULE && pfn->getArguments().size() > 1)
+      || (pfn->getRule() != PfRule::ALF_RULE && pfn->getArguments().size() > 0))
   {
     // Hack to get the arguments converted into something useful
     ProofNodeToSExpr sexpPrinter;
@@ -142,7 +140,7 @@ void AlfPrinter::printProof(
 }
 
 void AlfPrinter::printSortsAndConstants(std::ostream& out,
-                                             std::shared_ptr<ProofNode> pfn)
+                                        std::shared_ptr<ProofNode> pfn)
 {
   // TODO: this does something, I don't know what
 
@@ -188,29 +186,6 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
   out << "\n";
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void AlfPrinter::printProofInternal(
     AlfPrintChannel* out,
     const ProofNode* pn,
@@ -242,16 +217,15 @@ void AlfPrinter::printProofInternal(
       if (r == PfRule::ALF_RULE)
       {
         Assert(!cur->getArguments().empty());
-        //LfscRule lr = getLfscRule(cur->getArguments()[0]);
-        //isLambda = (lr == LfscRule::LAMBDA);
+        // LfscRule lr = getLfscRule(cur->getArguments()[0]);
+        // isLambda = (lr == LfscRule::LAMBDA);
         Node rn = cur->getArguments()[0];
         AletheLFRule r = getAletheLFRule(rn);
         // TODO: if scope, do `push` with the assumption
-        if (r==AletheLFRule::SCOPE)
+        if (r == AletheLFRule::SCOPE)
         {
-          Assert (cur->getArguments().size()==2);
+          Assert(cur->getArguments().size() == 2);
           Node a = cur->getArguments()[1];
-          
         }
       }
       else if (r == PfRule::ASSUME)
@@ -270,7 +244,8 @@ void AlfPrinter::printProofInternal(
       processingChildren.insert(cur);
       // will revisit this proof node
       visit.push_back(cur);
-      const std::vector<std::shared_ptr<ProofNode>>& children = cur->getChildren();
+      const std::vector<std::shared_ptr<ProofNode>>& children =
+          cur->getChildren();
       // visit each child
       for (const std::shared_ptr<ProofNode>& c : children)
       {
@@ -284,15 +259,6 @@ void AlfPrinter::printProofInternal(
     }
   } while (!visit.empty());
 }
-
-
-
-
-
-
-
-
-
 
 }  // namespace proof
 }  // namespace cvc5::internal

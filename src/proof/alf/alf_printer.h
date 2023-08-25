@@ -23,9 +23,9 @@
 #include <iostream>
 
 #include "expr/node_algorithm.h"
+#include "proof/alf/alf_print_channel.h"
 #include "proof/proof_checker.h"
 #include "proof/proof_node.h"
-#include "proof/alf/alf_print_channel.h"
 
 namespace cvc5::internal {
 
@@ -66,20 +66,18 @@ class AlfPrinter
   /* Returns the proof name normalized */
   static std::string getRuleName(std::shared_ptr<ProofNode> pfn);
 
-
   static void printOrdinaryStep(
       std::ostream& out,
       std::shared_ptr<ProofNode> pfn,
       const size_t& lastStep,
       std::map<std::shared_ptr<ProofNode>, size_t>& stepMap);
-  
+
   //-------------
-void printProofInternal(
-    AlfPrintChannel* out,
-    const ProofNode* pn,
-    const LetBinding& lbind,
-    const std::map<const ProofNode*, size_t>& pletMap,
-    std::map<Node, size_t>& passumeMap);
+  void printProofInternal(AlfPrintChannel* out,
+                          const ProofNode* pn,
+                          const LetBinding& lbind,
+                          const std::map<const ProofNode*, size_t>& pletMap,
+                          std::map<Node, size_t>& passumeMap);
 };
 
 }  // namespace proof

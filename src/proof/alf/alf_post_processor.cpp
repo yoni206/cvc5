@@ -53,11 +53,9 @@ bool AletheLFProofPostprocessCallback::shouldUpdate(
     {
       return (pn->getChildren().size() > 2);
     }
-    case PfRule::CHAIN_RESOLUTION:
-      return true;
+    case PfRule::CHAIN_RESOLUTION: return true;
     case PfRule::CONG: return true;
-    default:
-      return false;
+    default: return false;
   }
 }
 
@@ -74,9 +72,8 @@ bool AletheLFProofPostprocessCallback::addAletheLFStep(
   {
     newArgs.push_back(arg);
   }
-  Trace("alethels-proof") << "... add alf step " << conclusion << " "
-                          << rule << " " << children << " / " << newArgs
-                          << std::endl;
+  Trace("alethels-proof") << "... add alf step " << conclusion << " " << rule
+                          << " " << children << " / " << newArgs << std::endl;
   return cdp.addStep(conclusion, PfRule::ALF_RULE, children, newArgs);
 }
 
@@ -87,8 +84,8 @@ bool AletheLFProofPostprocessCallback::update(Node res,
                                               CDProof* cdp,
                                               bool& continueUpdate)
 {
-  Trace("alf-proof") << "...AletheLF pre-update " << res << " " << id
-                          << " " << children << " / " << args << std::endl;
+  Trace("alf-proof") << "...AletheLF pre-update " << res << " " << id << " "
+                     << children << " / " << args << std::endl;
   NodeManager* nm = NodeManager::currentNM();
 
   switch (id)
@@ -138,7 +135,7 @@ bool AletheLFProofPostprocessCallback::update(Node res,
       Assert(res.getKind() == EQUAL);
       Assert(res[0].getOperator() == res[1].getOperator());
       Trace("alf-proof") << "Processing congruence for " << res << " "
-                              << res[0].getKind() << std::endl;
+                         << res[0].getKind() << std::endl;
 
       // These Asserts captures features not yet implemented
       Assert(!res[0].isClosure());
@@ -158,7 +155,7 @@ bool AletheLFProofPostprocessCallback::update(Node res,
       // TODO: this comes from the lfsc converter
       Node op = d_tproc.getOperatorOfTerm(res[0]);
       Trace("alf-proof") << "Processing cong for op " << op << " "
-                              << op.getType() << std::endl;
+                         << op.getType() << std::endl;
       Assert(!op.isNull());
       // initial base step is REFL
       Node opEq = op.eqNode(op);
@@ -191,9 +188,8 @@ bool AletheLFProofPostprocessCallback::update(Node res,
             Node currApp = nm->mkNode(k, children[ii][0], currEq[0]);
             uop = d_tproc.getOperatorOfTerm(currApp);
           }
-          Trace("alf-proof")
-              << "Apply " << uop << " to " << children[ii][0] << " and "
-              << children[ii][1] << std::endl;
+          Trace("alf-proof") << "Apply " << uop << " to " << children[ii][0]
+                             << " and " << children[ii][1] << std::endl;
           Node argAppEq =
               nm->mkNode(HO_APPLY, uop, children[ii][0])
                   .eqNode(nm->mkNode(HO_APPLY, uop, children[ii][1]));
@@ -224,8 +220,7 @@ bool AletheLFProofPostprocessCallback::update(Node res,
       }
     }
     break;
-    default:
-      return false;
+    default: return false;
   }
   return true;
 }
