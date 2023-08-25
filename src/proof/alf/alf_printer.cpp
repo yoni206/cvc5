@@ -189,11 +189,14 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
     }
     printProofInternal(aout, pnBody, lbind, pletMap, passumeMap);
   }
+  // old method
+  /*
   // outer method to print valid AletheLF output from a ProofNode
   std::map<std::shared_ptr<ProofNode>, size_t> stepMap;
   size_t lastStep;
   printProof(out, pfn, lastStep, stepMap);
   out << "\n";
+  */
 }
 
 void AlfPrinter::printProofInternal(AlfPrintChannel* out,
@@ -300,9 +303,10 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out,
   bool isPop = false;
   PfRule r = pn->getRule();
   std::vector<Node> args;
+  const std::vector<Node> aargs = pn->getArguments();
   if (r == PfRule::ALF_RULE)
   {
-    Node rn = pn->getArguments()[0];
+    Node rn = aargs[0];
     AletheLFRule ar = getAletheLFRule(rn);
     // if scope, do pop the assumption from passumeMap
     if (ar == AletheLFRule::SCOPE)
@@ -310,20 +314,26 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out,
       isPop = true;
       if (d_activeScopes.find(pn) != d_activeScopes.end())
       {
-        Node a = pn->getArguments()[1];
+        Node a = aargs[1];
         passumeMap.erase(a);
       }
     }
-    const std::vector<Node> aargs = pn->getArguments();
     args.insert(args.end(), aargs.begin() + 1, aargs.end());
   }
   else
   {
-    args = pn->getArguments();
+    ProofNodeToSExpr pntse;
+    for (size_t i = 0, nargs = aargs.size(); i < nargs; i++)
+    {
+      ProofNodeToSExpr::ArgFormat f = pntse.getArgumentFormat(pn, i);
+      Node av = pntse.getArgument(aargs[i], f);
+      args.push_back(av);
+    }
   }
   TNode conclusion = pn->getResult();
   std::vector<size_t> premises;
   const std::vector<std::shared_ptr<ProofNode>>& children = pn->getChildren();
+  // get the premises
   std::map<Node, size_t>::iterator ita;
   std::map<const ProofNode*, size_t>::iterator itp;
   for (const std::shared_ptr<ProofNode>& c : children)
