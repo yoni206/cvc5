@@ -52,7 +52,7 @@ class ProofNodeToSExpr
    * @param printConclusion Whether to print conclusions
    */
   Node convertToSExpr(const ProofNode* pn, bool printConclusion = false);
-  
+
   /** argument format, determines how to print an argument */
   enum class ArgFormat
   {
@@ -75,6 +75,7 @@ class ProofNodeToSExpr
   ArgFormat getArgumentFormat(const ProofNode* pn, size_t i);
   /** get argument based on the provided format */
   Node getArgument(Node arg, ArgFormat f);
+
  private:
   /** map proof rules to a variable */
   std::map<PfRule, Node> d_pfrMap;
