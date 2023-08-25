@@ -207,6 +207,7 @@ const char* toString(PfRule id)
     //================================================= External rules
     case PfRule::LFSC_RULE: return "LFSC_RULE";
     case PfRule::ALETHE_RULE: return "ALETHE_RULE";
+    case PfRule::ALF_RULE: return "ALF_RULE";
     //================================================= Unknown rule
     case PfRule::UNKNOWN: return "UNKNOWN";
     default: return "?";

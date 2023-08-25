@@ -21,6 +21,9 @@ name   = "Proof"
 [[option.mode.ALETHE]]
   name       = "alethe"
   help       = "Output Alethe proof"
+[[option.mode.ALETHELF]]
+  name       = "alethelf"
+  help       = "Output AletheLS proof (experimental)"
 
 [[option]]
   name       = "proofPrintConclusion"
