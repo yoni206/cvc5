@@ -31,6 +31,7 @@ const char* aletheLFRuleToString(AletheLFRule id)
     case AletheLFRule::CHAIN_RESOLUTION: return "chain_resolution";
     case AletheLFRule::CONG: return "cong";
     case AletheLFRule::HO_CONG: return "ho_cong";
+    case AletheLFRule::SCOPE: return "scope";
     //================================================= Undefined rule
     case AletheLFRule::UNDEFINED: return "undefined";
     default: return "?";

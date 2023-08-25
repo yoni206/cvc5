@@ -243,7 +243,7 @@ void PfManager::printProof(std::ostream& out,
     proof::LfscNodeConverter ltp;
     proof::AletheLFProofPostprocess alfpp(d_env, ltp);
     alfpp.process(fp);
-    proof::AletheLFPrinter::print(out, fp);
+    proof::AlfPrinter::print(out, fp);
   }
   else if (mode == options::ProofFormatMode::ALETHE)
   {

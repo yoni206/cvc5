@@ -166,6 +166,8 @@ libcvc5_add_sources(
   proof/lazy_tree_proof_generator.h
   proof/alf/alf_post_processor.cpp
   proof/alf/alf_post_processor.h
+  proof/alf/alf_print_channel.cpp
+  proof/alf/alf_print_channel.h
   proof/alf/alf_printer.cpp
   proof/alf/alf_printer.h
   proof/alf/alf_proof_rule.cpp

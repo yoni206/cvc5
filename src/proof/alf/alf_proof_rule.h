@@ -33,6 +33,7 @@ enum class AletheLFRule : uint32_t
   CHAIN_RESOLUTION,
   CONG,
   HO_CONG,
+  SCOPE,
   // ======== undefined
   // Used in case that a step in the proof rule could not be translated.
   UNDEFINED

@@ -29,7 +29,7 @@ namespace cvc5::internal {
 
 namespace proof {
 
-std::string AletheLFPrinter::getRuleName(std::shared_ptr<ProofNode> pfn)
+std::string AlfPrinter::getRuleName(std::shared_ptr<ProofNode> pfn)
 {
   std::string name;
   if (pfn->getRule() == PfRule::ALF_RULE)
@@ -46,7 +46,7 @@ std::string AletheLFPrinter::getRuleName(std::shared_ptr<ProofNode> pfn)
   return name;
 }
 
-void AletheLFPrinter::printOrdinaryStep(
+void AlfPrinter::printOrdinaryStep(
     std::ostream& out,
     std::shared_ptr<ProofNode> pfn,
     const size_t& lastStep,
@@ -111,7 +111,7 @@ void AletheLFPrinter::printOrdinaryStep(
   out << ")" << std::endl;
 }
 
-void AletheLFPrinter::printProof(
+void AlfPrinter::printProof(
     std::ostream& out,
     std::shared_ptr<ProofNode> pfn,
     size_t& lastStep,
@@ -141,7 +141,7 @@ void AletheLFPrinter::printProof(
   lastStep += 1;
 }
 
-void AletheLFPrinter::printSortsAndConstants(std::ostream& out,
+void AlfPrinter::printSortsAndConstants(std::ostream& out,
                                              std::shared_ptr<ProofNode> pfn)
 {
   // TODO: this does something, I don't know what
@@ -177,7 +177,7 @@ void AletheLFPrinter::printSortsAndConstants(std::ostream& out,
   }
 }
 
-void AletheLFPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
+void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
 {
   // outer method to print valid AletheLF output from a ProofNode
   std::map<std::shared_ptr<ProofNode>, size_t> stepMap;
@@ -187,6 +187,112 @@ void AletheLFPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
   printProof(out, pfn, lastStep, stepMap);
   out << "\n";
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void AlfPrinter::printProofInternal(
+    AlfPrintChannel* out,
+    const ProofNode* pn,
+    const LetBinding& lbind,
+    const std::map<const ProofNode*, size_t>& pletMap,
+    std::map<Node, size_t>& passumeMap)
+{
+  // the stack
+  std::vector<const ProofNode*> visit;
+  // whether we have to process children
+  std::unordered_set<const ProofNode*> processingChildren;
+  // helper iterators
+  std::unordered_set<const ProofNode*>::iterator pit;
+  std::map<const ProofNode*, size_t>::const_iterator pletIt;
+  std::map<Node, size_t>::iterator passumeIt;
+  Node curn;
+  TypeNode curtn;
+  const ProofNode* cur;
+  visit.push_back(pn);
+  do
+  {
+    cur = visit.back();
+    visit.pop_back();
+
+    PfRule r = cur->getRule();
+    pit = processingChildren.find(cur);
+    if (pit == processingChildren.end())
+    {
+      if (r == PfRule::ALF_RULE)
+      {
+        Assert(!cur->getArguments().empty());
+        //LfscRule lr = getLfscRule(cur->getArguments()[0]);
+        //isLambda = (lr == LfscRule::LAMBDA);
+        Node rn = cur->getArguments()[0];
+        AletheLFRule r = getAletheLFRule(rn);
+        // TODO: if scope, do `push` with the assumption
+        if (r==AletheLFRule::SCOPE)
+        {
+          Assert (cur->getArguments().size()==2);
+          Node a = cur->getArguments()[1];
+          
+        }
+      }
+      else if (r == PfRule::ASSUME)
+      {
+        // ignore
+        continue;
+      }
+      else if (r == PfRule::ENCODE_PRED_TRANSFORM)
+      {
+        // just add child
+        visit.push_back(cur->getChildren()[0].get());
+        continue;
+      }
+      // a normal rule application, compute the proof arguments, which
+      // notice in the case of PI also may modify our passumeMap.
+      processingChildren.insert(cur);
+      // will revisit this proof node
+      visit.push_back(cur);
+      const std::vector<std::shared_ptr<ProofNode>>& children = cur->getChildren();
+      // visit each child
+      for (const std::shared_ptr<ProofNode>& c : children)
+      {
+        visit.push_back(c.get());
+      }
+    }
+    else
+    {
+      // TODO: print the step
+      // TODO: if scope, do `pop`
+    }
+  } while (!visit.empty());
+}
+
+
+
+
+
+
+
+
+
 
 }  // namespace proof
 }  // namespace cvc5::internal
