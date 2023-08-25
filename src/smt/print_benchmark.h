@@ -41,9 +41,9 @@ class PrintBenchmark
   PrintBenchmark(const Printer* p) : d_printer(p) {}
   /**
    */
-  void printDeclarationsFrom(std::ostream& out, 
-                       const std::vector<Node>& defs, 
-                       const std::vector<Node>& assertions);
+  void printDeclarationsFrom(std::ostream& out,
+                             const std::vector<Node>& defs,
+                             const std::vector<Node>& assertions);
   /**
    * Print assertions. This prints a parsable set of commands on the output
    * stream out that defines (recursive) functions in defs, and asserts

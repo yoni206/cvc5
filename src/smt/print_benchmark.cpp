@@ -25,8 +25,8 @@ namespace cvc5::internal {
 namespace smt {
 
 void PrintBenchmark::printDeclarationsFrom(std::ostream& out,
-                                     const std::vector<Node>& defs,
-                                     const std::vector<Node>& assertions)
+                                           const std::vector<Node>& defs,
+                                           const std::vector<Node>& assertions)
 {
   std::unordered_set<TypeNode> types;
   std::unordered_set<TNode> typeVisited;

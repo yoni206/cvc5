@@ -22,17 +22,17 @@
 #include <sstream>
 
 #include "expr/node_algorithm.h"
+#include "printer/printer.h"
 #include "proof/alf/alf_proof_rule.h"
 #include "proof/proof_node_to_sexpr.h"
 #include "smt/print_benchmark.h"
-#include "printer/printer.h"
 
 namespace cvc5::internal {
 
 namespace proof {
 
 AlfPrinter::AlfPrinter() {}
-  
+
 std::string AlfPrinter::getRuleName(const ProofNode* pfn)
 {
   std::string name;
@@ -151,24 +151,24 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
   const std::vector<Node>& definitions = pfn->getArguments();
   const std::vector<Node>& assertions = pfn->getChildren()[0]->getArguments();
   const ProofNode* pnBody = pfn->getChildren()[0]->getChildren()[0].get();
-  
+
   // TODO: preprocess definitions/assertions with the term converter
   smt::PrintBenchmark pb(Printer::getPrinter(out));
   pb.printDeclarationsFrom(out, definitions, assertions);
-  
+
   LetBinding lbind;
   AlfPrintChannelPre aletify(lbind);
   AlfPrintChannelOut aprint(out);
-  
+
   std::map<const ProofNode*, size_t> pletMap;
   std::map<Node, size_t> passumeMap;
-  
+
   // [2] print assumptions
   bool wasAlloc;
-  for (size_t i=0; i<2; i++)
+  for (size_t i = 0; i < 2; i++)
   {
     AlfPrintChannel* aout;
-    if (i==0)
+    if (i == 0)
     {
       aout = &aletify;
     }
@@ -196,12 +196,11 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
   out << "\n";
 }
 
-void AlfPrinter::printProofInternal(
-    AlfPrintChannel* out,
-    const ProofNode* pn,
-    const LetBinding& lbind,
-    std::map<const ProofNode*, size_t>& pletMap,
-    std::map<Node, size_t>& passumeMap)
+void AlfPrinter::printProofInternal(AlfPrintChannel* out,
+                                    const ProofNode* pn,
+                                    const LetBinding& lbind,
+                                    std::map<const ProofNode*, size_t>& pletMap,
+                                    std::map<Node, size_t>& passumeMap)
 {
   // the stack
   std::vector<const ProofNode*> visit;
@@ -255,10 +254,10 @@ void AlfPrinter::printProofInternal(
 }
 
 void AlfPrinter::printStepPre(AlfPrintChannel* out,
-                        const ProofNode* pn,
-                        const LetBinding& lbind,
-                        std::map<const ProofNode*, size_t>& pletMap,
-                        std::map<Node, size_t>& passumeMap)
+                              const ProofNode* pn,
+                              const LetBinding& lbind,
+                              std::map<const ProofNode*, size_t>& pletMap,
+                              std::map<Node, size_t>& passumeMap)
 {
   // if we haven't yet allocated a proof id, do it now
   PfRule r = pn->getRule();
@@ -290,10 +289,10 @@ void AlfPrinter::printStepPre(AlfPrintChannel* out,
   }
 }
 void AlfPrinter::printStepPost(AlfPrintChannel* out,
-                        const ProofNode* pn,
-                        const LetBinding& lbind,
-                        std::map<const ProofNode*, size_t>& pletMap,
-                        std::map<Node, size_t>& passumeMap)
+                               const ProofNode* pn,
+                               const LetBinding& lbind,
+                               std::map<const ProofNode*, size_t>& pletMap,
+                               std::map<Node, size_t>& passumeMap)
 {
   // if we have yet to allocate a proof id, do it now
   bool wasAlloc = false;
@@ -309,14 +308,14 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out,
     if (ar == AletheLFRule::SCOPE)
     {
       isPop = true;
-      if (d_activeScopes.find(pn)!=d_activeScopes.end())
+      if (d_activeScopes.find(pn) != d_activeScopes.end())
       {
         Node a = pn->getArguments()[1];
         passumeMap.erase(a);
       }
     }
     const std::vector<Node> aargs = pn->getArguments();
-    args.insert(args.end(), aargs.begin()+1, aargs.end());
+    args.insert(args.end(), aargs.begin() + 1, aargs.end());
   }
   else
   {
@@ -324,23 +323,22 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out,
   }
   TNode conclusion = pn->getResult();
   std::vector<size_t> premises;
-  const std::vector<std::shared_ptr<ProofNode>>& children =
-      pn->getChildren();
+  const std::vector<std::shared_ptr<ProofNode>>& children = pn->getChildren();
   std::map<Node, size_t>::iterator ita;
   std::map<const ProofNode*, size_t>::iterator itp;
   for (const std::shared_ptr<ProofNode>& c : children)
   {
     size_t pid;
-    if (c->getRule()==PfRule::ASSUME)
+    if (c->getRule() == PfRule::ASSUME)
     {
       ita = passumeMap.find(c->getResult());
-      Assert (ita!=passumeMap.end());
+      Assert(ita != passumeMap.end());
       pid = ita->second;
     }
     else
     {
       itp = pletMap.find(c.get());
-      Assert (itp!=pletMap.end());
+      Assert(itp != pletMap.end());
       pid = itp->second;
     }
     premises.push_back(pid);
@@ -349,10 +347,12 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out,
   out->printStep(rname, conclusion, id, premises, args, isPop);
 }
 
-size_t AlfPrinter::allocateAssumeId(const Node& n, std::map<Node, size_t>& passumeMap, bool& wasAlloc)
+size_t AlfPrinter::allocateAssumeId(const Node& n,
+                                    std::map<Node, size_t>& passumeMap,
+                                    bool& wasAlloc)
 {
   std::map<Node, size_t>::iterator it = passumeMap.find(n);
-  if (it!=passumeMap.end())
+  if (it != passumeMap.end())
   {
     wasAlloc = false;
     return it->second;
@@ -363,10 +363,12 @@ size_t AlfPrinter::allocateAssumeId(const Node& n, std::map<Node, size_t>& passu
   return d_pfIdCounter;
 }
 
-size_t AlfPrinter::allocateProofId(const ProofNode* pn, std::map<const ProofNode*, size_t>& pletMap, bool& wasAlloc)
+size_t AlfPrinter::allocateProofId(const ProofNode* pn,
+                                   std::map<const ProofNode*, size_t>& pletMap,
+                                   bool& wasAlloc)
 {
   std::map<const ProofNode*, size_t>::iterator it = pletMap.find(pn);
-  if (it!=pletMap.end())
+  if (it != pletMap.end())
   {
     wasAlloc = false;
     return it->second;
@@ -376,6 +378,6 @@ size_t AlfPrinter::allocateProofId(const ProofNode* pn, std::map<const ProofNode
   pletMap[pn] = d_pfIdCounter;
   return d_pfIdCounter;
 }
-  
+
 }  // namespace proof
 }  // namespace cvc5::internal
