@@ -40,12 +40,17 @@ void AlfPrintChannelOut::printTypeNode(TypeNode tn)
 
 void AlfPrintChannelOut::printAssume(TNode n, size_t i, bool isPush)
 {
-  Assert (!n.isNull());
+  Assert(!n.isNull());
   d_out << "(" << (isPush ? "push " : "assume p") << i;
   printNode(n);
   d_out << ")" << std::endl;
 }
-void AlfPrintChannelOut::printStep(const std::string& rname, TNode n, size_t i, const std::vector<size_t>& premises, const std::vector<Node>& args, bool isPop)
+void AlfPrintChannelOut::printStep(const std::string& rname,
+                                   TNode n,
+                                   size_t i,
+                                   const std::vector<size_t>& premises,
+                                   const std::vector<Node>& args,
+                                   bool isPop)
 {
   d_out << "(" << (isPop ? "pop " : "step p") << i;
   if (!n.isNull())
@@ -90,7 +95,6 @@ void AlfPrintChannelOut::printStep(const std::string& rname, TNode n, size_t i, 
     d_out << ")";
   }
   d_out << ")" << std::endl;
-  
 }
 
 void AlfPrintChannelOut::printNodeInternal(std::ostream& out, Node n)
@@ -100,7 +104,7 @@ void AlfPrintChannelOut::printNodeInternal(std::ostream& out, Node n)
   options::ioutils::applyOutputLanguage(ss, Language::LANG_SMTLIB_V2_6);
   n.toStream(ss);
   std::string s = ss.str();
-  //cleanSymbols(s);
+  // cleanSymbols(s);
   out << s;
 }
 
@@ -111,7 +115,7 @@ void AlfPrintChannelOut::printTypeNodeInternal(std::ostream& out, TypeNode tn)
   options::ioutils::applyOutputLanguage(ss, Language::LANG_SMTLIB_V2_6);
   tn.toStream(ss);
   std::string s = ss.str();
-  //cleanSymbols(s);
+  // cleanSymbols(s);
   out << s;
 }
 
@@ -143,7 +147,12 @@ void AlfPrintChannelPre::printAssume(TNode n, size_t i, bool isPush)
   d_lbind.process(n);
 }
 
-void AlfPrintChannelPre::printStep(const std::string& rname, TNode n, size_t i, const std::vector<size_t>& premises, const std::vector<Node>& args, bool isPop)
+void AlfPrintChannelPre::printStep(const std::string& rname,
+                                   TNode n,
+                                   size_t i,
+                                   const std::vector<size_t>& premises,
+                                   const std::vector<Node>& args,
+                                   bool isPop)
 {
   if (!n.isNull())
   {

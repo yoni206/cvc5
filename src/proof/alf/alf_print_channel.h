@@ -48,7 +48,14 @@ class AlfPrintChannel
   /** Print assume */
   virtual void printAssume(TNode n, size_t i, bool isPush = false) {}
   /** Print step */
-  virtual void printStep(const std::string& rname, TNode n, size_t i, const std::vector<size_t>& premises, const std::vector<Node>& args, bool isPop) {}
+  virtual void printStep(const std::string& rname,
+                         TNode n,
+                         size_t i,
+                         const std::vector<size_t>& premises,
+                         const std::vector<Node>& args,
+                         bool isPop)
+  {
+  }
 };
 
 /** Prints the proof to output stream d_out */
@@ -59,8 +66,13 @@ class AlfPrintChannelOut : public AlfPrintChannel
   void printNode(TNode n) override;
   void printTypeNode(TypeNode tn) override;
   void printAssume(TNode n, size_t i, bool isPush) override;
-  void printStep(const std::string& rname, TNode n, size_t i, const std::vector<size_t>& premises, const std::vector<Node>& args, bool isPop) override;
-  
+  void printStep(const std::string& rname,
+                 TNode n,
+                 size_t i,
+                 const std::vector<size_t>& premises,
+                 const std::vector<Node>& args,
+                 bool isPop) override;
+
   /**
    * Print node to stream in the expected format of LFSC.
    */
@@ -70,6 +82,7 @@ class AlfPrintChannelOut : public AlfPrintChannel
    */
   static void printTypeNodeInternal(std::ostream& out, TypeNode tn);
   static void printRule(std::ostream& out, const ProofNode* pn);
+
  private:
   /** The output stream */
   std::ostream& d_out;
@@ -86,7 +99,12 @@ class AlfPrintChannelPre : public AlfPrintChannel
   AlfPrintChannelPre(LetBinding& lbind);
   void printNode(TNode n) override;
   void printAssume(TNode n, size_t i, bool isPush) override;
-  void printStep(const std::string& rname, TNode n, size_t i, const std::vector<size_t>& premises, const std::vector<Node>& args, bool isPop) override;
+  void printStep(const std::string& rname,
+                 TNode n,
+                 size_t i,
+                 const std::vector<size_t>& premises,
+                 const std::vector<Node>& args,
+                 bool isPop) override;
 
  private:
   /** The let binding */
