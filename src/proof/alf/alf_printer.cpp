@@ -50,99 +50,6 @@ std::string AlfPrinter::getRuleName(const ProofNode* pfn)
   return name;
 }
 
-void AlfPrinter::printOrdinaryStep(
-    std::ostream& out,
-    std::shared_ptr<ProofNode> pfn,
-    const size_t& lastStep,
-    std::map<std::shared_ptr<ProofNode>, size_t>& stepMap)
-{
-  out << "(step t" << lastStep << " " << pfn->getResult() << " :rule "
-      << getRuleName(pfn.get());
-
-  if (pfn->getChildren().size() == 0 && pfn->getArguments().size() > 0)
-  {
-    out << " :premises ()";
-  }
-  else if (pfn->getChildren().size() > 0)
-  {
-    bool first = true;
-    for (std::shared_ptr<ProofNode> premise : pfn->getChildren())
-    {
-      if (first)
-      {
-        out << " :premises (";
-        first = false;
-      }
-      else
-      {
-        out << " ";
-      }
-      out << "t" << stepMap[premise];
-    }
-    out << ")";
-  }
-  if ((pfn->getRule() == PfRule::ALF_RULE && pfn->getArguments().size() > 1)
-      || (pfn->getRule() != PfRule::ALF_RULE && pfn->getArguments().size() > 0))
-  {
-    // Hack to get the arguments converted into something useful
-    ProofNodeToSExpr sexpPrinter;
-    Node sexp = sexpPrinter.convertToSExpr(pfn.get(), false);
-    bool first = true;
-    // this is a problem
-    bool skipFirst = (pfn->getRule() == PfRule::ALF_RULE);
-    for (Node arg : sexp[sexp.getNumChildren() - 1])
-    {
-      if (skipFirst)
-      {
-        skipFirst = false;
-        continue;
-      }
-      if (first)
-      {
-        out << " :args (";
-        first = false;
-      }
-      else
-      {
-        out << " ";
-      }
-      out << arg;
-    }
-    out << ")";
-  }
-  out << ")" << std::endl;
-}
-
-void AlfPrinter::printProof(
-    std::ostream& out,
-    std::shared_ptr<ProofNode> pfn,
-    size_t& lastStep,
-    std::map<std::shared_ptr<ProofNode>, size_t>& stepMap)
-{
-  if (pfn->getRule() == PfRule::SCOPE)
-  {
-    out << "; Oh no! it's a scope." << std::endl;
-  }
-
-  const std::vector<std::shared_ptr<ProofNode>>& children = pfn->getChildren();
-  for (const std::shared_ptr<ProofNode>& ch : children)
-  {
-    printProof(out, ch, lastStep, stepMap);
-  }
-
-  switch (pfn->getRule())
-  {
-    case PfRule::SCOPE: return;
-    case PfRule::ASSUME:
-      out << "(assume t" << lastStep << " " << pfn->getResult() << ")"
-          << std::endl;
-      break;
-    default: printOrdinaryStep(out, pfn, lastStep, stepMap); break;
-  }
-  stepMap[pfn] = lastStep;
-  lastStep += 1;
-}
-
 void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
 {
   d_pfIdCounter = 0;
@@ -153,6 +60,7 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
   const ProofNode* pnBody = pfn->getChildren()[0]->getChildren()[0].get();
 
   // TODO: preprocess definitions/assertions with the term converter
+  // if the names change
   smt::PrintBenchmark pb(Printer::getPrinter(out));
   pb.printDeclarationsFrom(out, definitions, assertions);
 
@@ -176,7 +84,7 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
     {
       aout = &aprint;
     }
-    // TODO: not necessary
+    // TODO: not exactly necessary
     for (const Node& n : definitions)
     {
       size_t id = allocateAssumeId(n, passumeMap, wasAlloc);
@@ -297,6 +205,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out,
                                std::map<const ProofNode*, size_t>& pletMap,
                                std::map<Node, size_t>& passumeMap)
 {
+  // TODO: check if we need to trust
   // if we have yet to allocate a proof id, do it now
   bool wasAlloc = false;
   size_t id = allocateProofId(pn, pletMap, wasAlloc);
@@ -339,6 +248,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out,
   for (const std::shared_ptr<ProofNode>& c : children)
   {
     size_t pid;
+    // if assume, lookup in passumeMap
     if (c->getRule() == PfRule::ASSUME)
     {
       ita = passumeMap.find(c->getResult());

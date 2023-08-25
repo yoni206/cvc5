@@ -43,27 +43,9 @@ class AlfPrinter
   void print(std::ostream& out, std::shared_ptr<ProofNode> pfn);
 
  private:
-  /**
-   * For each proof node, the final AletheLF output's formatting depends on
-   *  the particular proof rule. For example, a chain resolution must be
-   *  converted into a series of sequential resolutions.
-   * This method cases on the AletheLF proof rules (./lean_rules.h) and prints
-   *  to the ostream& out.
-   * Prints proof node children before parents, unless we encounter the
-   *  SCOPE rule, in which case we print "assume" and bind a new variable.
-   */
-  void printProof(std::ostream& out,
-                  std::shared_ptr<ProofNode> pfn,
-                  size_t& lastStep,
-                  std::map<std::shared_ptr<ProofNode>, size_t>& stepMap);
 
   /* Returns the proof name normalized */
   static std::string getRuleName(const ProofNode* pfn);
-
-  void printOrdinaryStep(std::ostream& out,
-                         std::shared_ptr<ProofNode> pfn,
-                         const size_t& lastStep,
-                         std::map<std::shared_ptr<ProofNode>, size_t>& stepMap);
 
   //-------------
   void printProofInternal(AlfPrintChannel* out,
