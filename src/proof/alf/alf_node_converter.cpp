@@ -203,8 +203,8 @@ Node AlfNodeConverter::postConvert(Node n)
     // (forall ((x1 T1) ... (xn Tk)) P) is
     // (forall x1 (forall x2 ... (forall xn P)))
     Node ret = n[1];
-    Node cop = getOperatorOfClosure(n, true);
-    Node pcop = getOperatorOfClosure(n, true, true);
+    Node cop = getOperatorOfClosure(n);
+    Node pcop = getOperatorOfClosure(n, true);
     for (size_t i = 0, nchild = n[0].getNumChildren(); i < nchild; i++)
     {
       size_t ii = (nchild - 1) - i;
@@ -511,7 +511,7 @@ bool AlfNodeConverter::shouldTraverse(Node n)
   return true;
 }
 
-Node AlfNodeConverter::maybeMkSkolemFun(Node k, bool macroApply)
+Node AlfNodeConverter::maybeMkSkolemFun(Node k)
 {
   NodeManager* nm = NodeManager::currentNM();
   SkolemManager* sm = nm->getSkolemManager();
@@ -640,33 +640,10 @@ Node AlfNodeConverter::convertBitVector(const BitVector& bv)
 Node AlfNodeConverter::getNullTerminator(Kind k, TypeNode tn)
 {
   NodeManager* nm = NodeManager::currentNM();
-  Node nullTerm;
-  switch (k)
-  {
-    case REGEXP_CONCAT:
-      // the language containing only the empty string, which has special
-      // syntax in LFSC
-      nullTerm = getSymbolInternal(k, tn, "re.empty");
-      break;
-    case BITVECTOR_CONCAT:
-    {
-      // the null terminator of bitvector concat is a dummy variable of
-      // bit-vector type with zero width, regardless of the type of the overall
-      // concat.
-      TypeNode bvz = nm->mkBitVectorType(0);
-      nullTerm = getSymbolInternal(k, bvz, "emptybv");
-    }
-    break;
-    default:
-      // no special handling, or not null terminated
-      break;
-  }
-  if (!nullTerm.isNull())
-  {
-    return nullTerm;
-  }
-  // otherwise, fall back to standard utility
-  return expr::getNullTerminator(k, tn);
+  Node tc = typeAsNode(convertType(tn));
+  TypeNode ftype = nm->mkFunctionType({tc.getType()}, tn);
+  Node nil = getSymbolInternal(k, ftype, "alf.nil");
+  return mkApplyUf(nil, {tc});
 }
 
 Kind AlfNodeConverter::getBuiltinKindForInternalSymbol(Node op) const
@@ -679,7 +656,7 @@ Kind AlfNodeConverter::getBuiltinKindForInternalSymbol(Node op) const
   return UNDEFINED_KIND;
 }
 
-Node AlfNodeConverter::getOperatorOfTerm(Node n, bool macroApply)
+Node AlfNodeConverter::getOperatorOfTerm(Node n)
 {
   Assert(n.hasOperator());
   Assert(!n.isClosure());
@@ -734,13 +711,6 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n, bool macroApply)
       {
         ftype = nm->mkFunctionType(itypes, ftype);
       }
-      if (!macroApply)
-      {
-        if (k != APPLY_UPDATER && k != APPLY_TESTER)
-        {
-          opName << "f_";
-        }
-      }
       // must avoid overloading for to_fp variants
       if (k == FLOATINGPOINT_TO_FP_FROM_FP)
       {
@@ -772,7 +742,7 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n, bool macroApply)
     }
     else if (k == APPLY_SELECTOR)
     {
-      ret = maybeMkSkolemFun(op, macroApply);
+      ret = maybeMkSkolemFun(op);
       if (ret.isNull())
       {
         unsigned index = DType::indexOf(op);
@@ -783,10 +753,6 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n, bool macroApply)
     }
     else if (k == SET_SINGLETON || k == BAG_MAKE || k == SEQ_UNIT)
     {
-      if (!macroApply)
-      {
-        opName << "f_";
-      }
       opName << printer::smt2::Smt2Printer::smtKindString(k);
     }
     else
@@ -818,12 +784,7 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n, bool macroApply)
   }
   TypeNode tn = n.getType();
   TypeNode ftype = nm->mkFunctionType(argTypes, tn);
-  // most functions are called f_X where X is the SMT-LIB name, if we are
-  // getting the macroApply variant, then we don't prefix with `f_`.
-  if (!macroApply)
-  {
-    opName << "f_";
-  }
+  // most functions are called f_X where X is the SMT-LIB name
   // all arithmetic kinds must explicitly deal with real vs int subtyping
   if (k == ADD || k == MULT || k == NONLINEAR_MULT || k == GEQ || k == GT
       || k == LEQ || k == LT || k == SUB || k == DIVISION || k == DIVISION_TOTAL
@@ -847,7 +808,6 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n, bool macroApply)
 }
 
 Node AlfNodeConverter::getOperatorOfClosure(Node q,
-                                            bool macroApply,
                                             bool isPartial)
 {
   NodeManager* nm = NodeManager::currentNM();
@@ -859,10 +819,6 @@ Node AlfNodeConverter::getOperatorOfClosure(Node q,
   TypeNode ftype = nm->mkFunctionType({intType, d_sortType}, bodyType);
   Kind k = q.getKind();
   std::stringstream opName;
-  if (!macroApply)
-  {
-    opName << "f_";
-  }
   opName << printer::smt2::Smt2Printer::smtKindString(k);
   return getSymbolInternal(k, ftype, opName.str());
 }

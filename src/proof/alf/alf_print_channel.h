@@ -57,7 +57,7 @@ class AlfPrintChannel
   {
   }
   /** Print trust */
-  virtual void printTrust(PfRule r, TNode n, size_t i) {}
+  virtual void printTrust(PfRule r, TNode n, size_t i, TNode conc) {}
 };
 
 /** Prints the proof to output stream d_out */
@@ -74,7 +74,7 @@ class AlfPrintChannelOut : public AlfPrintChannel
                  const std::vector<size_t>& premises,
                  const std::vector<Node>& args,
                  bool isPop) override;
-  void printTrust(PfRule r, TNode n, size_t i) override;
+  void printTrust(PfRule r, TNode n, size_t i, TNode conc) override;
 
   /**
    * Print node to stream in the expected format of LFSC.
@@ -108,6 +108,7 @@ class AlfPrintChannelPre : public AlfPrintChannel
                  const std::vector<size_t>& premises,
                  const std::vector<Node>& args,
                  bool isPop) override;
+  void printTrust(PfRule r, TNode n, size_t i, TNode conc) override;
 
  private:
   /** The let binding */

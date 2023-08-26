@@ -108,7 +108,7 @@ bool AlfProofPostprocessCallback::update(Node res,
         addAlfStep(AlfRule::SCOPE, next, {curr}, {args[ii]}, *cdp);
         curr = next;
       }
-      // convert to (=> (and F1 ... Fn) C) or
+      // convert (=> F1 (=> ... (=> Fn C)...)) to (=> (and F1 ... Fn) C) or
       // (not (and F1 ... Fn))
       addAlfStep(AlfRule::PROCESS_SCOPE, res, {curr}, {children[0]}, *cdp);
     }
@@ -184,6 +184,7 @@ bool AlfProofPostprocessCallback::update(Node res,
       Node opEq = op.eqNode(op);
       cdp->addStep(opEq, PfRule::REFL, {}, {op});
       size_t nchildren = children.size();
+      Node nullTerm = d_tproc.getNullTerminator(k, res[0].getType());
       // Are we doing congruence of an n-ary operator? If so, notice that op
       // is a binary operator and we must apply congruence in a special way.
       // Note we use the first block of code if we have more than 2 children.
@@ -193,13 +194,28 @@ bool AlfProofPostprocessCallback::update(Node res,
                     && k != kind::APPLY_UF;
 
       // TODO: is this correct? this was taken from LFSC
-      if (isNary && nchildren > 2)
+      if (isNary)
       {
-        Node currEq = children[nchildren - 1];
+         // get the null terminator for the kind, which may mean we are doing
+        // a special kind of congruence for n-ary kinds whose base is a REFL
+        // step for the null terminator.
+        Node currEq;
+        if (!nullTerm.isNull())
+        {
+          currEq = nullTerm.eqNode(nullTerm);
+          // if we have a null terminator, we do a final REFL step to add
+          // the null terminator to both sides.
+          cdp->addStep(currEq, PfRule::REFL, {}, {nullTerm});
+        }
+        else
+        {
+          // Otherwise, start with the last argument.
+          currEq = children[nchildren - 1];
+        }
         for (size_t i = 0; i < nchildren; i++)
         {
           size_t ii = (nchildren - 1) - i;
-          Trace("alf-proof") << "Process child " << ii << std::endl;
+          Trace("lfsc-pp-cong") << "Process child " << ii << std::endl;
           Node uop = op;
           // special case: applications of the following kinds in the chain may
           // have a different type, so remake the operator here.
@@ -211,13 +227,15 @@ bool AlfProofPostprocessCallback::update(Node res,
             Node currApp = nm->mkNode(k, children[ii][0], currEq[0]);
             uop = d_tproc.getOperatorOfTerm(currApp);
           }
-          Trace("alf-proof") << "Apply " << uop << " to " << children[ii][0]
-                             << " and " << children[ii][1] << std::endl;
+          Trace("lfsc-pp-cong") << "Apply " << uop << " to " << children[ii][0]
+                                << " and " << children[ii][1] << std::endl;
           Node argAppEq =
               nm->mkNode(HO_APPLY, uop, children[ii][0])
                   .eqNode(nm->mkNode(HO_APPLY, uop, children[ii][1]));
-          addAlfStep(
-              AlfRule::HO_CONG, argAppEq, {opEq, children[ii]}, {}, *cdp);
+          addAlfStep(AlfRule::HO_CONG,
+                    argAppEq, {opEq, children[ii]},
+                    {},
+                    *cdp);
           // now, congruence to the current equality
           Node nextEq;
           if (ii == 0)
@@ -231,8 +249,10 @@ bool AlfProofPostprocessCallback::update(Node res,
             nextEq = nm->mkNode(HO_APPLY, argAppEq[0], currEq[0])
                          .eqNode(nm->mkNode(HO_APPLY, argAppEq[1], currEq[1]));
           }
-          // cdp, conclusion, children, rule, args
-          addAlfStep(AlfRule::HO_CONG, nextEq, {argAppEq, currEq}, {}, *cdp);
+          addAlfStep(AlfRule::HO_CONG,
+                    nextEq, {argAppEq, currEq},
+                    {},
+                    *cdp);
           currEq = nextEq;
         }
       }

@@ -97,10 +97,11 @@ void AlfPrintChannelOut::printStep(const std::string& rname,
   d_out << ")" << std::endl;
 }
 
-void AlfPrintChannelOut::printTrust(PfRule r, TNode n, size_t i)
+void AlfPrintChannelOut::printTrust(PfRule r, TNode n, size_t i, TNode nc)
 {
+  Assert (!nc.isNull());
   d_out << "; trust " << r << std::endl;
-  printStep("trust", n, i, {}, {n}, false);
+  printStep("trust", n, i, {}, {nc}, false);
 }
 
 void AlfPrintChannelOut::printNodeInternal(std::ostream& out, Node n)
@@ -168,6 +169,11 @@ void AlfPrintChannelPre::printStep(const std::string& rname,
   {
     d_lbind.process(a);
   }
+}
+void AlfPrintChannelPre::printTrust(PfRule r, TNode n, size_t i, TNode nc)
+{
+  Assert (!nc.isNull());
+  d_lbind.process(nc);
 }
 
 }  // namespace proof

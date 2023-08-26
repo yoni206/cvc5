@@ -59,7 +59,7 @@ class AlfNodeConverter : public NodeConverter
    * where it is important to get the term corresponding to the operator for
    * a term. An example is for the base REFL step of nested CONG.
    */
-  Node getOperatorOfTerm(Node n, bool macroApply = false);
+  Node getOperatorOfTerm(Node n);
   /**
    * Recall that (forall ((x Int)) (P x)) is printed as:
    *   (apply (forall N Int) (apply P (bvar N Int)))
@@ -80,7 +80,6 @@ class AlfNodeConverter : public NodeConverter
    *   (-> Sort Int Int (-> Int Int Int Int))
    */
   Node getOperatorOfClosure(Node q,
-                            bool macroApply = false,
                             bool isPartial = false);
   /**
    * Get closure operator, where cop is the term returned by
@@ -145,7 +144,7 @@ class AlfNodeConverter : public NodeConverter
    * (in SkolemManager::mkSkolemFunction) that is supported in the ALF
    * signature.
    */
-  Node maybeMkSkolemFun(Node k, bool macroApply = false);
+  Node maybeMkSkolemFun(Node k);
   /**
    * Type as node, returns a node that prints in the form that ALF will
    * interpret as the type tni. This method is required since types can be

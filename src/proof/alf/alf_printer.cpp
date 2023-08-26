@@ -381,10 +381,16 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out,
   size_t id = allocateProofId(pn, pletMap, wasAlloc);
   bool isPop = false;
   TNode conclusion = pn->getResult();
+  TNode conclusionPrint;
+  // print conclusion only if option is set
+  if (options().proof.proofPrintConclusion)
+  {
+    conclusionPrint = conclusion;
+  }
   // if we don't handle the rule, print trust
   if (!isHandled(pn))
   {
-    out->printTrust(pn->getRule(), conclusion, id);
+    out->printTrust(pn->getRule(), conclusionPrint, id, conclusion);
     return;
   }
   PfRule r = pn->getRule();
@@ -444,7 +450,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out,
     premises.push_back(pid);
   }
   std::string rname = getRuleName(pn);
-  out->printStep(rname, conclusion, id, premises, args, isPop);
+  out->printStep(rname, conclusionPrint, id, premises, args, isPop);
 }
 
 size_t AlfPrinter::allocateAssumeId(const Node& n,
