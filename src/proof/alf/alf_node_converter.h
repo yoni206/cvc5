@@ -79,8 +79,7 @@ class AlfNodeConverter : public NodeConverter
    * We call these "partial". Then, the outer lambda is given type:
    *   (-> Sort Int Int (-> Int Int Int Int))
    */
-  Node getOperatorOfClosure(Node q,
-                            bool isPartial = false);
+  Node getOperatorOfClosure(Node q, bool isPartial = false);
   /**
    * Get closure operator, where cop is the term returned by
    * getOperatorOfClosure(q), where q is the closures to which v

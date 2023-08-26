@@ -99,7 +99,7 @@ void AlfPrintChannelOut::printStep(const std::string& rname,
 
 void AlfPrintChannelOut::printTrust(PfRule r, TNode n, size_t i, TNode nc)
 {
-  Assert (!nc.isNull());
+  Assert(!nc.isNull());
   d_out << "; trust " << r << std::endl;
   printStep("trust", n, i, {}, {nc}, false);
 }
@@ -172,7 +172,7 @@ void AlfPrintChannelPre::printStep(const std::string& rname,
 }
 void AlfPrintChannelPre::printTrust(PfRule r, TNode n, size_t i, TNode nc)
 {
-  Assert (!nc.isNull());
+  Assert(!nc.isNull());
   d_lbind.process(nc);
 }
 

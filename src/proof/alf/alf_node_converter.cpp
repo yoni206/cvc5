@@ -807,8 +807,7 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
   return getSymbolInternal(k, ftype, opName.str());
 }
 
-Node AlfNodeConverter::getOperatorOfClosure(Node q,
-                                            bool isPartial)
+Node AlfNodeConverter::getOperatorOfClosure(Node q, bool isPartial)
 {
   NodeManager* nm = NodeManager::currentNM();
   TypeNode retType = isPartial ? q[1].getType() : q.getType();

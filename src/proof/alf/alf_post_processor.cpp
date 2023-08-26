@@ -196,7 +196,7 @@ bool AlfProofPostprocessCallback::update(Node res,
       // TODO: is this correct? this was taken from LFSC
       if (isNary)
       {
-         // get the null terminator for the kind, which may mean we are doing
+        // get the null terminator for the kind, which may mean we are doing
         // a special kind of congruence for n-ary kinds whose base is a REFL
         // step for the null terminator.
         Node currEq;
@@ -232,10 +232,8 @@ bool AlfProofPostprocessCallback::update(Node res,
           Node argAppEq =
               nm->mkNode(HO_APPLY, uop, children[ii][0])
                   .eqNode(nm->mkNode(HO_APPLY, uop, children[ii][1]));
-          addAlfStep(AlfRule::HO_CONG,
-                    argAppEq, {opEq, children[ii]},
-                    {},
-                    *cdp);
+          addAlfStep(
+              AlfRule::HO_CONG, argAppEq, {opEq, children[ii]}, {}, *cdp);
           // now, congruence to the current equality
           Node nextEq;
           if (ii == 0)
@@ -249,10 +247,7 @@ bool AlfProofPostprocessCallback::update(Node res,
             nextEq = nm->mkNode(HO_APPLY, argAppEq[0], currEq[0])
                          .eqNode(nm->mkNode(HO_APPLY, argAppEq[1], currEq[1]));
           }
-          addAlfStep(AlfRule::HO_CONG,
-                    nextEq, {argAppEq, currEq},
-                    {},
-                    *cdp);
+          addAlfStep(AlfRule::HO_CONG, nextEq, {argAppEq, currEq}, {}, *cdp);
           currEq = nextEq;
         }
       }
