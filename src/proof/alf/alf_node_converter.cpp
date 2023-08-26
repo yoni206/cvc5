@@ -264,10 +264,7 @@ Node AlfNodeConverter::mkApplyUf(Node op, const std::vector<Node>& args) const
   return nm->mkNode(APPLY_UF, aargs);
 }
 
-TypeNode AlfNodeConverter::preConvertType(TypeNode tn)
-{
-  return tn;
-}
+TypeNode AlfNodeConverter::preConvertType(TypeNode tn) { return tn; }
 
 TypeNode AlfNodeConverter::postConvertType(TypeNode tn)
 {

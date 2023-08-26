@@ -55,7 +55,7 @@ bool AlfProofPostprocessCallback::shouldUpdate(std::shared_ptr<ProofNode> pn,
     case PfRule::SCOPE:
     case PfRule::CHAIN_RESOLUTION:
     case PfRule::CONG:
-    case PfRule::HO_CONG:return true;
+    case PfRule::HO_CONG: return true;
     default: return false;
   }
 }
