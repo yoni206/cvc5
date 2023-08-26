@@ -61,42 +61,10 @@ class AlfNodeConverter : public NodeConverter
    */
   Node getOperatorOfTerm(Node n);
   /**
-   * Recall that (forall ((x Int)) (P x)) is printed as:
-   *   (apply (forall N Int) (apply P (bvar N Int)))
-   * in ALF, where N is an integer indicating the id of the variable.
-   *
-   * Get closure operator. In the above example, this method returns the
-   * uninterpreted function whose name is "forall" and is used to construct
-   * higher-order operators for each bound variable in the closure.
-   *
-   * To ensure typing is correct on converted terms, lambdas require further
-   * care on inner variables. For example:
-   *   (lambda ((x Int) (y Int) (z Int)) 0)
-   * is printed as:
-   *   (apply (lambda N1 Int) (apply (lambda N2 Int) (apply (lambda N3 Int) 0)))
-   * The inner two lambda operators we give type
-   *   (-> Sort Int Int Int)
-   * We call these "partial". Then, the outer lambda is given type:
-   *   (-> Sort Int Int (-> Int Int Int Int))
-   */
-  Node getOperatorOfClosure(Node q, bool isPartial = false);
-  /**
-   * Get closure operator, where cop is the term returned by
-   * getOperatorOfClosure(q), where q is the closures to which v
-   * belongs. For example, for FORALL closures, this method will return the
-   * node that prints as "(forall N Int)".
-   */
-  Node getOperatorOfBoundVar(Node cop, Node v);
-  /**
    * Get the variable index for free variable fv, or assign a fresh index if it
    * is not yet assigned.
    */
   size_t getOrAssignIndexForFVar(Node fv);
-  /**
-   * Get the variable index for bound variable bv, or assign a fresh index if it
-   * is not yet assigned.
-   */
-  size_t getOrAssignIndexForBVar(Node bv);
   /**
    * Make an internal symbol with custom name. This is a BOUND_VARIABLE that
    * has a distinguished status so that it is *not* printed as (bvar ...). The

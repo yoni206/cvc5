@@ -99,18 +99,7 @@ Node AlfNodeConverter::postConvert(Node n)
       << "postConvert " << n << " " << k << std::endl;
   if (k == BOUND_VARIABLE)
   {
-    if (d_symbols.find(n) != d_symbols.end())
-    {
-      // ignore internally generated symbols
-      return n;
-    }
-    // bound variable v is (bvar x T)
-    TypeNode intType = nm->integerType();
-    Node x = nm->mkConstInt(Rational(getOrAssignIndexForBVar(n)));
-    Node tc = typeAsNode(convertType(tn));
-    TypeNode ftype = nm->mkFunctionType({intType, d_sortType}, tn);
-    Node bvarOp = getSymbolInternal(k, ftype, "bvar");
-    return mkApplyUf(bvarOp, {x, tc});
+    return n;
   }
   else if (k == RAW_SYMBOL)
   {
@@ -151,6 +140,7 @@ Node AlfNodeConverter::postConvert(Node n)
     // This case will only apply for terms originating from places with no
     // proof support. Note it is not added as a declared variable, instead it
     // is used as (var N T) throughout.
+    // FIXME
     TypeNode intType = nm->integerType();
     TypeNode varType = nm->mkFunctionType({intType, d_sortType}, tn);
     Node var = mkInternalSymbol("var", varType);
@@ -179,12 +169,13 @@ Node AlfNodeConverter::postConvert(Node n)
   {
     TypeNode tnv = nm->mkFunctionType({tn, tn}, tn);
     Rational r = n.getConst<Rational>();
-    Node realDiv = getSymbolInternal(k, tnv, "alf.div");
+    Node realDiv = getSymbolInternal(k, tnv, "alf.qdiv");
     // ensure rationals are printed properly here using alf syntax
+    // which computes the rational (alf.qdiv n d).
     Node num = nm->mkConstInt(r.getNumerator().abs());
     Node den = nm->mkConstInt(r.getDenominator());
     Node ret = mkApplyUf(realDiv, {num, den});
-    // negative (~ n/m)
+    // negative (alf.neg .)
     if (r.sgn() == -1)
     {
       Node realNeg =
@@ -198,16 +189,17 @@ Node AlfNodeConverter::postConvert(Node n)
     // (forall ((x1 T1) ... (xn Tk)) P) is
     // (forall x1 (forall x2 ... (forall xn P)))
     Node ret = n[1];
-    Node cop = getOperatorOfClosure(n);
-    Node pcop = getOperatorOfClosure(n, true);
+    std::stringstream opName;
+    opName << printer::smt2::Smt2Printer::smtKindString(k);
     for (size_t i = 0, nchild = n[0].getNumChildren(); i < nchild; i++)
     {
       size_t ii = (nchild - 1) - i;
       Node v = n[0][ii];
-      // use the partial operator for variables except the last one.  This
-      // avoids type errors in internal representation of LFSC terms.
-      Node vop = getOperatorOfBoundVar(ii == 0 ? cop : pcop, v);
-      ret = mkApplyUf(vop, {ret});
+      // use the body return type for all terms except the last one.
+      TypeNode retType = ii==0 ? n.getType() : n[1].getType();
+      TypeNode ftype = nm->mkFunctionType({v.getType(), ret.getType()}, retType);
+      Node vop = getSymbolInternal(k, ftype, opName.str());
+      ret = mkApplyUf(vop, {v, ret});
     }
     // notice that intentionally we drop annotations here
     return ret;
@@ -658,20 +650,16 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
       << GenericOp::isIndexedOperatorKind(k) << std::endl;
   if (n.getMetaKind() == metakind::PARAMETERIZED)
   {
+    if (k == APPLY_UPDATER || k == APPLY_TESTER)
+    {
+      // TODO: is-C or update-S.
+    }
     Node op = n.getOperator();
     std::vector<Node> indices;
-    if (GenericOp::isIndexedOperatorKind(k))
+    bool isIndexed = GenericOp::isIndexedOperatorKind(k);
+    if (isIndexed)
     {
       indices = GenericOp::getIndicesForOperator(k, n.getOperator());
-      // we must convert the name of indices on updaters and testers
-      if (k == APPLY_UPDATER || k == APPLY_TESTER)
-      {
-        Assert(indices.size() == 1);
-        // must convert to user name
-        TypeNode intType = nm->integerType();
-        indices[0] =
-            getSymbolInternal(k, intType, getNameForUserNameOf(indices[0]));
-      }
     }
     else if (op.getType().isFunction())
     {
@@ -689,7 +677,7 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
       ftype = nm->mkFunctionType(argTypes, ftype);
     }
     Node ret;
-    if (GenericOp::isIndexedOperatorKind(k))
+    if (isIndexed)
     {
       std::vector<TypeNode> itypes;
       for (const Node& i : indices)
@@ -731,6 +719,7 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
     }
     else if (k == APPLY_SELECTOR)
     {
+      // maybe a shared selector
       ret = maybeMkSkolemFun(op);
       if (ret.isNull())
       {
@@ -786,29 +775,6 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
   return getSymbolInternal(k, ftype, opName.str());
 }
 
-Node AlfNodeConverter::getOperatorOfClosure(Node q, bool isPartial)
-{
-  NodeManager* nm = NodeManager::currentNM();
-  TypeNode retType = isPartial ? q[1].getType() : q.getType();
-  TypeNode bodyType = nm->mkFunctionType(q[1].getType(), retType);
-  // We permit non-flat function types here
-  // intType is used here for variable indices
-  TypeNode intType = nm->integerType();
-  TypeNode ftype = nm->mkFunctionType({intType, d_sortType}, bodyType);
-  Kind k = q.getKind();
-  std::stringstream opName;
-  opName << printer::smt2::Smt2Printer::smtKindString(k);
-  return getSymbolInternal(k, ftype, opName.str());
-}
-
-Node AlfNodeConverter::getOperatorOfBoundVar(Node cop, Node v)
-{
-  NodeManager* nm = NodeManager::currentNM();
-  Node x = nm->mkConstInt(Rational(getOrAssignIndexForBVar(v)));
-  Node tc = typeAsNode(convertType(v.getType()));
-  return mkApplyUf(cop, {x, tc});
-}
-
 size_t AlfNodeConverter::getOrAssignIndexForFVar(Node fv)
 {
   Assert(fv.isVar());
@@ -819,19 +785,6 @@ size_t AlfNodeConverter::getOrAssignIndexForFVar(Node fv)
   }
   size_t id = d_fvarIndex.size();
   d_fvarIndex[fv] = id;
-  return id;
-}
-
-size_t AlfNodeConverter::getOrAssignIndexForBVar(Node bv)
-{
-  Assert(bv.isVar());
-  std::map<Node, size_t>::iterator it = d_bvarIndex.find(bv);
-  if (it != d_bvarIndex.end())
-  {
-    return it->second;
-  }
-  size_t id = d_bvarIndex.size();
-  d_bvarIndex[bv] = id;
   return id;
 }
 
