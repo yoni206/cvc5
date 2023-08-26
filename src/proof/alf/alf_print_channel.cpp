@@ -97,12 +97,10 @@ void AlfPrintChannelOut::printStep(const std::string& rname,
   d_out << ")" << std::endl;
 }
 
-void AlfPrintChannelOut::printTrust(PfRule r,
-                         TNode n,
-                         size_t i)
+void AlfPrintChannelOut::printTrust(PfRule r, TNode n, size_t i)
 {
   d_out << "; trust " << r << std::endl;
-  printStep("trust", n, i, {},{n}, false);
+  printStep("trust", n, i, {}, {n}, false);
 }
 
 void AlfPrintChannelOut::printNodeInternal(std::ostream& out, Node n)

@@ -21,8 +21,8 @@
 #include <map>
 #include <unordered_set>
 
-#include "proof/alf/alf_proof_rule.h"
 #include "proof/alf/alf_node_converter.h"
+#include "proof/alf/alf_proof_rule.h"
 #include "proof/proof_checker.h"
 #include "proof/proof_node_updater.h"
 

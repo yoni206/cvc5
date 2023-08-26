@@ -334,7 +334,8 @@ void PropEngine::assertLemmasInternal(
   Trace("prop") << "Finish " << trn << std::endl;
 }
 
-void PropEngine::requirePhase(TNode n, bool phase) {
+void PropEngine::requirePhase(TNode n, bool phase)
+{
   Trace("prop") << "requirePhase(" << n << ", " << phase << ")" << std::endl;
 
   Assert(n.getType().isBoolean());
