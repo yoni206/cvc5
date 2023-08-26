@@ -92,12 +92,12 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::CNF_ITE_NEG1:
     case PfRule::CNF_ITE_NEG2:
     case PfRule::CNF_ITE_NEG3:
+    case PfRule::CNF_AND_POS:
     case PfRule::REORDERING:
     case PfRule::RESOLUTION:
     case PfRule::CHAIN_RESOLUTION:
     case PfRule::ALF_RULE: return true; break;
     // FIXME
-    case PfRule::CNF_AND_POS:
     //
     case PfRule::SUBS:
     case PfRule::REWRITE:
