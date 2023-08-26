@@ -24,17 +24,19 @@
 
 #include "expr/node_algorithm.h"
 #include "proof/alf/alf_print_channel.h"
+#include "proof/alf/alf_node_converter.h"
 #include "proof/proof_checker.h"
 #include "proof/proof_node.h"
+#include "smt/env_obj.h"
 
 namespace cvc5::internal {
 
 namespace proof {
 
-class AlfPrinter
+class AlfPrinter : protected EnvObj
 {
  public:
-  AlfPrinter();
+  AlfPrinter(Env& env, AlfNodeConverter& atp);
   ~AlfPrinter() {}
 
   /**
@@ -43,7 +45,8 @@ class AlfPrinter
   void print(std::ostream& out, std::shared_ptr<ProofNode> pfn);
 
  private:
-
+  /** Is handled? */
+  bool isHandled(const ProofNode* pfn) const;
   /* Returns the proof name normalized */
   static std::string getRuleName(const ProofNode* pfn);
 
@@ -70,6 +73,8 @@ class AlfPrinter
   size_t allocateProofId(const ProofNode* pn,
                          std::map<const ProofNode*, size_t>& pletMap,
                          bool& wasAlloc);
+  /** The term processor */
+  AlfNodeConverter& d_tproc;
   /** Assume id counter */
   size_t d_pfIdCounter;
   /** Active scopes */

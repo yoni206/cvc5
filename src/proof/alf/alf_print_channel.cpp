@@ -41,7 +41,7 @@ void AlfPrintChannelOut::printTypeNode(TypeNode tn)
 void AlfPrintChannelOut::printAssume(TNode n, size_t i, bool isPush)
 {
   Assert(!n.isNull());
-  d_out << "(" << (isPush ? "push " : "assume p") << i;
+  d_out << "(" << (isPush ? "push " : "assume @p") << i;
   printNode(n);
   d_out << ")" << std::endl;
 }
@@ -52,7 +52,7 @@ void AlfPrintChannelOut::printStep(const std::string& rname,
                                    const std::vector<Node>& args,
                                    bool isPop)
 {
-  d_out << "(" << (isPop ? "pop " : "step p") << i;
+  d_out << "(" << (isPop ? "pop " : "step @p") << i;
   if (!n.isNull())
   {
     printNode(n);
@@ -72,7 +72,7 @@ void AlfPrintChannelOut::printStep(const std::string& rname,
       {
         d_out << " ";
       }
-      d_out << "p" << p;
+      d_out << "@p" << p;
     }
     d_out << ")";
   }
@@ -95,6 +95,14 @@ void AlfPrintChannelOut::printStep(const std::string& rname,
     d_out << ")";
   }
   d_out << ")" << std::endl;
+}
+
+void AlfPrintChannelOut::printTrust(PfRule r,
+                         TNode n,
+                         size_t i)
+{
+  d_out << "; trust " << r << std::endl;
+  printStep("trust", n, i, {},{n}, false);
 }
 
 void AlfPrintChannelOut::printNodeInternal(std::ostream& out, Node n)

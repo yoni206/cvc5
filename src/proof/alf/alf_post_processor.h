@@ -22,7 +22,7 @@
 #include <unordered_set>
 
 #include "proof/alf/alf_proof_rule.h"
-#include "proof/lfsc/lfsc_node_converter.h"
+#include "proof/alf/alf_node_converter.h"
 #include "proof/proof_checker.h"
 #include "proof/proof_node_updater.h"
 
@@ -38,7 +38,7 @@ class AletheLFProofPostprocessCallback : public ProofNodeUpdaterCallback
 {
  public:
   AletheLFProofPostprocessCallback(ProofNodeManager* pnm,
-                                   LfscNodeConverter& ltp);
+                                   AlfNodeConverter& atp);
   /**
    * Initialize, called once for each new ProofNode to process. This
    * initializes static information to be used by successive calls to update.
@@ -71,7 +71,7 @@ class AletheLFProofPostprocessCallback : public ProofNodeUpdaterCallback
   ProofChecker* d_pc;
 
   /** We reuse the Lfsc node converter when processing the CONG rule */
-  LfscNodeConverter& d_tproc;
+  AlfNodeConverter& d_tproc;
 
   bool addAletheLFStep(AletheLFRule rule,
                        Node conclusion,
@@ -87,7 +87,7 @@ class AletheLFProofPostprocessCallback : public ProofNodeUpdaterCallback
 class AletheLFProofPostprocess : protected EnvObj
 {
  public:
-  AletheLFProofPostprocess(Env& env, LfscNodeConverter& ltp);
+  AletheLFProofPostprocess(Env& env, AlfNodeConverter& atp);
   /** post-process */
   void process(std::shared_ptr<ProofNode> pf);
 

@@ -29,13 +29,13 @@ namespace cvc5::internal {
 namespace proof {
 
 AletheLFProofPostprocessCallback::AletheLFProofPostprocessCallback(
-    ProofNodeManager* pnm, LfscNodeConverter& ltp)
+    ProofNodeManager* pnm, AlfNodeConverter& ltp)
     : d_pnm(pnm), d_pc(pnm->getChecker()), d_tproc(ltp)
 {
 }
 
 AletheLFProofPostprocess::AletheLFProofPostprocess(Env& env,
-                                                   LfscNodeConverter& ltp)
+                                                   AlfNodeConverter& ltp)
     : EnvObj(env),
       d_cb(new proof::AletheLFProofPostprocessCallback(
           env.getProofNodeManager(), ltp))
@@ -90,6 +90,10 @@ bool AletheLFProofPostprocessCallback::update(Node res,
 
   switch (id)
   {
+    case PfRule::SCOPE:
+    {
+    }
+    break;
     case PfRule::AND_INTRO:
     {
       // Split one AND_INTRO into multiple NARY_AND_INTRO (if necessary)
