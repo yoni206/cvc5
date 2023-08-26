@@ -93,11 +93,11 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::CNF_ITE_NEG2:
     case PfRule::CNF_ITE_NEG3:
     case PfRule::CNF_AND_POS:
+    case PfRule::FACTORING:
     case PfRule::REORDERING:
     case PfRule::RESOLUTION:
     case PfRule::CHAIN_RESOLUTION:
     case PfRule::ALF_RULE: return true; break;
-    // FIXME
     //
     case PfRule::SUBS:
     case PfRule::REWRITE:
@@ -124,7 +124,6 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::TRUST_SUBS_EQ:
     case PfRule::THEORY_INFERENCE:
     case PfRule::SAT_REFUTATION:
-    case PfRule::FACTORING:
     case PfRule::MACRO_RESOLUTION:
     case PfRule::MACRO_RESOLUTION_TRUST:
     case PfRule::HO_APP_ENCODE:
@@ -222,7 +221,7 @@ std::string AlfPrinter::getRuleName(const ProofNode* pfn)
 
 void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
 {
-  out << "(include \"../proofs/rules/Cvc5.smt2\")" << std::endl;
+  out << "(include \"/home/andrew/alfc/proofs/rules/Cvc5.smt2\")" << std::endl;
   d_pfIdCounter = 0;
 
   // [1] Get the definitions and assertions and print the declarations from them
