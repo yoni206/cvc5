@@ -51,9 +51,11 @@ bool AlfProofPostprocessCallback::shouldUpdate(std::shared_ptr<ProofNode> pn,
     {
       return (pn->getChildren().size() > 2);
     }
+    case PfRule::TRANS:
     case PfRule::SCOPE:
     case PfRule::CHAIN_RESOLUTION:
-    case PfRule::CONG: return true;
+    case PfRule::CONG:
+    case PfRule::HO_CONG:return true;
     default: return false;
   }
 }
@@ -153,6 +155,30 @@ bool AlfProofPostprocessCallback::update(Node res,
       return addAlfStep(
           AlfRule::CHAIN_RESOLUTION, res, {conj}, {argsList}, *cdp);
     }
+    case PfRule::TRANS:
+    {
+      if (children.size() <= 2)
+      {
+        // no need to change
+        return false;
+      }
+      // turn into binary
+      Node cur = children[0];
+      std::unordered_set<Node> processed;
+      processed.insert(children.begin(), children.end());
+      for (size_t i = 1, size = children.size(); i < size; i++)
+      {
+        std::vector<Node> newChildren{cur, children[i]};
+        cur = d_pc->checkDebug(PfRule::TRANS, newChildren, {});
+        if (processed.find(cur) != processed.end())
+        {
+          continue;
+        }
+        processed.insert(cur);
+        cdp->addStep(cur, PfRule::TRANS, newChildren, {});
+      }
+    }
+    break;
     case PfRule::CONG:
     {
       Assert(res.getKind() == EQUAL);
@@ -255,6 +281,12 @@ bool AlfProofPostprocessCallback::update(Node res,
       {
         updateCong(res, children, cdp, op);
       }
+    }
+    break;
+    case PfRule::HO_CONG:
+    {
+      // converted to chain of CONG, with no base operator
+      updateCong(res, children, cdp, Node::null());
     }
     break;
     default: return false;

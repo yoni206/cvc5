@@ -49,12 +49,8 @@ namespace proof {
 AlfNodeConverter::AlfNodeConverter()
 {
   NodeManager* nm = NodeManager::currentNM();
-  d_arrow = nm->mkSortConstructor("arrow", 2);
 
   d_sortType = nm->mkSort("sortType");
-  // the embedding of arrow into Node, which is binary constructor over sorts
-  TypeNode anfType = nm->mkFunctionType({d_sortType, d_sortType}, d_sortType);
-  d_typeAsNode[d_arrow] = getSymbolInternal(FUNCTION_TYPE, anfType, "arrow");
 
   TypeNode intType = nm->integerType();
   TypeNode arrType = nm->mkFunctionType({d_sortType, d_sortType}, d_sortType);
@@ -164,7 +160,6 @@ Node AlfNodeConverter::postConvert(Node n)
   }
   else if (n.isVar())
   {
-    d_declVars.insert(n);
     return mkInternalSymbol(getNameForUserNameOf(n), tn);
   }
   else if (k == CARDINALITY_CONSTRAINT)
@@ -271,13 +266,6 @@ Node AlfNodeConverter::mkApplyUf(Node op, const std::vector<Node>& args) const
 
 TypeNode AlfNodeConverter::preConvertType(TypeNode tn)
 {
-  if (tn.getKind() == TUPLE_TYPE)
-  {
-    // Must collect the tuple type here, since at post-order traversal, the
-    // type has been modified and no longer maintains the mapping to its
-    // datatype encoding.
-    d_declTypes.insert(tn);
-  }
   return tn;
 }
 
@@ -339,7 +327,6 @@ TypeNode AlfNodeConverter::postConvertType(TypeNode tn)
   {
     Assert(!tn.isTuple());
     // an uninterpreted sort, or an uninstantiatied (maybe parametric) datatype
-    d_declTypes.insert(tn);
     std::stringstream ss;
     options::ioutils::applyOutputLanguage(ss, Language::LANG_SMTLIB_V2_6);
     tn.toStream(ss);
@@ -397,6 +384,11 @@ TypeNode AlfNodeConverter::postConvertType(TypeNode tn)
       TypeNode ftype = nm->mkFunctionType(types, d_sortType);
       std::string name = tn.getUninterpretedSortConstructor().getName();
       op = getSymbolInternal(k, ftype, name, false);
+    }
+    else if (k == FUNCTION_TYPE)
+    {
+      TypeNode ftype = nm->mkFunctionType(types, d_sortType);
+      op = getSymbolInternal(k, ftype, "->");
     }
     else
     {
@@ -784,16 +776,6 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
   }
   TypeNode tn = n.getType();
   TypeNode ftype = nm->mkFunctionType(argTypes, tn);
-  // most functions are called f_X where X is the SMT-LIB name
-  // all arithmetic kinds must explicitly deal with real vs int subtyping
-  if (k == ADD || k == MULT || k == NONLINEAR_MULT || k == GEQ || k == GT
-      || k == LEQ || k == LT || k == SUB || k == DIVISION || k == DIVISION_TOTAL
-      || k == INTS_DIVISION || k == INTS_DIVISION_TOTAL || k == INTS_MODULUS
-      || k == INTS_MODULUS_TOTAL || k == NEG || k == POW)
-  {
-    // currently allow subtyping
-    opName << "a.";
-  }
   if (k == NEG)
   {
     opName << "u";
@@ -854,16 +836,6 @@ size_t AlfNodeConverter::getOrAssignIndexForBVar(Node bv)
   size_t id = d_bvarIndex.size();
   d_bvarIndex[bv] = id;
   return id;
-}
-
-const std::unordered_set<Node>& AlfNodeConverter::getDeclaredSymbols() const
-{
-  return d_declVars;
-}
-
-const std::unordered_set<TypeNode>& AlfNodeConverter::getDeclaredTypes() const
-{
-  return d_declTypes;
 }
 
 }  // namespace proof
