@@ -28,24 +28,22 @@ using namespace cvc5::internal::kind;
 namespace cvc5::internal {
 namespace proof {
 
-AlfProofPostprocessCallback::AlfProofPostprocessCallback(
-    ProofNodeManager* pnm, AlfNodeConverter& ltp)
+AlfProofPostprocessCallback::AlfProofPostprocessCallback(ProofNodeManager* pnm,
+                                                         AlfNodeConverter& ltp)
     : d_pnm(pnm), d_pc(pnm->getChecker()), d_tproc(ltp), d_numIgnoredScopes(0)
 {
 }
 
-AlfProofPostprocess::AlfProofPostprocess(Env& env,
-                                                   AlfNodeConverter& ltp)
+AlfProofPostprocess::AlfProofPostprocess(Env& env, AlfNodeConverter& ltp)
     : EnvObj(env),
-      d_cb(new proof::AlfProofPostprocessCallback(
-          env.getProofNodeManager(), ltp))
+      d_cb(new proof::AlfProofPostprocessCallback(env.getProofNodeManager(),
+                                                  ltp))
 {
 }
 
-bool AlfProofPostprocessCallback::shouldUpdate(
-    std::shared_ptr<ProofNode> pn,
-    const std::vector<Node>& fa,
-    bool& continueUpdate)
+bool AlfProofPostprocessCallback::shouldUpdate(std::shared_ptr<ProofNode> pn,
+                                               const std::vector<Node>& fa,
+                                               bool& continueUpdate)
 {
   switch (pn->getRule())
   {
@@ -60,12 +58,11 @@ bool AlfProofPostprocessCallback::shouldUpdate(
   }
 }
 
-bool AlfProofPostprocessCallback::addAlfStep(
-    AlfRule rule,
-    Node conclusion,
-    const std::vector<Node>& children,
-    const std::vector<Node>& args,
-    CDProof& cdp)
+bool AlfProofPostprocessCallback::addAlfStep(AlfRule rule,
+                                             Node conclusion,
+                                             const std::vector<Node>& children,
+                                             const std::vector<Node>& args,
+                                             CDProof& cdp)
 {
   std::vector<Node> newArgs{NodeManager::currentNM()->mkConstInt(
       Rational(static_cast<uint32_t>(rule)))};
@@ -79,11 +76,11 @@ bool AlfProofPostprocessCallback::addAlfStep(
 }
 
 bool AlfProofPostprocessCallback::update(Node res,
-                                              PfRule id,
-                                              const std::vector<Node>& children,
-                                              const std::vector<Node>& args,
-                                              CDProof* cdp,
-                                              bool& continueUpdate)
+                                         PfRule id,
+                                         const std::vector<Node>& children,
+                                         const std::vector<Node>& args,
+                                         CDProof* cdp,
+                                         bool& continueUpdate)
 {
   Trace("alf-proof") << "...Alf pre-update " << res << " " << id << " "
                      << children << " / " << args << std::endl;
@@ -135,10 +132,10 @@ bool AlfProofPostprocessCallback::update(Node res,
         }
         Node nextConj = nm->mkNode(AND, conjuncts);
         addAlfStep(AlfRule::AND_INTRO_NARY,
-                        nextConj,
-                        {children[n - i], conj},
-                        {},
-                        *cdp);
+                   nextConj,
+                   {children[n - i], conj},
+                   {},
+                   *cdp);
         conj = nextConj;
       }
       return true;
@@ -235,8 +232,7 @@ bool AlfProofPostprocessCallback::update(Node res,
                          .eqNode(nm->mkNode(HO_APPLY, argAppEq[1], currEq[1]));
           }
           // cdp, conclusion, children, rule, args
-          addAlfStep(
-              AlfRule::HO_CONG, nextEq, {argAppEq, currEq}, {}, *cdp);
+          addAlfStep(AlfRule::HO_CONG, nextEq, {argAppEq, currEq}, {}, *cdp);
           currEq = nextEq;
         }
       }
@@ -251,8 +247,10 @@ bool AlfProofPostprocessCallback::update(Node res,
   return true;
 }
 
-void AlfProofPostprocessCallback::updateCong(
-    Node res, const std::vector<Node>& children, CDProof* cdp, Node startOp)
+void AlfProofPostprocessCallback::updateCong(Node res,
+                                             const std::vector<Node>& children,
+                                             CDProof* cdp,
+                                             Node startOp)
 {
   Node currEq;
   size_t i = 0;
@@ -287,8 +285,7 @@ void AlfProofPostprocessCallback::updateCong(
       nextEq = curL.eqNode(curR);
     }
     // cdp, conclusion, children, rule, args
-    addAlfStep(
-        AlfRule::HO_CONG, nextEq, {currEq, children[i]}, {}, *cdp);
+    addAlfStep(AlfRule::HO_CONG, nextEq, {currEq, children[i]}, {}, *cdp);
     currEq = nextEq;
   }
 }

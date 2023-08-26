@@ -37,8 +37,7 @@ namespace proof {
 class AlfProofPostprocessCallback : public ProofNodeUpdaterCallback
 {
  public:
-  AlfProofPostprocessCallback(ProofNodeManager* pnm,
-                                   AlfNodeConverter& atp);
+  AlfProofPostprocessCallback(ProofNodeManager* pnm, AlfNodeConverter& atp);
   /**
    * Initialize, called once for each new ProofNode to process. This
    * initializes static information to be used by successive calls to update.
@@ -78,10 +77,10 @@ class AlfProofPostprocessCallback : public ProofNodeUpdaterCallback
   uint8_t d_numIgnoredScopes;
 
   bool addAlfStep(AlfRule rule,
-                       Node conclusion,
-                       const std::vector<Node>& children,
-                       const std::vector<Node>& args,
-                       CDProof& cdp);
+                  Node conclusion,
+                  const std::vector<Node>& children,
+                  const std::vector<Node>& args,
+                  CDProof& cdp);
 };
 
 /**

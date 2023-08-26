@@ -137,8 +137,7 @@ Node AlfNodeConverter::postConvert(Node n)
     Node wi = SkolemManager::getUnpurifiedForm(n);
     if (!wi.isNull() && wi != n)
     {
-      Trace("alf-term-process-debug")
-          << "...original form " << wi << std::endl;
+      Trace("alf-term-process-debug") << "...original form " << wi << std::endl;
       wi = convert(wi);
       Trace("alf-term-process-debug")
           << "...converted original for " << wi << std::endl;
@@ -193,7 +192,8 @@ Node AlfNodeConverter::postConvert(Node n)
     // negative (~ n/m)
     if (r.sgn() == -1)
     {
-      Node realNeg = getSymbolInternal(k, nm->mkFunctionType(tn, tn), "alf.neg");
+      Node realNeg =
+          getSymbolInternal(k, nm->mkFunctionType(tn, tn), "alf.neg");
       ret = mkApplyUf(realNeg, {ret});
     }
     return ret;
@@ -249,7 +249,7 @@ Node AlfNodeConverter::postConvert(Node n)
 
 Node AlfNodeConverter::mkApplyUf(Node op, const std::vector<Node>& args) const
 {
-  NodeManager * nm = NodeManager::currentNM();
+  NodeManager* nm = NodeManager::currentNM();
   std::vector<Node> aargs;
   if (op.isVar())
   {
@@ -422,7 +422,7 @@ TypeNode AlfNodeConverter::postConvertType(TypeNode tn)
 }
 
 std::string AlfNodeConverter::getNameForUserName(const std::string& name,
-                                                  size_t variant)
+                                                 size_t variant)
 {
   // For user name X, we do cvc.Y, where Y contains an escaped version of X.
   // Specifically, since LFSC does not allow these characters in identifier
@@ -479,8 +479,7 @@ std::string AlfNodeConverter::getNameForUserNameOfInternal(
 {
   std::vector<uint64_t>& syms = d_userSymbolList[name];
   size_t variant = 0;
-  std::vector<uint64_t>::iterator itr =
-      std::find(syms.begin(), syms.end(), id);
+  std::vector<uint64_t>::iterator itr = std::find(syms.begin(), syms.end(), id);
   if (itr != syms.cend())
   {
     variant = std::distance(syms.begin(), itr);
@@ -548,8 +547,8 @@ Node AlfNodeConverter::maybeMkSkolemFun(Node k, bool macroApply)
       Assert(!cacheVal.isNull() && cacheVal.getKind() == SEXPR
              && cacheVal.getNumChildren() == 3);
       // third value is mpz, which is not converted
-      return mkApplyUf(sk,
-          {convert(cacheVal[0]), convert(cacheVal[1]), cacheVal[2]});
+      return mkApplyUf(
+          sk, {convert(cacheVal[0]), convert(cacheVal[1]), cacheVal[2]});
     }
   }
   return Node::null();
@@ -565,8 +564,8 @@ Node AlfNodeConverter::typeAsNode(TypeNode tni) const
 }
 
 Node AlfNodeConverter::mkInternalSymbol(const std::string& name,
-                                         TypeNode tn,
-                                         bool useRawSym)
+                                        TypeNode tn,
+                                        bool useRawSym)
 {
   // use raw symbol so that it is never quoted
   NodeManager* nm = NodeManager::currentNM();
@@ -576,16 +575,16 @@ Node AlfNodeConverter::mkInternalSymbol(const std::string& name,
 }
 
 Node AlfNodeConverter::getSymbolInternalFor(Node n,
-                                             const std::string& name,
-                                             bool useRawSym)
+                                            const std::string& name,
+                                            bool useRawSym)
 {
   return getSymbolInternal(n.getKind(), n.getType(), name, useRawSym);
 }
 
 Node AlfNodeConverter::getSymbolInternal(Kind k,
-                                          TypeNode tn,
-                                          const std::string& name,
-                                          bool useRawSym)
+                                         TypeNode tn,
+                                         const std::string& name,
+                                         bool useRawSym)
 {
   std::tuple<Kind, TypeNode, std::string> key(k, tn, name);
   std::map<std::tuple<Kind, TypeNode, std::string>, Node>::iterator it =
@@ -848,8 +847,8 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n, bool macroApply)
 }
 
 Node AlfNodeConverter::getOperatorOfClosure(Node q,
-                                             bool macroApply,
-                                             bool isPartial)
+                                            bool macroApply,
+                                            bool isPartial)
 {
   NodeManager* nm = NodeManager::currentNM();
   TypeNode retType = isPartial ? q[1].getType() : q.getType();
