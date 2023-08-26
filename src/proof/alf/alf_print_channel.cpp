@@ -41,7 +41,7 @@ void AlfPrintChannelOut::printTypeNode(TypeNode tn)
 void AlfPrintChannelOut::printAssume(TNode n, size_t i, bool isPush)
 {
   Assert(!n.isNull());
-  d_out << "(" << (isPush ? "push " : "assume @p") << i;
+  d_out << "(" << (isPush ? "push" : "assume") << " @p" << i;
   printNode(n);
   d_out << ")" << std::endl;
 }
@@ -52,7 +52,7 @@ void AlfPrintChannelOut::printStep(const std::string& rname,
                                    const std::vector<Node>& args,
                                    bool isPop)
 {
-  d_out << "(" << (isPop ? "pop " : "step @p") << i;
+  d_out << "(" << (isPop ? "pop" : "step") << " @p" << i;
   if (!n.isNull())
   {
     printNode(n);
@@ -130,7 +130,7 @@ void AlfPrintChannelOut::printRule(std::ostream& out, const ProofNode* pn)
   if (pn->getRule() == PfRule::ALF_RULE)
   {
     const std::vector<Node>& args = pn->getArguments();
-    out << getAletheLFRule(args[0]);
+    out << getAlfRule(args[0]);
     return;
   }
   // Otherwise, convert to lower case

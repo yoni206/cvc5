@@ -10,8 +10,8 @@
  * directory for licensing information.
  * ****************************************************************************
  *
- * Enumeration of AletheLF specific proof rules.  These are mostly variants of
- * standard cvc5 rules that are slight adapted to the limits of AletheLF.
+ * Enumeration of Alf specific proof rules.  These are mostly variants of
+ * standard cvc5 rules that are slight adapted to the limits of Alf.
  */
 
 #include "cvc5_private.h"
@@ -27,13 +27,14 @@ namespace cvc5::internal {
 
 namespace proof {
 
-enum class AletheLFRule : uint32_t
+enum class AlfRule : uint32_t
 {
   AND_INTRO_NARY,
   CHAIN_RESOLUTION,
   CONG,
   HO_CONG,
   SCOPE,
+  PROCESS_SCOPE,
   // ======== undefined
   // Used in case that a step in the proof rule could not be translated.
   UNDEFINED
@@ -45,19 +46,19 @@ enum class AletheLFRule : uint32_t
  * @param id The Alethe proof rule
  * @return The name of the Alethe proof rule
  */
-const char* aletheLFRuleToString(AletheLFRule id);
+const char* AlfRuleToString(AlfRule id);
 
 /**
- * Writes an AletheLF proof rule name to a stream.
+ * Writes an Alf proof rule name to a stream.
  *
  * @param out The stream to write to
- * @param id The AletheLF proof rule to write to the stream
+ * @param id The Alf proof rule to write to the stream
  * @return The stream
  */
-std::ostream& operator<<(std::ostream& out, AletheLFRule id);
+std::ostream& operator<<(std::ostream& out, AlfRule id);
 
-/** Convert a node holding an id to the corresponding AletheLFRule */
-AletheLFRule getAletheLFRule(Node n);
+/** Convert a node holding an id to the corresponding AlfRule */
+AlfRule getAlfRule(Node n);
 
 }  // namespace proof
 

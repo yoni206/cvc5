@@ -10,7 +10,7 @@
  * directory for licensing information.
  * ****************************************************************************
  *
- * The printer for the experimental AletheLF format.
+ * The printer for the experimental Alf format.
  */
 
 #include "proof/alf/alf_printer.h"
@@ -208,7 +208,7 @@ std::string AlfPrinter::getRuleName(const ProofNode* pfn)
   std::string name;
   if (pfn->getRule() == PfRule::ALF_RULE)
   {
-    name = aletheLFRuleToString(getAletheLFRule(pfn->getArguments()[0]));
+    name = AlfRuleToString(getAlfRule(pfn->getArguments()[0]));
   }
   else
   {
@@ -270,7 +270,7 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
   }
   // old method
   /*
-  // outer method to print valid AletheLF output from a ProofNode
+  // outer method to print valid Alf output from a ProofNode
   std::map<std::shared_ptr<ProofNode>, size_t> stepMap;
   size_t lastStep;
   printProof(out, pfn, lastStep, stepMap);
@@ -347,8 +347,8 @@ void AlfPrinter::printStepPre(AlfPrintChannel* out,
   {
     Assert(!pn->getArguments().empty());
     Node rn = pn->getArguments()[0];
-    AletheLFRule ar = getAletheLFRule(rn);
-    if (ar == AletheLFRule::SCOPE)
+    AlfRule ar = getAlfRule(rn);
+    if (ar == AlfRule::SCOPE)
     {
       Assert(pn->getArguments().size() == 2);
       Node a = pn->getArguments()[1];
@@ -393,9 +393,9 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out,
   if (r == PfRule::ALF_RULE)
   {
     Node rn = aargs[0];
-    AletheLFRule ar = getAletheLFRule(rn);
+    AlfRule ar = getAlfRule(rn);
     // if scope, do pop the assumption from passumeMap
-    if (ar == AletheLFRule::SCOPE)
+    if (ar == AlfRule::SCOPE)
     {
       isPop = true;
       if (d_activeScopes.find(pn) != d_activeScopes.end())
@@ -403,8 +403,12 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out,
         Node a = aargs[1];
         passumeMap.erase(a);
       }
+      // note that aargs[1] is not provided, it is consumed as an assumption
     }
-    args.insert(args.end(), aargs.begin() + 1, aargs.end());
+    else
+    {
+      args.insert(args.end(), aargs.begin() + 1, aargs.end());
+    }
   }
   else
   {

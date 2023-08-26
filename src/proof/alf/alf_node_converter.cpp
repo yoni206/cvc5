@@ -201,8 +201,7 @@ Node AlfNodeConverter::postConvert(Node n)
   else if (n.isClosure())
   {
     // (forall ((x1 T1) ... (xn Tk)) P) is
-    // ((forall x1 T1) ((forall x2 T2) ... ((forall xk Tk) P))). We use
-    // SEXPR to do this, which avoids the need for indexed operators.
+    // (forall x1 (forall x2 ... (forall xn P)))
     Node ret = n[1];
     Node cop = getOperatorOfClosure(n, true);
     Node pcop = getOperatorOfClosure(n, true, true);

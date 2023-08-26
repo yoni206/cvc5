@@ -10,7 +10,7 @@
  * directory for licensing information.
  * ****************************************************************************
  *
- * Implementation of AletheLF proof rules
+ * Implementation of Alf proof rules
  */
 
 #include "proof/alf/alf_proof_rule.h"
@@ -23,35 +23,36 @@ namespace cvc5::internal {
 
 namespace proof {
 
-const char* aletheLFRuleToString(AletheLFRule id)
+const char* AlfRuleToString(AlfRule id)
 {
   switch (id)
   {
-    case AletheLFRule::AND_INTRO_NARY: return "and_intro_nary";
-    case AletheLFRule::CHAIN_RESOLUTION: return "chain_resolution";
-    case AletheLFRule::CONG: return "cong";
-    case AletheLFRule::HO_CONG: return "ho_cong";
-    case AletheLFRule::SCOPE: return "scope";
+    case AlfRule::AND_INTRO_NARY: return "and_intro_nary";
+    case AlfRule::CHAIN_RESOLUTION: return "chain_resolution";
+    case AlfRule::CONG: return "cong";
+    case AlfRule::HO_CONG: return "ho_cong";
+    case AlfRule::SCOPE: return "scope";
+    case AlfRule::PROCESS_SCOPE: return "process_scope";
     //================================================= Undefined rule
-    case AletheLFRule::UNDEFINED: return "undefined";
+    case AlfRule::UNDEFINED: return "undefined";
     default: return "?";
   }
 }
 
-std::ostream& operator<<(std::ostream& out, AletheLFRule id)
+std::ostream& operator<<(std::ostream& out, AlfRule id)
 {
-  out << aletheLFRuleToString(id);
+  out << AlfRuleToString(id);
   return out;
 }
 
-AletheLFRule getAletheLFRule(Node n)
+AlfRule getAlfRule(Node n)
 {
   uint32_t id;
   if (ProofRuleChecker::getUInt32(n, id))
   {
-    return static_cast<AletheLFRule>(id);
+    return static_cast<AlfRule>(id);
   }
-  return AletheLFRule::UNDEFINED;
+  return AlfRule::UNDEFINED;
 }
 
 }  // namespace proof

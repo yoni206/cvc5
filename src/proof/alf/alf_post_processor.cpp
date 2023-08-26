@@ -10,7 +10,7 @@
  * directory for licensing information.
  * ****************************************************************************
  *
- * The post processor for the experimental AletheLF format.
+ * The post processor for the experimental Alf format.
  */
 
 #include "proof/alf/alf_post_processor.h"
@@ -28,21 +28,21 @@ using namespace cvc5::internal::kind;
 namespace cvc5::internal {
 namespace proof {
 
-AletheLFProofPostprocessCallback::AletheLFProofPostprocessCallback(
+AlfProofPostprocessCallback::AlfProofPostprocessCallback(
     ProofNodeManager* pnm, AlfNodeConverter& ltp)
-    : d_pnm(pnm), d_pc(pnm->getChecker()), d_tproc(ltp)
+    : d_pnm(pnm), d_pc(pnm->getChecker()), d_tproc(ltp), d_numIgnoredScopes(0)
 {
 }
 
-AletheLFProofPostprocess::AletheLFProofPostprocess(Env& env,
+AlfProofPostprocess::AlfProofPostprocess(Env& env,
                                                    AlfNodeConverter& ltp)
     : EnvObj(env),
-      d_cb(new proof::AletheLFProofPostprocessCallback(
+      d_cb(new proof::AlfProofPostprocessCallback(
           env.getProofNodeManager(), ltp))
 {
 }
 
-bool AletheLFProofPostprocessCallback::shouldUpdate(
+bool AlfProofPostprocessCallback::shouldUpdate(
     std::shared_ptr<ProofNode> pn,
     const std::vector<Node>& fa,
     bool& continueUpdate)
@@ -53,14 +53,15 @@ bool AletheLFProofPostprocessCallback::shouldUpdate(
     {
       return (pn->getChildren().size() > 2);
     }
-    case PfRule::CHAIN_RESOLUTION: return true;
+    case PfRule::SCOPE:
+    case PfRule::CHAIN_RESOLUTION:
     case PfRule::CONG: return true;
     default: return false;
   }
 }
 
-bool AletheLFProofPostprocessCallback::addAletheLFStep(
-    AletheLFRule rule,
+bool AlfProofPostprocessCallback::addAlfStep(
+    AlfRule rule,
     Node conclusion,
     const std::vector<Node>& children,
     const std::vector<Node>& args,
@@ -77,14 +78,14 @@ bool AletheLFProofPostprocessCallback::addAletheLFStep(
   return cdp.addStep(conclusion, PfRule::ALF_RULE, children, newArgs);
 }
 
-bool AletheLFProofPostprocessCallback::update(Node res,
+bool AlfProofPostprocessCallback::update(Node res,
                                               PfRule id,
                                               const std::vector<Node>& children,
                                               const std::vector<Node>& args,
                                               CDProof* cdp,
                                               bool& continueUpdate)
 {
-  Trace("alf-proof") << "...AletheLF pre-update " << res << " " << id << " "
+  Trace("alf-proof") << "...Alf pre-update " << res << " " << id << " "
                      << children << " / " << args << std::endl;
   NodeManager* nm = NodeManager::currentNM();
 
@@ -92,6 +93,27 @@ bool AletheLFProofPostprocessCallback::update(Node res,
   {
     case PfRule::SCOPE:
     {
+      // On the first two calls to update, the proof node is the outermost
+      // scopes of the proof. These scopes should not be printed in the LFSC
+      // proof. Instead, the LFSC proof printer will print the proper scopes
+      // around the proof, which e.g. involves an LFSC "check" command.
+      if (d_numIgnoredScopes < 2)
+      {
+        d_numIgnoredScopes++;
+        // Note that we do not want to modify the top-most SCOPEs.
+        return false;
+      }
+      Node curr = children[0];
+      for (size_t i = 0, nargs = args.size(); i < nargs; i++)
+      {
+        size_t ii = (nargs - 1) - i;
+        Node next = nm->mkNode(IMPLIES, args[ii], curr);
+        addAlfStep(AlfRule::SCOPE, next, {curr}, {args[ii]}, *cdp);
+        curr = next;
+      }
+      // convert to (=> (and F1 ... Fn) C) or
+      // (not (and F1 ... Fn))
+      addAlfStep(AlfRule::PROCESS_SCOPE, res, {curr}, {children[0]}, *cdp);
     }
     break;
     case PfRule::AND_INTRO:
@@ -112,7 +134,7 @@ bool AletheLFProofPostprocessCallback::update(Node res,
           conjuncts.push_back(child);
         }
         Node nextConj = nm->mkNode(AND, conjuncts);
-        addAletheLFStep(AletheLFRule::AND_INTRO_NARY,
+        addAlfStep(AlfRule::AND_INTRO_NARY,
                         nextConj,
                         {children[n - i], conj},
                         {},
@@ -131,8 +153,8 @@ bool AletheLFProofPostprocessCallback::update(Node res,
       Node argsList = nm->mkNode(AND, args);
       // This AND_INTRO will also be preprocessed to multiple AND_INTRO_NARY
       cdp->addStep(conj, PfRule::AND_INTRO, children, std::vector<Node>());
-      return addAletheLFStep(
-          AletheLFRule::CHAIN_RESOLUTION, res, {conj}, {argsList}, *cdp);
+      return addAlfStep(
+          AlfRule::CHAIN_RESOLUTION, res, {conj}, {argsList}, *cdp);
     }
     case PfRule::CONG:
     {
@@ -147,8 +169,8 @@ bool AletheLFProofPostprocessCallback::update(Node res,
       Kind k = res[0].getKind();
       if (k == HO_APPLY)
       {
-        // HO_APPLY congruence is a single application of AletheLF congruence
-        addAletheLFStep(AletheLFRule::HO_CONG, res, children, {}, *cdp);
+        // HO_APPLY congruence is a single application of Alf congruence
+        addAlfStep(AlfRule::HO_CONG, res, children, {}, *cdp);
         return true;
       }
 
@@ -197,8 +219,8 @@ bool AletheLFProofPostprocessCallback::update(Node res,
           Node argAppEq =
               nm->mkNode(HO_APPLY, uop, children[ii][0])
                   .eqNode(nm->mkNode(HO_APPLY, uop, children[ii][1]));
-          addAletheLFStep(
-              AletheLFRule::HO_CONG, argAppEq, {opEq, children[ii]}, {}, *cdp);
+          addAlfStep(
+              AlfRule::HO_CONG, argAppEq, {opEq, children[ii]}, {}, *cdp);
           // now, congruence to the current equality
           Node nextEq;
           if (ii == 0)
@@ -213,8 +235,8 @@ bool AletheLFProofPostprocessCallback::update(Node res,
                          .eqNode(nm->mkNode(HO_APPLY, argAppEq[1], currEq[1]));
           }
           // cdp, conclusion, children, rule, args
-          addAletheLFStep(
-              AletheLFRule::HO_CONG, nextEq, {argAppEq, currEq}, {}, *cdp);
+          addAlfStep(
+              AlfRule::HO_CONG, nextEq, {argAppEq, currEq}, {}, *cdp);
           currEq = nextEq;
         }
       }
@@ -229,7 +251,7 @@ bool AletheLFProofPostprocessCallback::update(Node res,
   return true;
 }
 
-void AletheLFProofPostprocessCallback::updateCong(
+void AlfProofPostprocessCallback::updateCong(
     Node res, const std::vector<Node>& children, CDProof* cdp, Node startOp)
 {
   Node currEq;
@@ -265,13 +287,13 @@ void AletheLFProofPostprocessCallback::updateCong(
       nextEq = curL.eqNode(curR);
     }
     // cdp, conclusion, children, rule, args
-    addAletheLFStep(
-        AletheLFRule::HO_CONG, nextEq, {currEq, children[i]}, {}, *cdp);
+    addAlfStep(
+        AlfRule::HO_CONG, nextEq, {currEq, children[i]}, {}, *cdp);
     currEq = nextEq;
   }
 }
 
-void AletheLFProofPostprocess::process(std::shared_ptr<ProofNode> pf)
+void AlfProofPostprocess::process(std::shared_ptr<ProofNode> pf)
 {
   ProofNodeUpdater updater(d_env, *(d_cb.get()));
   updater.process(pf);

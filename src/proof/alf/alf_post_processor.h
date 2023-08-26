@@ -10,7 +10,7 @@
  * directory for licensing information.
  * ****************************************************************************
  *
- * The post processor for the experimental AletheLF format.
+ * The post processor for the experimental Alf format.
  */
 
 #include "cvc5_private.h"
@@ -31,13 +31,13 @@ namespace cvc5::internal {
 namespace proof {
 
 /**
- * A callback class used by the AletheLF convereter for post-processing proof
- * nodes by replacing internal rules by the rules in the AletheLF calculus.
+ * A callback class used by the Alf convereter for post-processing proof
+ * nodes by replacing internal rules by the rules in the Alf calculus.
  */
-class AletheLFProofPostprocessCallback : public ProofNodeUpdaterCallback
+class AlfProofPostprocessCallback : public ProofNodeUpdaterCallback
 {
  public:
-  AletheLFProofPostprocessCallback(ProofNodeManager* pnm,
+  AlfProofPostprocessCallback(ProofNodeManager* pnm,
                                    AlfNodeConverter& atp);
   /**
    * Initialize, called once for each new ProofNode to process. This
@@ -69,11 +69,15 @@ class AletheLFProofPostprocessCallback : public ProofNodeUpdaterCallback
    * proof steps. This is currently only used in the resolution rule.
    */
   ProofChecker* d_pc;
-
-  /** We reuse the Lfsc node converter when processing the CONG rule */
+  /**  */
   AlfNodeConverter& d_tproc;
+  /**
+   * Are we in the first 2 calls to update? This is to distinguish the top-most
+   * SCOPEs.
+   */
+  uint8_t d_numIgnoredScopes;
 
-  bool addAletheLFStep(AletheLFRule rule,
+  bool addAlfStep(AlfRule rule,
                        Node conclusion,
                        const std::vector<Node>& children,
                        const std::vector<Node>& args,
@@ -82,18 +86,18 @@ class AletheLFProofPostprocessCallback : public ProofNodeUpdaterCallback
 
 /**
  * The proof postprocessor module. This postprocesses a proof node into one
- * using the rules from the AletheLF calculus.
+ * using the rules from the Alf calculus.
  */
-class AletheLFProofPostprocess : protected EnvObj
+class AlfProofPostprocess : protected EnvObj
 {
  public:
-  AletheLFProofPostprocess(Env& env, AlfNodeConverter& atp);
+  AlfProofPostprocess(Env& env, AlfNodeConverter& atp);
   /** post-process */
   void process(std::shared_ptr<ProofNode> pf);
 
  private:
   /** The post process callback */
-  std::unique_ptr<AletheLFProofPostprocessCallback> d_cb;
+  std::unique_ptr<AlfProofPostprocessCallback> d_cb;
 };
 
 }  // namespace proof
