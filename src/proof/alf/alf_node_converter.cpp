@@ -196,8 +196,9 @@ Node AlfNodeConverter::postConvert(Node n)
       size_t ii = (nchild - 1) - i;
       Node v = n[0][ii];
       // use the body return type for all terms except the last one.
-      TypeNode retType = ii==0 ? n.getType() : n[1].getType();
-      TypeNode ftype = nm->mkFunctionType({v.getType(), ret.getType()}, retType);
+      TypeNode retType = ii == 0 ? n.getType() : n[1].getType();
+      TypeNode ftype =
+          nm->mkFunctionType({v.getType(), ret.getType()}, retType);
       Node vop = getSymbolInternal(k, ftype, opName.str());
       ret = mkApplyUf(vop, {v, ret});
     }
