@@ -73,12 +73,17 @@ class AlfPrinter : protected EnvObj
   size_t allocateProofId(const ProofNode* pn,
                          std::map<const ProofNode*, size_t>& pletMap,
                          bool& wasAlloc);
+  /** Print let list */
+  void printLetList(std::ostream& out,
+                    LetBinding& lbind);
   /** The term processor */
   AlfNodeConverter& d_tproc;
   /** Assume id counter */
   size_t d_pfIdCounter;
   /** Active scopes */
   std::unordered_set<const ProofNode*> d_activeScopes;
+  /** term prefix */
+  std::string d_termLetPrefix;
 };
 
 }  // namespace proof

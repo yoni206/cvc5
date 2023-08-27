@@ -24,7 +24,7 @@ using namespace cvc5::internal::rewriter;
 namespace cvc5::internal {
 namespace proof {
 
-AlfPrintChannelOut::AlfPrintChannelOut(std::ostream& out) : d_out(out) {}
+AlfPrintChannelOut::AlfPrintChannelOut(std::ostream& out, const LetBinding& lbind, const std::string& tprefix) : d_out(out), d_lbind(lbind), d_termLetPrefix(tprefix) {}
 
 void AlfPrintChannelOut::printNode(TNode n)
 {
@@ -109,7 +109,8 @@ void AlfPrintChannelOut::printNodeInternal(std::ostream& out, Node n)
   // due to use of special names in the node converter, we must clean symbols
   std::stringstream ss;
   options::ioutils::applyOutputLanguage(ss, Language::LANG_SMTLIB_V2_6);
-  n.toStream(ss);
+  Node nc = d_lbind.convert(n, d_termLetPrefix, true);
+  nc.toStream(ss);
   std::string s = ss.str();
   // cleanSymbols(s);
   out << s;

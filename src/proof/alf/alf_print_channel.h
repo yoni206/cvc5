@@ -64,7 +64,7 @@ class AlfPrintChannel
 class AlfPrintChannelOut : public AlfPrintChannel
 {
  public:
-  AlfPrintChannelOut(std::ostream& out);
+  AlfPrintChannelOut(std::ostream& out, const LetBinding& lbind, const std::string& tprefix);
   void printNode(TNode n) override;
   void printTypeNode(TypeNode tn) override;
   void printAssume(TNode n, size_t i, bool isPush) override;
@@ -79,16 +79,20 @@ class AlfPrintChannelOut : public AlfPrintChannel
   /**
    * Print node to stream in the expected format of LFSC.
    */
-  static void printNodeInternal(std::ostream& out, Node n);
+  void printNodeInternal(std::ostream& out, Node n);
   /**
    * Print type node to stream in the expected format of LFSC.
    */
-  static void printTypeNodeInternal(std::ostream& out, TypeNode tn);
+  void printTypeNodeInternal(std::ostream& out, TypeNode tn);
   static void printRule(std::ostream& out, const ProofNode* pn);
 
  private:
   /** The output stream */
   std::ostream& d_out;
+  /** The let binding */
+  const LetBinding& d_lbind;
+  /** term prefix */
+  std::string d_termLetPrefix;
 };
 
 /**

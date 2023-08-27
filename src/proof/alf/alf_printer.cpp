@@ -32,7 +32,8 @@ namespace cvc5::internal {
 namespace proof {
 
 AlfPrinter::AlfPrinter(Env& env, AlfNodeConverter& atp)
-    : EnvObj(env), d_tproc(atp)
+    : EnvObj(env), d_tproc(atp),
+      d_termLetPrefix("@t")
 {
 }
 
@@ -219,6 +220,22 @@ std::string AlfPrinter::getRuleName(const ProofNode* pfn)
   return name;
 }
 
+void AlfPrinter::printLetList(std::ostream& out,
+                    LetBinding& lbind)
+{
+  std::vector<Node> letList;
+  lbind.letify(letList);
+  std::map<Node, size_t>::const_iterator it;
+  Printer * p = Printer::getPrinter(out);
+  for (size_t i = 0, nlets = letList.size(); i < nlets; i++)
+  {
+    Node n = letList[i];
+    Node def = lbind.convert(n, d_termLetPrefix, false);
+    Node f = lbind.convert(n, d_termLetPrefix, true);
+    p->toStreamCmdDefineFunction(out, f, def);
+  }
+}
+
 void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
 {
   out << "(include \"/home/andrew/alfc/proofs/rules/Cvc5.smt2\")" << std::endl;
@@ -236,12 +253,11 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
 
   LetBinding lbind;
   AlfPrintChannelPre aletify(lbind);
-  AlfPrintChannelOut aprint(out);
+  AlfPrintChannelOut aprint(out, lbind, d_termLetPrefix);
 
   std::map<const ProofNode*, size_t> pletMap;
   std::map<Node, size_t> passumeMap;
 
-  // [2] print assumptions
   bool wasAlloc;
   for (size_t i = 0; i < 2; i++)
   {
@@ -254,9 +270,15 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
     {
       aout = &aprint;
     }
-    // TODO: not exactly necessary
+    if (i==1)
+    {
+      // [2] print proof-level term bindings
+      printLetList(out, lbind);
+    }
+    // [3] print assumptions
     for (const Node& n : definitions)
     {
+      // TODO: not exactly necessary, could be refl
       size_t id = allocateAssumeId(n, passumeMap, wasAlloc);
       aout->printAssume(n, id, false);
     }
@@ -265,16 +287,9 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
       size_t id = allocateAssumeId(n, passumeMap, wasAlloc);
       aout->printAssume(n, id, false);
     }
+    // [4] print proof body
     printProofInternal(aout, pnBody, lbind, pletMap, passumeMap);
   }
-  // old method
-  /*
-  // outer method to print valid Alf output from a ProofNode
-  std::map<std::shared_ptr<ProofNode>, size_t> stepMap;
-  size_t lastStep;
-  printProof(out, pfn, lastStep, stepMap);
-  out << "\n";
-  */
 }
 
 void AlfPrinter::printProofInternal(AlfPrintChannel* out,
