@@ -24,7 +24,12 @@ using namespace cvc5::internal::rewriter;
 namespace cvc5::internal {
 namespace proof {
 
-AlfPrintChannelOut::AlfPrintChannelOut(std::ostream& out, const LetBinding& lbind, const std::string& tprefix) : d_out(out), d_lbind(lbind), d_termLetPrefix(tprefix) {}
+AlfPrintChannelOut::AlfPrintChannelOut(std::ostream& out,
+                                       const LetBinding& lbind,
+                                       const std::string& tprefix)
+    : d_out(out), d_lbind(lbind), d_termLetPrefix(tprefix)
+{
+}
 
 void AlfPrintChannelOut::printNode(TNode n)
 {

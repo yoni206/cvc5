@@ -32,8 +32,7 @@ namespace cvc5::internal {
 namespace proof {
 
 AlfPrinter::AlfPrinter(Env& env, AlfNodeConverter& atp)
-    : EnvObj(env), d_tproc(atp),
-      d_termLetPrefix("@t")
+    : EnvObj(env), d_tproc(atp), d_termLetPrefix("@t")
 {
 }
 
@@ -220,13 +219,12 @@ std::string AlfPrinter::getRuleName(const ProofNode* pfn)
   return name;
 }
 
-void AlfPrinter::printLetList(std::ostream& out,
-                    LetBinding& lbind)
+void AlfPrinter::printLetList(std::ostream& out, LetBinding& lbind)
 {
   std::vector<Node> letList;
   lbind.letify(letList);
   std::map<Node, size_t>::const_iterator it;
-  Printer * p = Printer::getPrinter(out);
+  Printer* p = Printer::getPrinter(out);
   for (size_t i = 0, nlets = letList.size(); i < nlets; i++)
   {
     Node n = letList[i];
@@ -270,7 +268,7 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
     {
       aout = &aprint;
     }
-    if (i==1)
+    if (i == 1)
     {
       // [2] print proof-level term bindings
       printLetList(out, lbind);

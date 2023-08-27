@@ -74,8 +74,7 @@ class AlfPrinter : protected EnvObj
                          std::map<const ProofNode*, size_t>& pletMap,
                          bool& wasAlloc);
   /** Print let list */
-  void printLetList(std::ostream& out,
-                    LetBinding& lbind);
+  void printLetList(std::ostream& out, LetBinding& lbind);
   /** The term processor */
   AlfNodeConverter& d_tproc;
   /** Assume id counter */

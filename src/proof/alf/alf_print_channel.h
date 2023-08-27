@@ -64,7 +64,9 @@ class AlfPrintChannel
 class AlfPrintChannelOut : public AlfPrintChannel
 {
  public:
-  AlfPrintChannelOut(std::ostream& out, const LetBinding& lbind, const std::string& tprefix);
+  AlfPrintChannelOut(std::ostream& out,
+                     const LetBinding& lbind,
+                     const std::string& tprefix);
   void printNode(TNode n) override;
   void printTypeNode(TypeNode tn) override;
   void printAssume(TNode n, size_t i, bool isPush) override;
