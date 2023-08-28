@@ -243,7 +243,7 @@ void PfManager::printProof(std::ostream& out,
     proof::AlfNodeConverter atp;
     proof::AlfProofPostprocess alfpp(d_env, atp);
     alfpp.process(fp);
-    bool flatten = false;
+    bool flatten = true;
     if (options().proof.proofFlattenWasSetByUser)
     {
       flatten = options().proof.proofFlatten;

@@ -57,6 +57,7 @@ class AlfPrinter : protected EnvObj
   /** Allocate assume id, return true if was newly allocated */
   size_t allocateAssumeId(const Node& n, bool& wasAlloc);
   size_t allocateProofId(const ProofNode* pn, bool& wasAlloc);
+  Node allocatePremise(size_t id);
   /** Print let list */
   void printLetList(std::ostream& out, LetBinding& lbind);
   /** The term processor */
@@ -67,6 +68,10 @@ class AlfPrinter : protected EnvObj
   std::map<const ProofNode*, size_t> d_pletMap;
   /** Mapping assumed formulas to identifiers */
   std::map<Node, size_t> d_passumeMap;
+  /** Mapping proof nodes to nodes (non-flatten) */
+  std::map<const ProofNode*, Node> d_pnodeMap;
+  std::map<size_t, Node> d_passumeNodeMap;
+  TypeNode d_pfType;
   /** Active scopes */
   std::unordered_set<const ProofNode*> d_activeScopes;
   /** term prefix */

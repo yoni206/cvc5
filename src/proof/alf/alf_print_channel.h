@@ -51,9 +51,9 @@ class AlfPrintChannel
   virtual void printStep(const std::string& rname,
                          TNode n,
                          size_t i,
-                         const std::vector<size_t>& premises,
+                         const std::vector<Node>& premises,
                          const std::vector<Node>& args,
-                         bool isPop)
+                         bool isPop = false)
   {
   }
   /** Print trust */
@@ -73,9 +73,9 @@ class AlfPrintChannelOut : public AlfPrintChannel
   void printStep(const std::string& rname,
                  TNode n,
                  size_t i,
-                 const std::vector<size_t>& premises,
+                 const std::vector<Node>& premises,
                  const std::vector<Node>& args,
-                 bool isPop) override;
+                 bool isPop = false) override;
   void printTrust(PfRule r, TNode n, size_t i, TNode conc) override;
 
   /**
@@ -112,9 +112,9 @@ class AlfPrintChannelPre : public AlfPrintChannel
   void printStep(const std::string& rname,
                  TNode n,
                  size_t i,
-                 const std::vector<size_t>& premises,
+                 const std::vector<Node>& premises,
                  const std::vector<Node>& args,
-                 bool isPop) override;
+                 bool isPop = false) override;
   void printTrust(PfRule r, TNode n, size_t i, TNode conc) override;
 
  private:

@@ -34,6 +34,7 @@ namespace proof {
 AlfPrinter::AlfPrinter(Env& env, AlfNodeConverter& atp, bool flatten)
     : EnvObj(env), d_tproc(atp), d_termLetPrefix("@t"), d_proofFlatten(flatten)
 {
+  d_pfType = NodeManager::currentNM()->mkSort("proofType");
 }
 
 bool AlfPrinter::isHandled(const ProofNode* pfn) const
@@ -287,6 +288,17 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
     // [4] print proof body
     printProofInternal(aout, pnBody);
   }
+  // if flattened, print the full proof as ident
+  if (!d_proofFlatten)
+  {
+    d_pfIdCounter++;
+    std::map<const ProofNode*, Node>::iterator it = d_pnodeMap.find(pnBody);
+    if (it!=d_pnodeMap.end())
+    {
+      std::vector<Node> premises;
+      aprint.printStep("identity", pnBody->getResult(), d_pfIdCounter, {it->second}, {});
+    }
+  }
 }
 
 void AlfPrinter::printProofInternal(AlfPrintChannel* out, const ProofNode* pn)
@@ -396,6 +408,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
     if (ar == AlfRule::SCOPE)
     {
       isPop = true;
+      // FIXME
       if (d_activeScopes.find(pn) != d_activeScopes.end())
       {
         Node a = aargs[1];
@@ -418,6 +431,59 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
       args.push_back(av);
     }
   }
+  const std::vector<std::shared_ptr<ProofNode>>& children = pn->getChildren();
+  // if not flattening proofs
+  if (!d_proofFlatten)
+  {
+    std::vector<Node> pargs;
+    std::string rname;
+    if (!isHandled(pn))
+    {
+      rname = "trust";
+      pargs.push_back(conclusion);
+    }
+    else
+    {  
+      rname = getRuleName(pn);
+      std::map<Node, size_t>::iterator ita;
+      std::map<const ProofNode*, Node>::iterator itp;
+      for (const std::shared_ptr<ProofNode>& c : children)
+      {
+        Node arg;
+        if (c->getRule() == PfRule::ASSUME)
+        {
+          ita = d_passumeMap.find(c->getResult());
+          Assert(ita != d_passumeMap.end());
+          arg = allocatePremise(ita->second);
+        }
+        else
+        {
+          itp = d_pnodeMap.find(c.get());
+          Assert(itp != d_pnodeMap.end());
+          arg = itp->second;
+        }
+        pargs.push_back(arg);
+      }
+      if (isPop)
+      {
+        // we must manually print pops
+        size_t id = allocateProofId(pn, wasAlloc);
+        out->printStep(rname, conclusionPrint, id, pargs, args, isPop);
+        if (d_pnodeMap.find(pn)==d_pnodeMap.end())
+        {
+          d_pnodeMap[pn] = allocatePremise(id);
+        }
+        return;
+      }
+      pargs.insert(pargs.end(), args.begin(), args.end());
+    }
+    // otherwise just make the node
+    if (d_pnodeMap.find(pn)==d_pnodeMap.end())
+    {
+      d_pnodeMap[pn] = d_tproc.mkInternalApp(rname, pargs, d_pfType);
+    }
+    return;
+  }
   size_t id = allocateProofId(pn, wasAlloc);
   // if we don't handle the rule, print trust
   if (!isHandled(pn))
@@ -425,8 +491,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
     out->printTrust(pn->getRule(), conclusionPrint, id, conclusion);
     return;
   }
-  std::vector<size_t> premises;
-  const std::vector<std::shared_ptr<ProofNode>>& children = pn->getChildren();
+  std::vector<Node> premises;
   // get the premises
   std::map<Node, size_t>::iterator ita;
   std::map<const ProofNode*, size_t>::iterator itp;
@@ -446,7 +511,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
       Assert(itp != d_pletMap.end());
       pid = itp->second;
     }
-    premises.push_back(pid);
+    premises.push_back(allocatePremise(pid));
   }
   std::string rname = getRuleName(pn);
   out->printStep(rname, conclusionPrint, id, premises, args, isPop);
@@ -478,6 +543,20 @@ size_t AlfPrinter::allocateProofId(const ProofNode* pn, bool& wasAlloc)
   d_pfIdCounter++;
   d_pletMap[pn] = d_pfIdCounter;
   return d_pfIdCounter;
+}
+
+Node AlfPrinter::allocatePremise(size_t id)
+{
+  std::map<size_t, Node>::iterator itan = d_passumeNodeMap.find(id);
+  if (itan!=d_passumeNodeMap.end())
+  {
+    return itan->second;
+  }
+  std::stringstream ss;
+  ss << "@p" << id;
+  Node n = d_tproc.mkInternalSymbol(ss.str(), d_pfType);
+  d_passumeNodeMap[id] = n;
+  return n;
 }
 
 }  // namespace proof

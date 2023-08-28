@@ -556,6 +556,29 @@ Node AlfNodeConverter::mkInternalSymbol(const std::string& name,
   return sym;
 }
 
+Node AlfNodeConverter::mkInternalApp(const std::string& name,
+                     const std::vector<Node>& args,
+                      TypeNode ret,
+                      bool useRawSym)
+{
+  if (!args.empty())
+  {
+    std::vector<TypeNode> argTypes;
+    for (const Node& a : args)
+    {
+      argTypes.push_back(a.getType());
+    }
+    NodeManager * nm = NodeManager::currentNM();
+    TypeNode atype = nm->mkFunctionType(argTypes, ret);
+    Node op = mkInternalSymbol(name, atype, useRawSym);
+    std::vector<Node> aargs;
+    aargs.push_back(op);
+    aargs.insert(aargs.end(), args.begin(), args.end());
+    return nm->mkNode(APPLY_UF, aargs);
+  }
+  return mkInternalSymbol(name, ret, useRawSym);
+}
+
 Node AlfNodeConverter::getSymbolInternalFor(Node n,
                                             const std::string& name,
                                             bool useRawSym)

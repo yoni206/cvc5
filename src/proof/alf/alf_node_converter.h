@@ -74,6 +74,15 @@ class AlfNodeConverter : public NodeConverter
                         TypeNode tn,
                         bool useRawSym = true);
   /**
+   * Make an internal symbol with custom name. This is a BOUND_VARIABLE that
+   * has a distinguished status so that it is *not* printed as (bvar ...). The
+   * returned variable is always fresh.
+   */
+  Node mkInternalApp(const std::string& name,
+                     const std::vector<Node>& args,
+                        TypeNode ret,
+                        bool useRawSym = true);
+  /**
    * Get builtin kind for internal symbol op
    */
   Kind getBuiltinKindForInternalSymbol(Node op) const;

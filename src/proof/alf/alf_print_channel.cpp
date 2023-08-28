@@ -53,7 +53,7 @@ void AlfPrintChannelOut::printAssume(TNode n, size_t i, bool isPush)
 void AlfPrintChannelOut::printStep(const std::string& rname,
                                    TNode n,
                                    size_t i,
-                                   const std::vector<size_t>& premises,
+                                   const std::vector<Node>& premises,
                                    const std::vector<Node>& args,
                                    bool isPop)
 {
@@ -67,7 +67,7 @@ void AlfPrintChannelOut::printStep(const std::string& rname,
   if (!premises.empty())
   {
     d_out << " :premises (";
-    for (size_t p : premises)
+    for (const Node& p : premises)
     {
       if (firstTime)
       {
@@ -77,7 +77,7 @@ void AlfPrintChannelOut::printStep(const std::string& rname,
       {
         d_out << " ";
       }
-      d_out << "@p" << p;
+      printNodeInternal(d_out, p);
     }
     d_out << ")";
   }
@@ -149,7 +149,7 @@ void AlfPrintChannelPre::printAssume(TNode n, size_t i, bool isPush)
 void AlfPrintChannelPre::printStep(const std::string& rname,
                                    TNode n,
                                    size_t i,
-                                   const std::vector<size_t>& premises,
+                                   const std::vector<Node>& premises,
                                    const std::vector<Node>& args,
                                    bool isPop)
 {
@@ -157,6 +157,8 @@ void AlfPrintChannelPre::printStep(const std::string& rname,
   {
     d_lbind.process(n);
   }
+  // don't process premises, even if they may be non-variable, as this
+  // will introduce internal (proof) symbols into the letification
   for (const Node& a : args)
   {
     d_lbind.process(a);
