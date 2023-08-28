@@ -289,8 +289,7 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
   }
 }
 
-void AlfPrinter::printProofInternal(AlfPrintChannel* out,
-                                    const ProofNode* pn)
+void AlfPrinter::printProofInternal(AlfPrintChannel* out, const ProofNode* pn)
 {
   // the stack
   std::vector<const ProofNode*> visit;
@@ -343,8 +342,7 @@ void AlfPrinter::printProofInternal(AlfPrintChannel* out,
   } while (!visit.empty());
 }
 
-void AlfPrinter::printStepPre(AlfPrintChannel* out,
-                              const ProofNode* pn)
+void AlfPrinter::printStepPre(AlfPrintChannel* out, const ProofNode* pn)
 {
   // if we haven't yet allocated a proof id, do it now
   PfRule r = pn->getRule();
@@ -375,8 +373,7 @@ void AlfPrinter::printStepPre(AlfPrintChannel* out,
     }
   }
 }
-void AlfPrinter::printStepPost(AlfPrintChannel* out,
-                               const ProofNode* pn)
+void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
 {
   // if we have yet to allocate a proof id, do it now
   bool wasAlloc = false;
@@ -455,8 +452,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out,
   out->printStep(rname, conclusionPrint, id, premises, args, isPop);
 }
 
-size_t AlfPrinter::allocateAssumeId(const Node& n,
-                                    bool& wasAlloc)
+size_t AlfPrinter::allocateAssumeId(const Node& n, bool& wasAlloc)
 {
   std::map<Node, size_t>::iterator it = d_passumeMap.find(n);
   if (it != d_passumeMap.end())
@@ -470,8 +466,7 @@ size_t AlfPrinter::allocateAssumeId(const Node& n,
   return d_pfIdCounter;
 }
 
-size_t AlfPrinter::allocateProofId(const ProofNode* pn,
-                                   bool& wasAlloc)
+size_t AlfPrinter::allocateProofId(const ProofNode* pn, bool& wasAlloc)
 {
   std::map<const ProofNode*, size_t>::iterator it = d_pletMap.find(pn);
   if (it != d_pletMap.end())

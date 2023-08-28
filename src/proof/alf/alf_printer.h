@@ -51,17 +51,12 @@ class AlfPrinter : protected EnvObj
   static std::string getRuleName(const ProofNode* pfn);
 
   //-------------
-  void printProofInternal(AlfPrintChannel* out,
-                          const ProofNode* pn);
-  void printStepPre(AlfPrintChannel* out,
-                    const ProofNode* pn);
-  void printStepPost(AlfPrintChannel* out,
-                     const ProofNode* pn);
+  void printProofInternal(AlfPrintChannel* out, const ProofNode* pn);
+  void printStepPre(AlfPrintChannel* out, const ProofNode* pn);
+  void printStepPost(AlfPrintChannel* out, const ProofNode* pn);
   /** Allocate assume id, return true if was newly allocated */
-  size_t allocateAssumeId(const Node& n,
-                          bool& wasAlloc);
-  size_t allocateProofId(const ProofNode* pn,
-                         bool& wasAlloc);
+  size_t allocateAssumeId(const Node& n, bool& wasAlloc);
+  size_t allocateProofId(const ProofNode* pn, bool& wasAlloc);
   /** Print let list */
   void printLetList(std::ostream& out, LetBinding& lbind);
   /** The term processor */

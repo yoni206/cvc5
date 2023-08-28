@@ -105,7 +105,7 @@ void AlfPrintChannelOut::printStep(const std::string& rname,
 void AlfPrintChannelOut::printTrust(PfRule r, TNode n, size_t i, TNode nc)
 {
   Assert(!nc.isNull());
-  if (d_warnedRules.find(r)==d_warnedRules.end())
+  if (d_warnedRules.find(r) == d_warnedRules.end())
   {
     d_out << "; WARNING: add trust step for " << r << std::endl;
     d_warnedRules.insert(r);
