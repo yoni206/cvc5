@@ -105,6 +105,11 @@ void AlfPrintChannelOut::printStep(const std::string& rname,
 void AlfPrintChannelOut::printTrust(PfRule r, TNode n, size_t i, TNode nc)
 {
   Assert(!nc.isNull());
+  if (d_warnedRules.find(r)==d_warnedRules.end())
+  {
+    d_out << "; WARNING: add trust step for " << r << std::endl;
+    d_warnedRules.insert(r);
+  }
   d_out << "; trust " << r << std::endl;
   printStep("trust", n, i, {}, {nc}, false);
 }
@@ -130,25 +135,6 @@ void AlfPrintChannelOut::printTypeNodeInternal(std::ostream& out, TypeNode tn)
   std::string s = ss.str();
   // cleanSymbols(s);
   out << s;
-}
-
-void AlfPrintChannelOut::printRule(std::ostream& out, const ProofNode* pn)
-{
-  if (pn->getRule() == PfRule::ALF_RULE)
-  {
-    const std::vector<Node>& args = pn->getArguments();
-    out << getAlfRule(args[0]);
-    return;
-  }
-  // Otherwise, convert to lower case
-  std::stringstream ss;
-  ss << pn->getRule();
-  std::string rname = ss.str();
-  std::transform(
-      rname.begin(), rname.end(), rname.begin(), [](unsigned char c) {
-        return std::tolower(c);
-      });
-  out << rname;
 }
 
 AlfPrintChannelPre::AlfPrintChannelPre(LetBinding& lbind) : d_lbind(lbind) {}

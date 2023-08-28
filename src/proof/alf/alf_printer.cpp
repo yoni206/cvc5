@@ -236,7 +236,6 @@ void AlfPrinter::printLetList(std::ostream& out, LetBinding& lbind)
 
 void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
 {
-  out << "(include \"/home/andrew/alfc/proofs/rules/Cvc5.smt2\")" << std::endl;
   d_pfIdCounter = 0;
 
   // [1] Get the definitions and assertions and print the declarations from them

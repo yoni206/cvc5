@@ -86,7 +86,6 @@ class AlfPrintChannelOut : public AlfPrintChannel
    * Print type node to stream in the expected format of LFSC.
    */
   void printTypeNodeInternal(std::ostream& out, TypeNode tn);
-  static void printRule(std::ostream& out, const ProofNode* pn);
 
  private:
   /** The output stream */
@@ -95,6 +94,8 @@ class AlfPrintChannelOut : public AlfPrintChannel
   const LetBinding& d_lbind;
   /** term prefix */
   std::string d_termLetPrefix;
+  /** Warned rules */
+  std::unordered_set<PfRule> d_warnedRules;
 };
 
 /**

@@ -143,6 +143,7 @@ bool AlfProofPostprocessCallback::update(Node res,
       return true;
     }
     break;
+#if 0
     case PfRule::CHAIN_RESOLUTION:
     {
       // create and_intro for each child
@@ -155,6 +156,22 @@ bool AlfProofPostprocessCallback::update(Node res,
       return addAlfStep(
           AlfRule::CHAIN_RESOLUTION, res, {conj}, {argsList}, *cdp);
     }
+#else
+    // this is faster
+    case PfRule::CHAIN_RESOLUTION:
+    {
+      // turn into binary resolution
+      Node cur = children[0];
+      for (size_t i = 1, size = children.size(); i < size; i++)
+      {
+        std::vector<Node> newChildren{cur, children[i]};
+        std::vector<Node> newArgs{args[(i - 1) * 2], args[(i - 1) * 2 + 1]};
+        cur = d_pc->checkDebug(PfRule::RESOLUTION, newChildren, newArgs);
+        cdp->addStep(cur, PfRule::RESOLUTION, newChildren, newArgs);
+      }
+    }
+    break;
+#endif
     case PfRule::TRANS:
     {
       if (children.size() <= 2)
