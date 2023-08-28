@@ -36,7 +36,7 @@ namespace proof {
 class AlfPrinter : protected EnvObj
 {
  public:
-  AlfPrinter(Env& env, AlfNodeConverter& atp);
+  AlfPrinter(Env& env, AlfNodeConverter& atp, bool flatten);
   ~AlfPrinter() {}
 
   /**
@@ -52,26 +52,15 @@ class AlfPrinter : protected EnvObj
 
   //-------------
   void printProofInternal(AlfPrintChannel* out,
-                          const ProofNode* pn,
-                          const LetBinding& lbind,
-                          std::map<const ProofNode*, size_t>& pletMap,
-                          std::map<Node, size_t>& passumeMap);
+                          const ProofNode* pn);
   void printStepPre(AlfPrintChannel* out,
-                    const ProofNode* pn,
-                    const LetBinding& lbind,
-                    std::map<const ProofNode*, size_t>& pletMap,
-                    std::map<Node, size_t>& passumeMap);
+                    const ProofNode* pn);
   void printStepPost(AlfPrintChannel* out,
-                     const ProofNode* pn,
-                     const LetBinding& lbind,
-                     std::map<const ProofNode*, size_t>& pletMap,
-                     std::map<Node, size_t>& passumeMap);
+                     const ProofNode* pn);
   /** Allocate assume id, return true if was newly allocated */
   size_t allocateAssumeId(const Node& n,
-                          std::map<Node, size_t>& passumeMap,
                           bool& wasAlloc);
   size_t allocateProofId(const ProofNode* pn,
-                         std::map<const ProofNode*, size_t>& pletMap,
                          bool& wasAlloc);
   /** Print let list */
   void printLetList(std::ostream& out, LetBinding& lbind);
@@ -79,10 +68,16 @@ class AlfPrinter : protected EnvObj
   AlfNodeConverter& d_tproc;
   /** Assume id counter */
   size_t d_pfIdCounter;
+  /** Mapping proofs to identifiers */
+  std::map<const ProofNode*, size_t> d_pletMap;
+  /** Mapping assumed formulas to identifiers */
+  std::map<Node, size_t> d_passumeMap;
   /** Active scopes */
   std::unordered_set<const ProofNode*> d_activeScopes;
   /** term prefix */
   std::string d_termLetPrefix;
+  /** Flatten */
+  bool d_proofFlatten;
 };
 
 }  // namespace proof
