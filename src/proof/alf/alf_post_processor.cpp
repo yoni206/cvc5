@@ -143,7 +143,18 @@ bool AlfProofPostprocessCallback::update(Node res,
       return true;
     }
     break;
-#if 0
+#if 1
+    case PfRule::CHAIN_RESOLUTION:
+    {
+      // create and_intro for each child
+      // create big conjunction for args
+      Assert(children.size() >= 2);
+      Node argsList = nm->mkNode(AND, args);
+      return addAlfStep(
+          AlfRule::CHAIN_RESOLUTION, res, children, {argsList}, *cdp);
+    }
+    break;
+#elif 0
     case PfRule::CHAIN_RESOLUTION:
     {
       // create and_intro for each child
@@ -156,6 +167,7 @@ bool AlfProofPostprocessCallback::update(Node res,
       return addAlfStep(
           AlfRule::CHAIN_RESOLUTION, res, {conj}, {argsList}, *cdp);
     }
+    break;
 #else
     // this is faster
     case PfRule::CHAIN_RESOLUTION:

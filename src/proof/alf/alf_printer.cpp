@@ -366,20 +366,8 @@ void AlfPrinter::printStepPre(AlfPrintChannel* out, const ProofNode* pn)
     if (ar == AlfRule::SCOPE)
     {
       Assert(pn->getArguments().size() == 2);
+      size_t aid = allocatePush(pn);
       Node a = pn->getArguments()[1];
-      bool wasAlloc = false;
-      size_t aid = allocateAssumeId(a, wasAlloc);
-      // if we assigned an id to the assumption,
-      if (wasAlloc)
-      {
-        d_activeScopes.insert(pn);
-      }
-      else
-      {
-        // otherwise we shadow, just use a dummy
-        d_pfIdCounter++;
-        aid = d_pfIdCounter;
-      }
       // print a push
       out->printAssume(a, aid, true);
     }
@@ -408,12 +396,6 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
     if (ar == AlfRule::SCOPE)
     {
       isPop = true;
-      // FIXME
-      if (d_activeScopes.find(pn) != d_activeScopes.end())
-      {
-        Node a = aargs[1];
-        d_passumeMap.erase(a);
-      }
       // note that aargs[1] is not provided, it is consumed as an assumption
     }
     else
@@ -515,6 +497,32 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
   }
   std::string rname = getRuleName(pn);
   out->printStep(rname, conclusionPrint, id, premises, args, isPop);
+}
+
+size_t AlfPrinter::allocatePush(const ProofNode* pn)
+{
+  std::map<const ProofNode*, size_t>::iterator it = d_ppushMap.find(pn);
+  if (it != d_ppushMap.end())
+  {
+    return it->second;
+  }
+  // pn is a Alf SCOPE
+  Node a = pn->getArguments()[1];
+  bool wasAlloc = false;
+  size_t aid = allocateAssumeId(a, wasAlloc);
+  // if we assigned an id to the assumption,
+  if (wasAlloc)
+  {
+    d_activeScopes.insert(pn);
+  }
+  else
+  {
+    // otherwise we shadow, just use a dummy
+    d_pfIdCounter++;
+    aid = d_pfIdCounter;
+  }
+  d_ppushMap[pn] = aid;
+  return aid;
 }
 
 size_t AlfPrinter::allocateAssumeId(const Node& n, bool& wasAlloc)

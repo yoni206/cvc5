@@ -55,6 +55,7 @@ class AlfPrinter : protected EnvObj
   void printStepPre(AlfPrintChannel* out, const ProofNode* pn);
   void printStepPost(AlfPrintChannel* out, const ProofNode* pn);
   /** Allocate assume id, return true if was newly allocated */
+  size_t allocatePush(const ProofNode* pn);
   size_t allocateAssumeId(const Node& n, bool& wasAlloc);
   size_t allocateProofId(const ProofNode* pn, bool& wasAlloc);
   Node allocatePremise(size_t id);
@@ -64,6 +65,8 @@ class AlfPrinter : protected EnvObj
   AlfNodeConverter& d_tproc;
   /** Assume id counter */
   size_t d_pfIdCounter;
+  /** Mapping scope proofs to identifiers */
+  std::map<const ProofNode*, size_t> d_ppushMap;
   /** Mapping proofs to identifiers */
   std::map<const ProofNode*, size_t> d_pletMap;
   /** Mapping assumed formulas to identifiers */
