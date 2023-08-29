@@ -252,10 +252,10 @@ SatValue MinisatSatSolver::modelValue(SatLiteral l){
   return toSatLiteralValue(d_minisat->modelValue(toMinisatLit(l)));
 }
 
-void MinisatSatSolver::requirePhase(SatLiteral lit)
+void MinisatSatSolver::preferPhase(SatLiteral lit)
 {
   Assert(!d_minisat->rnd_pol);
-  Trace("minisat") << "requirePhase(" << lit << ")"
+  Trace("minisat") << "preferPhase(" << lit << ")"
                    << " " << lit.getSatVariable() << " " << lit.isNegated()
                    << std::endl;
   SatVariable v = lit.getSatVariable();
