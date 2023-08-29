@@ -80,8 +80,8 @@ class AlfNodeConverter : public NodeConverter
    */
   Node mkInternalApp(const std::string& name,
                      const std::vector<Node>& args,
-                        TypeNode ret,
-                        bool useRawSym = true);
+                     TypeNode ret,
+                     bool useRawSym = true);
   /**
    * Get builtin kind for internal symbol op
    */

@@ -293,10 +293,11 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
   {
     d_pfIdCounter++;
     std::map<const ProofNode*, Node>::iterator it = d_pnodeMap.find(pnBody);
-    if (it!=d_pnodeMap.end())
+    if (it != d_pnodeMap.end())
     {
       std::vector<Node> premises;
-      aprint.printStep("identity", pnBody->getResult(), d_pfIdCounter, {it->second}, {});
+      aprint.printStep(
+          "identity", pnBody->getResult(), d_pfIdCounter, {it->second}, {});
     }
   }
 }
@@ -425,7 +426,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
       pargs.push_back(conclusion);
     }
     else
-    {  
+    {
       rname = getRuleName(pn);
       std::map<Node, size_t>::iterator ita;
       std::map<const ProofNode*, Node>::iterator itp;
@@ -451,7 +452,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
         // we must manually print pops
         size_t id = allocateProofId(pn, wasAlloc);
         out->printStep(rname, conclusionPrint, id, pargs, args, isPop);
-        if (d_pnodeMap.find(pn)==d_pnodeMap.end())
+        if (d_pnodeMap.find(pn) == d_pnodeMap.end())
         {
           d_pnodeMap[pn] = allocatePremise(id);
         }
@@ -460,7 +461,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
       pargs.insert(pargs.end(), args.begin(), args.end());
     }
     // otherwise just make the node
-    if (d_pnodeMap.find(pn)==d_pnodeMap.end())
+    if (d_pnodeMap.find(pn) == d_pnodeMap.end())
     {
       d_pnodeMap[pn] = d_tproc.mkInternalApp(rname, pargs, d_pfType);
     }
@@ -556,7 +557,7 @@ size_t AlfPrinter::allocateProofId(const ProofNode* pn, bool& wasAlloc)
 Node AlfPrinter::allocatePremise(size_t id)
 {
   std::map<size_t, Node>::iterator itan = d_passumeNodeMap.find(id);
-  if (itan!=d_passumeNodeMap.end())
+  if (itan != d_passumeNodeMap.end())
   {
     return itan->second;
   }
