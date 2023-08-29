@@ -97,6 +97,13 @@ class AlfNodeConverter : public NodeConverter
                                         size_t variant = 0);
   /** get name for the name of node v, where v should be a variable */
   std::string getNameForUserNameOf(Node v);
+  /**
+   * Type as node, returns a node that prints in the form that ALF will
+   * interpret as the type tni. This method is required since types can be
+   * passed as arguments to terms. This method assumes that tni has been
+   * converted to internal form (via the convertType method of this class).
+   */
+  Node typeAsNode(TypeNode tni) const;
 
  private:
   /** get name for a Node/TypeNode whose id is id and whose name is name */
@@ -117,13 +124,6 @@ class AlfNodeConverter : public NodeConverter
    * signature.
    */
   Node maybeMkSkolemFun(Node k);
-  /**
-   * Type as node, returns a node that prints in the form that ALF will
-   * interpret as the type tni. This method is required since types can be
-   * passed as arguments to terms. This method assumes that tni has been
-   * converted to internal form (via the convertType method of this class).
-   */
-  Node typeAsNode(TypeNode tni) const;
   /**
    * Get symbol for term, a special case of the method below for the type and
    * kind of n.

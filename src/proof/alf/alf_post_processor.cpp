@@ -146,8 +146,8 @@ bool AlfProofPostprocessCallback::update(Node res,
 #if 1
     case PfRule::CHAIN_RESOLUTION:
     {
-      // create and_intro for each child
-      // create big conjunction for args
+      // ALF has chain_resolution which supports a list of premises.
+      // We only need to provide a conjunction for args
       Assert(children.size() >= 2);
       Node argsList = nm->mkNode(AND, args);
       return addAlfStep(
@@ -251,6 +251,10 @@ bool AlfProofPostprocessCallback::update(Node res,
       // TODO: is this correct? this was taken from LFSC
       if (isNary)
       {
+#if 1
+        Node tn = d_tproc.typeAsNode(res[0].getType());
+        addAlfStep(AlfRule::NARY_CONG, res, children, {tn, op}, *cdp);
+#else
         // get the null terminator for the kind, which may mean we are doing
         // a special kind of congruence for n-ary kinds whose base is a REFL
         // step for the null terminator.
@@ -305,6 +309,7 @@ bool AlfProofPostprocessCallback::update(Node res,
           addAlfStep(AlfRule::HO_CONG, nextEq, {argAppEq, currEq}, {}, *cdp);
           currEq = nextEq;
         }
+#endif
       }
       else
       {

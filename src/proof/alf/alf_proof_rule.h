@@ -32,6 +32,7 @@ enum class AlfRule : uint32_t
   AND_INTRO_NARY,
   CHAIN_RESOLUTION,
   CONG,
+  NARY_CONG,
   HO_CONG,
   SCOPE,
   PROCESS_SCOPE,
