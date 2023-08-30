@@ -278,12 +278,14 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
     {
       // TODO: not exactly necessary, could be refl
       size_t id = allocateAssumeId(n, wasAlloc);
-      aout->printAssume(n, id, false);
+      Node nc = d_tproc.convert(n);
+      aout->printAssume(nc, id, false);
     }
     for (const Node& n : assertions)
     {
       size_t id = allocateAssumeId(n, wasAlloc);
-      aout->printAssume(n, id, false);
+      Node nc = d_tproc.convert(n);
+      aout->printAssume(nc, id, false);
     }
     // [4] print proof body
     printProofInternal(aout, pnBody);
@@ -368,7 +370,7 @@ void AlfPrinter::printStepPre(AlfPrintChannel* out, const ProofNode* pn)
     {
       Assert(pn->getArguments().size() == 2);
       size_t aid = allocatePush(pn);
-      Node a = pn->getArguments()[1];
+      Node a = d_tproc.convert(pn->getArguments()[1]);
       // print a push
       out->printAssume(a, aid, true);
     }
@@ -379,7 +381,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
   // if we have yet to allocate a proof id, do it now
   bool wasAlloc = false;
   bool isPop = false;
-  TNode conclusion = pn->getResult();
+  TNode conclusion = d_tproc.convert(pn->getResult());
   TNode conclusionPrint;
   // print conclusion only if option is set
   if (options().proof.proofPrintConclusion)
@@ -401,7 +403,10 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
     }
     else
     {
-      args.insert(args.end(), aargs.begin() + 1, aargs.end());
+      for (size_t i=1, nargs=aargs.size(); i<nargs; i++)
+      {
+        args.push_back(d_tproc.convert(aargs[i]));
+      }
     }
   }
   else
@@ -410,7 +415,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
     for (size_t i = 0, nargs = aargs.size(); i < nargs; i++)
     {
       ProofNodeToSExpr::ArgFormat f = pntse.getArgumentFormat(pn, i);
-      Node av = pntse.getArgument(aargs[i], f);
+      Node av = d_tproc.convert(pntse.getArgument(aargs[i], f));
       args.push_back(av);
     }
   }

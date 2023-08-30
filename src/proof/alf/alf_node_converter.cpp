@@ -97,13 +97,8 @@ Node AlfNodeConverter::postConvert(Node n)
   TypeNode tn = n.getType();
   Trace("alf-term-process-debug")
       << "postConvert " << n << " " << k << std::endl;
-  if (k == BOUND_VARIABLE)
+  if (k == BOUND_VARIABLE || k == RAW_SYMBOL)
   {
-    return n;
-  }
-  else if (k == RAW_SYMBOL)
-  {
-    // ignore internally generated symbols
     return n;
   }
   else if (k == SKOLEM)
@@ -117,19 +112,6 @@ Node AlfNodeConverter::postConvert(Node n)
       // to avoid type errors when constructing terms for postConvert
       return n;
     }
-    // skolems v print as their original forms
-    // v is (skolem W) where W is the original or original form of v
-    Node wi = SkolemManager::getUnpurifiedForm(n);
-    if (!wi.isNull() && wi != n)
-    {
-      Trace("alf-term-process-debug") << "...original form " << wi << std::endl;
-      wi = convert(wi);
-      Trace("alf-term-process-debug")
-          << "...converted original for " << wi << std::endl;
-      TypeNode ftype = nm->mkFunctionType(tn, tn);
-      Node skolemOp = getSymbolInternal(k, ftype, "skolem");
-      return mkApplyUf(skolemOp, {wi});
-    }
     // might be a skolem function
     Node ns = maybeMkSkolemFun(n);
     if (!ns.isNull())
@@ -140,17 +122,12 @@ Node AlfNodeConverter::postConvert(Node n)
     // This case will only apply for terms originating from places with no
     // proof support. Note it is not added as a declared variable, instead it
     // is used as (var N T) throughout.
-    // FIXME
     TypeNode intType = nm->integerType();
     TypeNode varType = nm->mkFunctionType({intType, d_sortType}, tn);
     Node var = mkInternalSymbol("var", varType);
     Node index = nm->mkConstInt(Rational(getOrAssignIndexForFVar(n)));
     Node tc = typeAsNode(convertType(tn));
     return mkApplyUf(var, {index, tc});
-  }
-  else if (n.isVar())
-  {
-    return mkInternalSymbol(getNameForUserNameOf(n), tn);
   }
   else if (k == CARDINALITY_CONSTRAINT)
   {
@@ -164,6 +141,18 @@ Node AlfNodeConverter::postConvert(Node n)
         nm->mkFunctionType({tnn.getType(), ub.getType()}, nm->booleanType());
     Node fcard = getSymbolInternal(k, tnc, "fmf.card");
     return mkApplyUf(fcard, {tnn, ub});
+  }
+  else if (k == CONST_INTEGER)
+  {
+    Rational r = n.getConst<Rational>();
+    if (r.sgn() == -1)
+    {
+      Node na = nm->mkConstInt(r.abs());
+      Node intNeg =
+          getSymbolInternal(k, nm->mkFunctionType(tn, tn), "alf.neg");
+      return mkApplyUf(intNeg, {na});
+    }
+    return n;
   }
   else if (k == CONST_RATIONAL)
   {
@@ -212,25 +201,18 @@ Node AlfNodeConverter::postConvert(Node n)
     Assert(!lam.isNull());
     return convert(lam);
   }
-  else if (k == REGEXP_LOOP)
-  {
-    // ((_ re.loop n1 n2) t) is ((re.loop n1 n2) t)
-    TypeNode intType = nm->integerType();
-    TypeNode relType =
-        nm->mkFunctionType({intType, intType}, nm->mkFunctionType(tn, tn));
-    Node rop = getSymbolInternal(
-        k, relType, printer::smt2::Smt2Printer::smtKindString(k));
-    RegExpLoop op = n.getOperator().getConst<RegExpLoop>();
-    Node n1 = nm->mkConstInt(Rational(op.d_loopMinOcc));
-    Node n2 = nm->mkConstInt(Rational(op.d_loopMaxOcc));
-    return mkApplyUf(mkApplyUf(rop, {n1, n2}), {n[0]});
-  }
   else if (k == SEP_NIL)
   {
     Node tnn = typeAsNode(convertType(tn));
     TypeNode ftype = nm->mkFunctionType(d_sortType, tn);
     Node s = getSymbolInternal(k, ftype, "sep.nil");
     return mkApplyUf(s, {tnn});
+  }
+  else if (k==APPLY_TESTER || k==APPLY_UPDATER || k==NEG)
+  {
+    // kinds where the operator may be different
+    Node opc = getOperatorOfTerm(n);
+    return mkApplyUf(opc, std::vector<Node>(n.begin(), n.end()));
   }
   return n;
 }
@@ -502,36 +484,23 @@ Node AlfNodeConverter::maybeMkSkolemFun(Node k)
   TypeNode tn = k.getType();
   if (sm->isSkolemFunction(k, sfi, cacheVal))
   {
-    if (sfi == SkolemFunId::SHARED_SELECTOR)
+    // convert every skolem function to its name applied to arguments
+    std::stringstream ss;
+    ss << "@k." << sfi;
+    std::vector<Node> args;
+    if (cacheVal.getKind()==SEXPR)
     {
-      // a skolem corresponding to shared selector should print in
-      // LFSC as (sel T n) where T is the type and n is the index of the
-      // shared selector.
-      TypeNode fselt = nm->mkFunctionType(tn.getDatatypeSelectorDomainType(),
-                                          tn.getDatatypeSelectorRangeType());
-      TypeNode intType = nm->integerType();
-      TypeNode selt = nm->mkFunctionType({d_sortType, intType}, fselt);
-      Node sel = getSymbolInternal(k.getKind(), selt, "sel");
-      Node kn = typeAsNode(convertType(tn.getDatatypeSelectorRangeType()));
-      Assert(!cacheVal.isNull() && cacheVal.getKind() == CONST_RATIONAL);
-      return mkApplyUf(sel, {kn, cacheVal});
+      for (const Node& cv : cacheVal)
+      {
+        args.push_back(convert(cv));
+      }
     }
-    else if (sfi == SkolemFunId::RE_UNFOLD_POS_COMPONENT)
+    else
     {
-      // a skolem corresponding to a regular expression unfolding component
-      // should print as (skolem_re_unfold_pos t R n) where the skolem is the
-      // n^th component for the unfolding of (str.in_re t R).
-      TypeNode strType = nm->stringType();
-      TypeNode reType = nm->regExpType();
-      TypeNode intType = nm->integerType();
-      TypeNode reut = nm->mkFunctionType({strType, reType, intType}, strType);
-      Node sk = getSymbolInternal(k.getKind(), reut, "skolem_re_unfold_pos");
-      Assert(!cacheVal.isNull() && cacheVal.getKind() == SEXPR
-             && cacheVal.getNumChildren() == 3);
-      // third value is mpz, which is not converted
-      return mkApplyUf(
-          sk, {convert(cacheVal[0]), convert(cacheVal[1]), cacheVal[2]});
+      args.push_back(convert(cacheVal));
     }
+    // must convert all arguments
+    return mkInternalApp(ss.str(), args, k.getType());
   }
   return Node::null();
 }
