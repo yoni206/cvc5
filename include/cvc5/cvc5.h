@@ -63,7 +63,7 @@ class StatisticsRegistry;
 }  // namespace internal
 
 namespace parser {
-class Command;
+class Cmd;
 }
 
 class Solver;
@@ -357,7 +357,7 @@ class Datatype;
  */
 class CVC5_EXPORT Sort
 {
-  friend class parser::Command;
+  friend class parser::Cmd;
   friend class DatatypeConstructor;
   friend class DatatypeConstructorDecl;
   friend class DatatypeSelector;
@@ -1113,7 +1113,7 @@ namespace cvc5 {
  */
 class CVC5_EXPORT Term
 {
-  friend class parser::Command;
+  friend class parser::Cmd;
   friend class Datatype;
   friend class DatatypeConstructor;
   friend class DatatypeSelector;
@@ -2892,7 +2892,7 @@ std::ostream& operator<<(std::ostream& out,
  */
 class CVC5_EXPORT Grammar
 {
-  friend class parser::Command;
+  friend class parser::Cmd;
   friend class Solver;
 
  public:
@@ -3344,7 +3344,7 @@ class CVC5_EXPORT Solver
   friend class DriverOptions;
   friend class Grammar;
   friend class Op;
-  friend class parser::Command;
+  friend class parser::Cmd;
   friend class main::CommandExecutor;
   friend class Sort;
   friend class Term;
@@ -4159,9 +4159,14 @@ class CVC5_EXPORT Solver
    *
    * @param symbol The name of the sort.
    * @param arity The arity of the sort.
+   * @param fresh If true, then this method always returns a new Sort.
+   * Otherwise, this method will always return the same Sort
+   * for each call with the given arity and symbol where fresh is false.
    * @return The sort.
    */
-  Sort declareSort(const std::string& symbol, uint32_t arity) const;
+  Sort declareSort(const std::string& symbol,
+                   uint32_t arity,
+                   bool fresh = true) const;
 
   /**
    * Define n-ary function.
