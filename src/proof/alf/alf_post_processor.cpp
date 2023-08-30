@@ -235,11 +235,6 @@ bool AlfProofPostprocessCallback::update(Node res,
       Trace("alf-proof") << "Processing cong for op " << op << " "
                          << op.getType() << std::endl;
       Assert(!op.isNull());
-      // initial base step is REFL
-      Node opEq = op.eqNode(op);
-      cdp->addStep(opEq, PfRule::REFL, {}, {op});
-      size_t nchildren = children.size();
-      Node nullTerm = d_tproc.getNullTerminator(k, res[0].getType());
       // Are we doing congruence of an n-ary operator? If so, notice that op
       // is a binary operator and we must apply congruence in a special way.
       // Note we use the first block of code if we have more than 2 children.
@@ -252,9 +247,9 @@ bool AlfProofPostprocessCallback::update(Node res,
       if (isNary)
       {
 #if 1
-        Node tn = d_tproc.typeAsNode(res[0].getType());
-        addAlfStep(AlfRule::NARY_CONG, res, children, {tn, op}, *cdp);
+        addAlfStep(AlfRule::NARY_CONG, res, children, {op}, *cdp);
 #else
+        Node nullTerm = d_tproc.getNullTerminator(k, res[0].getType());
         // get the null terminator for the kind, which may mean we are doing
         // a special kind of congruence for n-ary kinds whose base is a REFL
         // step for the null terminator.
@@ -313,7 +308,8 @@ bool AlfProofPostprocessCallback::update(Node res,
       }
       else
       {
-        updateCong(res, children, cdp, op);
+        addAlfStep(AlfRule::CONG, res, children, {op}, *cdp);
+        //updateCong(res, children, cdp, op);
       }
     }
     break;
