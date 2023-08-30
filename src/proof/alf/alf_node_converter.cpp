@@ -148,8 +148,7 @@ Node AlfNodeConverter::postConvert(Node n)
     if (r.sgn() == -1)
     {
       Node na = nm->mkConstInt(r.abs());
-      Node intNeg =
-          getSymbolInternal(k, nm->mkFunctionType(tn, tn), "alf.neg");
+      Node intNeg = getSymbolInternal(k, nm->mkFunctionType(tn, tn), "alf.neg");
       return mkApplyUf(intNeg, {na});
     }
     return n;
@@ -208,7 +207,7 @@ Node AlfNodeConverter::postConvert(Node n)
     Node s = getSymbolInternal(k, ftype, "sep.nil");
     return mkApplyUf(s, {tnn});
   }
-  else if (k==APPLY_TESTER || k==APPLY_UPDATER || k==NEG)
+  else if (k == APPLY_TESTER || k == APPLY_UPDATER || k == NEG)
   {
     // kinds where the operator may be different
     Node opc = getOperatorOfTerm(n);
@@ -488,7 +487,7 @@ Node AlfNodeConverter::maybeMkSkolemFun(Node k)
     std::stringstream ss;
     ss << "@k." << sfi;
     std::vector<Node> args;
-    if (cacheVal.getKind()==SEXPR)
+    if (cacheVal.getKind() == SEXPR)
     {
       for (const Node& cv : cacheVal)
       {

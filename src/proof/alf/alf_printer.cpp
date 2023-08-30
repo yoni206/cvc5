@@ -403,7 +403,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
     }
     else
     {
-      for (size_t i=1, nargs=aargs.size(); i<nargs; i++)
+      for (size_t i = 1, nargs = aargs.size(); i < nargs; i++)
       {
         args.push_back(d_tproc.convert(aargs[i]));
       }
