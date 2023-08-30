@@ -483,23 +483,35 @@ Node AlfNodeConverter::maybeMkSkolemFun(Node k)
   TypeNode tn = k.getType();
   if (sm->isSkolemFunction(k, sfi, cacheVal))
   {
-    // convert every skolem function to its name applied to arguments
-    std::stringstream ss;
-    ss << "@k." << sfi;
-    std::vector<Node> args;
-    if (cacheVal.getKind() == SEXPR)
+    Node app;
+    if (sfi==SkolemFunId::PURIFY)
     {
-      for (const Node& cv : cacheVal)
-      {
-        args.push_back(convert(cv));
-      }
+      Assert (cacheVal.getType()==k.getType());
+      // special case: just use self
+      app = convert(cacheVal);
     }
     else
     {
-      args.push_back(convert(cacheVal));
+      // convert every skolem function to its name applied to arguments
+      std::stringstream ss;
+      ss << "@k." << sfi;
+      std::vector<Node> args;
+      if (cacheVal.getKind() == SEXPR)
+      {
+        for (const Node& cv : cacheVal)
+        {
+          args.push_back(convert(cv));
+        }
+      }
+      else
+      {
+        args.push_back(convert(cacheVal));
+      }
+      // must convert all arguments
+      app = mkInternalApp(ss.str(), args, k.getType());
     }
-    // must convert all arguments
-    return mkInternalApp(ss.str(), args, k.getType());
+    // wrap in "skolem" operator
+    return mkInternalApp("skolem", {app}, k.getType());
   }
   return Node::null();
 }

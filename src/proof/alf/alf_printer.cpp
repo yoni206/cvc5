@@ -98,6 +98,11 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::REORDERING:
     case PfRule::RESOLUTION:
     case PfRule::CHAIN_RESOLUTION:
+    case PfRule::ARITH_SUM_UB:
+    case PfRule::ARITH_MULT_POS:
+    case PfRule::ARITH_MULT_NEG: 
+    case PfRule::SKOLEM_INTRO:
+    // alf rule is handled
     case PfRule::ALF_RULE: return true; break;
     //
     case PfRule::SUBS:
@@ -143,7 +148,6 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::DT_COLLAPSE:
     case PfRule::DT_SPLIT:
     case PfRule::DT_CLASH:
-    case PfRule::SKOLEM_INTRO:
     case PfRule::SKOLEMIZE:
     case PfRule::INSTANTIATE:
     case PfRule::ALPHA_EQUIV:
@@ -169,13 +173,10 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::STRING_SEQ_UNIT_INJ:
     case PfRule::STRING_INFERENCE:
     case PfRule::MACRO_ARITH_SCALE_SUM_UB:
-    case PfRule::ARITH_SUM_UB:
     case PfRule::ARITH_TRICHOTOMY:
     case PfRule::INT_TIGHT_LB:
     case PfRule::INT_TIGHT_UB:
     case PfRule::ARITH_MULT_SIGN:
-    case PfRule::ARITH_MULT_POS:
-    case PfRule::ARITH_MULT_NEG:
     case PfRule::ARITH_MULT_TANGENT:
     case PfRule::ARITH_OP_ELIM_AXIOM:
     case PfRule::ARITH_POLY_NORM:
