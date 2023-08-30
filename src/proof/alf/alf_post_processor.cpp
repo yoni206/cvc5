@@ -309,7 +309,7 @@ bool AlfProofPostprocessCallback::update(Node res,
       else
       {
         addAlfStep(AlfRule::CONG, res, children, {op}, *cdp);
-        //updateCong(res, children, cdp, op);
+        // updateCong(res, children, cdp, op);
       }
     }
     break;
