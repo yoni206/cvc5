@@ -170,7 +170,6 @@ bool AlfProofPostprocessCallback::update(Node res,
       // First, get the operator, which will be used for printing the base
       // REFL step. Notice this may be for interpreted or uninterpreted
       // function symbols.
-      // TODO: this comes from the lfsc converter
       Node op = d_tproc.getOperatorOfTerm(res[0]);
       Trace("alf-proof") << "Processing cong for op " << op << " "
                          << op.getType() << std::endl;
@@ -182,14 +181,14 @@ bool AlfProofPostprocessCallback::update(Node res,
       // symbols have function types that expect n arguments.
       bool isNary = NodeManager::isNAryKind(k) && k != kind::APPLY_CONSTRUCTOR
                     && k != kind::APPLY_UF;
-
-      // TODO: is this correct? this was taken from LFSC
       if (isNary)
       {
+        // use n-ary rule
         addAlfStep(AlfRule::NARY_CONG, res, children, {op}, *cdp);
       }
       else
       {
+        // use ordinary rule
         addAlfStep(AlfRule::CONG, res, children, {op}, *cdp);
       }
     }
