@@ -49,26 +49,7 @@ namespace proof {
 AlfNodeConverter::AlfNodeConverter()
 {
   NodeManager* nm = NodeManager::currentNM();
-
   d_sortType = nm->mkSort("sortType");
-
-  TypeNode intType = nm->integerType();
-  TypeNode arrType = nm->mkFunctionType({d_sortType, d_sortType}, d_sortType);
-  d_typeKindToNodeCons[ARRAY_TYPE] =
-      getSymbolInternal(FUNCTION_TYPE, arrType, "Array");
-  TypeNode bvType = nm->mkFunctionType(intType, d_sortType);
-  d_typeKindToNodeCons[BITVECTOR_TYPE] =
-      getSymbolInternal(FUNCTION_TYPE, bvType, "BitVec");
-  TypeNode fpType = nm->mkFunctionType({intType, intType}, d_sortType);
-  d_typeKindToNodeCons[FLOATINGPOINT_TYPE] =
-      getSymbolInternal(FUNCTION_TYPE, fpType, "FloatingPoint");
-  TypeNode setType = nm->mkFunctionType(d_sortType, d_sortType);
-  d_typeKindToNodeCons[SET_TYPE] =
-      getSymbolInternal(FUNCTION_TYPE, setType, "Set");
-  d_typeKindToNodeCons[BAG_TYPE] =
-      getSymbolInternal(FUNCTION_TYPE, setType, "Bag");
-  d_typeKindToNodeCons[SEQUENCE_TYPE] =
-      getSymbolInternal(FUNCTION_TYPE, setType, "Seq");
 }
 
 Node AlfNodeConverter::preConvert(Node n)
@@ -129,19 +110,6 @@ Node AlfNodeConverter::postConvert(Node n)
     Node tc = typeAsNode(convertType(tn));
     return mkApplyUf(var, {index, tc});
   }
-  else if (k == CARDINALITY_CONSTRAINT)
-  {
-    Trace("alf-term-process-debug")
-        << "...convert cardinality constraint" << std::endl;
-    const CardinalityConstraint& cc =
-        n.getOperator().getConst<CardinalityConstraint>();
-    Node tnn = typeAsNode(convertType(cc.getType()));
-    Node ub = nm->mkConstInt(Rational(cc.getUpperBound()));
-    TypeNode tnc =
-        nm->mkFunctionType({tnn.getType(), ub.getType()}, nm->booleanType());
-    Node fcard = getSymbolInternal(k, tnc, "fmf.card");
-    return mkApplyUf(fcard, {tnn, ub});
-  }
   else if (k == CONST_INTEGER)
   {
     Rational r = n.getConst<Rational>();
@@ -174,7 +142,7 @@ Node AlfNodeConverter::postConvert(Node n)
   }
   else if (n.isClosure())
   {
-    // (forall ((x1 T1) ... (xn Tk)) P) is
+    // e.g. (forall ((x1 T1) ... (xn Tk)) P) is
     // (forall x1 (forall x2 ... (forall xn P)))
     Node ret = n[1];
     std::stringstream opName;
@@ -199,13 +167,6 @@ Node AlfNodeConverter::postConvert(Node n)
     Node lam = theory::uf::FunctionConst::toLambda(n);
     Assert(!lam.isNull());
     return convert(lam);
-  }
-  else if (k == SEP_NIL)
-  {
-    Node tnn = typeAsNode(convertType(tn));
-    TypeNode ftype = nm->mkFunctionType(d_sortType, tn);
-    Node s = getSymbolInternal(k, ftype, "sep.nil");
-    return mkApplyUf(s, {tnn});
   }
   else if (k == APPLY_TESTER || k == APPLY_UPDATER || k == NEG)
   {
@@ -236,152 +197,6 @@ Node AlfNodeConverter::mkApplyUf(Node op, const std::vector<Node>& args) const
   }
   aargs.insert(aargs.end(), args.begin(), args.end());
   return nm->mkNode(APPLY_UF, aargs);
-}
-
-TypeNode AlfNodeConverter::preConvertType(TypeNode tn) { return tn; }
-
-TypeNode AlfNodeConverter::postConvertType(TypeNode tn)
-{
-  NodeManager* nm = NodeManager::currentNM();
-  TypeNode cur = tn;
-  Node tnn;
-  Kind k = tn.getKind();
-  Trace("alf-term-process-debug")
-      << "postConvertType " << tn << " " << tn.getNumChildren() << " " << k
-      << std::endl;
-  if (k == BITVECTOR_TYPE)
-  {
-    tnn = d_typeKindToNodeCons[k];
-    Node w = nm->mkConstInt(Rational(tn.getBitVectorSize()));
-    tnn = mkApplyUf(tnn, {w});
-  }
-  else if (k == FLOATINGPOINT_TYPE)
-  {
-    tnn = d_typeKindToNodeCons[k];
-    Node e = nm->mkConstInt(Rational(tn.getFloatingPointExponentSize()));
-    Node s = nm->mkConstInt(Rational(tn.getFloatingPointSignificandSize()));
-    tnn = mkApplyUf(tnn, {e, s});
-  }
-  else if (k == TUPLE_TYPE)
-  {
-    // special case: tuples must be distinguished by their arity
-    size_t nargs = tn.getNumChildren();
-    if (nargs > 0)
-    {
-      std::vector<TypeNode> types;
-      std::vector<TypeNode> convTypes;
-      std::vector<Node> targs;
-      for (size_t i = 0; i < nargs; i++)
-      {
-        TypeNode tnc = tn[i];
-        types.push_back(d_sortType);
-        convTypes.push_back(tnc);
-        targs.push_back(typeAsNode(tnc));
-      }
-      TypeNode ftype = nm->mkFunctionType(types, d_sortType);
-      // must distinguish by arity
-      std::stringstream ss;
-      ss << "Tuple_" << nargs;
-      tnn = mkApplyUf(getSymbolInternal(k, ftype, ss.str()), targs);
-      // we are changing its name, we must make a sort constructor
-      cur = nm->mkSortConstructor(ss.str(), nargs);
-      cur = nm->mkSort(cur, convTypes);
-    }
-    else
-    {
-      // no need to convert type for tuples of size 0,
-      // type as node is simple
-      tnn = getSymbolInternal(k, d_sortType, "Tuple");
-    }
-  }
-  else if (tn.getNumChildren() == 0)
-  {
-    Assert(!tn.isTuple());
-    // an uninterpreted sort, or an uninstantiatied (maybe parametric) datatype
-    std::stringstream ss;
-    options::ioutils::applyOutputLanguage(ss, Language::LANG_SMTLIB_V2_6);
-    tn.toStream(ss);
-    if (tn.isUninterpretedSortConstructor())
-    {
-      std::string s = getNameForUserNameOfInternal(tn.getId(), ss.str());
-      tnn = getSymbolInternal(k, d_sortType, s, false);
-      cur = nm->mkSortConstructor(s, tn.getUninterpretedSortConstructorArity());
-    }
-    else if (tn.isUninterpretedSort() || tn.isDatatype())
-    {
-      std::string s = getNameForUserNameOfInternal(tn.getId(), ss.str());
-      tnn = getSymbolInternal(k, d_sortType, s, false);
-      cur = nm->mkSort(s);
-    }
-    else
-    {
-      // all other builtin type constants, e.g. Int
-      tnn = getSymbolInternal(k, d_sortType, ss.str());
-    }
-  }
-  else
-  {
-    // to build the type-as-node, must convert the component types
-    std::vector<Node> targs;
-    std::vector<TypeNode> types;
-    for (const TypeNode& tnc : tn)
-    {
-      targs.push_back(typeAsNode(tnc));
-      types.push_back(d_sortType);
-    }
-    Node op;
-    if (k == PARAMETRIC_DATATYPE)
-    {
-      // note we don't add to declared types here, since the parametric
-      // datatype is traversed and will be declared as a type constructor
-      // erase first child, which repeats the datatype
-      targs.erase(targs.begin(), targs.begin() + 1);
-      types.erase(types.begin(), types.begin() + 1);
-      TypeNode ftype = nm->mkFunctionType(types, d_sortType);
-      // the operator has been converted; it is no longer a datatype, thus
-      // we must print to get its name.
-      std::stringstream ss;
-      ss << tn[0];
-      op = getSymbolInternal(k, ftype, ss.str());
-    }
-    else if (k == INSTANTIATED_SORT_TYPE)
-    {
-      // We don't add to declared types here. The type constructor is already
-      // added to declare types when processing the children of this.
-      // Also, similar to PARAMETRIC_DATATYPE, the type constructor
-      // should be erased from children.
-      targs.erase(targs.begin(), targs.begin() + 1);
-      types.erase(types.begin(), types.begin() + 1);
-      TypeNode ftype = nm->mkFunctionType(types, d_sortType);
-      std::string name = tn.getUninterpretedSortConstructor().getName();
-      op = getSymbolInternal(k, ftype, name, false);
-    }
-    else if (k == FUNCTION_TYPE)
-    {
-      TypeNode ftype = nm->mkFunctionType(types, d_sortType);
-      op = getSymbolInternal(k, ftype, "->");
-    }
-    else
-    {
-      std::map<Kind, Node>::iterator it = d_typeKindToNodeCons.find(k);
-      if (it != d_typeKindToNodeCons.end())
-      {
-        op = it->second;
-      }
-    }
-    if (!op.isNull())
-    {
-      tnn = mkApplyUf(op, targs);
-    }
-    else
-    {
-      AlwaysAssert(false);
-    }
-  }
-  Assert(!tnn.isNull());
-  Trace("alf-term-process-debug") << "...type as node: " << tnn << std::endl;
-  d_typeAsNode[cur] = tnn;
-  return cur;
 }
 
 std::string AlfNodeConverter::getNameForUserName(const std::string& name,
@@ -516,13 +331,22 @@ Node AlfNodeConverter::maybeMkSkolemFun(Node k)
   return Node::null();
 }
 
-Node AlfNodeConverter::typeAsNode(TypeNode tni) const
+Node AlfNodeConverter::typeAsNode(TypeNode tn)
 {
   // should always exist in the cache, as we always run types through
   // postConvertType before calling this method.
-  std::map<TypeNode, Node>::const_iterator it = d_typeAsNode.find(tni);
-  AlwaysAssert(it != d_typeAsNode.end()) << "Missing typeAsNode " << tni;
-  return it->second;
+  std::map<TypeNode, Node>::const_iterator it = d_typeAsNode.find(tn);
+  if (it!=d_typeAsNode.end())
+  {
+    return it->second;
+  }
+  // dummy symbol whose name is the type printed
+  // this suffices since ALF faithfully represents all types.
+  std::stringstream ss;
+  ss << tn;
+  Node ret = mkInternalSymbol(ss.str(), d_sortType, true);
+  d_typeAsNode[tn] = ret;
+  return ret;
 }
 
 Node AlfNodeConverter::mkInternalSymbol(const std::string& name,
@@ -584,51 +408,9 @@ Node AlfNodeConverter::getSymbolInternal(Kind k,
   return sym;
 }
 
-void AlfNodeConverter::getCharVectorInternal(Node c, std::vector<Node>& chars)
-{
-  Assert(c.getKind() == CONST_STRING);
-  NodeManager* nm = NodeManager::currentNM();
-  const std::vector<unsigned>& vec = c.getConst<String>().getVec();
-  if (vec.size() == 0)
-  {
-    Node ec = getSymbolInternalFor(c, "emptystr");
-    chars.push_back(ec);
-    return;
-  }
-  TypeNode tnc = nm->mkFunctionType(nm->integerType(), c.getType());
-  Node aconstf = getSymbolInternal(CONST_STRING, tnc, "char");
-  for (unsigned i = 0, size = vec.size(); i < size; i++)
-  {
-    Node cc = mkApplyUf(aconstf, {nm->mkConstInt(Rational(vec[i]))});
-    chars.push_back(cc);
-  }
-}
-
-Node AlfNodeConverter::convertBitVector(const BitVector& bv)
-{
-  NodeManager* nm = NodeManager::currentNM();
-  TypeNode btn = nm->booleanType();
-  TypeNode btnv = nm->mkFunctionType({btn, btn}, btn);
-  size_t w = bv.getSize();
-  Node ret = getSymbolInternal(CONST_BITVECTOR, btn, "bvn");
-  Node b0 = getSymbolInternal(CONST_BITVECTOR, btn, "b0");
-  Node b1 = getSymbolInternal(CONST_BITVECTOR, btn, "b1");
-  Node bvc = getSymbolInternal(CONST_BITVECTOR, btnv, "bvc");
-  for (size_t i = 0; i < w; i++)
-  {
-    Node arg = bv.isBitSet((w - 1) - i) ? b1 : b0;
-    ret = mkApplyUf(bvc, {arg, ret});
-  }
-  return ret;
-}
-
 Node AlfNodeConverter::getNullTerminator(Kind k, TypeNode tn)
 {
-  NodeManager* nm = NodeManager::currentNM();
-  Node tc = typeAsNode(convertType(tn));
-  TypeNode ftype = nm->mkFunctionType({tc.getType()}, tn);
-  Node nil = getSymbolInternal(k, ftype, "alf.nil");
-  return mkApplyUf(nil, {tc});
+  return getSymbolInternal(k, tn, "alf.nil");
 }
 
 Kind AlfNodeConverter::getBuiltinKindForInternalSymbol(Node op) const

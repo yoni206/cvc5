@@ -40,10 +40,6 @@ class AlfNodeConverter : public NodeConverter
   Node preConvert(Node n) override;
   /** convert at post-order traversal */
   Node postConvert(Node n) override;
-  /** convert type at pre-order traversal */
-  TypeNode preConvertType(TypeNode tn) override;
-  /** convert type at post-order traversal */
-  TypeNode postConvertType(TypeNode tn) override;
   /**
    * Get the null terminator for kind k and type tn. The type tn can be
    * omitted if applications of kind k do not have parametric type.
@@ -103,7 +99,7 @@ class AlfNodeConverter : public NodeConverter
    * passed as arguments to terms. This method assumes that tni has been
    * converted to internal form (via the convertType method of this class).
    */
-  Node typeAsNode(TypeNode tni) const;
+  Node typeAsNode(TypeNode tni);
 
  private:
   /** get name for a Node/TypeNode whose id is id and whose name is name */
@@ -141,12 +137,6 @@ class AlfNodeConverter : public NodeConverter
                          TypeNode tn,
                          const std::string& name,
                          bool useRawSym = true);
-  /**
-   * Get character vector, add internal vector of characters for c.
-   */
-  void getCharVectorInternal(Node c, std::vector<Node>& chars);
-  /** convert bitvector to its ALF term (of ALF sort bitvec) */
-  Node convertBitVector(const BitVector& bv);
   /** Is k a kind that is printed as an indexed operator in ALF? */
   static bool isIndexedOperatorKind(Kind k);
   /** get indices for printing the operator of n in the ALF format */
@@ -176,8 +166,6 @@ class AlfNodeConverter : public NodeConverter
   std::map<Node, size_t> d_bvarIndex;
   /** Cache for typeAsNode */
   std::map<TypeNode, Node> d_typeAsNode;
-  /** Used for interpreted builtin parametric sorts */
-  std::map<Kind, Node> d_typeKindToNodeCons;
 };
 
 }  // namespace proof

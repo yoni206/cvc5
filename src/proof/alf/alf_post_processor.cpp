@@ -47,10 +47,6 @@ bool AlfProofPostprocessCallback::shouldUpdate(std::shared_ptr<ProofNode> pn,
 {
   switch (pn->getRule())
   {
-    case PfRule::AND_INTRO:
-    {
-      return (pn->getChildren().size() > 2);
-    }
     case PfRule::TRANS:
     case PfRule::SCOPE:
     case PfRule::CHAIN_RESOLUTION:
@@ -143,7 +139,6 @@ bool AlfProofPostprocessCallback::update(Node res,
       return true;
     }
     break;
-#if 1
     case PfRule::CHAIN_RESOLUTION:
     {
       // ALF has chain_resolution which supports a list of premises.
@@ -154,36 +149,6 @@ bool AlfProofPostprocessCallback::update(Node res,
           AlfRule::CHAIN_RESOLUTION, res, children, {argsList}, *cdp);
     }
     break;
-#elif 0
-    case PfRule::CHAIN_RESOLUTION:
-    {
-      // create and_intro for each child
-      // create big conjunction for args
-      Assert(children.size() >= 2);
-      Node conj = nm->mkNode(AND, children);
-      Node argsList = nm->mkNode(AND, args);
-      // This AND_INTRO will also be preprocessed to multiple AND_INTRO_NARY
-      cdp->addStep(conj, PfRule::AND_INTRO, children, std::vector<Node>());
-      return addAlfStep(
-          AlfRule::CHAIN_RESOLUTION, res, {conj}, {argsList}, *cdp);
-    }
-    break;
-#else
-    // this is faster
-    case PfRule::CHAIN_RESOLUTION:
-    {
-      // turn into binary resolution
-      Node cur = children[0];
-      for (size_t i = 1, size = children.size(); i < size; i++)
-      {
-        std::vector<Node> newChildren{cur, children[i]};
-        std::vector<Node> newArgs{args[(i - 1) * 2], args[(i - 1) * 2 + 1]};
-        cur = d_pc->checkDebug(PfRule::RESOLUTION, newChildren, newArgs);
-        cdp->addStep(cur, PfRule::RESOLUTION, newChildren, newArgs);
-      }
-    }
-    break;
-#endif
     case PfRule::TRANS:
     {
       if (children.size() <= 2)
@@ -246,70 +211,11 @@ bool AlfProofPostprocessCallback::update(Node res,
       // TODO: is this correct? this was taken from LFSC
       if (isNary)
       {
-#if 1
         addAlfStep(AlfRule::NARY_CONG, res, children, {op}, *cdp);
-#else
-        Node nullTerm = d_tproc.getNullTerminator(k, res[0].getType());
-        // get the null terminator for the kind, which may mean we are doing
-        // a special kind of congruence for n-ary kinds whose base is a REFL
-        // step for the null terminator.
-        Node currEq;
-        if (!nullTerm.isNull())
-        {
-          currEq = nullTerm.eqNode(nullTerm);
-          // if we have a null terminator, we do a final REFL step to add
-          // the null terminator to both sides.
-          cdp->addStep(currEq, PfRule::REFL, {}, {nullTerm});
-        }
-        else
-        {
-          // Otherwise, start with the last argument.
-          currEq = children[nchildren - 1];
-        }
-        for (size_t i = 0; i < nchildren; i++)
-        {
-          size_t ii = (nchildren - 1) - i;
-          Trace("lfsc-pp-cong") << "Process child " << ii << std::endl;
-          Node uop = op;
-          // special case: applications of the following kinds in the chain may
-          // have a different type, so remake the operator here.
-          if (k == kind::BITVECTOR_CONCAT || k == ADD || k == MULT
-              || k == NONLINEAR_MULT)
-          {
-            // we get the operator of the next argument concatenated with the
-            // current accumulated remainder.
-            Node currApp = nm->mkNode(k, children[ii][0], currEq[0]);
-            uop = d_tproc.getOperatorOfTerm(currApp);
-          }
-          Trace("lfsc-pp-cong") << "Apply " << uop << " to " << children[ii][0]
-                                << " and " << children[ii][1] << std::endl;
-          Node argAppEq =
-              nm->mkNode(HO_APPLY, uop, children[ii][0])
-                  .eqNode(nm->mkNode(HO_APPLY, uop, children[ii][1]));
-          addAlfStep(
-              AlfRule::HO_CONG, argAppEq, {opEq, children[ii]}, {}, *cdp);
-          // now, congruence to the current equality
-          Node nextEq;
-          if (ii == 0)
-          {
-            // use final conclusion
-            nextEq = res;
-          }
-          else
-          {
-            // otherwise continue to apply
-            nextEq = nm->mkNode(HO_APPLY, argAppEq[0], currEq[0])
-                         .eqNode(nm->mkNode(HO_APPLY, argAppEq[1], currEq[1]));
-          }
-          addAlfStep(AlfRule::HO_CONG, nextEq, {argAppEq, currEq}, {}, *cdp);
-          currEq = nextEq;
-        }
-#endif
       }
       else
       {
         addAlfStep(AlfRule::CONG, res, children, {op}, *cdp);
-        // updateCong(res, children, cdp, op);
       }
     }
     break;
