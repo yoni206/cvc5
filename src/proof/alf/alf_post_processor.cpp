@@ -47,7 +47,6 @@ bool AlfProofPostprocessCallback::shouldUpdate(std::shared_ptr<ProofNode> pn,
 {
   switch (pn->getRule())
   {
-    case PfRule::TRANS:
     case PfRule::SCOPE:
     case PfRule::CHAIN_RESOLUTION:
     case PfRule::CONG:
@@ -147,30 +146,6 @@ bool AlfProofPostprocessCallback::update(Node res,
       Node argsList = nm->mkNode(AND, args);
       return addAlfStep(
           AlfRule::CHAIN_RESOLUTION, res, children, {argsList}, *cdp);
-    }
-    break;
-    case PfRule::TRANS:
-    {
-      if (children.size() <= 2)
-      {
-        // no need to change
-        return false;
-      }
-      // turn into binary
-      Node cur = children[0];
-      std::unordered_set<Node> processed;
-      processed.insert(children.begin(), children.end());
-      for (size_t i = 1, size = children.size(); i < size; i++)
-      {
-        std::vector<Node> newChildren{cur, children[i]};
-        cur = d_pc->checkDebug(PfRule::TRANS, newChildren, {});
-        if (processed.find(cur) != processed.end())
-        {
-          continue;
-        }
-        processed.insert(cur);
-        cdp->addStep(cur, PfRule::TRANS, newChildren, {});
-      }
     }
     break;
     case PfRule::CONG:
