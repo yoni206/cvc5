@@ -35,10 +35,12 @@ AlfPrinter::AlfPrinter(Env& env, AlfNodeConverter& atp, bool flatten)
     : EnvObj(env), d_tproc(atp), d_termLetPrefix("@t"), d_proofFlatten(flatten)
 {
   d_pfType = NodeManager::currentNM()->mkSort("proofType");
+  d_false = NodeManager::currentNM()->mkConst(false);
 }
 
 bool AlfPrinter::isHandled(const ProofNode* pfn) const
 {
+  const std::vector<Node> pargs = pn->getArguments();
   switch (pfn->getRule())
   {
     case PfRule::REFL:
@@ -102,8 +104,27 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::ARITH_MULT_POS:
     case PfRule::ARITH_MULT_NEG: 
     case PfRule::SKOLEM_INTRO:
+    case PfRule::CONCAT_EQ:
+    case PfRule::STRING_LENGTH_POS:
+    case PfRule::STRING_LENGTH_NON_EMPTY:
+      return true;
     // alf rule is handled
-    case PfRule::ALF_RULE: return true; break;
+    case PfRule::ALF_RULE: return true;
+    case PfRule::STRING_REDUCTION:
+    {
+      // depends on the operator
+      Assert (!pargs.empty());
+      Kind k = pargs[0].getKind();
+      return k == STRING_SUBSTR || k == STRING_INDEXOF;
+    }
+      break;
+    case PfRule::STRING_EAGER_REDUCTION:
+    {
+      // depends on the operator
+      Kind k = pargs[0].getKind();
+      return k==STRING_CONTAINS || k == STRING_TO_CODE || k == STRING_INDEXOF;
+    }
+      break;
     //
     case PfRule::SUBS:
     case PfRule::REWRITE:
@@ -152,7 +173,6 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::INSTANTIATE:
     case PfRule::ALPHA_EQUIV:
     case PfRule::QUANTIFIERS_PREPROCESS:
-    case PfRule::CONCAT_EQ:
     case PfRule::CONCAT_UNIFY:
     case PfRule::CONCAT_CONFLICT:
     case PfRule::CONCAT_SPLIT:
@@ -160,10 +180,6 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::CONCAT_LPROP:
     case PfRule::CONCAT_CPROP:
     case PfRule::STRING_DECOMPOSE:
-    case PfRule::STRING_LENGTH_POS:
-    case PfRule::STRING_LENGTH_NON_EMPTY:
-    case PfRule::STRING_REDUCTION:
-    case PfRule::STRING_EAGER_REDUCTION:
     case PfRule::RE_INTER:
     case PfRule::RE_UNFOLD_POS:
     case PfRule::RE_UNFOLD_NEG:
@@ -377,6 +393,35 @@ void AlfPrinter::printStepPre(AlfPrintChannel* out, const ProofNode* pn)
     }
   }
 }
+
+void AlfPrinter::getArgsFromPfRule(const ProofNode* pn, std::vector<Node>& args)
+{
+  Node res = pn->getResult();
+  const std::vector<Node> pargs = pn->getArguments();
+  switch (pn->getRule())
+  {
+    // several strings proof rules require adding the type as the first argument
+    case PfRule::CONCAT_EQ:
+    {
+      Assert (res.getKind()==EQUAL);
+      args.push_back(d_tproc.typeAsNode(res[0].getType()));
+    }
+      break;
+    case PfRule::STRING_LENGTH_POS:
+    case PfRule::STRING_REDUCTION:
+    case PfRule::STRING_EAGER_REDUCTION:
+      args.push_back(d_tproc.typeAsNode(pargs[0].getType()));
+      break;
+  }
+  ProofNodeToSExpr pntse;
+  for (size_t i = 0, nargs = pargs.size(); i < nargs; i++)
+  {
+    ProofNodeToSExpr::ArgFormat f = pntse.getArgumentFormat(pn, i);
+    Node av = d_tproc.convert(pntse.getArgument(pargs[i], f));
+    args.push_back(av);
+  }
+}
+
 void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
 {
   // if we have yet to allocate a proof id, do it now
@@ -384,16 +429,16 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
   bool isPop = false;
   TNode conclusion = d_tproc.convert(pn->getResult());
   TNode conclusionPrint;
-  // print conclusion only if option is set
-  if (options().proof.proofPrintConclusion)
+  // print conclusion only if option is set, or this is false
+  if (options().proof.proofPrintConclusion || conclusion==d_false)
   {
     conclusionPrint = conclusion;
   }
   PfRule r = pn->getRule();
   std::vector<Node> args;
-  const std::vector<Node> aargs = pn->getArguments();
   if (r == PfRule::ALF_RULE)
   {
+    const std::vector<Node> aargs = pn->getArguments();
     Node rn = aargs[0];
     AlfRule ar = getAlfRule(rn);
     // if scope, do pop the assumption from passumeMap
@@ -412,13 +457,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
   }
   else
   {
-    ProofNodeToSExpr pntse;
-    for (size_t i = 0, nargs = aargs.size(); i < nargs; i++)
-    {
-      ProofNodeToSExpr::ArgFormat f = pntse.getArgumentFormat(pn, i);
-      Node av = d_tproc.convert(pntse.getArgument(aargs[i], f));
-      args.push_back(av);
-    }
+    getArgsFromPfRule(pn, args);
   }
   const std::vector<std::shared_ptr<ProofNode>>& children = pn->getChildren();
   // if not flattening proofs

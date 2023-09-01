@@ -51,6 +51,7 @@ class AlfPrinter : protected EnvObj
   static std::string getRuleName(const ProofNode* pfn);
 
   //-------------
+  void getArgsFromPfRule(const ProofNode * pn, std::vector<Node>& args);
   void printProofInternal(AlfPrintChannel* out, const ProofNode* pn);
   void printStepPre(AlfPrintChannel* out, const ProofNode* pn);
   void printStepPost(AlfPrintChannel* out, const ProofNode* pn);
@@ -81,6 +82,7 @@ class AlfPrinter : protected EnvObj
   std::string d_termLetPrefix;
   /** Flatten */
   bool d_proofFlatten;
+  Node d_false;
 };
 
 }  // namespace proof

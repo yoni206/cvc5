@@ -27,8 +27,6 @@ const char* AlfRuleToString(AlfRule id)
 {
   switch (id)
   {
-    case AlfRule::AND_INTRO_NARY: return "and_intro_nary";
-    case AlfRule::CHAIN_RESOLUTION: return "chain_resolution";
     case AlfRule::CONG: return "cong";
     case AlfRule::NARY_CONG: return "nary_cong";
     case AlfRule::HO_CONG: return "ho_cong";
