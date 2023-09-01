@@ -49,6 +49,7 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::SYMM:
     case PfRule::TRANS:
     case PfRule::CONG:
+    case PfRule::HO_CONG:
     case PfRule::TRUE_INTRO:
     case PfRule::TRUE_ELIM:
     case PfRule::FALSE_INTRO:
@@ -105,8 +106,12 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::ARITH_SUM_UB:
     case PfRule::ARITH_MULT_POS:
     case PfRule::ARITH_MULT_NEG:
+    case PfRule::INT_TIGHT_LB:
+    case PfRule::INT_TIGHT_UB:
     case PfRule::SKOLEM_INTRO:
     case PfRule::CONCAT_EQ:
+    case PfRule::CONCAT_UNIFY:
+    case PfRule::CONCAT_CSPLIT:
     case PfRule::STRING_LENGTH_POS:
     case PfRule::STRING_LENGTH_NON_EMPTY: return true;
     // alf rule is handled
@@ -130,10 +135,6 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::SUBS:
     case PfRule::REWRITE:
     case PfRule::EVALUATE:
-    case PfRule::MACRO_SR_EQ_INTRO:
-    case PfRule::MACRO_SR_PRED_INTRO:
-    case PfRule::MACRO_SR_PRED_ELIM:
-    case PfRule::MACRO_SR_PRED_TRANSFORM:
     case PfRule::ANNOTATION:
     case PfRule::DSL_REWRITE:
     case PfRule::REMOVE_TERM_FORMULA_AXIOM:
@@ -145,17 +146,11 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::THEORY_PREPROCESS_LEMMA:
     case PfRule::THEORY_EXPAND_DEF:
     case PfRule::WITNESS_AXIOM:
-    case PfRule::TRUST_REWRITE:
-    case PfRule::TRUST_FLATTENING_REWRITE:
-    case PfRule::TRUST_SUBS:
-    case PfRule::TRUST_SUBS_MAP:
-    case PfRule::TRUST_SUBS_EQ:
     case PfRule::THEORY_INFERENCE:
     case PfRule::SAT_REFUTATION:
     case PfRule::MACRO_RESOLUTION:
     case PfRule::MACRO_RESOLUTION_TRUST:
     case PfRule::HO_APP_ENCODE:
-    case PfRule::HO_CONG:
     case PfRule::BETA_REDUCE:
     case PfRule::ARRAYS_READ_OVER_WRITE:
     case PfRule::ARRAYS_READ_OVER_WRITE_CONTRA:
@@ -174,10 +169,8 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::INSTANTIATE:
     case PfRule::ALPHA_EQUIV:
     case PfRule::QUANTIFIERS_PREPROCESS:
-    case PfRule::CONCAT_UNIFY:
     case PfRule::CONCAT_CONFLICT:
     case PfRule::CONCAT_SPLIT:
-    case PfRule::CONCAT_CSPLIT:
     case PfRule::CONCAT_LPROP:
     case PfRule::CONCAT_CPROP:
     case PfRule::STRING_DECOMPOSE:
@@ -191,8 +184,6 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::STRING_INFERENCE:
     case PfRule::MACRO_ARITH_SCALE_SUM_UB:
     case PfRule::ARITH_TRICHOTOMY:
-    case PfRule::INT_TIGHT_LB:
-    case PfRule::INT_TIGHT_UB:
     case PfRule::ARITH_MULT_SIGN:
     case PfRule::ARITH_MULT_TANGENT:
     case PfRule::ARITH_OP_ELIM_AXIOM:
@@ -403,6 +394,8 @@ void AlfPrinter::getArgsFromPfRule(const ProofNode* pn, std::vector<Node>& args)
   {
     // several strings proof rules require adding the type as the first argument
     case PfRule::CONCAT_EQ:
+    case PfRule::CONCAT_UNIFY:
+    case PfRule::CONCAT_CSPLIT:
     {
       Assert(res.getKind() == EQUAL);
       args.push_back(d_tproc.typeAsNode(res[0].getType()));
