@@ -251,6 +251,62 @@ class LfscTester(Tester):
             print_ok("OK")
         return exit_code
 
+class AlfTester(Tester):
+
+    def __init__(self):
+        super().__init__("alf")
+
+    def applies(self, benchmark_info):
+        return (
+            benchmark_info.benchmark_ext != ".sy"
+            and benchmark_info.expected_output.strip() == "unsat"
+        )
+
+    def run_internal(self, benchmark_info):
+        exit_code = EXIT_OK
+        with tempfile.NamedTemporaryFile() as tmpf:
+            cvc5_args = benchmark_info.command_line_args + [
+                "--dump-proofs",
+                "--proof-format=alf",
+                "--proof-granularity=theory-rewrite",
+            ]
+            output, error, exit_status = run_process(
+                [benchmark_info.cvc5_binary]
+                + cvc5_args
+                + [benchmark_info.benchmark_basename],
+                benchmark_info.benchmark_dir,
+                benchmark_info.timeout,
+            )
+            tmpf.write("(include \"/space/ajreynol/alfc/proofs/rules/Cvc5.smt2\")".encode())
+            tmpf.write(output.strip("unsat\n".encode()))
+            tmpf.flush()
+            output, error = output.decode(), error.decode()
+            exit_code = self.check_exit_status(EXIT_OK, exit_status, output,
+                                               error, cvc5_args)
+            if "step" not in output:
+                print_error("Empty proof")
+                print()
+                print_outputs(output, error)
+                return EXIT_FAILURE
+            if exit_code != EXIT_OK:
+                return exit_code
+            output, error, exit_status = run_process(
+                [benchmark_info.alfc_binary] +
+                [tmpf.name],
+                benchmark_info.benchmark_dir,
+                timeout=benchmark_info.timeout,
+            )
+            output, error = output.decode(), error.decode()
+            exit_code = self.check_exit_status(EXIT_OK, exit_status, output,
+                                               error, cvc5_args)
+            if "success" not in output:
+                print_error("Invalid proof")
+                print()
+                print_outputs(output, error)
+                return EXIT_FAILURE
+        if exit_code == EXIT_OK:
+            print_ok("OK")
+        return exit_code
 
 class ModelTester(Tester):
 
@@ -383,7 +439,8 @@ g_testers = {
     "synth": SynthTester(),
     "abduct": AbductTester(),
     "dump": DumpTester(),
-    "dsl-proof": DslProofTester()
+    "dsl-proof": DslProofTester(),
+    "alf": AlfTester()
 }
 
 g_default_testers = [
@@ -408,6 +465,7 @@ BenchmarkInfo = collections.namedtuple(
         "cvc5_binary",
         "lfsc_binary",
         "lfsc_sigs",
+        "alfc_binary",
         "benchmark_dir",
         "benchmark_basename",
         "benchmark_ext",
@@ -590,6 +648,7 @@ def run_regression(
     cvc5_binary,
     lfsc_binary,
     lfsc_sigs,
+    alfc_binary,
     benchmark_path,
     timeout,
 ):
@@ -665,6 +724,8 @@ def run_regression(
                     testers.remove("lfsc")
                 if "dsl-proof" in testers:
                     testers.remove("dsl-proof")
+                if "alf" in testers:
+                    testers.remove("alf")
 
     expected_output = expected_output.strip()
     expected_error = expected_error.strip()
@@ -729,6 +790,7 @@ def run_regression(
             cvc5_binary=cvc5_binary,
             lfsc_binary=lfsc_binary,
             lfsc_sigs=lfsc_sigs,
+            alfc_binary=alfc_binary,
             benchmark_dir=benchmark_dir,
             benchmark_basename=benchmark_basename,
             benchmark_ext=benchmark_ext,
@@ -775,6 +837,7 @@ def main():
     parser.add_argument("--tester", choices=tester_choices, action="append")
     parser.add_argument("--lfsc-binary", default="")
     parser.add_argument("--lfsc-sig-dir", default="")
+    parser.add_argument("--alfc-binary", default="")
     parser.add_argument("wrapper", nargs="*")
     parser.add_argument("cvc5_binary")
     parser.add_argument("benchmark")
@@ -788,6 +851,7 @@ def main():
 
     cvc5_binary = os.path.abspath(g_args.cvc5_binary)
     lfsc_binary = os.path.abspath(g_args.lfsc_binary)
+    alfc_binary = os.path.abspath(g_args.alfc_binary)
 
     wrapper = g_args.wrapper
     if os.environ.get("VALGRIND") == "1" and not wrapper:
@@ -819,6 +883,7 @@ def main():
         cvc5_binary,
         lfsc_binary,
         lfsc_sigs,
+        alfc_binary,
         g_args.benchmark,
         timeout,
     )
