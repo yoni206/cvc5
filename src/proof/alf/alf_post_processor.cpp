@@ -48,9 +48,7 @@ bool AlfProofPostprocessCallback::shouldUpdate(std::shared_ptr<ProofNode> pn,
   switch (pn->getRule())
   {
     case PfRule::SCOPE:
-    case PfRule::CHAIN_RESOLUTION:
-    case PfRule::CONG:
-    case PfRule::HO_CONG: return true;
+    case PfRule::CONG:return true;
     default: return false;
   }
 }
@@ -110,16 +108,6 @@ bool AlfProofPostprocessCallback::update(Node res,
       addAlfStep(AlfRule::PROCESS_SCOPE, res, {curr}, {children[0]}, *cdp);
     }
     break;
-    case PfRule::CHAIN_RESOLUTION:
-    {
-      // ALF has chain_resolution which supports a list of premises.
-      // We only need to provide a conjunction for args
-      Assert(children.size() >= 2);
-      Node argsList = nm->mkNode(AND, args);
-      return addAlfStep(
-          AlfRule::CHAIN_RESOLUTION, res, children, {argsList}, *cdp);
-    }
-    break;
     case PfRule::CONG:
     {
       Assert(res.getKind() == EQUAL);
@@ -133,8 +121,8 @@ bool AlfProofPostprocessCallback::update(Node res,
       Kind k = res[0].getKind();
       if (k == HO_APPLY)
       {
-        // HO_APPLY congruence is a single application of Alf congruence
-        addAlfStep(AlfRule::HO_CONG, res, children, {}, *cdp);
+        // HO_APPLY congruence is a single application of HO_CONG
+        cdp->addStep(res, PfRule::HO_CONG, children, {});
         return true;
       }
 
@@ -165,58 +153,9 @@ bool AlfProofPostprocessCallback::update(Node res,
       }
     }
     break;
-    case PfRule::HO_CONG:
-    {
-      // converted to chain of CONG, with no base operator
-      updateCong(res, children, cdp, Node::null());
-    }
-    break;
     default: return false;
   }
   return true;
-}
-
-void AlfProofPostprocessCallback::updateCong(Node res,
-                                             const std::vector<Node>& children,
-                                             CDProof* cdp,
-                                             Node startOp)
-{
-  Node currEq;
-  size_t i = 0;
-  size_t nchildren = children.size();
-  if (!startOp.isNull())
-  {
-    // start with reflexive equality on operator
-    currEq = startOp.eqNode(startOp);
-  }
-  else
-  {
-    // first child specifies (higher-order) operator equality
-    currEq = children[0];
-    i++;
-  }
-  Node curL = currEq[0];
-  Node curR = currEq[1];
-  NodeManager* nm = NodeManager::currentNM();
-  for (; i < nchildren; i++)
-  {
-    // CONG rules for each child
-    Node nextEq;
-    if (i + 1 == nchildren)
-    {
-      // if we are at the end, we prove the final equality
-      nextEq = res;
-    }
-    else
-    {
-      curL = nm->mkNode(HO_APPLY, curL, children[i][0]);
-      curR = nm->mkNode(HO_APPLY, curR, children[i][1]);
-      nextEq = curL.eqNode(curR);
-    }
-    // cdp, conclusion, children, rule, args
-    addAlfStep(AlfRule::HO_CONG, nextEq, {currEq, children[i]}, {}, *cdp);
-    currEq = nextEq;
-  }
 }
 
 void AlfProofPostprocess::process(std::shared_ptr<ProofNode> pf)

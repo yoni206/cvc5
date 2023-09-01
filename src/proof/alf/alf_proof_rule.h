@@ -29,10 +29,8 @@ namespace proof {
 
 enum class AlfRule : uint32_t
 {
-  CHAIN_RESOLUTION,
   CONG,
   NARY_CONG,
-  HO_CONG,
   SCOPE,
   PROCESS_SCOPE,
   // ======== undefined

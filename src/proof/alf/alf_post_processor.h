@@ -56,11 +56,6 @@ class AlfProofPostprocessCallback : public ProofNodeUpdaterCallback
               CDProof* cdp,
               bool& continueUpdate) override;
 
-  void updateCong(Node res,
-                  const std::vector<Node>& children,
-                  CDProof* cdp,
-                  Node startOp);
-
  private:
   /** The proof node manager */
   ProofNodeManager* d_pnm;

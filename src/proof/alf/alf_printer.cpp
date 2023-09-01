@@ -378,6 +378,16 @@ void AlfPrinter::getArgsFromPfRule(const ProofNode* pn, std::vector<Node>& args)
   const std::vector<Node> pargs = pn->getArguments();
   switch (pn->getRule())
   {
+    case PfRule::CHAIN_RESOLUTION:
+    {
+      // we combine into a list
+      NodeManager * nm = NodeManager::currentNM();
+      Node argsList = nm->mkNode(AND, pargs);
+      argsList = d_tproc.convert(argsList);
+      args.push_back(argsList);
+      return;
+    }
+    break;
     // several strings proof rules require adding the type as the first argument
     case PfRule::CONCAT_EQ:
     case PfRule::CONCAT_UNIFY:
