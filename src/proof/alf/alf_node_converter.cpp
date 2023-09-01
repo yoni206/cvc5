@@ -174,6 +174,10 @@ Node AlfNodeConverter::postConvert(Node n)
     Node opc = getOperatorOfTerm(n);
     return mkApplyUf(opc, std::vector<Node>(n.begin(), n.end()));
   }
+  else if (GenericOp::isIndexedOperatorKind(k))
+  {
+    // return app of?
+  }
   return n;
 }
 
