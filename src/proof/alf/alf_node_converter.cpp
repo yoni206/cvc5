@@ -299,9 +299,9 @@ Node AlfNodeConverter::maybeMkSkolemFun(Node k)
   if (sm->isSkolemFunction(k, sfi, cacheVal))
   {
     Node app;
-    if (sfi==SkolemFunId::PURIFY)
+    if (sfi == SkolemFunId::PURIFY)
     {
-      Assert (cacheVal.getType()==k.getType());
+      Assert(cacheVal.getType() == k.getType());
       // special case: just use self
       app = convert(cacheVal);
     }
@@ -336,7 +336,7 @@ Node AlfNodeConverter::typeAsNode(TypeNode tn)
   // should always exist in the cache, as we always run types through
   // postConvertType before calling this method.
   std::map<TypeNode, Node>::const_iterator it = d_typeAsNode.find(tn);
-  if (it!=d_typeAsNode.end())
+  if (it != d_typeAsNode.end())
   {
     return it->second;
   }

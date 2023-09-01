@@ -104,29 +104,28 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::CHAIN_RESOLUTION:
     case PfRule::ARITH_SUM_UB:
     case PfRule::ARITH_MULT_POS:
-    case PfRule::ARITH_MULT_NEG: 
+    case PfRule::ARITH_MULT_NEG:
     case PfRule::SKOLEM_INTRO:
     case PfRule::CONCAT_EQ:
     case PfRule::STRING_LENGTH_POS:
-    case PfRule::STRING_LENGTH_NON_EMPTY:
-      return true;
+    case PfRule::STRING_LENGTH_NON_EMPTY: return true;
     // alf rule is handled
     case PfRule::ALF_RULE: return true;
     case PfRule::STRING_REDUCTION:
     {
       // depends on the operator
-      Assert (!pargs.empty());
+      Assert(!pargs.empty());
       Kind k = pargs[0].getKind();
       return k == STRING_SUBSTR || k == STRING_INDEXOF;
     }
-      break;
+    break;
     case PfRule::STRING_EAGER_REDUCTION:
     {
       // depends on the operator
       Kind k = pargs[0].getKind();
-      return k==STRING_CONTAINS || k == STRING_TO_CODE || k == STRING_INDEXOF;
+      return k == STRING_CONTAINS || k == STRING_TO_CODE || k == STRING_INDEXOF;
     }
-      break;
+    break;
     //
     case PfRule::SUBS:
     case PfRule::REWRITE:
@@ -405,17 +404,16 @@ void AlfPrinter::getArgsFromPfRule(const ProofNode* pn, std::vector<Node>& args)
     // several strings proof rules require adding the type as the first argument
     case PfRule::CONCAT_EQ:
     {
-      Assert (res.getKind()==EQUAL);
+      Assert(res.getKind() == EQUAL);
       args.push_back(d_tproc.typeAsNode(res[0].getType()));
     }
-      break;
+    break;
     case PfRule::STRING_LENGTH_POS:
     case PfRule::STRING_REDUCTION:
     case PfRule::STRING_EAGER_REDUCTION:
       args.push_back(d_tproc.typeAsNode(pargs[0].getType()));
       break;
-    default:
-      break;
+    default: break;
   }
   ProofNodeToSExpr pntse;
   for (size_t i = 0, nargs = pargs.size(); i < nargs; i++)
@@ -434,7 +432,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
   TNode conclusion = d_tproc.convert(pn->getResult());
   TNode conclusionPrint;
   // print conclusion only if option is set, or this is false
-  if (options().proof.proofPrintConclusion || conclusion==d_false)
+  if (options().proof.proofPrintConclusion || conclusion == d_false)
   {
     conclusionPrint = conclusion;
   }
