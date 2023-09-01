@@ -27,6 +27,8 @@
 #include "proof/proof_node_to_sexpr.h"
 #include "smt/print_benchmark.h"
 
+using namespace cvc5::internal::kind;
+
 namespace cvc5::internal {
 
 namespace proof {
@@ -40,7 +42,7 @@ AlfPrinter::AlfPrinter(Env& env, AlfNodeConverter& atp, bool flatten)
 
 bool AlfPrinter::isHandled(const ProofNode* pfn) const
 {
-  const std::vector<Node> pargs = pn->getArguments();
+  const std::vector<Node> pargs = pfn->getArguments();
   switch (pfn->getRule())
   {
     case PfRule::REFL:
@@ -411,6 +413,8 @@ void AlfPrinter::getArgsFromPfRule(const ProofNode* pn, std::vector<Node>& args)
     case PfRule::STRING_REDUCTION:
     case PfRule::STRING_EAGER_REDUCTION:
       args.push_back(d_tproc.typeAsNode(pargs[0].getType()));
+      break;
+    default:
       break;
   }
   ProofNodeToSExpr pntse;
