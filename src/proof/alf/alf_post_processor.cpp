@@ -21,8 +21,8 @@
 #include "proof/proof_node_algorithm.h"
 #include "proof/proof_node_manager.h"
 #include "smt/env.h"
-#include "util/rational.h"
 #include "theory/builtin/generic_op.h"
+#include "util/rational.h"
 
 using namespace cvc5::internal::kind;
 
@@ -49,7 +49,7 @@ bool AlfProofPostprocessCallback::shouldUpdate(std::shared_ptr<ProofNode> pn,
   switch (pn->getRule())
   {
     case PfRule::SCOPE:
-    case PfRule::CONG:return true;
+    case PfRule::CONG: return true;
     default: return false;
   }
 }

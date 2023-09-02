@@ -55,8 +55,8 @@ bool GenericOp::isNumeralIndexedOperatorKind(Kind k)
 {
   return k == REGEXP_LOOP || k == BITVECTOR_EXTRACT || k == BITVECTOR_REPEAT
          || k == BITVECTOR_ZERO_EXTEND || k == BITVECTOR_SIGN_EXTEND
-         || k == BITVECTOR_ROTATE_LEFT || k == BITVECTOR_ROTATE_RIGHT || k==BITVECTOR_BITOF
-         || k == INT_TO_BITVECTOR || k == IAND
+         || k == BITVECTOR_ROTATE_LEFT || k == BITVECTOR_ROTATE_RIGHT
+         || k == BITVECTOR_BITOF || k == INT_TO_BITVECTOR || k == IAND
          || k == FLOATINGPOINT_TO_FP_FROM_FP
          || k == FLOATINGPOINT_TO_FP_FROM_IEEE_BV
          || k == FLOATINGPOINT_TO_FP_FROM_SBV
@@ -112,7 +112,8 @@ std::vector<Node> GenericOp::getIndicesForOperator(Kind k, Node n)
           Rational(n.getConst<BitVectorRotateRight>().d_rotateRightAmount)));
       break;
     case BITVECTOR_BITOF:
-      indices.push_back(nm->mkConstInt(Rational(n.getConst<BitVectorBitOf>().d_bitIndex)));
+      indices.push_back(
+          nm->mkConstInt(Rational(n.getConst<BitVectorBitOf>().d_bitIndex)));
       break;
     case INT_TO_BITVECTOR:
       indices.push_back(

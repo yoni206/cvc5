@@ -381,7 +381,7 @@ void AlfPrinter::getArgsFromPfRule(const ProofNode* pn, std::vector<Node>& args)
     case PfRule::CHAIN_RESOLUTION:
     {
       // we combine into a list
-      NodeManager * nm = NodeManager::currentNM();
+      NodeManager* nm = NodeManager::currentNM();
       Node argsList = nm->mkNode(AND, pargs);
       argsList = d_tproc.convert(argsList);
       args.push_back(argsList);
