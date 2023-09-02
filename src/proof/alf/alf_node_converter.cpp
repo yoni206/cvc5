@@ -168,7 +168,8 @@ Node AlfNodeConverter::postConvert(Node n)
     Assert(!lam.isNull());
     return convert(lam);
   }
-  else if (k == APPLY_TESTER || k == APPLY_UPDATER || k == NEG)
+  else if (k == APPLY_TESTER || k == APPLY_UPDATER || k == NEG || k == DIVISION_TOTAL || k == INTS_DIVISION_TOTAL
+      || k == INTS_MODULUS_TOTAL)
   {
     // kinds where the operator may be different
     Node opc = getOperatorOfTerm(n);
@@ -177,6 +178,9 @@ Node AlfNodeConverter::postConvert(Node n)
   else if (GenericOp::isIndexedOperatorKind(k))
   {
     // return app of?
+    std::vector<Node> args = GenericOp::getIndicesForOperator(k, n.getOperator());
+    args.insert(args.end(), n.begin(), n.end());
+    return mkInternalApp(printer::smt2::Smt2Printer::smtKindString(k), args, n.getType());
   }
   return n;
 }
@@ -518,10 +522,6 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
         unsigned cindex = DType::cindexOf(op);
         opName << getNameForUserNameOf(dt[cindex][index].getSelector());
       }
-    }
-    else if (k == SET_SINGLETON || k == BAG_MAKE || k == SEQ_UNIT)
-    {
-      opName << printer::smt2::Smt2Printer::smtKindString(k);
     }
     else
     {

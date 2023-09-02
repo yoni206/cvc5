@@ -22,6 +22,7 @@
 #include "proof/proof_node_manager.h"
 #include "smt/env.h"
 #include "util/rational.h"
+#include "theory/builtin/generic_op.h"
 
 using namespace cvc5::internal::kind;
 
@@ -68,6 +69,18 @@ bool AlfProofPostprocessCallback::addAlfStep(AlfRule rule,
   Trace("alethels-proof") << "... add alf step " << conclusion << " " << rule
                           << " " << children << " / " << newArgs << std::endl;
   return cdp.addStep(conclusion, PfRule::ALF_RULE, children, newArgs);
+}
+
+void AlfProofPostprocessCallback::addReflStep(const Node& n, CDProof& cdp)
+{
+  // share REFL
+  std::map<Node, std::shared_ptr<ProofNode> >::iterator it = d_refl.find(n);
+  if (it == d_refl.end())
+  {
+    d_refl[n] = d_pnm->mkNode(PfRule::REFL, {}, {n});
+    it = d_refl.find(n);
+  }
+  cdp.addProof(it->second);
 }
 
 bool AlfProofPostprocessCallback::update(Node res,
@@ -125,14 +138,25 @@ bool AlfProofPostprocessCallback::update(Node res,
         cdp->addStep(res, PfRule::HO_CONG, children, {});
         return true;
       }
-
-      // We are proving f(t1, ..., tn) = f(s1, ..., sn), nested.
-      // First, get the operator, which will be used for printing the base
-      // REFL step. Notice this may be for interpreted or uninterpreted
-      // function symbols.
+      // get the operator
       Node op = d_tproc.getOperatorOfTerm(res[0]);
       Trace("alf-proof") << "Processing cong for op " << op << " "
                          << op.getType() << std::endl;
+      if (GenericOp::isIndexedOperatorKind(k))
+      {
+        // if an indexed operator, we have to add refl steps for the indices
+        std::vector<Node> ichildren;
+        for (const Node& i : op)
+        {
+          addReflStep(i, *cdp);
+          ichildren.push_back(i.eqNode(i));
+        }
+        ichildren.insert(ichildren.end(), children.begin(), children.end());
+        // we are doing congruence on the operator
+        op = op.getOperator();
+        addAlfStep(AlfRule::CONG, res, ichildren, {op}, *cdp);
+        return true;
+      }
       Assert(!op.isNull());
       // Are we doing congruence of an n-ary operator? If so, notice that op
       // is a binary operator and we must apply congruence in a special way.

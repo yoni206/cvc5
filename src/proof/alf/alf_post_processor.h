@@ -70,12 +70,15 @@ class AlfProofPostprocessCallback : public ProofNodeUpdaterCallback
    * SCOPEs.
    */
   uint8_t d_numIgnoredScopes;
+  /** Optimization to only do unique refl */
+  std::map<Node, std::shared_ptr<ProofNode> > d_refl;
 
   bool addAlfStep(AlfRule rule,
                   Node conclusion,
                   const std::vector<Node>& children,
                   const std::vector<Node>& args,
                   CDProof& cdp);
+  void addReflStep(const Node& n, CDProof& cdp);
 };
 
 /**
