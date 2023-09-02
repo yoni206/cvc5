@@ -493,7 +493,7 @@ size_t AlfNodeConverter::getOrAssignIndexForConst(Node v)
 }
 size_t AlfNodeConverter::getOrAssignIndexForVar(Node v)
 {
-  Assert(fv.isVar());
+  Assert(v.isVar());
   std::map<Node, size_t>::iterator it = d_varIndex.find(v);
   if (it != d_varIndex.end())
   {
