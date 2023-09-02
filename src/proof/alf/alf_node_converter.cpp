@@ -103,12 +103,9 @@ Node AlfNodeConverter::postConvert(Node n)
     // This case will only apply for terms originating from places with no
     // proof support. Note it is not added as a declared variable, instead it
     // is used as (var N T) throughout.
-    TypeNode intType = nm->integerType();
-    TypeNode varType = nm->mkFunctionType({intType, d_sortType}, tn);
-    Node var = mkInternalSymbol("var", varType);
     Node index = nm->mkConstInt(Rational(getOrAssignIndexForFVar(n)));
-    Node tc = typeAsNode(convertType(tn));
-    return mkApplyUf(var, {index, tc});
+    Node tc = typeAsNode(tn);
+    return mkInternalApp("var", {index, tc}, tn);
   }
   else if (k == CONST_INTEGER)
   {
@@ -116,27 +113,22 @@ Node AlfNodeConverter::postConvert(Node n)
     if (r.sgn() == -1)
     {
       Node na = nm->mkConstInt(r.abs());
-      Node intNeg = getSymbolInternal(k, nm->mkFunctionType(tn, tn), "alf.neg");
-      return mkApplyUf(intNeg, {na});
+      return mkInternalApp("alf.neg", {na}, tn);
     }
     return n;
   }
   else if (k == CONST_RATIONAL)
   {
-    TypeNode tnv = nm->mkFunctionType({tn, tn}, tn);
     Rational r = n.getConst<Rational>();
-    Node realDiv = getSymbolInternal(k, tnv, "alf.qdiv");
     // ensure rationals are printed properly here using alf syntax
     // which computes the rational (alf.qdiv n d).
     Node num = nm->mkConstInt(r.getNumerator().abs());
     Node den = nm->mkConstInt(r.getDenominator());
-    Node ret = mkApplyUf(realDiv, {num, den});
+    Node ret = mkInternalApp("alf.qdiv", {num, den}, tn);
     // negative (alf.neg .)
     if (r.sgn() == -1)
     {
-      Node realNeg =
-          getSymbolInternal(k, nm->mkFunctionType(tn, tn), "alf.neg");
-      ret = mkApplyUf(realNeg, {ret});
+      ret = mkInternalApp("alf.neg", {ret}, tn);
     }
     return ret;
   }
@@ -153,10 +145,7 @@ Node AlfNodeConverter::postConvert(Node n)
       Node v = n[0][ii];
       // use the body return type for all terms except the last one.
       TypeNode retType = ii == 0 ? n.getType() : n[1].getType();
-      TypeNode ftype =
-          nm->mkFunctionType({v.getType(), ret.getType()}, retType);
-      Node vop = getSymbolInternal(k, ftype, opName.str());
-      ret = mkApplyUf(vop, {v, ret});
+      ret = mkInternalApp(opName.str(), {v, ret}, retType);
     }
     // notice that intentionally we drop annotations here
     return ret;
@@ -343,7 +332,7 @@ Node AlfNodeConverter::maybeMkSkolemFun(Node k)
           args.push_back(convert(cv));
         }
       }
-      else
+      else if (!cacheVal.isNull())
       {
         args.push_back(convert(cacheVal));
       }
@@ -367,6 +356,7 @@ Node AlfNodeConverter::typeAsNode(TypeNode tn)
   }
   // dummy symbol whose name is the type printed
   // this suffices since ALF faithfully represents all types.
+  // note we cannot letify types (same as in SMT-LIB)
   std::stringstream ss;
   ss << tn;
   Node ret = mkInternalSymbol(ss.str(), d_sortType, true);
@@ -395,47 +385,22 @@ Node AlfNodeConverter::mkInternalApp(const std::string& name,
     std::vector<TypeNode> argTypes;
     for (const Node& a : args)
     {
+      Assert (!a.isNull());
       argTypes.push_back(a.getType());
     }
     NodeManager* nm = NodeManager::currentNM();
     TypeNode atype = nm->mkFunctionType(argTypes, ret);
     Node op = mkInternalSymbol(name, atype, useRawSym);
+    if (args.empty())
+    {
+      return op;
+    }
     std::vector<Node> aargs;
     aargs.push_back(op);
     aargs.insert(aargs.end(), args.begin(), args.end());
     return nm->mkNode(APPLY_UF, aargs);
   }
   return mkInternalSymbol(name, ret, useRawSym);
-}
-
-Node AlfNodeConverter::getSymbolInternalFor(Node n,
-                                            const std::string& name,
-                                            bool useRawSym)
-{
-  return getSymbolInternal(n.getKind(), n.getType(), name, useRawSym);
-}
-
-Node AlfNodeConverter::getSymbolInternal(Kind k,
-                                         TypeNode tn,
-                                         const std::string& name,
-                                         bool useRawSym)
-{
-  std::tuple<Kind, TypeNode, std::string> key(k, tn, name);
-  std::map<std::tuple<Kind, TypeNode, std::string>, Node>::iterator it =
-      d_symbolsMap.find(key);
-  if (it != d_symbolsMap.end())
-  {
-    return it->second;
-  }
-  Node sym = mkInternalSymbol(name, tn, useRawSym);
-  d_symbolToBuiltinKind[sym] = k;
-  d_symbolsMap[key] = sym;
-  return sym;
-}
-
-Node AlfNodeConverter::getNullTerminator(Kind k, TypeNode tn)
-{
-  return getSymbolInternal(k, tn, "alf.nil");
 }
 
 Kind AlfNodeConverter::getBuiltinKindForInternalSymbol(Node op) const
@@ -547,7 +512,7 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
     if (ret.isNull())
     {
       Trace("alf-term-process-debug2") << "...default symbol" << std::endl;
-      ret = getSymbolInternal(k, ftype, opName.str());
+      ret = mkInternalSymbol(opName.str(), ftype);
     }
     // if indexed, apply to index
     if (!indices.empty())
@@ -579,7 +544,7 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
   {
     opName << "_total";
   }
-  return getSymbolInternal(k, ftype, opName.str());
+  return mkInternalSymbol(opName.str(), ftype);
 }
 
 size_t AlfNodeConverter::getOrAssignIndexForFVar(Node fv)

@@ -41,15 +41,6 @@ class AlfNodeConverter : public NodeConverter
   /** convert at post-order traversal */
   Node postConvert(Node n) override;
   /**
-   * Get the null terminator for kind k and type tn. The type tn can be
-   * omitted if applications of kind k do not have parametric type.
-   *
-   * The returned null terminator is *not* converted to internal form.
-   *
-   * For examples of null terminators, see nary_term_utils.h.
-   */
-  Node getNullTerminator(Kind k, TypeNode tn = TypeNode::null());
-  /**
    * Return the properly named operator for n of the form (f t1 ... tn), where
    * f could be interpreted or uninterpreted.  This method is used for cases
    * where it is important to get the term corresponding to the operator for
@@ -120,23 +111,6 @@ class AlfNodeConverter : public NodeConverter
    * signature.
    */
   Node maybeMkSkolemFun(Node k);
-  /**
-   * Get symbol for term, a special case of the method below for the type and
-   * kind of n.
-   */
-  Node getSymbolInternalFor(Node n,
-                            const std::string& name,
-                            bool useRawSym = true);
-  /**
-   * Get symbol internal, (k,tn,name) are for caching, name is the name. This
-   * method returns a fresh symbol of the given name and type. It is frequently
-   * used when the type of a native operator does not match the type of the
-   * ALF operator.
-   */
-  Node getSymbolInternal(Kind k,
-                         TypeNode tn,
-                         const std::string& name,
-                         bool useRawSym = true);
   /** Is k a kind that is printed as an indexed operator in ALF? */
   static bool isIndexedOperatorKind(Kind k);
   /** get indices for printing the operator of n in the ALF format */
