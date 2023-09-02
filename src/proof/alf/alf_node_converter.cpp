@@ -70,7 +70,7 @@ Node AlfNodeConverter::postConvert(Node n)
   Kind k = n.getKind();
   // we eliminate MATCH at preConvert above
   Assert(k != MATCH);
-  if (k == ASCRIPTION_TYPE)
+  if (k == ASCRIPTION_TYPE || k == RAW_SYMBOL)
   {
     // dummy node, return it
     return n;
@@ -78,11 +78,7 @@ Node AlfNodeConverter::postConvert(Node n)
   TypeNode tn = n.getType();
   Trace("alf-term-process-debug")
       << "postConvert " << n << " " << k << std::endl;
-  if (k == BOUND_VARIABLE || k == RAW_SYMBOL)
-  {
-    return n;
-  }
-  else if (k == SKOLEM)
+  if (k == SKOLEM)
   {
     // constructors/selectors are represented by skolems, which are defined
     // symbols
@@ -103,9 +99,30 @@ Node AlfNodeConverter::postConvert(Node n)
     // This case will only apply for terms originating from places with no
     // proof support. Note it is not added as a declared variable, instead it
     // is used as (var N T) throughout.
-    Node index = nm->mkConstInt(Rational(getOrAssignIndexForFVar(n)));
+    Node index = nm->mkConstInt(Rational(getOrAssignIndexForConst(n)));
     Node tc = typeAsNode(tn);
     return mkInternalApp("var", {index, tc}, tn);
+  }
+  else if (k==BOUND_VARIABLE)
+  {
+    Node index = nm->mkConstInt(Rational(getOrAssignIndexForVar(n)));
+    Node tc = typeAsNode(tn);
+    return mkInternalApp("var", {index, tc}, tn);
+  }
+  else if (k == APPLY_UF)
+  {
+    // must ensure we print higher-order function applications with "_"
+    if (!n.getOperator().isVar())
+    {
+      std::vector<Node> args;
+      args.push_back(n.getOperator());
+      args.insert(args.end(), n.begin(), n.end());
+      return mkInternalApp("_", args, tn);
+    }
+  }
+  else if (k == HO_APPLY)
+  {
+    return mkInternalApp("_", {n[0], n[1]}, tn);
   }
   else if (k == CONST_INTEGER)
   {
@@ -142,7 +159,7 @@ Node AlfNodeConverter::postConvert(Node n)
     for (size_t i = 0, nchild = n[0].getNumChildren(); i < nchild; i++)
     {
       size_t ii = (nchild - 1) - i;
-      Node v = n[0][ii];
+      Node v = convert(n[0][ii]);
       // use the body return type for all terms except the last one.
       TypeNode retType = ii == 0 ? n.getType() : n[1].getType();
       ret = mkInternalApp(opName.str(), {v, ret}, retType);
@@ -211,77 +228,6 @@ Node AlfNodeConverter::mkApplyUf(Node op, const std::vector<Node>& args) const
   }
   aargs.insert(aargs.end(), args.begin(), args.end());
   return nm->mkNode(APPLY_UF, aargs);
-}
-
-std::string AlfNodeConverter::getNameForUserName(const std::string& name,
-                                                 size_t variant)
-{
-  // For user name X, we do cvc.Y, where Y contains an escaped version of X.
-  // Specifically, since LFSC does not allow these characters in identifier
-  // bodies: "() \t\n\f;", each is replaced with an escape sequence "\xXX"
-  // where XX is the zero-padded hex representation of the code point. "\\" is
-  // also escaped.
-  //
-  // See also: https://github.com/cvc5/LFSC/blob/master/src/lexer.flex#L24
-  //
-  // The "cvc." prefix ensures we do not clash with LFSC definitions.
-  //
-  // The escaping ensures that all names are valid LFSC identifiers.
-  std::stringstream ss;
-  ss << "cvc";
-  if (variant != 0)
-  {
-    ss << variant;
-  }
-  ss << ".";
-  std::string sanitized = ss.str();
-  size_t found = sanitized.size();
-  sanitized += name;
-  // The following sanitizes symbols that are not allowed in LFSC identifiers
-  // here, e.g.
-  //   |a b|
-  // is converted to:
-  //   cvc.a\x20b
-  // where "20" is the hex unicode value of " ".
-  do
-  {
-    found = sanitized.find_first_of("() \t\n\f\\;", found);
-    if (found != std::string::npos)
-    {
-      // Emit hex sequence
-      std::stringstream seq;
-      seq << "\\x" << std::setbase(16) << std::setfill('0') << std::setw(2)
-          << static_cast<size_t>(sanitized[found]);
-      sanitized.replace(found, 1, seq.str());
-      // increment found over the escape
-      found += 3;
-    }
-  } while (found != std::string::npos);
-  return sanitized;
-}
-
-std::string AlfNodeConverter::getNameForUserNameOf(Node v)
-{
-  std::string name = v.getName();
-  return getNameForUserNameOfInternal(v.getId(), name);
-}
-
-std::string AlfNodeConverter::getNameForUserNameOfInternal(
-    uint64_t id, const std::string& name)
-{
-  std::vector<uint64_t>& syms = d_userSymbolList[name];
-  size_t variant = 0;
-  std::vector<uint64_t>::iterator itr = std::find(syms.begin(), syms.end(), id);
-  if (itr != syms.cend())
-  {
-    variant = std::distance(syms.begin(), itr);
-  }
-  else
-  {
-    variant = syms.size();
-    syms.push_back(id);
-  }
-  return getNameForUserName(name, variant);
 }
 
 bool AlfNodeConverter::shouldTraverse(Node n)
@@ -391,26 +337,12 @@ Node AlfNodeConverter::mkInternalApp(const std::string& name,
     NodeManager* nm = NodeManager::currentNM();
     TypeNode atype = nm->mkFunctionType(argTypes, ret);
     Node op = mkInternalSymbol(name, atype, useRawSym);
-    if (args.empty())
-    {
-      return op;
-    }
     std::vector<Node> aargs;
     aargs.push_back(op);
     aargs.insert(aargs.end(), args.begin(), args.end());
     return nm->mkNode(APPLY_UF, aargs);
   }
   return mkInternalSymbol(name, ret, useRawSym);
-}
-
-Kind AlfNodeConverter::getBuiltinKindForInternalSymbol(Node op) const
-{
-  std::map<Node, Kind>::const_iterator it = d_symbolToBuiltinKind.find(op);
-  if (it != d_symbolToBuiltinKind.end())
-  {
-    return it->second;
-  }
-  return UNDEFINED_KIND;
 }
 
 Node AlfNodeConverter::getOperatorOfTerm(Node n)
@@ -491,7 +423,7 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
       unsigned index = DType::indexOf(op);
       const DType& dt = DType::datatypeOf(op);
       // get its variable name
-      opName << getNameForUserNameOf(dt[index].getConstructor());
+      opName << dt[index].getConstructor();
     }
     else if (k == APPLY_SELECTOR)
     {
@@ -502,7 +434,7 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
         unsigned index = DType::indexOf(op);
         const DType& dt = DType::datatypeOf(op);
         unsigned cindex = DType::cindexOf(op);
-        opName << getNameForUserNameOf(dt[cindex][index].getSelector());
+        opName << dt[cindex][index].getSelector();
       }
     }
     else
@@ -547,16 +479,28 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
   return mkInternalSymbol(opName.str(), ftype);
 }
 
-size_t AlfNodeConverter::getOrAssignIndexForFVar(Node fv)
+size_t AlfNodeConverter::getOrAssignIndexForConst(Node v)
 {
-  Assert(fv.isVar());
-  std::map<Node, size_t>::iterator it = d_fvarIndex.find(fv);
-  if (it != d_fvarIndex.end())
+  Assert(v.isVar());
+  std::map<Node, size_t>::iterator it = d_constIndex.find(v);
+  if (it != d_constIndex.end())
   {
     return it->second;
   }
-  size_t id = d_fvarIndex.size();
-  d_fvarIndex[fv] = id;
+  size_t id = d_constIndex.size();
+  d_constIndex[v] = id;
+  return id;
+}
+size_t AlfNodeConverter::getOrAssignIndexForVar(Node v)
+{
+  Assert(fv.isVar());
+  std::map<Node, size_t>::iterator it = d_varIndex.find(v);
+  if (it != d_varIndex.end())
+  {
+    return it->second;
+  }
+  size_t id = d_varIndex.size();
+  d_varIndex[v] = id;
   return id;
 }
 

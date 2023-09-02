@@ -241,7 +241,7 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
 
   // TODO: preprocess definitions/assertions with the term converter
   // if the names change
-  smt::PrintBenchmark pb(Printer::getPrinter(out));
+  smt::PrintBenchmark pb(Printer::getPrinter(out), &d_tproc);
   pb.printDeclarationsFrom(out, definitions, assertions);
 
   LetBinding lbind;
@@ -449,6 +449,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
     }
     else
     {
+      // arguments are converted here
       for (size_t i = 1, nargs = aargs.size(); i < nargs; i++)
       {
         args.push_back(d_tproc.convert(aargs[i]));

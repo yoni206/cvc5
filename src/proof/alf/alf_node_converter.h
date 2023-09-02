@@ -51,7 +51,12 @@ class AlfNodeConverter : public NodeConverter
    * Get the variable index for free variable fv, or assign a fresh index if it
    * is not yet assigned.
    */
-  size_t getOrAssignIndexForFVar(Node fv);
+  size_t getOrAssignIndexForConst(Node c);
+  /**
+   * Get the variable index for free variable fv, or assign a fresh index if it
+   * is not yet assigned.
+   */
+  size_t getOrAssignIndexForVar(Node v);
   /**
    * Make an internal symbol with custom name. This is a BOUND_VARIABLE that
    * has a distinguished status so that it is *not* printed as (bvar ...). The
@@ -70,21 +75,6 @@ class AlfNodeConverter : public NodeConverter
                      TypeNode ret,
                      bool useRawSym = true);
   /**
-   * Get builtin kind for internal symbol op
-   */
-  Kind getBuiltinKindForInternalSymbol(Node op) const;
-
-  /**
-   * get name for user name
-   * @param name The user provided name for the symbol
-   * @param variant A unique index for the symbol to resolve multiple symbols
-   * with the same name.
-   */
-  static std::string getNameForUserName(const std::string& name,
-                                        size_t variant = 0);
-  /** get name for the name of node v, where v should be a variable */
-  std::string getNameForUserNameOf(Node v);
-  /**
    * Type as node, returns a node that prints in the form that ALF will
    * interpret as the type tni. This method is required since types can be
    * passed as arguments to terms. This method assumes that tni has been
@@ -93,9 +83,6 @@ class AlfNodeConverter : public NodeConverter
   Node typeAsNode(TypeNode tni);
 
  private:
-  /** get name for a Node/TypeNode whose id is id and whose name is name */
-  std::string getNameForUserNameOfInternal(uint64_t id,
-                                           const std::string& name);
   /** Should we traverse n? */
   bool shouldTraverse(Node n) override;
   /**
@@ -115,29 +102,17 @@ class AlfNodeConverter : public NodeConverter
   static bool isIndexedOperatorKind(Kind k);
   /** get indices for printing the operator of n in the ALF format */
   static std::vector<Node> getOperatorIndices(Kind k, Node n);
-  /** terms with different syntax than smt2 */
-  std::map<std::tuple<Kind, TypeNode, std::string>, Node> d_symbolsMap;
   /** the set of all internally generated symbols */
   std::unordered_set<Node> d_symbols;
-  /**
-   * Mapping from user symbols to the (list of) symbols with that name. This
-   * is used to resolve symbol overloading, which is forbidden in ALF. We use
-   * Node identifiers, since this map is used for both Node and TypeNode.
-   */
-  std::map<std::string, std::vector<uint64_t> > d_userSymbolList;
-  /** symbols to builtin kinds*/
-  std::map<Node, Kind> d_symbolToBuiltinKind;
-  /** arrow type constructor */
-  TypeNode d_arrow;
   /** the type of ALF sorts, which can appear in terms */
   TypeNode d_sortType;
   /** Used for getting unique index for free variable */
-  std::map<Node, size_t> d_fvarIndex;
+  std::map<Node, size_t> d_constIndex;
   // We use different maps for free and bound variables to ensure that the
   // indices of bound variables appearing in definitions do not depend on the
   // order in which free variables appear in assertions/proof.
   /** Used for getting unique index for bound variable */
-  std::map<Node, size_t> d_bvarIndex;
+  std::map<Node, size_t> d_varIndex;
   /** Cache for typeAsNode */
   std::map<TypeNode, Node> d_typeAsNode;
 };

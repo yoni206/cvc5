@@ -26,6 +26,7 @@
 namespace cvc5::internal {
 
 class Printer;
+class NodeConverter;
 
 namespace smt {
 
@@ -38,7 +39,7 @@ namespace smt {
 class PrintBenchmark
 {
  public:
-  PrintBenchmark(const Printer* p) : d_printer(p) {}
+  PrintBenchmark(const Printer* p, NodeConverter* c = nullptr) : d_printer(p), d_converter(c) {}
   /**
    */
   void printDeclarationsFrom(std::ostream& out,
@@ -134,6 +135,8 @@ class PrintBenchmark
    * individual commands.
    */
   const Printer* d_printer;
+  /** (Optional) node converter */
+  NodeConverter* d_converter;
 };
 
 }  // namespace smt

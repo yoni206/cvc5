@@ -18,6 +18,7 @@
 #include "expr/dtype.h"
 #include "expr/node_algorithm.h"
 #include "printer/printer.h"
+#include "expr/node_converter.h"
 
 using namespace cvc5::internal::kind;
 
@@ -55,6 +56,11 @@ void PrintBenchmark::printDeclarationsFrom(std::ostream& out,
       if ((ctn.isUninterpretedSort() && ctn.getNumChildren() == 0)
           || ctn.isUninterpretedSortConstructor())
       {
+        TypeNode ctnp = ctn;
+        if (d_converter!=nullptr)
+        {
+          ctnp = d_converter->convertType(ctnp);
+        }
         d_printer->toStreamCmdDeclareType(out, ctn);
       }
       else if (ctn.isDatatype())
@@ -110,7 +116,24 @@ void PrintBenchmark::printDeclarationsFrom(std::ostream& out,
       itd = defMap.find(f);
       Assert(itd != defMap.end());
       Assert(!itd->second.first);
-      d_printer->toStreamCmdDefineFunction(out, f, itd->second.second);
+      Node def = itd->second.second;
+      std::stringstream vs;
+      vs << f;
+      std::vector<Node> formals;
+      TypeNode rangeType = def.getType();
+      if (def.getKind() == kind::LAMBDA)
+      {
+        formals.insert(formals.end(), def[0].begin(), def[0].end());
+        def = def[1];
+        Assert(rangeType.isFunction());
+        rangeType = rangeType.getRangeType();
+      }
+      if (d_converter!=nullptr)
+      {
+        def = d_converter->convert(def);
+        //rangeType = d_converter->convertType(rangeType);
+      }
+      d_printer->toStreamCmdDefineFunction(out, vs.str(), formals, rangeType, def);
       // a definition is also a declaration
       alreadyPrintedDecl.insert(f);
     }
@@ -120,7 +143,12 @@ void PrintBenchmark::printDeclarationsFrom(std::ostream& out,
       std::vector<Node> lambdas;
       for (const Node& f : recDefs)
       {
-        lambdas.push_back(defMap[f].second);
+        Node lam = defMap[f].second;
+        if (d_converter!=nullptr)
+        {
+          lam = d_converter->convert(lam);
+        }
+        lambdas.push_back(lam);
         // a recursive definition is also a declaration
         alreadyPrintedDecl.insert(f);
       }
@@ -144,7 +172,12 @@ void PrintBenchmark::printAssertions(std::ostream& out,
   // print the assertions
   for (const Node& a : assertions)
   {
-    d_printer->toStreamCmdAssert(out, a);
+    Node ap = a;
+    if (d_converter!=nullptr)
+    {
+      ap = d_converter->convert(ap);
+    }
+    d_printer->toStreamCmdAssert(out, ap);
   }
 }
 
