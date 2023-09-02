@@ -168,6 +168,20 @@ Node AlfNodeConverter::postConvert(Node n)
     Assert(!lam.isNull());
     return convert(lam);
   }
+  else if (k==BITVECTOR_BB_TERM)
+  {
+    // bbT is a right-assoc-nil operator in the alf signature, but internally may have one child.
+    // We require adding alf.nil as a child to ensure that all applications
+    // of it have 2+ arguments.
+    if (n.getNumChildren()==1)
+    {
+      std::vector<Node> args;
+      args.push_back(n[0]);
+      args.push_back(mkInternalSymbol("alf.nil", n[0].getType()));
+      return mkInternalApp(
+          printer::smt2::Smt2Printer::smtKindString(k), args, n.getType());
+    }
+  }
   else if (k == APPLY_TESTER || k == APPLY_UPDATER || k == NEG
            || k == DIVISION_TOTAL || k == INTS_DIVISION_TOTAL
            || k == INTS_MODULUS_TOTAL)
