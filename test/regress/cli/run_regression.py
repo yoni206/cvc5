@@ -269,6 +269,7 @@ class AlfTester(Tester):
                 "--dump-proofs",
                 "--proof-format=alf",
                 "--proof-granularity=theory-rewrite",
+                "--proof-print-conclusion",
             ]
             output, error, exit_status = run_process(
                 [benchmark_info.cvc5_binary]

@@ -117,7 +117,8 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::STRING_LENGTH_POS:
     case PfRule::STRING_LENGTH_NON_EMPTY:
     case PfRule::RE_INTER:
-    case PfRule::RE_UNFOLD_POS: return true;
+    case PfRule::RE_UNFOLD_POS:
+    case PfRule::REMOVE_TERM_FORMULA_AXIOM:return true;
     // alf rule is handled
     case PfRule::ALF_RULE: return true;
     case PfRule::STRING_REDUCTION:
@@ -139,7 +140,6 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::EVALUATE:
     case PfRule::ANNOTATION:
     case PfRule::DSL_REWRITE:
-    case PfRule::REMOVE_TERM_FORMULA_AXIOM:
     case PfRule::THEORY_EXPAND_DEF:
     case PfRule::WITNESS_AXIOM:
     case PfRule::HO_APP_ENCODE:
@@ -406,7 +406,7 @@ void AlfPrinter::getArgsFromPfRule(const ProofNode* pn, std::vector<Node>& args)
     case PfRule::INT_TIGHT_UB:
       Assert(res.getNumChildren() == 2);
       // provide the target constant explicitly
-      args.push_back(res[1]);
+      args.push_back(d_tproc.convert(res[1]));
       break;
     case PfRule::ARITH_TRICHOTOMY:
       // argument is redundant
