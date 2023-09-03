@@ -128,9 +128,6 @@ bool AlfProofPostprocessCallback::update(Node res,
       Trace("alf-proof") << "Processing congruence for " << res << " "
                          << res[0].getKind() << std::endl;
 
-      // These Asserts captures features not yet implemented
-      Assert(!res[0].isClosure());
-
       Kind k = res[0].getKind();
       if (k == HO_APPLY)
       {
@@ -142,6 +139,18 @@ bool AlfProofPostprocessCallback::update(Node res,
       Node op = d_tproc.getOperatorOfTerm(res[0]);
       Trace("alf-proof") << "Processing cong for op " << op << " "
                          << op.getType() << std::endl;
+      if (res[0].isClosure())
+      {
+        Assert (children.size()==2);
+        // variable lists should be equal
+        Assert (res[0][0]==res[1][0]);
+        std::vector<Node> vars(res[0][0].begin(), res[0][0].end());
+        // expects in reverse order
+        std::reverse(vars.begin(), vars.end());
+        Node vl = d_tproc.mkSExpr(vars);
+        addAlfStep(AlfRule::CLOSURE_CONG, res, {children[1]}, {op, vl}, *cdp);
+        return true;
+      }
       if (GenericOp::isIndexedOperatorKind(k))
       {
         // if an indexed operator, we have to add refl steps for the indices

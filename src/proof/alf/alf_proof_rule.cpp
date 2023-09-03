@@ -29,6 +29,7 @@ const char* AlfRuleToString(AlfRule id)
   {
     case AlfRule::CONG: return "cong";
     case AlfRule::NARY_CONG: return "nary_cong";
+    case AlfRule::CLOSURE_CONG: return "closure_cong";
     case AlfRule::SCOPE: return "scope";
     case AlfRule::PROCESS_SCOPE: return "process_scope";
     //================================================= Undefined rule

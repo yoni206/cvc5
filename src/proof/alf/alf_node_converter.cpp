@@ -182,6 +182,11 @@ Node AlfNodeConverter::postConvert(Node n)
     Node val = convert(storeAll.getValue());
     return mkInternalApp("store_all", {t, val}, tn);
   }
+  else if (k == SET_EMPTY || k == SET_UNIVERSE || k == BAG_EMPTY)
+  {
+    Node t = typeAsNode(tn);
+    return mkInternalApp(printer::smt2::Smt2Printer::smtKindString(k), {t}, tn);
+  }
   else if (k == FUNCTION_ARRAY_CONST)
   {
     // must convert to lambda and then run the conversion
@@ -328,6 +333,22 @@ Node AlfNodeConverter::typeAsNode(TypeNode tn)
 Node AlfNodeConverter::mkNil(TypeNode tn)
 {
   return mkInternalSymbol("alf.nil", tn);
+}
+
+Node AlfNodeConverter::mkSExpr(const std::vector<Node>& args)
+{
+  TypeNode tn = NodeManager::currentNM()->booleanType();
+  if (args.empty())
+  {
+    return mkNil(tn);
+  }
+  else if (args.size()==1)
+  {
+    std::vector<Node> aargs(args.begin(), args.end());
+    aargs.push_back(mkNil(tn));
+    return mkInternalApp("sexpr", aargs, tn);
+  }
+    return mkInternalApp("sexpr", args, tn);
 }
 
 Node AlfNodeConverter::mkInternalSymbol(const std::string& name,

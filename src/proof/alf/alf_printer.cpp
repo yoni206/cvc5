@@ -436,7 +436,7 @@ void AlfPrinter::getArgsFromPfRule(const ProofNode* pn, std::vector<Node>& args)
       {
         targs.push_back(d_tproc.mkNil(bt));
       }
-      Node ts = d_tproc.mkInternalApp("sexpr", targs, bt);
+      Node ts = d_tproc.mkSExpr(targs);
       args.push_back(ts);
       return;
     }

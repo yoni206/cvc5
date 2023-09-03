@@ -31,6 +31,7 @@ enum class AlfRule : uint32_t
 {
   CONG,
   NARY_CONG,
+  CLOSURE_CONG,
   SCOPE,
   PROCESS_SCOPE,
   // ======== undefined
