@@ -103,6 +103,10 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::REORDERING:
     case PfRule::RESOLUTION:
     case PfRule::CHAIN_RESOLUTION:
+    case PfRule::ARRAYS_READ_OVER_WRITE:
+    case PfRule::ARRAYS_READ_OVER_WRITE_CONTRA:
+    case PfRule::ARRAYS_READ_OVER_WRITE_1:
+    case PfRule::ARRAYS_EXT:
     case PfRule::ARITH_SUM_UB:
     case PfRule::ARITH_MULT_POS:
     case PfRule::ARITH_MULT_NEG:
@@ -145,10 +149,6 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::WITNESS_AXIOM:
     case PfRule::HO_APP_ENCODE:
     case PfRule::BETA_REDUCE:
-    case PfRule::ARRAYS_READ_OVER_WRITE:
-    case PfRule::ARRAYS_READ_OVER_WRITE_CONTRA:
-    case PfRule::ARRAYS_READ_OVER_WRITE_1:
-    case PfRule::ARRAYS_EXT:
     case PfRule::ARRAYS_EQ_RANGE_EXPAND:
     case PfRule::BV_BITBLAST:
     case PfRule::BV_BITBLAST_STEP:

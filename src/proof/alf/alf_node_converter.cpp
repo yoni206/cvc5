@@ -101,7 +101,7 @@ Node AlfNodeConverter::postConvert(Node n)
     // is used as (var N T) throughout.
     Node index = nm->mkConstInt(Rational(getOrAssignIndexForConst(n)));
     Node tc = typeAsNode(tn);
-    return mkInternalApp("var", {index, tc}, tn);
+    return mkInternalApp("const", {index, tc}, tn);
   }
   else if (k==BOUND_VARIABLE)
   {
@@ -174,6 +174,13 @@ Node AlfNodeConverter::postConvert(Node n)
     }
     // notice that intentionally we drop annotations here
     return ret;
+  }
+  else if (k == STORE_ALL)
+  {
+    Node t = typeAsNode(tn);
+    ArrayStoreAll storeAll = n.getConst<ArrayStoreAll>();
+    Node val = convert(storeAll.getValue());
+    return mkInternalApp("store_all", {t, val}, tn);
   }
   else if (k == FUNCTION_ARRAY_CONST)
   {
@@ -371,10 +378,6 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
       << GenericOp::isIndexedOperatorKind(k) << std::endl;
   if (n.getMetaKind() == metakind::PARAMETERIZED)
   {
-    if (k == APPLY_UPDATER || k == APPLY_TESTER)
-    {
-      // TODO: is-C or update-S.
-    }
     Node op = n.getOperator();
     std::vector<Node> indices;
     bool isIndexed = GenericOp::isIndexedOperatorKind(k);
@@ -400,34 +403,39 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
     Node ret;
     if (isIndexed)
     {
-      std::vector<TypeNode> itypes;
-      for (const Node& i : indices)
+      if (k == APPLY_TESTER)
       {
-        itypes.push_back(i.getType());
+        size_t cindex = DType::indexOf(op);
+        const DType& dt = DType::datatypeOf(op);
+        opName << "is-" << dt[cindex].getConstructor();
+        indices.clear();
       }
-      if (!itypes.empty())
+      else if (k == APPLY_UPDATER)
       {
-        ftype = nm->mkFunctionType(itypes, ftype);
-      }
-      // must avoid overloading for to_fp variants
-      if (k == FLOATINGPOINT_TO_FP_FROM_FP)
-      {
-        opName << "to_fp_fp";
-      }
-      else if (k == FLOATINGPOINT_TO_FP_FROM_IEEE_BV)
-      {
-        opName << "to_fp_ieee_bv";
-      }
-      else if (k == FLOATINGPOINT_TO_FP_FROM_SBV)
-      {
-        opName << "to_fp_sbv";
-      }
-      else if (k == FLOATINGPOINT_TO_FP_FROM_REAL)
-      {
-        opName << "to_fp_real";
+        size_t index = DType::indexOf(op);
+        const DType& dt = DType::datatypeOf(op);
+        size_t cindex = DType::cindexOf(op);
+        if (dt.isTuple())
+        {
+          opName << "tuple.update";
+        }
+        else
+        {
+          opName << "update-" << dt[cindex][index].getSelector();
+        }
+        indices.clear();
       }
       else
       {
+        std::vector<TypeNode> itypes;
+        for (const Node& i : indices)
+        {
+          itypes.push_back(i.getType());
+        }
+        if (!itypes.empty())
+        {
+          ftype = nm->mkFunctionType(itypes, ftype);
+        }
         opName << printer::smt2::Smt2Printer::smtKindString(k);
       }
     }
