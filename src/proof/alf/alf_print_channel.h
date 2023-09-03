@@ -117,9 +117,16 @@ class AlfPrintChannelPre : public AlfPrintChannel
                  bool isPop = false) override;
   void printTrust(PfRule r, TNode n, size_t i, TNode conc) override;
 
+  /** Get variables */
+  const std::unordered_set<TNode>& getVariables() const;
  private:
   /** The let binding */
   LetBinding& d_lbind;
+  /** For computing free variables */
+  std::unordered_set<Node> d_keep;
+  std::unordered_set<TNode> d_vars;
+  std::unordered_set<TNode> d_varsVisited;
+  void processInternal(const Node& n);
 };
 
 }  // namespace proof

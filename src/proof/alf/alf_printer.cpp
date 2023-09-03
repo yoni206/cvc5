@@ -118,7 +118,8 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::STRING_LENGTH_NON_EMPTY:
     case PfRule::RE_INTER:
     case PfRule::RE_UNFOLD_POS:
-    case PfRule::REMOVE_TERM_FORMULA_AXIOM:return true;
+    case PfRule::REMOVE_TERM_FORMULA_AXIOM:
+    case PfRule::INSTANTIATE:return true;
     // alf rule is handled
     case PfRule::ALF_RULE: return true;
     case PfRule::STRING_REDUCTION:
@@ -158,7 +159,6 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::DT_SPLIT:
     case PfRule::DT_CLASH:
     case PfRule::SKOLEMIZE:
-    case PfRule::INSTANTIATE:
     case PfRule::ALPHA_EQUIV:
     case PfRule::QUANTIFIERS_PREPROCESS:
     case PfRule::CONCAT_SPLIT:
@@ -239,11 +239,6 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
   const std::vector<Node>& assertions = pfn->getChildren()[0]->getArguments();
   const ProofNode* pnBody = pfn->getChildren()[0]->getChildren()[0].get();
 
-  // TODO: preprocess definitions/assertions with the term converter
-  // if the names change
-  smt::PrintBenchmark pb(Printer::getPrinter(out), &d_tproc);
-  pb.printDeclarationsFrom(out, definitions, assertions);
-
   LetBinding lbind;
   AlfPrintChannelPre aletify(lbind);
   AlfPrintChannelOut aprint(out, lbind, d_termLetPrefix);
@@ -265,16 +260,32 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
     }
     if (i == 1)
     {
+      // [0] print the universal variables
+      const std::unordered_set<TNode>& vars = aletify.getVariables();
+      for (TNode v : vars)
+      {
+        if (v.getKind()==BOUND_VARIABLE)
+        {
+          out << "(declare-var " << v << " " << v.getType() << ")" << std::endl;
+        }
+      }
+      // [1] print the definitions/declarations
+      smt::PrintBenchmark pb(Printer::getPrinter(out), &d_tproc);
+      pb.printDeclarationsFrom(out, definitions, assertions);
       // [2] print proof-level term bindings
       printLetList(out, lbind);
     }
     // [3] print assumptions
     for (const Node& n : definitions)
     {
-      // TODO: not exactly necessary, could be refl
-      size_t id = allocateAssumeId(n, wasAlloc);
-      Node nc = d_tproc.convert(n);
-      aout->printAssume(nc, id, false);
+      if (n.getKind()==EQUAL)
+      {
+        // TODO: not exactly necessary, could be refl
+        size_t id = allocateAssumeId(n, wasAlloc);
+        Node lam = d_tproc.convert(n[1]);
+        //aout->printAssume(nc, id, false);
+        aout->printStep("refl", lam.eqNode(lam), id, {}, {lam});
+      }
     }
     for (const Node& n : assertions)
     {
@@ -292,7 +303,6 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
     std::map<const ProofNode*, Node>::iterator it = d_pnodeMap.find(pnBody);
     if (it != d_pnodeMap.end())
     {
-      std::vector<Node> premises;
       aprint.printStep(
           "identity", pnBody->getResult(), d_pfIdCounter, {it->second}, {});
     }
@@ -411,6 +421,25 @@ void AlfPrinter::getArgsFromPfRule(const ProofNode* pn, std::vector<Node>& args)
     case PfRule::ARITH_TRICHOTOMY:
       // argument is redundant
       return;
+    case PfRule::INSTANTIATE:
+    {
+      // ignore arguments past the term vector, collect them into an sexpr
+      Node q = pn->getChildren()[0]->getResult();
+      Assert (q.getKind()==FORALL);
+      Assert (pargs.size()>q[0].getNumChildren());
+      std::vector<Node> targs(pargs.begin(), pargs.begin()+q[0].getNumChildren());
+      NodeManager* nm = NodeManager::currentNM();
+      // type is irrelevant, use bool
+      TypeNode bt = nm->booleanType();
+      // ensure in n-ary form
+      if (targs.size()==1)
+      {
+        targs.push_back(d_tproc.mkNil(bt));
+      }
+      Node ts = d_tproc.mkInternalApp("sexpr", targs, bt);
+      args.push_back(ts);
+      return;
+    }
     default: break;
   }
   ProofNodeToSExpr pntse;

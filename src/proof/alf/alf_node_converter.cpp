@@ -105,9 +105,17 @@ Node AlfNodeConverter::postConvert(Node n)
   }
   else if (k==BOUND_VARIABLE)
   {
-    Node index = nm->mkConstInt(Rational(getOrAssignIndexForVar(n)));
-    Node tc = typeAsNode(tn);
-    return mkInternalApp("var", {index, tc}, tn);
+    std::stringstream ss;
+    ss << n;
+    std::string sname = ss.str();
+    size_t index = d_varIndex[sname];
+    if (index==0)
+    {
+      return n;
+    }
+    std::stringstream ssn;
+    ssn << "alf.var" << index << "." << sname;
+    return NodeManager::currentNM()->mkBoundVar(ssn.str(), tn);
   }
   else if (k == APPLY_UF)
   {
@@ -183,7 +191,7 @@ Node AlfNodeConverter::postConvert(Node n)
     {
       std::vector<Node> args;
       args.push_back(n[0]);
-      args.push_back(mkInternalSymbol("alf.nil", n[0].getType()));
+      args.push_back(mkNil(n[0].getType()));
       return mkInternalApp(
           printer::smt2::Smt2Printer::smtKindString(k), args, n.getType());
     }
@@ -308,6 +316,11 @@ Node AlfNodeConverter::typeAsNode(TypeNode tn)
   Node ret = mkInternalSymbol(ss.str(), d_sortType, true);
   d_typeAsNode[tn] = ret;
   return ret;
+}
+
+Node AlfNodeConverter::mkNil(TypeNode tn)
+{
+  return mkInternalSymbol("alf.nil", tn);
 }
 
 Node AlfNodeConverter::mkInternalSymbol(const std::string& name,
@@ -489,18 +502,6 @@ size_t AlfNodeConverter::getOrAssignIndexForConst(Node v)
   }
   size_t id = d_constIndex.size();
   d_constIndex[v] = id;
-  return id;
-}
-size_t AlfNodeConverter::getOrAssignIndexForVar(Node v)
-{
-  Assert(v.isVar());
-  std::map<Node, size_t>::iterator it = d_varIndex.find(v);
-  if (it != d_varIndex.end())
-  {
-    return it->second;
-  }
-  size_t id = d_varIndex.size();
-  d_varIndex[v] = id;
   return id;
 }
 

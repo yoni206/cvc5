@@ -18,6 +18,7 @@
 #include <sstream>
 
 #include "proof/alf/alf_proof_rule.h"
+#include "expr/node_algorithm.h"
 
 using namespace cvc5::internal::rewriter;
 
@@ -143,7 +144,7 @@ void AlfPrintChannelPre::printNode(TNode n) { d_lbind.process(n); }
 
 void AlfPrintChannelPre::printAssume(TNode n, size_t i, bool isPush)
 {
-  d_lbind.process(n);
+  processInternal(n);
 }
 
 void AlfPrintChannelPre::printStep(const std::string& rname,
@@ -155,19 +156,31 @@ void AlfPrintChannelPre::printStep(const std::string& rname,
 {
   if (!n.isNull())
   {
-    d_lbind.process(n);
+    processInternal(n);
   }
   // don't process premises, even if they may be non-variable, as this
   // will introduce internal (proof) symbols into the letification
   for (const Node& a : args)
   {
-    d_lbind.process(a);
+    processInternal(a);
   }
 }
 void AlfPrintChannelPre::printTrust(PfRule r, TNode n, size_t i, TNode nc)
 {
   Assert(!nc.isNull());
-  d_lbind.process(nc);
+  processInternal(nc);
+}
+
+void AlfPrintChannelPre::processInternal(const Node& n)
+{
+  d_lbind.process(n);
+  d_keep.insert(n); // probably not necessary
+  expr::getVariables(n, d_vars, d_varsVisited);
+}
+
+const std::unordered_set<TNode>& AlfPrintChannelPre::getVariables() const
+{
+  return d_vars;
 }
 
 }  // namespace proof

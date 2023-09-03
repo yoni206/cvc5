@@ -52,11 +52,8 @@ class AlfNodeConverter : public NodeConverter
    * is not yet assigned.
    */
   size_t getOrAssignIndexForConst(Node c);
-  /**
-   * Get the variable index for free variable fv, or assign a fresh index if it
-   * is not yet assigned.
-   */
-  size_t getOrAssignIndexForVar(Node v);
+  /** */
+  Node mkNil(TypeNode tn);
   /**
    * Make an internal symbol with custom name. This is a BOUND_VARIABLE that
    * has a distinguished status so that it is *not* printed as (bvar ...). The
@@ -108,11 +105,9 @@ class AlfNodeConverter : public NodeConverter
   TypeNode d_sortType;
   /** Used for getting unique index for free variable */
   std::map<Node, size_t> d_constIndex;
-  // We use different maps for free and bound variables to ensure that the
-  // indices of bound variables appearing in definitions do not depend on the
-  // order in which free variables appear in assertions/proof.
-  /** Used for getting unique index for bound variable */
-  std::map<Node, size_t> d_varIndex;
+  /**
+   */
+  std::map<std::string, size_t> d_varIndex;
   /** Cache for typeAsNode */
   std::map<TypeNode, Node> d_typeAsNode;
 };
