@@ -216,7 +216,7 @@ Node AlfNodeConverter::postConvert(Node n)
   }
   else if (k == APPLY_TESTER || k == APPLY_UPDATER || k == NEG
            || k == DIVISION_TOTAL || k == INTS_DIVISION_TOTAL
-           || k == INTS_MODULUS_TOTAL)
+           || k == INTS_MODULUS_TOTAL || k == APPLY_CONSTRUCTOR)
   {
     // kinds where the operator may be different
     Node opc = getOperatorOfTerm(n);

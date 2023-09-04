@@ -26,6 +26,7 @@
 #include "proof/alf/alf_proof_rule.h"
 #include "proof/proof_node_to_sexpr.h"
 #include "smt/print_benchmark.h"
+#include "theory/strings/theory_strings_utils.h"
 
 using namespace cvc5::internal::kind;
 
@@ -376,9 +377,9 @@ void AlfPrinter::printStepPre(AlfPrintChannel* out, const ProofNode* pn)
     AlfRule ar = getAlfRule(rn);
     if (ar == AlfRule::SCOPE)
     {
-      Assert(pn->getArguments().size() == 2);
+      Assert(pn->getArguments().size() == 3);
       size_t aid = allocatePush(pn);
-      Node a = d_tproc.convert(pn->getArguments()[1]);
+      Node a = d_tproc.convert(pn->getArguments()[2]);
       // print a push
       out->printAssume(a, aid, true);
     }
@@ -411,9 +412,14 @@ void AlfPrinter::getArgsFromPfRule(const ProofNode* pn, std::vector<Node>& args)
     }
     break;
     case PfRule::STRING_LENGTH_POS:
+      args.push_back(d_tproc.typeAsNode(pargs[0].getType()));
+      break;
     case PfRule::STRING_REDUCTION:
     case PfRule::STRING_EAGER_REDUCTION:
-      args.push_back(d_tproc.typeAsNode(pargs[0].getType()));
+    {
+      TypeNode towner = theory::strings::utils::getOwnerStringType(pargs[0]);
+      args.push_back(d_tproc.typeAsNode(towner));
+    }
       break;
     case PfRule::INT_TIGHT_LB:
     case PfRule::INT_TIGHT_UB:
@@ -430,7 +436,11 @@ void AlfPrinter::getArgsFromPfRule(const ProofNode* pn, std::vector<Node>& args)
       Node q = pn->getChildren()[0]->getResult();
       Assert (q.getKind()==FORALL);
       Assert (pargs.size()>q[0].getNumChildren());
-      std::vector<Node> targs(pargs.begin(), pargs.begin()+q[0].getNumChildren());
+      std::vector<Node> targs;
+      for (size_t i=0, nvars=q[0].getNumChildren(); i<nvars; i++)
+      {
+        targs.push_back(d_tproc.convert(pargs[i]));
+      }
       NodeManager* nm = NodeManager::currentNM();
       // type is irrelevant, use bool
       TypeNode bt = nm->booleanType();
@@ -482,7 +492,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
     else
     {
       // arguments are converted here
-      for (size_t i = 1, nargs = aargs.size(); i < nargs; i++)
+      for (size_t i = 2, nargs = aargs.size(); i < nargs; i++)
       {
         args.push_back(d_tproc.convert(aargs[i]));
       }
@@ -586,7 +596,7 @@ size_t AlfPrinter::allocatePush(const ProofNode* pn)
     return it->second;
   }
   // pn is a Alf SCOPE
-  Node a = pn->getArguments()[1];
+  Node a = pn->getArguments()[2];
   bool wasAlloc = false;
   size_t aid = allocateAssumeId(a, wasAlloc);
   // if we assigned an id to the assumption,

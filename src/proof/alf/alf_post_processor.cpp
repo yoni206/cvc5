@@ -60,8 +60,10 @@ bool AlfProofPostprocessCallback::addAlfStep(AlfRule rule,
                                              const std::vector<Node>& args,
                                              CDProof& cdp)
 {
-  std::vector<Node> newArgs{NodeManager::currentNM()->mkConstInt(
-      Rational(static_cast<uint32_t>(rule)))};
+  std::vector<Node> newArgs;
+  NodeManager * nm =NodeManager::currentNM();
+  newArgs.push_back(nm->mkConstInt(Rational(static_cast<uint32_t>(rule))));
+  newArgs.push_back(conclusion);
   for (const Node& arg : args)
   {
     newArgs.push_back(arg);
@@ -180,11 +182,11 @@ bool AlfProofPostprocessCallback::update(Node res,
       {
         std::vector<Node> rchildren = children;
         std::reverse(rchildren.begin(), rchildren.end());
-        std::vector<Node> args;
-        args.push_back(op);
-        args.push_back(d_tproc.getNullTerminator(k, res[0].getType()));
+        std::vector<Node> cargs;
+        cargs.push_back(op);
+        cargs.push_back(d_tproc.getNullTerminator(k, res[0].getType()));
         // use n-ary rule, must reverse children
-        addAlfStep(AlfRule::NARY_CONG, res, rchildren, args, *cdp);
+        addAlfStep(AlfRule::NARY_CONG, res, rchildren, cargs, *cdp);
       }
       else
       {
