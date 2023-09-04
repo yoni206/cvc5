@@ -118,6 +118,11 @@ void PrintBenchmark::printDeclarationsFrom(std::ostream& outTypes,
       Assert(itd != defMap.end());
       Assert(!itd->second.first);
       Node def = itd->second.second;
+      if (d_converter!=nullptr)
+      {
+        def = d_converter->convert(def);
+      }
+      /*
       std::stringstream vs;
       vs << f;
       std::vector<Node> formals;
@@ -135,6 +140,8 @@ void PrintBenchmark::printDeclarationsFrom(std::ostream& outTypes,
         //rangeType = d_converter->convertType(rangeType);
       }
       d_printer->toStreamCmdDefineFunction(outFuns, vs.str(), formals, rangeType, def);
+      */
+      d_printer->toStreamCmdDefineFunction(outFuns, f, def);
       // a definition is also a declaration
       alreadyPrintedDecl.insert(f);
     }

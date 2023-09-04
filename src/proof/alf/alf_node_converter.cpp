@@ -109,12 +109,13 @@ Node AlfNodeConverter::postConvert(Node n)
     ss << n;
     std::string sname = ss.str();
     size_t index = d_varIndex[sname];
+    d_varIndex[sname]++;
     if (index==0)
     {
       return n;
     }
     std::stringstream ssn;
-    ssn << "alf.var" << index << "." << sname;
+    ssn << "alf." << index << "." << sname;
     return NodeManager::currentNM()->mkBoundVar(ssn.str(), tn);
   }
   else if (k == APPLY_UF)
@@ -220,6 +221,10 @@ Node AlfNodeConverter::postConvert(Node n)
   {
     // kinds where the operator may be different
     Node opc = getOperatorOfTerm(n);
+    if (n.getNumChildren()==0)
+    {
+      return opc;
+    }
     return mkApplyUf(opc, std::vector<Node>(n.begin(), n.end()));
   }
   else if (GenericOp::isIndexedOperatorKind(k))
