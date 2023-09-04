@@ -187,6 +187,13 @@ Node AlfNodeConverter::postConvert(Node n)
     Node t = typeAsNode(tn);
     return mkInternalApp(printer::smt2::Smt2Printer::smtKindString(k), {t}, tn);
   }
+  else if (k == CONST_FINITE_FIELD)
+  {
+    const FiniteFieldValue& ffv = n.getConst<FiniteFieldValue>();
+    Node v = convert(nm->mkConstInt(ffv.getValue()));
+    Node fs = convert(nm->mkConstInt(ffv.getFieldSize()));
+    return mkInternalApp("ff.value", {fs, v}, tn);
+  }
   else if (k == FUNCTION_ARRAY_CONST)
   {
     // must convert to lambda and then run the conversion
@@ -196,17 +203,16 @@ Node AlfNodeConverter::postConvert(Node n)
   }
   else if (k==BITVECTOR_BB_TERM)
   {
-    // bbT is a right-assoc-nil operator in the alf signature, but internally may have one child.
-    // We require adding alf.nil as a child to ensure that all applications
-    // of it have 2+ arguments.
-    if (n.getNumChildren()==1)
+    Node curr = mkInternalSymbol("bvempty", nm->mkBitVectorType(0));
+    for (size_t i=0, nchildren=n.getNumChildren(); i<nchildren; i++)
     {
+      size_t ii = (nchildren-1)-i;
       std::vector<Node> args;
-      args.push_back(n[0]);
-      args.push_back(mkNil(n[0].getType()));
-      return mkInternalApp(
-          printer::smt2::Smt2Printer::smtKindString(k), args, n.getType());
+      args.push_back(n[ii]);
+      args.push_back(curr);
+      curr = mkInternalApp("bbT", args, nm->mkBitVectorType(i+1));
     }
+    return curr;
   }
   else if (k == APPLY_TESTER || k == APPLY_UPDATER || k == NEG
            || k == DIVISION_TOTAL || k == INTS_DIVISION_TOTAL
@@ -333,6 +339,24 @@ Node AlfNodeConverter::typeAsNode(TypeNode tn)
 Node AlfNodeConverter::mkNil(TypeNode tn)
 {
   return mkInternalSymbol("alf.nil", tn);
+}
+
+Node AlfNodeConverter::getNullTerminator(Kind k, TypeNode tn)
+{
+  switch (k)
+  {
+    case kind::ADD:
+      return NodeManager::currentNM()->mkConstInt(Rational(0));
+    case kind::MULT:
+      return NodeManager::currentNM()->mkConstInt(Rational(1));
+    case kind::BITVECTOR_CONCAT:
+      return mkInternalSymbol("bvempty", NodeManager::currentNM()->mkBitVectorType(0));
+    case kind::BITVECTOR_BB_TERM:
+      return NodeManager::currentNM()->mkConst(true);
+    default:
+      break;
+  }
+  return mkNil(tn);
 }
 
 Node AlfNodeConverter::mkSExpr(const std::vector<Node>& args)

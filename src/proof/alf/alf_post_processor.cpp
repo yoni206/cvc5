@@ -151,6 +151,7 @@ bool AlfProofPostprocessCallback::update(Node res,
         addAlfStep(AlfRule::CLOSURE_CONG, res, {children[1]}, {op, vl}, *cdp);
         return true;
       }
+      /*
       if (GenericOp::isIndexedOperatorKind(k))
       {
         // if an indexed operator, we have to add refl steps for the indices
@@ -166,6 +167,7 @@ bool AlfProofPostprocessCallback::update(Node res,
         addAlfStep(AlfRule::CONG, res, ichildren, {op}, *cdp);
         return true;
       }
+      */
       Assert(!op.isNull());
       // Are we doing congruence of an n-ary operator? If so, notice that op
       // is a binary operator and we must apply congruence in a special way.
@@ -178,8 +180,11 @@ bool AlfProofPostprocessCallback::update(Node res,
       {
         std::vector<Node> rchildren = children;
         std::reverse(rchildren.begin(), rchildren.end());
+        std::vector<Node> args;
+        args.push_back(op);
+        args.push_back(d_tproc.getNullTerminator(k, res[0].getType()));
         // use n-ary rule, must reverse children
-        addAlfStep(AlfRule::NARY_CONG, res, rchildren, {op}, *cdp);
+        addAlfStep(AlfRule::NARY_CONG, res, rchildren, args, *cdp);
       }
       else
       {

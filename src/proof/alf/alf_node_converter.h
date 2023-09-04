@@ -54,6 +54,15 @@ class AlfNodeConverter : public NodeConverter
   size_t getOrAssignIndexForConst(Node c);
   /** */
   Node mkNil(TypeNode tn);
+  /**
+   * Get the null terminator for kind k and type tn. The type tn can be
+   * omitted if applications of kind k do not have parametric type.
+   *
+   * The returned null terminator is *not* converted to internal form.
+   *
+   * For examples of null terminators, see nary_term_utils.h.
+   */
+  Node getNullTerminator(Kind k, TypeNode tn);
   /** Make generic SExpr */
   Node mkSExpr(const std::vector<Node>& args);
   /**
