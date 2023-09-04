@@ -1183,6 +1183,8 @@ std::string Smt2Printer::smtKindString(Kind k)
     case kind::TUPLE_PROJECT: return "tuple.project";
 
     // set theory
+    case kind::SET_EMPTY: return "set.empty";
+    case kind::SET_UNIVERSE: return "set.universe";
     case kind::SET_UNION: return "set.union";
     case kind::SET_INTER: return "set.inter";
     case kind::SET_MINUS: return "set.minus";
@@ -1211,6 +1213,7 @@ std::string Smt2Printer::smtKindString(Kind k)
 
     // bag theory
     case kind::BAG_TYPE: return "Bag";
+    case kind::BAG_EMPTY: return "bag.empty";
     case kind::BAG_UNION_MAX: return "bag.union_max";
     case kind::BAG_UNION_DISJOINT: return "bag.union_disjoint";
     case kind::BAG_INTER_MIN: return "bag.inter_min";

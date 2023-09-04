@@ -260,7 +260,11 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
     }
     if (i == 1)
     {
-      // [0] print the universal variables
+      // [1] print the types
+      smt::PrintBenchmark pb(Printer::getPrinter(out), &d_tproc);
+      std::stringstream outFuns;
+      pb.printDeclarationsFrom(out, outFuns, definitions, assertions);
+      // [2] print the universal variables
       const std::unordered_set<TNode>& vars = aletify.getVariables();
       for (TNode v : vars)
       {
@@ -269,13 +273,12 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
           out << "(declare-var " << v << " " << v.getType() << ")" << std::endl;
         }
       }
-      // [1] print the definitions/declarations
-      smt::PrintBenchmark pb(Printer::getPrinter(out), &d_tproc);
-      pb.printDeclarationsFrom(out, definitions, assertions);
-      // [2] print proof-level term bindings
+      // [3] print the declared functions
+      out << outFuns.str();
+      // [4] print proof-level term bindings
       printLetList(out, lbind);
     }
-    // [3] print assumptions
+    // [5] print assumptions
     for (const Node& n : definitions)
     {
       if (n.getKind()==EQUAL)
@@ -293,7 +296,7 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
       Node nc = d_tproc.convert(n);
       aout->printAssume(nc, id, false);
     }
-    // [4] print proof body
+    // [6] print proof body
     printProofInternal(aout, pnBody);
   }
   // if flattened, print the full proof as ident

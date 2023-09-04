@@ -25,7 +25,8 @@ using namespace cvc5::internal::kind;
 namespace cvc5::internal {
 namespace smt {
 
-void PrintBenchmark::printDeclarationsFrom(std::ostream& out,
+void PrintBenchmark::printDeclarationsFrom(std::ostream& outTypes,
+                                           std::ostream& outFuns,
                                            const std::vector<Node>& defs,
                                            const std::vector<Node>& assertions)
 {
@@ -61,7 +62,7 @@ void PrintBenchmark::printDeclarationsFrom(std::ostream& out,
         {
           ctnp = d_converter->convertType(ctnp);
         }
-        d_printer->toStreamCmdDeclareType(out, ctn);
+        d_printer->toStreamCmdDeclareType(outTypes, ctn);
       }
       else if (ctn.isDatatype())
       {
@@ -71,7 +72,7 @@ void PrintBenchmark::printDeclarationsFrom(std::ostream& out,
     // print the mutually recursive datatype block if necessary
     if (!datatypeBlock.empty())
     {
-      d_printer->toStreamCmdDatatypeDeclaration(out, datatypeBlock);
+      d_printer->toStreamCmdDatatypeDeclaration(outTypes, datatypeBlock);
     }
   }
 
@@ -109,7 +110,7 @@ void PrintBenchmark::printDeclarationsFrom(std::ostream& out,
         s, recDefs, ordinaryDefs, syms, defMap, alreadyPrintedDef, visited);
     // print the declarations that are encountered for the first time in this
     // block
-    printDeclaredFuns(out, syms, alreadyPrintedDecl);
+    printDeclaredFuns(outFuns, syms, alreadyPrintedDecl);
     // print the ordinary definitions
     for (const Node& f : ordinaryDefs)
     {
@@ -133,7 +134,7 @@ void PrintBenchmark::printDeclarationsFrom(std::ostream& out,
         def = d_converter->convert(def);
         //rangeType = d_converter->convertType(rangeType);
       }
-      d_printer->toStreamCmdDefineFunction(out, vs.str(), formals, rangeType, def);
+      d_printer->toStreamCmdDefineFunction(outFuns, vs.str(), formals, rangeType, def);
       // a definition is also a declaration
       alreadyPrintedDecl.insert(f);
     }
@@ -152,7 +153,7 @@ void PrintBenchmark::printDeclarationsFrom(std::ostream& out,
         // a recursive definition is also a declaration
         alreadyPrintedDecl.insert(f);
       }
-      d_printer->toStreamCmdDefineFunctionRec(out, recDefs, lambdas);
+      d_printer->toStreamCmdDefineFunctionRec(outFuns, recDefs, lambdas);
     }
   }
 
@@ -162,13 +163,13 @@ void PrintBenchmark::printDeclarationsFrom(std::ostream& out,
   {
     expr::getSymbols(a, syms, visited);
   }
-  printDeclaredFuns(out, syms, alreadyPrintedDecl);
+  printDeclaredFuns(outFuns, syms, alreadyPrintedDecl);
 }
 void PrintBenchmark::printAssertions(std::ostream& out,
                                      const std::vector<Node>& defs,
                                      const std::vector<Node>& assertions)
 {
-  printDeclarationsFrom(out, defs, assertions);
+  printDeclarationsFrom(out, out, defs, assertions);
   // print the assertions
   for (const Node& a : assertions)
   {

@@ -42,7 +42,8 @@ class PrintBenchmark
   PrintBenchmark(const Printer* p, NodeConverter* c = nullptr) : d_printer(p), d_converter(c) {}
   /**
    */
-  void printDeclarationsFrom(std::ostream& out,
+  void printDeclarationsFrom(std::ostream& outTypes,
+                             std::ostream& outFuns,
                              const std::vector<Node>& defs,
                              const std::vector<Node>& assertions);
   /**

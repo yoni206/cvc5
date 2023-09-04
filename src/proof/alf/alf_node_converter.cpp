@@ -348,6 +348,7 @@ Node AlfNodeConverter::getNullTerminator(Kind k, TypeNode tn)
     case kind::ADD:
       return NodeManager::currentNM()->mkConstInt(Rational(0));
     case kind::MULT:
+    case kind::NONLINEAR_MULT:
       return NodeManager::currentNM()->mkConstInt(Rational(1));
     case kind::BITVECTOR_CONCAT:
       return mkInternalSymbol("bvempty", NodeManager::currentNM()->mkBitVectorType(0));
