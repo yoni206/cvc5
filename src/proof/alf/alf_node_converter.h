@@ -63,8 +63,8 @@ class AlfNodeConverter : public NodeConverter
    * For examples of null terminators, see nary_term_utils.h.
    */
   Node getNullTerminator(Kind k, TypeNode tn);
-  /** Make generic SExpr */
-  Node mkSExpr(const std::vector<Node>& args);
+  /** Make generic list */
+  Node mkList(const std::vector<Node>& args);
   /**
    * Make an internal symbol with custom name. This is a BOUND_VARIABLE that
    * has a distinguished status so that it is *not* printed as (bvar ...). The

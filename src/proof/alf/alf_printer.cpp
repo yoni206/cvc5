@@ -433,26 +433,19 @@ void AlfPrinter::getArgsFromPfRule(const ProofNode* pn, std::vector<Node>& args)
       // argument is redundant
       return;
     case PfRule::INSTANTIATE:
-    case PfRule::SKOLEMIZE:
     {
       // ignore arguments past the term vector, collect them into an sexpr
       Node q = pn->getChildren()[0]->getResult();
-      q = q.getKind()==NOT ? q[0] : q;
-      Assert (q.isClosure());
+      Assert (q.getKind()==FORALL);
+      // only provide arguments up to the variable list length
       std::vector<Node> targs;
       for (size_t i=0, nvars=q[0].getNumChildren(); i<nvars; i++)
       {
-        if (r==PfRule::INSTANTIATE)
-        {
-          Assert (i<pargs.size());
-          targs.push_back(d_tproc.convert(pargs[i]));
-        }
-        else
-        {
-          targs.push_back(d_tproc.convert(q[0][i]));
-        }
+        Assert (i<pargs.size());
+        targs.push_back(d_tproc.convert(pargs[i]));
       }
-      Node ts = d_tproc.mkSExpr(targs);
+      // package as list
+      Node ts = d_tproc.mkList(targs);
       args.push_back(ts);
       return;
     }

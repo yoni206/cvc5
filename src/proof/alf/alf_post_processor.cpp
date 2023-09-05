@@ -149,7 +149,7 @@ bool AlfProofPostprocessCallback::update(Node res,
         std::vector<Node> vars(res[0][0].begin(), res[0][0].end());
         // expects in reverse order
         std::reverse(vars.begin(), vars.end());
-        Node vl = d_tproc.mkSExpr(vars);
+        Node vl = d_tproc.mkList(vars);
         addAlfStep(AlfRule::CLOSURE_CONG, res, {children[1]}, {op, vl}, *cdp);
         return true;
       }

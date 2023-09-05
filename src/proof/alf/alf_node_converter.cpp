@@ -161,20 +161,15 @@ Node AlfNodeConverter::postConvert(Node n)
   else if (n.isClosure())
   {
     // e.g. (forall ((x1 T1) ... (xn Tk)) P) is
-    // (forall x1 (forall x2 ... (forall xn P)))
-    Node ret = n[1];
-    std::stringstream opName;
-    opName << printer::smt2::Smt2Printer::smtKindString(k);
-    for (size_t i = 0, nchild = n[0].getNumChildren(); i < nchild; i++)
+    // (forall (@list x1 ... xn) P)
+    std::vector<Node> vars;
+    for (const Node& v : n[0])
     {
-      size_t ii = (nchild - 1) - i;
-      Node v = convert(n[0][ii]);
-      // use the body return type for all terms except the last one.
-      TypeNode retType = ii == 0 ? n.getType() : n[1].getType();
-      ret = mkInternalApp(opName.str(), {v, ret}, retType);
+      vars.push_back(convert(v));
     }
+    Node vl = mkList(vars);
     // notice that intentionally we drop annotations here
-    return ret;
+    return mkInternalApp(printer::smt2::Smt2Printer::smtKindString(k), {vl, n[1]}, tn);
   }
   else if (k == STORE_ALL)
   {
@@ -304,20 +299,17 @@ Node AlfNodeConverter::maybeMkSkolemFun(Node k)
       std::vector<Node> args;
       if (sfi==SkolemFunId::QUANTIFIERS_SKOLEMIZE)
       {
+        // must provide the variable, not the index (for typing)
         Assert (cacheVal.getNumChildren()==2);
         Node q = convert(cacheVal[0]);
         Node index = cacheVal[1];
+        Assert (q.getKind()==EXISTS);
         Assert (index.getKind()==CONST_INTEGER);
         const Integer& i = index.getConst<Rational>().getNumerator();
         Assert (i.fitsUnsignedInt());
         size_t ii = i.getUnsignedInt();
-        for (size_t j=0; j<ii; j++)
-        {
-          Assert (q.getNumChildren()==2);
-          q = q[1];
-        }
-        args.push_back(q[0]);
-        args.push_back(q[1]);
+        args.push_back(q);
+        args.push_back(convert(q[0][ii]));
       }
       else
       {
@@ -385,7 +377,7 @@ Node AlfNodeConverter::getNullTerminator(Kind k, TypeNode tn)
   return mkNil(tn);
 }
 
-Node AlfNodeConverter::mkSExpr(const std::vector<Node>& args)
+Node AlfNodeConverter::mkList(const std::vector<Node>& args)
 {
   TypeNode tn = NodeManager::currentNM()->booleanType();
   if (args.empty())
@@ -396,9 +388,9 @@ Node AlfNodeConverter::mkSExpr(const std::vector<Node>& args)
   {
     std::vector<Node> aargs(args.begin(), args.end());
     aargs.push_back(mkNil(tn));
-    return mkInternalApp("sexpr", aargs, tn);
+    return mkInternalApp("@list", aargs, tn);
   }
-    return mkInternalApp("sexpr", args, tn);
+  return mkInternalApp("@list", args, tn);
 }
 
 Node AlfNodeConverter::mkInternalSymbol(const std::string& name,
