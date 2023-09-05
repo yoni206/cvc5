@@ -23,6 +23,7 @@
 #include "smt/env.h"
 #include "theory/builtin/generic_op.h"
 #include "util/rational.h"
+#include "printer/smt2/smt2_printer.h"
 
 using namespace cvc5::internal::kind;
 
@@ -137,37 +138,50 @@ bool AlfProofPostprocessCallback::update(Node res,
         cdp->addStep(res, PfRule::HO_CONG, children, {});
         return true;
       }
+      // NOTE: as optimization can collect REFL steps. This would subsume
+      // the ordinary closure handling
+      
       // get the operator
       Node op = d_tproc.getOperatorOfTerm(res[0]);
       Trace("alf-proof") << "Processing cong for op " << op << " "
                          << op.getType() << std::endl;
-      if (res[0].isClosure())
+      if (res[0].getKind()==LAMBDA)
+      {
+        Assert (res[1].getKind()==LAMBDA && res[0][0]==res[1][0]);
+        Node lam1 = d_tproc.convert(res[0]);
+        Node lam2 = d_tproc.convert(res[1]);
+        for (size_t i=0, nvars=res[0][0].getNumChildren(); i<nvars; i++)
+        {
+          Assert (lam1.getNumChildren()==2 && lam2.getNumChildren()==2);
+          Node varEq = lam1[0].eqNode(lam1[0]);
+          cdp->addStep(varEq, PfRule::REFL, {}, {lam1[0]});
+          Node bodyEq = lam1[1].eqNode(lam2[1]);
+          Node lamEq = lam1.eqNode(lam2);
+          Node conclusion = i==0 ? res : lam1.eqNode(lam2);
+          addAlfStep(AlfRule::CONG, conclusion, {varEq, bodyEq}, {lam1.getOperator()}, *cdp);
+          lam1 = lam1[1];
+          lam2 = lam2[1];
+        }
+        return true;
+      }
+      else if (res[0].isClosure())
       {
         Assert (children.size()==2);
         // variable lists should be equal
         Assert (res[0][0]==res[1][0]);
-        std::vector<Node> vars(res[0][0].begin(), res[0][0].end());
-        Node vl = d_tproc.mkList(vars);
-        addAlfStep(AlfRule::CLOSURE_CONG, res, {children[1]}, {op, vl}, *cdp);
-        return true;
-      }
-      /*
-      if (GenericOp::isIndexedOperatorKind(k))
-      {
-        // if an indexed operator, we have to add refl steps for the indices
-        std::vector<Node> ichildren;
-        for (const Node& i : op)
+        std::vector<Node> vars;
+        for (const Node& v : res[0][0])
         {
-          addReflStep(i, *cdp);
-          ichildren.push_back(i.eqNode(i));
+          vars.push_back(d_tproc.convert(v));
         }
-        ichildren.insert(ichildren.end(), children.begin(), children.end());
-        // we are doing congruence on the operator
-        op = op.getOperator();
-        addAlfStep(AlfRule::CONG, res, ichildren, {op}, *cdp);
+        // can use ordinary cong
+        Node vl = d_tproc.mkList(vars);
+        Node opc = d_tproc.mkInternalApp(printer::smt2::Smt2Printer::smtKindString(k), {vl}, vl.getType());
+        addAlfStep(AlfRule::CONG, res, {children[1]}, {opc}, *cdp);
         return true;
       }
-      */
+      // Note that indexed operators are "collected" at the base of ordinary
+      // cong rule applications and don't need special treatment here.
       Assert(!op.isNull());
       // Are we doing congruence of an n-ary operator? If so, notice that op
       // is a binary operator and we must apply congruence in a special way.

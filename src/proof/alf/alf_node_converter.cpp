@@ -446,7 +446,6 @@ Node AlfNodeConverter::mkInternalApp(const std::string& name,
 Node AlfNodeConverter::getOperatorOfTerm(Node n)
 {
   Assert(n.hasOperator());
-  Assert(!n.isClosure());
   NodeManager* nm = NodeManager::currentNM();
   Kind k = n.getKind();
   std::stringstream opName;
