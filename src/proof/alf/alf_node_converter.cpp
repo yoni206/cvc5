@@ -316,8 +316,8 @@ Node AlfNodeConverter::maybeMkSkolemFun(Node k)
           Assert (q.getNumChildren()==2);
           q = q[1];
         }
-        args.push_back(typeAsNode(q[0].getType()));
-        args.push_back(q);
+        args.push_back(q[0]);
+        args.push_back(q[1]);
       }
       else
       {

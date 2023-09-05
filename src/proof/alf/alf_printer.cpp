@@ -124,7 +124,8 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::RE_INTER:
     case PfRule::RE_UNFOLD_POS:
     case PfRule::REMOVE_TERM_FORMULA_AXIOM:
-    case PfRule::INSTANTIATE:return true;
+    case PfRule::INSTANTIATE:
+    case PfRule::SKOLEMIZE:return true;
     // alf rule is handled
     case PfRule::ALF_RULE: return true;
     case PfRule::STRING_REDUCTION:
@@ -160,7 +161,6 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::DT_COLLAPSE:
     case PfRule::DT_SPLIT:
     case PfRule::DT_CLASH:
-    case PfRule::SKOLEMIZE:
     case PfRule::ALPHA_EQUIV:
     case PfRule::QUANTIFIERS_PREPROCESS:
     case PfRule::CONCAT_SPLIT:
@@ -391,7 +391,8 @@ void AlfPrinter::getArgsFromPfRule(const ProofNode* pn, std::vector<Node>& args)
 {
   Node res = pn->getResult();
   const std::vector<Node> pargs = pn->getArguments();
-  switch (pn->getRule())
+  PfRule r = pn->getRule();
+  switch (r)
   {
     case PfRule::CHAIN_RESOLUTION:
     {
@@ -432,23 +433,24 @@ void AlfPrinter::getArgsFromPfRule(const ProofNode* pn, std::vector<Node>& args)
       // argument is redundant
       return;
     case PfRule::INSTANTIATE:
+    case PfRule::SKOLEMIZE:
     {
       // ignore arguments past the term vector, collect them into an sexpr
       Node q = pn->getChildren()[0]->getResult();
-      Assert (q.getKind()==FORALL);
-      Assert (pargs.size()>q[0].getNumChildren());
+      q = q.getKind()==NOT ? q[0] : q;
+      Assert (q.isClosure());
       std::vector<Node> targs;
       for (size_t i=0, nvars=q[0].getNumChildren(); i<nvars; i++)
       {
-        targs.push_back(d_tproc.convert(pargs[i]));
-      }
-      NodeManager* nm = NodeManager::currentNM();
-      // type is irrelevant, use bool
-      TypeNode bt = nm->booleanType();
-      // ensure in n-ary form
-      if (targs.size()==1)
-      {
-        targs.push_back(d_tproc.mkNil(bt));
+        if (r==PfRule::INSTANTIATE)
+        {
+          Assert (i<pargs.size());
+          targs.push_back(d_tproc.convert(pargs[i]));
+        }
+        else
+        {
+          targs.push_back(d_tproc.convert(q[0][i]));
+        }
       }
       Node ts = d_tproc.mkSExpr(targs);
       args.push_back(ts);
