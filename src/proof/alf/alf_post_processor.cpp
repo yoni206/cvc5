@@ -145,9 +145,9 @@ bool AlfProofPostprocessCallback::update(Node res,
       Node op = d_tproc.getOperatorOfTerm(res[0]);
       Trace("alf-proof") << "Processing cong for op " << op << " "
                          << op.getType() << std::endl;
-      if (res[0].getKind()==LAMBDA)
+      if (k==LAMBDA || k==WITNESS)
       {
-        Assert (res[1].getKind()==LAMBDA && res[0][0]==res[1][0]);
+        Assert (res[1].getKind()==k && res[0][0]==res[1][0]);
         Node lam1 = d_tproc.convert(res[0]);
         Node lam2 = d_tproc.convert(res[1]);
         for (size_t i=0, nvars=res[0][0].getNumChildren(); i<nvars; i++)
@@ -166,7 +166,7 @@ bool AlfProofPostprocessCallback::update(Node res,
       }
       else if (res[0].isClosure())
       {
-        Assert (children.size()==2);
+        Assert (children.size()>=2);
         // variable lists should be equal
         Assert (res[0][0]==res[1][0]);
         std::vector<Node> vars;

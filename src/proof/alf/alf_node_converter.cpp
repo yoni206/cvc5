@@ -161,7 +161,7 @@ Node AlfNodeConverter::postConvert(Node n)
     }
     return ret;
   }
-  else if (k == LAMBDA)
+  else if (k == LAMBDA || k == WITNESS)
   {
     // e.g. (lambda ((x1 T1) ... (xn Tk)) P) is
     // (lambda x1 (lambda x2 ... (lambda xn P)))
@@ -320,9 +320,9 @@ Node AlfNodeConverter::maybeMkSkolemFun(Node k)
       {
         // must provide the variable, not the index (for typing)
         Assert (cacheVal.getNumChildren()==2);
+        Assert (cacheVal[0].getKind()==EXISTS);
         Node q = convert(cacheVal[0]);
         Node index = cacheVal[1];
-        Assert (q.getKind()==EXISTS);
         Assert (index.getKind()==CONST_INTEGER);
         const Integer& i = index.getConst<Rational>().getNumerator();
         Assert (i.fitsUnsignedInt());
