@@ -105,18 +105,21 @@ Node AlfNodeConverter::postConvert(Node n)
   }
   else if (k==BOUND_VARIABLE)
   {
+    // note: we always distinguish variables, to ensure they do not have
+    // names that are overloaded with user names
     std::stringstream ss;
     ss << n;
     std::string sname = ss.str();
     size_t index = d_varIndex[sname];
     d_varIndex[sname]++;
-    if (index==0)
-    {
-      return n;
-    }
     std::stringstream ssn;
     ssn << "alf." << index << "." << sname;
     return NodeManager::currentNM()->mkBoundVar(ssn.str(), tn);
+  }
+  else if (k == VARIABLE)
+  {
+    // TODO: overloading
+    return n;
   }
   else if (k == APPLY_UF)
   {
@@ -163,13 +166,14 @@ Node AlfNodeConverter::postConvert(Node n)
     // e.g. (lambda ((x1 T1) ... (xn Tk)) P) is
     // (lambda x1 (lambda x2 ... (lambda xn P)))
     Node ret = n[1];
+    TypeNode tnr = ret.getType();
     for (size_t i = 0, nchild = n[0].getNumChildren(); i < nchild; i++)
     {
       size_t ii = (nchild - 1) - i;
       Node v = convert(n[0][ii]);
       // use the body return type for all terms except the last one.
-      TypeNode retType = ii == 0 ? n.getType() : n[1].getType();
-      ret = mkInternalApp("lambda", {v, ret}, retType);
+      tnr = ii == 0 ? n.getType() : nm->mkFunctionType({v.getType()}, tnr);
+      ret = mkInternalApp("lambda", {v, ret}, tnr);
     }
     return ret;
   }
