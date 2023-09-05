@@ -138,6 +138,7 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::STRING_EAGER_REDUCTION:
     {
       // depends on the operator
+      Assert(!pargs.empty());
       Kind k = pargs[0].getKind();
       return k == STRING_CONTAINS || k == STRING_TO_CODE || k == STRING_INDEXOF;
     }
@@ -478,6 +479,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
   }
   PfRule r = pn->getRule();
   std::vector<Node> args;
+  bool handled = isHandled(pn);
   if (r == PfRule::ALF_RULE)
   {
     const std::vector<Node> aargs = pn->getArguments();
@@ -498,7 +500,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
       }
     }
   }
-  else
+  else if (handled)
   {
     getArgsFromPfRule(pn, args);
   }
@@ -508,7 +510,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
   {
     std::vector<Node> pargs;
     std::string rname;
-    if (!isHandled(pn))
+    if (!handled)
     {
       rname = "trust";
       pargs.push_back(conclusion);
@@ -557,7 +559,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
   }
   size_t id = allocateProofId(pn, wasAlloc);
   // if we don't handle the rule, print trust
-  if (!isHandled(pn))
+  if (!handled)
   {
     out->printTrust(pn->getRule(), conclusionPrint, id, conclusion);
     return;

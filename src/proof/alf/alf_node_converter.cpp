@@ -302,16 +302,36 @@ Node AlfNodeConverter::maybeMkSkolemFun(Node k)
       std::stringstream ss;
       ss << "@k." << sfi;
       std::vector<Node> args;
-      if (cacheVal.getKind() == SEXPR)
+      if (sfi==SkolemFunId::QUANTIFIERS_SKOLEMIZE)
       {
-        for (const Node& cv : cacheVal)
+        Assert (cacheVal.getNumChildren()==2);
+        Node q = convert(cacheVal[0]);
+        Node index = cacheVal[1];
+        Assert (index.getKind()==CONST_INTEGER);
+        const Integer& i = index.getConst<Rational>().getNumerator();
+        Assert (i.fitsUnsignedInt());
+        size_t ii = i.getUnsignedInt();
+        for (size_t j=0; j<ii; j++)
         {
-          args.push_back(convert(cv));
+          Assert (q.getNumChildren()==2);
+          q = q[1];
         }
+        args.push_back(typeAsNode(q[0].getType()));
+        args.push_back(q);
       }
-      else if (!cacheVal.isNull())
+      else
       {
-        args.push_back(convert(cacheVal));
+        if (cacheVal.getKind() == SEXPR)
+        {
+          for (const Node& cv : cacheVal)
+          {
+            args.push_back(convert(cv));
+          }
+        }
+        else if (!cacheVal.isNull())
+        {
+          args.push_back(convert(cacheVal));
+        }
       }
       // must convert all arguments
       app = mkInternalApp(ss.str(), args, k.getType());
