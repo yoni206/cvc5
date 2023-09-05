@@ -147,8 +147,6 @@ bool AlfProofPostprocessCallback::update(Node res,
         // variable lists should be equal
         Assert (res[0][0]==res[1][0]);
         std::vector<Node> vars(res[0][0].begin(), res[0][0].end());
-        // expects in reverse order
-        std::reverse(vars.begin(), vars.end());
         Node vl = d_tproc.mkList(vars);
         addAlfStep(AlfRule::CLOSURE_CONG, res, {children[1]}, {op, vl}, *cdp);
         return true;

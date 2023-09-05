@@ -278,7 +278,7 @@ class AlfTester(Tester):
                 benchmark_info.benchmark_dir,
                 benchmark_info.timeout,
             )
-            tmpf.write("(include \"/home/andrew/alfc/proofs/rules/Cvc5.smt2\")".encode())
+            tmpf.write("(include \"/space/ajreynol/alfc/proofs/rules/Cvc5.smt2\")".encode())
             tmpf.write(output.strip("unsat\n".encode()))
             tmpf.flush()
             output, error = output.decode(), error.decode()

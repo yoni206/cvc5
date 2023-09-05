@@ -280,23 +280,36 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
       // [4] print proof-level term bindings
       printLetList(out, lbind);
     }
-    // [5] print assumptions
-    for (const Node& n : definitions)
-    {
-      if (n.getKind()==EQUAL)
-      {
-        // TODO: not exactly necessary, could be refl
-        size_t id = allocateAssumeId(n, wasAlloc);
-        Node lam = d_tproc.convert(n[1]);
-        //aout->printAssume(nc, id, false);
-        aout->printStep("refl", lam.eqNode(lam), id, {}, {lam});
-      }
-    }
+    // [5] print (unique) assumptions
+    std::unordered_set<Node> processed;
     for (const Node& n : assertions)
     {
+      if (processed.find(n)!=processed.end())
+      {
+        continue;
+      }
+      processed.insert(n);
       size_t id = allocateAssumeId(n, wasAlloc);
       Node nc = d_tproc.convert(n);
       aout->printAssume(nc, id, false);
+    }
+    for (const Node& n : definitions)
+    {
+      if (n.getKind()!=EQUAL)
+      {
+        // skip define-fun-rec?
+        continue;
+      }
+      if (processed.find(n)!=processed.end())
+      {
+        continue;
+      }
+      processed.insert(n);
+      // define-fun are HO equalities that can be proven by refl
+      size_t id = allocateAssumeId(n, wasAlloc);
+      Node f = d_tproc.convert(n[0]);
+      Node lam = d_tproc.convert(n[1]);
+      aout->printStep("refl", f.eqNode(lam), id, {}, {lam});
     }
     // [6] print proof body
     printProofInternal(aout, pnBody);
