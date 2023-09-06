@@ -236,7 +236,7 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
 {
   d_pfIdCounter = 0;
 
-  // [1] Get the definitions and assertions and print the declarations from them
+  // Get the definitions and assertions and print the declarations from them
   const std::vector<Node>& definitions = pfn->getArguments();
   const std::vector<Node>& assertions = pfn->getChildren()[0]->getArguments();
   const ProofNode* pnBody = pfn->getChildren()[0]->getChildren()[0].get();

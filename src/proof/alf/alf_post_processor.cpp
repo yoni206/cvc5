@@ -50,7 +50,8 @@ bool AlfProofPostprocessCallback::shouldUpdate(std::shared_ptr<ProofNode> pn,
   switch (pn->getRule())
   {
     case PfRule::SCOPE:
-    case PfRule::CONG: return true;
+    case PfRule::CONG:
+    case PfRule::CONCAT_CONFLICT: return true;
     default: return false;
   }
 }
@@ -155,7 +156,7 @@ bool AlfProofPostprocessCallback::update(Node res,
           Assert(lam1.getNumChildren() == 2 && lam2.getNumChildren() == 2);
           Node varEq = lam1[0].eqNode(lam1[0]);
           cdp->addStep(varEq, PfRule::REFL, {}, {lam1[0]});
-          Node bodyEq = lam1[1].eqNode(lam2[1]);
+          Node bodyEq = i+1==nvars ? children[1] : lam1[1].eqNode(lam2[1]);
           Node lamEq = lam1.eqNode(lam2);
           Node conclusion = i == 0 ? res : lam1.eqNode(lam2);
           addAlfStep(AlfRule::CONG,
@@ -210,6 +211,24 @@ bool AlfProofPostprocessCallback::update(Node res,
         // use ordinary rule
         addAlfStep(AlfRule::CONG, res, children, {op}, *cdp);
       }
+    }
+    break;
+    case PfRule::CONCAT_CONFLICT:
+    {
+      if (children.size() == 1)
+      {
+        // no need to change
+        return false;
+      }
+      Assert(children.size() == 2);
+      Assert(children[0].getKind() == EQUAL);
+      Assert(children[0][0].getType().isSequence());
+      // must use the sequences version of the rule
+      Node falsen = nm->mkConst(false);
+      std::vector<Node> newArgs = args;
+      Node tn = d_tproc.typeAsNode(children[0][0].getType());
+      newArgs.push_back(tn);
+      addAlfStep(AlfRule::CONCAT_CONFLICT_DEQ, res, children, newArgs, *cdp);
     }
     break;
     default: return false;
