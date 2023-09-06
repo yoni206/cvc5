@@ -239,7 +239,7 @@ Node AlfNodeConverter::postConvert(Node n)
   }
   else if (k == APPLY_TESTER || k == APPLY_UPDATER || k == NEG
            || k == DIVISION_TOTAL || k == INTS_DIVISION_TOTAL
-           || k == INTS_MODULUS_TOTAL || k == APPLY_CONSTRUCTOR)
+           || k == INTS_MODULUS_TOTAL || k == APPLY_CONSTRUCTOR || k == APPLY_SELECTOR)
   {
     // kinds where the operator may be different
     Node opc = getOperatorOfTerm(n);
@@ -532,7 +532,14 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
       unsigned index = DType::indexOf(op);
       const DType& dt = DType::datatypeOf(op);
       // get its variable name
-      opName << dt[index].getConstructor();
+      if (dt.isTuple())
+      {
+        opName << "tuple";
+      }
+      else
+      {
+        opName << dt[index].getConstructor();
+      }
     }
     else if (k == APPLY_SELECTOR)
     {
@@ -542,8 +549,16 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
       {
         unsigned index = DType::indexOf(op);
         const DType& dt = DType::datatypeOf(op);
-        unsigned cindex = DType::cindexOf(op);
-        opName << dt[cindex][index].getSelector();
+        if (dt.isTuple())
+        {
+          indices.push_back(nm->mkConstInt(index));
+          opName << "tuple.select";
+        }
+        else
+        {
+          unsigned cindex = DType::cindexOf(op);
+          opName << dt[cindex][index].getSelector();
+        }
       }
     }
     else
