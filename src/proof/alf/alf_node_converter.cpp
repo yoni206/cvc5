@@ -167,13 +167,15 @@ Node AlfNodeConverter::postConvert(Node n)
     // (lambda x1 (lambda x2 ... (lambda xn P)))
     Node ret = n[1];
     TypeNode tnr = ret.getType();
+    std::stringstream opName;
+    opName << printer::smt2::Smt2Printer::smtKindString(k);
     for (size_t i = 0, nchild = n[0].getNumChildren(); i < nchild; i++)
     {
       size_t ii = (nchild - 1) - i;
       Node v = convert(n[0][ii]);
       // use the body return type for all terms except the last one.
       tnr = ii == 0 ? n.getType() : nm->mkFunctionType({v.getType()}, tnr);
-      ret = mkInternalApp("lambda", {v, ret}, tnr);
+      ret = mkInternalApp(opName.str(), {v, ret}, tnr);
     }
     return ret;
   }
@@ -201,6 +203,11 @@ Node AlfNodeConverter::postConvert(Node n)
   {
     Node t = typeAsNode(tn);
     return mkInternalApp(printer::smt2::Smt2Printer::smtKindString(k), {t}, tn);
+  }
+  else if (k == CONST_SEQUENCE && n.getConst<Sequence>().empty())
+  {
+    Node t = typeAsNode(tn);
+    return mkInternalApp("seq.empty", {t}, tn);
   }
   else if (k == CONST_FINITE_FIELD)
   {

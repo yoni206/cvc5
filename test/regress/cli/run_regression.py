@@ -278,13 +278,13 @@ class AlfTester(Tester):
                 benchmark_info.benchmark_dir,
                 benchmark_info.timeout,
             )
-            tmpf.write("(include \"/space/ajreynol/alfc/proofs/rules/Cvc5.smt2\")".encode())
+            tmpf.write("(include \"/home/andrew/alfc/proofs/rules/Cvc5.smt2\")".encode())
             tmpf.write(output.strip("unsat\n".encode()))
             tmpf.flush()
             output, error = output.decode(), error.decode()
             exit_code = self.check_exit_status(EXIT_OK, exit_status, output,
                                                error, cvc5_args)
-            if "step" not in output:
+            if ("step" not in output) and ("assume" not in output):
                 print_error("Empty proof")
                 print()
                 print_outputs(output, error)

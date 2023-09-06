@@ -64,7 +64,7 @@ void PrintBenchmark::printDeclarationsFrom(std::ostream& outTypes,
         }
         d_printer->toStreamCmdDeclareType(outTypes, ctn);
       }
-      else if (ctn.isDatatype())
+      else if (ctn.isDatatype() && !ctn.isTuple())
       {
         datatypeBlock.push_back(ctn);
       }
@@ -122,25 +122,6 @@ void PrintBenchmark::printDeclarationsFrom(std::ostream& outTypes,
       {
         def = d_converter->convert(def);
       }
-      /*
-      std::stringstream vs;
-      vs << f;
-      std::vector<Node> formals;
-      TypeNode rangeType = def.getType();
-      if (def.getKind() == kind::LAMBDA)
-      {
-        formals.insert(formals.end(), def[0].begin(), def[0].end());
-        def = def[1];
-        Assert(rangeType.isFunction());
-        rangeType = rangeType.getRangeType();
-      }
-      if (d_converter!=nullptr)
-      {
-        def = d_converter->convert(def);
-        //rangeType = d_converter->convertType(rangeType);
-      }
-      d_printer->toStreamCmdDefineFunction(outFuns, vs.str(), formals, rangeType, def);
-      */
       d_printer->toStreamCmdDefineFunction(outFuns, f, def);
       // a definition is also a declaration
       alreadyPrintedDecl.insert(f);
