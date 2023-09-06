@@ -125,7 +125,7 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::RE_UNFOLD_POS:
     case PfRule::REMOVE_TERM_FORMULA_AXIOM:
     case PfRule::INSTANTIATE:
-    case PfRule::SKOLEMIZE:return true;
+    case PfRule::SKOLEMIZE: return true;
     // alf rule is handled
     case PfRule::ALF_RULE: return true;
     case PfRule::STRING_REDUCTION:
@@ -270,7 +270,7 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
       const std::unordered_set<TNode>& vars = aletify.getVariables();
       for (TNode v : vars)
       {
-        if (v.getKind()==BOUND_VARIABLE)
+        if (v.getKind() == BOUND_VARIABLE)
         {
           out << "(declare-var " << v << " " << v.getType() << ")" << std::endl;
         }
@@ -284,7 +284,7 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
     std::unordered_set<Node> processed;
     for (const Node& n : assertions)
     {
-      if (processed.find(n)!=processed.end())
+      if (processed.find(n) != processed.end())
       {
         continue;
       }
@@ -295,12 +295,12 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
     }
     for (const Node& n : definitions)
     {
-      if (n.getKind()!=EQUAL)
+      if (n.getKind() != EQUAL)
       {
         // skip define-fun-rec?
         continue;
       }
-      if (processed.find(n)!=processed.end())
+      if (processed.find(n) != processed.end())
       {
         continue;
       }
@@ -435,7 +435,7 @@ void AlfPrinter::getArgsFromPfRule(const ProofNode* pn, std::vector<Node>& args)
       TypeNode towner = theory::strings::utils::getOwnerStringType(pargs[0]);
       args.push_back(d_tproc.typeAsNode(towner));
     }
-      break;
+    break;
     case PfRule::INT_TIGHT_LB:
     case PfRule::INT_TIGHT_UB:
       Assert(res.getNumChildren() == 2);
@@ -449,12 +449,12 @@ void AlfPrinter::getArgsFromPfRule(const ProofNode* pn, std::vector<Node>& args)
     {
       // ignore arguments past the term vector, collect them into an sexpr
       Node q = pn->getChildren()[0]->getResult();
-      Assert (q.getKind()==FORALL);
+      Assert(q.getKind() == FORALL);
       // only provide arguments up to the variable list length
       std::vector<Node> targs;
-      for (size_t i=0, nvars=q[0].getNumChildren(); i<nvars; i++)
+      for (size_t i = 0, nvars = q[0].getNumChildren(); i < nvars; i++)
       {
-        Assert (i<pargs.size());
+        Assert(i < pargs.size());
         targs.push_back(d_tproc.convert(pargs[i]));
       }
       // package as list

@@ -119,6 +119,7 @@ class AlfPrintChannelPre : public AlfPrintChannel
 
   /** Get variables */
   const std::unordered_set<TNode>& getVariables() const;
+
  private:
   /** The let binding */
   LetBinding& d_lbind;

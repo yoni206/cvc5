@@ -17,8 +17,8 @@
 
 #include "expr/dtype.h"
 #include "expr/node_algorithm.h"
-#include "printer/printer.h"
 #include "expr/node_converter.h"
+#include "printer/printer.h"
 
 using namespace cvc5::internal::kind;
 
@@ -58,7 +58,7 @@ void PrintBenchmark::printDeclarationsFrom(std::ostream& outTypes,
           || ctn.isUninterpretedSortConstructor())
       {
         TypeNode ctnp = ctn;
-        if (d_converter!=nullptr)
+        if (d_converter != nullptr)
         {
           ctnp = d_converter->convertType(ctnp);
         }
@@ -118,7 +118,7 @@ void PrintBenchmark::printDeclarationsFrom(std::ostream& outTypes,
       Assert(itd != defMap.end());
       Assert(!itd->second.first);
       Node def = itd->second.second;
-      if (d_converter!=nullptr)
+      if (d_converter != nullptr)
       {
         def = d_converter->convert(def);
       }
@@ -133,7 +133,7 @@ void PrintBenchmark::printDeclarationsFrom(std::ostream& outTypes,
       for (const Node& f : recDefs)
       {
         Node lam = defMap[f].second;
-        if (d_converter!=nullptr)
+        if (d_converter != nullptr)
         {
           lam = d_converter->convert(lam);
         }
@@ -162,7 +162,7 @@ void PrintBenchmark::printAssertions(std::ostream& out,
   for (const Node& a : assertions)
   {
     Node ap = a;
-    if (d_converter!=nullptr)
+    if (d_converter != nullptr)
     {
       ap = d_converter->convert(ap);
     }

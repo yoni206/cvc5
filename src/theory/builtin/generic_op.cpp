@@ -63,13 +63,9 @@ bool GenericOp::isNumeralIndexedOperatorKind(Kind k)
          || k == FLOATINGPOINT_TO_FP_FROM_SBV
          || k == FLOATINGPOINT_TO_FP_FROM_REAL || k == FLOATINGPOINT_TO_SBV
          || k == FLOATINGPOINT_TO_UBV || k == FLOATINGPOINT_TO_SBV_TOTAL
-         || k == FLOATINGPOINT_TO_UBV_TOTAL
-|| k == RELATION_AGGREGATE
-|| k == RELATION_PROJECT
-|| k == RELATION_GROUP
-|| k == TABLE_PROJECT
-|| k == TABLE_AGGREGATE
-|| k == TABLE_JOIN || k == TABLE_GROUP;
+         || k == FLOATINGPOINT_TO_UBV_TOTAL || k == RELATION_AGGREGATE
+         || k == RELATION_PROJECT || k == RELATION_GROUP || k == TABLE_PROJECT
+         || k == TABLE_AGGREGATE || k == TABLE_JOIN || k == TABLE_GROUP;
 }
 
 bool GenericOp::isIndexedOperatorKind(Kind k)
@@ -190,7 +186,7 @@ std::vector<Node> GenericOp::getIndicesForOperator(Kind k, Node n)
     case RELATION_PROJECT:
     case RELATION_GROUP:
     case TABLE_PROJECT:
-    case TABLE_AGGREGATE :
+    case TABLE_AGGREGATE:
     case TABLE_JOIN:
     case TABLE_GROUP:
     {
@@ -317,10 +313,10 @@ Node GenericOp::getOperatorForIndices(Kind k, const std::vector<Node>& indices)
       case RELATION_PROJECT:
       case RELATION_GROUP:
       case TABLE_PROJECT:
-      case TABLE_AGGREGATE :
+      case TABLE_AGGREGATE:
       case TABLE_JOIN:
       case TABLE_GROUP:
-        //return nm->mkConst(ProjectOp(numerals));
+        // return nm->mkConst(ProjectOp(numerals));
       default:
         Unhandled() << "GenericOp::getOperatorForIndices: unhandled kind " << k;
         break;

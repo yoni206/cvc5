@@ -39,7 +39,10 @@ namespace smt {
 class PrintBenchmark
 {
  public:
-  PrintBenchmark(const Printer* p, NodeConverter* c = nullptr) : d_printer(p), d_converter(c) {}
+  PrintBenchmark(const Printer* p, NodeConverter* c = nullptr)
+      : d_printer(p), d_converter(c)
+  {
+  }
   /**
    */
   void printDeclarationsFrom(std::ostream& outTypes,

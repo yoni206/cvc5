@@ -17,13 +17,13 @@
 
 #include <vector>
 
+#include "printer/smt2/smt2_printer.h"
 #include "proof/lazy_proof.h"
 #include "proof/proof_node_algorithm.h"
 #include "proof/proof_node_manager.h"
 #include "smt/env.h"
 #include "theory/builtin/generic_op.h"
 #include "util/rational.h"
-#include "printer/smt2/smt2_printer.h"
 
 using namespace cvc5::internal::kind;
 
@@ -62,7 +62,7 @@ bool AlfProofPostprocessCallback::addAlfStep(AlfRule rule,
                                              CDProof& cdp)
 {
   std::vector<Node> newArgs;
-  NodeManager * nm =NodeManager::currentNM();
+  NodeManager* nm = NodeManager::currentNM();
   newArgs.push_back(nm->mkConstInt(Rational(static_cast<uint32_t>(rule))));
   newArgs.push_back(conclusion);
   for (const Node& arg : args)
@@ -140,25 +140,29 @@ bool AlfProofPostprocessCallback::update(Node res,
       }
       // NOTE: as optimization can collect REFL steps. This would subsume
       // the ordinary closure handling
-      
+
       // get the operator
       Node op = d_tproc.getOperatorOfTerm(res[0]);
       Trace("alf-proof") << "Processing cong for op " << op << " "
                          << op.getType() << std::endl;
-      if (k==LAMBDA || k==WITNESS)
+      if (k == LAMBDA || k == WITNESS)
       {
-        Assert (res[1].getKind()==k && res[0][0]==res[1][0]);
+        Assert(res[1].getKind() == k && res[0][0] == res[1][0]);
         Node lam1 = d_tproc.convert(res[0]);
         Node lam2 = d_tproc.convert(res[1]);
-        for (size_t i=0, nvars=res[0][0].getNumChildren(); i<nvars; i++)
+        for (size_t i = 0, nvars = res[0][0].getNumChildren(); i < nvars; i++)
         {
-          Assert (lam1.getNumChildren()==2 && lam2.getNumChildren()==2);
+          Assert(lam1.getNumChildren() == 2 && lam2.getNumChildren() == 2);
           Node varEq = lam1[0].eqNode(lam1[0]);
           cdp->addStep(varEq, PfRule::REFL, {}, {lam1[0]});
           Node bodyEq = lam1[1].eqNode(lam2[1]);
           Node lamEq = lam1.eqNode(lam2);
-          Node conclusion = i==0 ? res : lam1.eqNode(lam2);
-          addAlfStep(AlfRule::CONG, conclusion, {varEq, bodyEq}, {lam1.getOperator()}, *cdp);
+          Node conclusion = i == 0 ? res : lam1.eqNode(lam2);
+          addAlfStep(AlfRule::CONG,
+                     conclusion,
+                     {varEq, bodyEq},
+                     {lam1.getOperator()},
+                     *cdp);
           lam1 = lam1[1];
           lam2 = lam2[1];
         }
@@ -166,9 +170,9 @@ bool AlfProofPostprocessCallback::update(Node res,
       }
       else if (res[0].isClosure())
       {
-        Assert (children.size()>=2);
+        Assert(children.size() >= 2);
         // variable lists should be equal
-        Assert (res[0][0]==res[1][0]);
+        Assert(res[0][0] == res[1][0]);
         std::vector<Node> vars;
         for (const Node& v : res[0][0])
         {
@@ -176,7 +180,8 @@ bool AlfProofPostprocessCallback::update(Node res,
         }
         // can use ordinary cong
         Node vl = d_tproc.mkList(vars);
-        Node opc = d_tproc.mkInternalApp(printer::smt2::Smt2Printer::smtKindString(k), {vl}, vl.getType());
+        Node opc = d_tproc.mkInternalApp(
+            printer::smt2::Smt2Printer::smtKindString(k), {vl}, vl.getType());
         addAlfStep(AlfRule::CONG, res, {children[1]}, {opc}, *cdp);
         return true;
       }

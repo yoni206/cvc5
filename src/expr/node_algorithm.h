@@ -144,8 +144,9 @@ bool getVariables(TNode n, std::unordered_set<TNode>& vs);
  * @param visited A cache of nodes we have already visited
  * @return true iff this node contains a free variable.
  */
-bool getVariables(TNode n, std::unordered_set<TNode>& vs,
-                std::unordered_set<TNode>& visited);
+bool getVariables(TNode n,
+                  std::unordered_set<TNode>& vs,
+                  std::unordered_set<TNode>& visited);
 
 /**
  * For term n, this function collects the symbols that occur as a subterms

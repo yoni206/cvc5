@@ -408,7 +408,8 @@ Node BuiltinProofRuleChecker::checkInternal(PfRule id,
     Assert(args[0].getType().isBoolean());
     return args[0];
   }
-  else if (id == PfRule::LFSC_RULE || id == PfRule::ALETHE_RULE || id==PfRule::ALF_RULE)
+  else if (id == PfRule::LFSC_RULE || id == PfRule::ALETHE_RULE
+           || id == PfRule::ALF_RULE)
   {
     Assert(args.size() > 1);
     Assert(args[0].getType().isInteger());

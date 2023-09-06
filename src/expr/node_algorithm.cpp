@@ -482,7 +482,9 @@ bool getVariables(TNode n, std::unordered_set<TNode>& vs)
   return getVariables(n, vs, visited);
 }
 
-bool getVariables(TNode n, std::unordered_set<TNode>& vs, std::unordered_set<TNode>& visited)
+bool getVariables(TNode n,
+                  std::unordered_set<TNode>& vs,
+                  std::unordered_set<TNode>& visited)
 {
   std::vector<TNode> visit;
   TNode cur;

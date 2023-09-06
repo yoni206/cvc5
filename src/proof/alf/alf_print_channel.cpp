@@ -17,8 +17,8 @@
 
 #include <sstream>
 
-#include "proof/alf/alf_proof_rule.h"
 #include "expr/node_algorithm.h"
+#include "proof/alf/alf_proof_rule.h"
 
 using namespace cvc5::internal::rewriter;
 
@@ -174,7 +174,7 @@ void AlfPrintChannelPre::printTrust(PfRule r, TNode n, size_t i, TNode nc)
 void AlfPrintChannelPre::processInternal(const Node& n)
 {
   d_lbind.process(n);
-  d_keep.insert(n); // probably not necessary
+  d_keep.insert(n);  // probably not necessary
   expr::getVariables(n, d_vars, d_varsVisited);
 }
 

@@ -103,7 +103,7 @@ Node AlfNodeConverter::postConvert(Node n)
     Node tc = typeAsNode(tn);
     return mkInternalApp("const", {index, tc}, tn);
   }
-  else if (k==BOUND_VARIABLE)
+  else if (k == BOUND_VARIABLE)
   {
     // note: we always distinguish variables, to ensure they do not have
     // names that are overloaded with user names
@@ -190,7 +190,8 @@ Node AlfNodeConverter::postConvert(Node n)
     }
     Node vl = mkList(vars);
     // notice that intentionally we drop annotations here
-    return mkInternalApp(printer::smt2::Smt2Printer::smtKindString(k), {vl, n[1]}, tn);
+    return mkInternalApp(
+        printer::smt2::Smt2Printer::smtKindString(k), {vl, n[1]}, tn);
   }
   else if (k == STORE_ALL)
   {
@@ -223,16 +224,16 @@ Node AlfNodeConverter::postConvert(Node n)
     Assert(!lam.isNull());
     return convert(lam);
   }
-  else if (k==BITVECTOR_BB_TERM)
+  else if (k == BITVECTOR_BB_TERM)
   {
     Node curr = mkInternalSymbol("bvempty", nm->mkBitVectorType(0));
-    for (size_t i=0, nchildren=n.getNumChildren(); i<nchildren; i++)
+    for (size_t i = 0, nchildren = n.getNumChildren(); i < nchildren; i++)
     {
-      size_t ii = (nchildren-1)-i;
+      size_t ii = (nchildren - 1) - i;
       std::vector<Node> args;
       args.push_back(n[ii]);
       args.push_back(curr);
-      curr = mkInternalApp("bbT", args, nm->mkBitVectorType(i+1));
+      curr = mkInternalApp("bbT", args, nm->mkBitVectorType(i + 1));
     }
     return curr;
   }
@@ -242,7 +243,7 @@ Node AlfNodeConverter::postConvert(Node n)
   {
     // kinds where the operator may be different
     Node opc = getOperatorOfTerm(n);
-    if (n.getNumChildren()==0)
+    if (n.getNumChildren() == 0)
     {
       return opc;
     }
@@ -323,16 +324,16 @@ Node AlfNodeConverter::maybeMkSkolemFun(Node k)
       std::stringstream ss;
       ss << "@k." << sfi;
       std::vector<Node> args;
-      if (sfi==SkolemFunId::QUANTIFIERS_SKOLEMIZE)
+      if (sfi == SkolemFunId::QUANTIFIERS_SKOLEMIZE)
       {
         // must provide the variable, not the index (for typing)
-        Assert (cacheVal.getNumChildren()==2);
-        Assert (cacheVal[0].getKind()==EXISTS);
+        Assert(cacheVal.getNumChildren() == 2);
+        Assert(cacheVal[0].getKind() == EXISTS);
         Node q = convert(cacheVal[0]);
         Node index = cacheVal[1];
-        Assert (index.getKind()==CONST_INTEGER);
+        Assert(index.getKind() == CONST_INTEGER);
         const Integer& i = index.getConst<Rational>().getNumerator();
-        Assert (i.fitsUnsignedInt());
+        Assert(i.fitsUnsignedInt());
         size_t ii = i.getUnsignedInt();
         args.push_back(q);
         args.push_back(convert(q[0][ii]));
@@ -388,17 +389,16 @@ Node AlfNodeConverter::getNullTerminator(Kind k, TypeNode tn)
 {
   switch (k)
   {
-    case kind::ADD:
-      return NodeManager::currentNM()->mkConstInt(Rational(0));
+    case kind::ADD: return NodeManager::currentNM()->mkConstInt(Rational(0));
     case kind::MULT:
     case kind::NONLINEAR_MULT:
       return NodeManager::currentNM()->mkConstInt(Rational(1));
     case kind::BITVECTOR_CONCAT:
-      return mkInternalSymbol("bvempty", NodeManager::currentNM()->mkBitVectorType(0));
+      return mkInternalSymbol("bvempty",
+                              NodeManager::currentNM()->mkBitVectorType(0));
     case kind::BITVECTOR_BB_TERM:
       return NodeManager::currentNM()->mkConst(true);
-    default:
-      break;
+    default: break;
   }
   return mkNil(tn);
 }
@@ -410,7 +410,7 @@ Node AlfNodeConverter::mkList(const std::vector<Node>& args)
   {
     return mkNil(tn);
   }
-  else if (args.size()==1)
+  else if (args.size() == 1)
   {
     std::vector<Node> aargs(args.begin(), args.end());
     aargs.push_back(mkNil(tn));
@@ -440,7 +440,7 @@ Node AlfNodeConverter::mkInternalApp(const std::string& name,
     std::vector<TypeNode> argTypes;
     for (const Node& a : args)
     {
-      Assert (!a.isNull());
+      Assert(!a.isNull());
       argTypes.push_back(a.getType());
     }
     NodeManager* nm = NodeManager::currentNM();
