@@ -211,11 +211,33 @@ bool AlfPrinter::canEvaluate(Node n) const
     visit.pop_back();
     if (visited.find(cur) == visited.end()) {
       visited.insert(cur);
-      switch (k)
+      switch (cur.getKind())
       {
-        default: return false;
+        case CONST_INTEGER:
+        case CONST_RATIONAL:
+        case CONST_STRING:
+        case ADD:
+        case SUB:
+        case NEG:
+        case EQUAL:
+        case LT:
+        case GT:
+        case GEQ:
+        case LEQ:
+        case MULT:
+        case NONLINEAR_MULT:
+        case STRING_CONCAT:
+        case STRING_SUBSTR:
+        case STRING_LENGTH:
+        case BITVECTOR_ADD:
+        case BITVECTOR_SUB:
+        case BITVECTOR_NEG:
+          break;
+        default: 
+          return false;
       }
-      for (const Node& cn : cur ){
+      for (const Node& cn : cur)
+      {
         visit.push_back(cn);
       }
     }
