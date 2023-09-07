@@ -564,12 +564,17 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
   }
   std::vector<Node> args(n.begin(), n.end());
   Node app = mkInternalApp(opName.str(), args, n.getType());
+  Node ret;
   if (!indices.empty())
   {
-    return mkInternalApp(opName.str(), indices, app.getOperator().getType());
+    ret = mkInternalApp(opName.str(), indices, app.getOperator().getType());
   }
-  Trace("alf-term-process-debug2") << "...return " << app.getOperator() << std::endl;
-  return args.empty() ? app : app.getOperator();
+  else
+  {
+    ret = args.empty() ? app : app.getOperator();
+  }
+  Trace("alf-term-process-debug2") << "...return " << ret << std::endl;
+  return ret;
 }
 
 size_t AlfNodeConverter::getOrAssignIndexForConst(Node v)

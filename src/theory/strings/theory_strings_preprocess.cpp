@@ -424,7 +424,7 @@ Node StringsPreprocess::reduce(Node t,
     Node emp = Word::mkEmptyWord(s.getType());
     Node sEmpty = s.eqNode(emp);
     Node k = sc->mkSkolemFun(
-        SkolemFunId::STRINGS_STOI_NON_DIGIT, nm->integerType(), t);
+        SkolemFunId::STRINGS_STOI_NON_DIGIT, nm->integerType(), t[0]);
     Node kc1 = nm->mkNode(GEQ, k, zero);
     Node kc2 = nm->mkNode(LT, k, lens);
     Node c0 = nm->mkNode(STRING_TO_CODE, nm->mkConst(String("0")));
@@ -439,7 +439,7 @@ Node StringsPreprocess::reduce(Node t,
     argTypes.push_back(nm->integerType());
     TypeNode stoiResultType = nm->mkFunctionType(argTypes, nm->integerType());
     Node u =
-        sc->mkSkolemFun(SkolemFunId::STRINGS_STOI_RESULT, stoiResultType, t);
+        sc->mkSkolemFun(SkolemFunId::STRINGS_STOI_RESULT, stoiResultType, t[0]);
 
     lem = stoit.eqNode(nm->mkNode(APPLY_UF, u, lens));
     conc2.push_back(lem);
