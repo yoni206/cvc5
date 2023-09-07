@@ -200,7 +200,7 @@ Node AlfNodeConverter::postConvert(Node n)
     Node val = convert(storeAll.getValue());
     return mkInternalApp("store_all", {t, val}, tn);
   }
-  else if (k == SET_EMPTY || k == SET_UNIVERSE || k == BAG_EMPTY)
+  else if (k == SET_EMPTY || k == SET_UNIVERSE || k == BAG_EMPTY || k == SEP_NIL)
   {
     Node t = typeAsNode(tn);
     return mkInternalApp(printer::smt2::Smt2Printer::smtKindString(k), {t}, tn);
@@ -248,6 +248,11 @@ Node AlfNodeConverter::postConvert(Node n)
       return opc;
     }
     return mkApplyUf(opc, std::vector<Node>(n.begin(), n.end()));
+  }
+  else if (k==INDEXED_ROOT_PREDICATE)
+  {
+    // TODO
+    return n;
   }
   else if (GenericOp::isIndexedOperatorKind(k))
   {
@@ -389,6 +394,10 @@ Node AlfNodeConverter::getNullTerminator(Kind k, TypeNode tn)
 {
   switch (k)
   {
+    case kind::OR:
+      return NodeManager::currentNM()->mkConst(false);
+    case kind::AND:
+      return NodeManager::currentNM()->mkConst(true);
     case kind::ADD: return NodeManager::currentNM()->mkConstInt(Rational(0));
     case kind::MULT:
     case kind::NONLINEAR_MULT:
@@ -396,8 +405,6 @@ Node AlfNodeConverter::getNullTerminator(Kind k, TypeNode tn)
     case kind::BITVECTOR_CONCAT:
       return mkInternalSymbol("bvempty",
                               NodeManager::currentNM()->mkBitVectorType(0));
-    case kind::BITVECTOR_BB_TERM:
-      return NodeManager::currentNM()->mkConst(true);
     default: break;
   }
   return mkNil(tn);
