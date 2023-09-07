@@ -200,6 +200,29 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
   return false;
 }
 
+bool AlfPrinter::canEvaluate(Node n) const
+{
+  std::unordered_set<TNode> visited;
+  std::vector<TNode> visit;
+  TNode cur;
+  visit.push_back(n);
+  do {
+    cur = visit.back();
+    visit.pop_back();
+    if (visited.find(cur) == visited.end()) {
+      visited.insert(cur);
+      switch (k)
+      {
+        default: return false;
+      }
+      for (const Node& cn : cur ){
+        visit.push_back(cn);
+      }
+    }
+  } while (!visit.empty());
+  return true;
+}
+
 std::string AlfPrinter::getRuleName(const ProofNode* pfn)
 {
   std::string name;

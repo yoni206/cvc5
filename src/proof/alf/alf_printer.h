@@ -47,6 +47,7 @@ class AlfPrinter : protected EnvObj
  private:
   /** Is handled? */
   bool isHandled(const ProofNode* pfn) const;
+  bool canEvaluate(Node n) const;
   /* Returns the proof name normalized */
   static std::string getRuleName(const ProofNode* pfn);
 

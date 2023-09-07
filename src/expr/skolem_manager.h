@@ -119,9 +119,9 @@ enum class SkolemFunId
    * is the substring of a matched by b. It is either empty or there is no
    * shorter string that matches b.
    */
-  SK_FIRST_MATCH_PRE,
-  SK_FIRST_MATCH,
-  SK_FIRST_MATCH_POST,
+  RE_FIRST_MATCH_PRE,
+  RE_FIRST_MATCH,
+  RE_FIRST_MATCH_POST,
   /**
    * Regular expression unfold component: if (str.in_re t R), where R is
    * (re.++ r0 ... rn), then the RE_UNFOLD_POS_COMPONENT{t,R,i} is a string
