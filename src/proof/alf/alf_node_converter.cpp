@@ -464,10 +464,10 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
       << "getOperatorOfTerm " << n << " " << k << " "
       << (n.getMetaKind() == metakind::PARAMETERIZED) << " "
       << GenericOp::isIndexedOperatorKind(k) << std::endl;
+  std::vector<Node> indices;
   if (n.getMetaKind() == metakind::PARAMETERIZED)
   {
     Node op = n.getOperator();
-    std::vector<Node> indices;
     bool isIndexed = GenericOp::isIndexedOperatorKind(k);
     if (isIndexed)
     {
@@ -478,16 +478,6 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
       return op;
     }
     // note other kinds of functions (e.g. selectors and testers)
-    std::vector<TypeNode> argTypes;
-    for (const Node& nc : n)
-    {
-      argTypes.push_back(nc.getType());
-    }
-    TypeNode ftype = n.getType();
-    if (!argTypes.empty())
-    {
-      ftype = nm->mkFunctionType(argTypes, ftype);
-    }
     Node ret;
     if (isIndexed)
     {
@@ -515,15 +505,6 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
       }
       else
       {
-        std::vector<TypeNode> itypes;
-        for (const Node& i : indices)
-        {
-          itypes.push_back(i.getType());
-        }
-        if (!itypes.empty())
-        {
-          ftype = nm->mkFunctionType(itypes, ftype);
-        }
         opName << printer::smt2::Smt2Printer::smtKindString(k);
       }
     }
@@ -545,62 +526,50 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
     {
       // maybe a shared selector
       ret = maybeMkSkolemFun(op);
-      if (ret.isNull())
+      if (!ret.isNull())
       {
-        unsigned index = DType::indexOf(op);
-        const DType& dt = DType::datatypeOf(op);
-        if (dt.isTuple())
-        {
-          indices.push_back(nm->mkConstInt(index));
-          opName << "tuple.select";
-        }
-        else
-        {
-          unsigned cindex = DType::cindexOf(op);
-          opName << dt[cindex][index].getSelector();
-        }
+        return ret;
+      }
+      unsigned index = DType::indexOf(op);
+      const DType& dt = DType::datatypeOf(op);
+      if (dt.isTuple())
+      {
+        indices.push_back(nm->mkConstInt(index));
+        opName << "tuple.select";
+      }
+      else
+      {
+        unsigned cindex = DType::cindexOf(op);
+        opName << dt[cindex][index].getSelector();
       }
     }
     else
     {
       opName << op;
     }
-    if (ret.isNull())
-    {
-      Trace("alf-term-process-debug2") << "...default symbol" << std::endl;
-      ret = mkInternalSymbol(opName.str(), ftype);
-    }
-    // if indexed, apply to index
-    if (!indices.empty())
-    {
-      ret = mkApplyUf(ret, indices);
-    }
-    Trace("alf-term-process-debug2") << "...return " << ret << std::endl;
-    return ret;
-  }
-  std::vector<TypeNode> argTypes;
-  for (const Node& nc : n)
-  {
-    argTypes.push_back(nc.getType());
   }
   // we only use binary operators
-  if (NodeManager::isNAryKind(k))
+  else
   {
-    argTypes.resize(2);
+    if (k == NEG)
+    {
+      opName << "u";
+    }
+    opName << printer::smt2::Smt2Printer::smtKindString(k);
+    if (k == DIVISION_TOTAL || k == INTS_DIVISION_TOTAL
+        || k == INTS_MODULUS_TOTAL)
+    {
+      opName << "_total";
+    }
   }
-  TypeNode tn = n.getType();
-  TypeNode ftype = nm->mkFunctionType(argTypes, tn);
-  if (k == NEG)
+  std::vector<Node> args(n.begin(), n.end());
+  Node app = mkInternalApp(opName.str(), args, n.getType());
+  if (!indices.empty())
   {
-    opName << "u";
+    return mkInternalApp(opName.str(), indices, app.getOperator().getType());
   }
-  opName << printer::smt2::Smt2Printer::smtKindString(k);
-  if (k == DIVISION_TOTAL || k == INTS_DIVISION_TOTAL
-      || k == INTS_MODULUS_TOTAL)
-  {
-    opName << "_total";
-  }
-  return mkInternalSymbol(opName.str(), ftype);
+  Trace("alf-term-process-debug2") << "...return " << app.getOperator() << std::endl;
+  return args.empty() ? app : app.getOperator();
 }
 
 size_t AlfNodeConverter::getOrAssignIndexForConst(Node v)
