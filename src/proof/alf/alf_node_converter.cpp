@@ -547,18 +547,19 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
       }
       else if (k == APPLY_UPDATER)
       {
+        indices.clear();
         size_t index = DType::indexOf(op);
         const DType& dt = DType::datatypeOf(op);
         size_t cindex = DType::cindexOf(op);
         if (dt.isTuple())
         {
           opName << "tuple.update";
+          indices.push_back(nm->mkConstInt(cindex));
         }
         else
         {
           opName << "update-" << dt[cindex][index].getSelector();
         }
-        indices.clear();
       }
       else
       {
