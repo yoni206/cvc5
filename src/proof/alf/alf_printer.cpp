@@ -147,6 +147,14 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     break;
     //
     case PfRule::EVALUATE:
+    {
+      if (canEvaluate(pargs[0]))
+      {
+        Trace("alf-printer-debug") << "Can evaluate " << pargs[0] << std::endl;
+        return true;
+      }
+    }
+    break;
     case PfRule::ANNOTATION:
     case PfRule::DSL_REWRITE:
     case PfRule::THEORY_EXPAND_DEF:
@@ -235,7 +243,9 @@ bool AlfPrinter::canEvaluate(Node n) const
         case BITVECTOR_ADD:
         case BITVECTOR_SUB:
         case BITVECTOR_NEG: break;
-        default: return false;
+        default:
+          Trace("alf-printer-debug") << "Cannot evaluate " << cur.getKind() << std::endl;
+          return false;
       }
       for (const Node& cn : cur)
       {

@@ -73,6 +73,8 @@ enum class SkolemFunId
    *   where n is the number of occurrences of b in a, and k(0)=0.
    */
   STRINGS_OCCUR_INDEX,
+  /** Same, but where b is a regular expression */
+  STRINGS_OCCUR_INDEX_RE,
   /**
    * For function k: Int -> Int
    *   exists k.
@@ -83,6 +85,8 @@ enum class SkolemFunId
    *   in a, and k(0)=0.
    */
   STRINGS_OCCUR_LEN,
+  /** Same, but where b is a regular expression */
+  STRINGS_OCCUR_LEN_RE,
   /**
    * Diff index for disequalities a != b => substr(a,k,1) != substr(b,k,1)
    */
