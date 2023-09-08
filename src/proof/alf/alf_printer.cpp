@@ -26,6 +26,7 @@
 #include "proof/alf/alf_proof_rule.h"
 #include "proof/proof_node_to_sexpr.h"
 #include "smt/print_benchmark.h"
+#include "options/main_options.h"
 #include "theory/strings/theory_strings_utils.h"
 
 using namespace cvc5::internal::kind;
@@ -307,21 +308,32 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
     }
     if (i == 1)
     {
-      // [1] print the types
-      smt::PrintBenchmark pb(Printer::getPrinter(out), &d_tproc);
-      std::stringstream outFuns;
-      pb.printDeclarationsFrom(out, outFuns, definitions, assertions);
-      // [2] print the universal variables
+      std::stringstream outVars;
       const std::unordered_set<TNode>& vars = aletify.getVariables();
       for (TNode v : vars)
       {
         if (v.getKind() == BOUND_VARIABLE)
         {
-          out << "(declare-var " << v << " " << v.getType() << ")" << std::endl;
+          outVars << "(declare-var " << v << " " << v.getType() << ")" << std::endl;
         }
       }
-      // [3] print the declared functions
-      out << outFuns.str();
+      if (options().proof.alfPrintReference)
+      {
+        out << "(reference \"" << options().driver.filename << "\")" << std::endl;
+        // [2] print the universal variables
+        out << outVars.str();
+      }
+      else
+      {
+        // [1] print the types
+        smt::PrintBenchmark pb(Printer::getPrinter(out), &d_tproc);
+        std::stringstream outFuns;
+        pb.printDeclarationsFrom(out, outFuns, definitions, assertions);
+        // [2] print the universal variables
+        out << outVars.str();
+        // [3] print the declared functions
+        out << outFuns.str();
+      }
       // [4] print proof-level term bindings
       printLetList(out, lbind);
     }
