@@ -503,7 +503,14 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
       {
         size_t cindex = DType::indexOf(op);
         const DType& dt = DType::datatypeOf(op);
-        opName << "is-" << dt[cindex].getConstructor();
+        if (dt.isTuple())
+        {
+          opName << "is-tuple";
+        }
+        else
+        {
+          opName << "is-" << dt[cindex].getConstructor();
+        }
         indices.clear();
       }
       else if (k == APPLY_UPDATER)
@@ -533,7 +540,14 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
       // get its variable name
       if (dt.isTuple())
       {
-        opName << "tuple";
+        if (n.getNumChildren()==0)
+        {
+          opName << "tuple.unit";
+        }
+        else
+        {
+          opName << "tuple";
+        }
       }
       else
       {
