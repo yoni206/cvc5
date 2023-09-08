@@ -47,7 +47,7 @@ void AlfPrintChannelOut::printTypeNode(TypeNode tn)
 void AlfPrintChannelOut::printAssume(TNode n, size_t i, bool isPush)
 {
   Assert(!n.isNull());
-  d_out << "(" << (isPush ? "push" : "assume") << " @p" << i;
+  d_out << "(" << (isPush ? "assume-push" : "assume") << " @p" << i;
   printNode(n);
   d_out << ")" << std::endl;
 }
@@ -58,7 +58,7 @@ void AlfPrintChannelOut::printStep(const std::string& rname,
                                    const std::vector<Node>& args,
                                    bool isPop)
 {
-  d_out << "(" << (isPop ? "pop" : "step") << " @p" << i;
+  d_out << "(" << (isPop ? "step-pop" : "step") << " @p" << i;
   if (!n.isNull())
   {
     printNode(n);
