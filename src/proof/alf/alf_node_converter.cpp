@@ -31,6 +31,7 @@
 #include "theory/bv/theory_bv_utils.h"
 #include "theory/datatypes/datatypes_rewriter.h"
 #include "theory/strings/word.h"
+#include "theory/strings/theory_strings_utils.h"
 #include "theory/uf/function_const.h"
 #include "theory/uf/theory_uf_rewriter.h"
 #include "util/bitvector.h"
@@ -190,8 +191,15 @@ Node AlfNodeConverter::postConvert(Node n)
     }
     Node vl = mkList(vars);
     // notice that intentionally we drop annotations here
+    std::vector<Node> args;
+    args.push_back(vl);
+    args.push_back(n[1]);
+    if (k==SET_COMPREHENSION)
+    {
+      args.push_back(n[2]);
+    }
     return mkInternalApp(
-        printer::smt2::Smt2Printer::smtKindString(k), {vl, n[1]}, tn);
+        printer::smt2::Smt2Printer::smtKindString(k), args, tn);
   }
   else if (k == STORE_ALL)
   {
@@ -205,10 +213,16 @@ Node AlfNodeConverter::postConvert(Node n)
     Node t = typeAsNode(tn);
     return mkInternalApp(printer::smt2::Smt2Printer::smtKindString(k), {t}, tn);
   }
-  else if (k == CONST_SEQUENCE && n.getConst<Sequence>().empty())
+  else if (k == CONST_SEQUENCE)
   {
-    Node t = typeAsNode(tn);
-    return mkInternalApp("seq.empty", {t}, tn);
+    if (n.getConst<Sequence>().empty())
+    {
+      Node t = typeAsNode(tn);
+      return mkInternalApp("seq.empty", {t}, tn);
+    }
+    // otherwise must convert to term representation and convert
+    Node cc = theory::strings::utils::mkConcatForConstSequence(n);
+    return convert(cc);
   }
   else if (k == CONST_FINITE_FIELD)
   {
@@ -237,6 +251,13 @@ Node AlfNodeConverter::postConvert(Node n)
     }
     return curr;
   }
+  /*
+  else if (k==RELATION_GROUP || k == TABLE_GROUP)
+  {
+    // TODO: cannot take arbitrary number of premises
+    return n;
+  }
+  */
   else if (k == APPLY_TESTER || k == APPLY_UPDATER || k == NEG
            || k == DIVISION_TOTAL || k == INTS_DIVISION_TOTAL
            || k == INTS_MODULUS_TOTAL || k == APPLY_CONSTRUCTOR || k == APPLY_SELECTOR)

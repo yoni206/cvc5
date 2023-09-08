@@ -739,7 +739,7 @@ Node StringsPreprocess::reduce(Node t,
     Node k = sc->mkSkolemCached(t, SkolemCache::SK_PURIFY, "k");
 
     Node numOcc = sc->mkSkolemFun(
-        SkolemFunId::STRINGS_NUM_OCCUR, nm->integerType(), x, y);
+        SkolemFunId::STRINGS_NUM_OCCUR_RE, nm->integerType(), x, y);
     std::vector<TypeNode> argTypes;
     argTypes.push_back(nm->integerType());
     TypeNode raResultType = nm->mkFunctionType(argTypes, t.getType());

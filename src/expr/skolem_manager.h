@@ -61,9 +61,11 @@ enum class SkolemFunId
    * first order datatype variable for f.
    */
   QUANTIFIERS_SYNTH_FUN_EMBED,
-  //----- string skolems are cached based on two strings (a, b)
-  /** exists k. ( b occurs k times in a ) */
+  //----- string skolems are cached based on (a, b)
+  /** exists k. ( string b occurs k times in string a ) */
   STRINGS_NUM_OCCUR,
+  /** exists k. ( regular expression b can be matched k times in a ) */
+  STRINGS_NUM_OCCUR_RE,
   /** For function k: Int -> Int
    *   exists k.
    *     forall 0 <= x <= n,
