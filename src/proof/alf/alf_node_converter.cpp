@@ -30,8 +30,8 @@
 #include "theory/builtin/generic_op.h"
 #include "theory/bv/theory_bv_utils.h"
 #include "theory/datatypes/datatypes_rewriter.h"
-#include "theory/strings/word.h"
 #include "theory/strings/theory_strings_utils.h"
+#include "theory/strings/word.h"
 #include "theory/uf/function_const.h"
 #include "theory/uf/theory_uf_rewriter.h"
 #include "util/bitvector.h"
@@ -194,7 +194,7 @@ Node AlfNodeConverter::postConvert(Node n)
     std::vector<Node> args;
     args.push_back(vl);
     args.push_back(n[1]);
-    if (k==SET_COMPREHENSION)
+    if (k == SET_COMPREHENSION)
     {
       args.push_back(n[2]);
     }
@@ -208,7 +208,8 @@ Node AlfNodeConverter::postConvert(Node n)
     Node val = convert(storeAll.getValue());
     return mkInternalApp("store_all", {t, val}, tn);
   }
-  else if (k == SET_EMPTY || k == SET_UNIVERSE || k == BAG_EMPTY || k == SEP_NIL)
+  else if (k == SET_EMPTY || k == SET_UNIVERSE || k == BAG_EMPTY
+           || k == SEP_NIL)
   {
     Node t = typeAsNode(tn);
     return mkInternalApp(printer::smt2::Smt2Printer::smtKindString(k), {t}, tn);
@@ -260,7 +261,8 @@ Node AlfNodeConverter::postConvert(Node n)
   */
   else if (k == APPLY_TESTER || k == APPLY_UPDATER || k == NEG
            || k == DIVISION_TOTAL || k == INTS_DIVISION_TOTAL
-           || k == INTS_MODULUS_TOTAL || k == APPLY_CONSTRUCTOR || k == APPLY_SELECTOR)
+           || k == INTS_MODULUS_TOTAL || k == APPLY_CONSTRUCTOR
+           || k == APPLY_SELECTOR)
   {
     // kinds where the operator may be different
     Node opc = getOperatorOfTerm(n);
@@ -269,7 +271,7 @@ Node AlfNodeConverter::postConvert(Node n)
     {
       return opc;
     }
-    else if (opc.getNumChildren()>0)
+    else if (opc.getNumChildren() > 0)
     {
       newArgs.insert(newArgs.end(), opc.begin(), opc.end());
       newArgs.insert(newArgs.end(), n.begin(), n.end());
@@ -281,7 +283,7 @@ Node AlfNodeConverter::postConvert(Node n)
     newArgs.insert(newArgs.end(), n.begin(), n.end());
     return mkApplyUf(opc, newArgs);
   }
-  else if (k==INDEXED_ROOT_PREDICATE)
+  else if (k == INDEXED_ROOT_PREDICATE)
   {
     // TODO
     return n;
@@ -426,8 +428,7 @@ Node AlfNodeConverter::getNullTerminator(Kind k, TypeNode tn)
 {
   switch (k)
   {
-    case kind::APPLY_UF:
-      return Node::null();
+    case kind::APPLY_UF: return Node::null();
     case kind::APPLY_CONSTRUCTOR:
       // tuple constructor is n-ary with unit tuple as null terminator
       if (tn.isTuple())
@@ -437,10 +438,8 @@ Node AlfNodeConverter::getNullTerminator(Kind k, TypeNode tn)
       }
       return Node::null();
       break;
-    case kind::OR:
-      return NodeManager::currentNM()->mkConst(false);
-    case kind::AND:
-      return NodeManager::currentNM()->mkConst(true);
+    case kind::OR: return NodeManager::currentNM()->mkConst(false);
+    case kind::AND: return NodeManager::currentNM()->mkConst(true);
     case kind::ADD: return NodeManager::currentNM()->mkConstInt(Rational(0));
     case kind::MULT:
     case kind::NONLINEAR_MULT:
@@ -573,7 +572,7 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
       // get its variable name
       if (dt.isTuple())
       {
-        if (n.getNumChildren()==0)
+        if (n.getNumChildren() == 0)
         {
           opName << "tuple.unit";
         }

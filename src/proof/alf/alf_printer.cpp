@@ -22,11 +22,11 @@
 #include <sstream>
 
 #include "expr/node_algorithm.h"
+#include "options/main_options.h"
 #include "printer/printer.h"
 #include "proof/alf/alf_proof_rule.h"
 #include "proof/proof_node_to_sexpr.h"
 #include "smt/print_benchmark.h"
-#include "options/main_options.h"
 #include "theory/strings/theory_strings_utils.h"
 
 using namespace cvc5::internal::kind;
@@ -207,10 +207,12 @@ bool AlfPrinter::canEvaluate(Node n) const
   std::vector<TNode> visit;
   TNode cur;
   visit.push_back(n);
-  do {
+  do
+  {
     cur = visit.back();
     visit.pop_back();
-    if (visited.find(cur) == visited.end()) {
+    if (visited.find(cur) == visited.end())
+    {
       visited.insert(cur);
       switch (cur.getKind())
       {
@@ -232,10 +234,8 @@ bool AlfPrinter::canEvaluate(Node n) const
         case STRING_LENGTH:
         case BITVECTOR_ADD:
         case BITVECTOR_SUB:
-        case BITVECTOR_NEG:
-          break;
-        default: 
-          return false;
+        case BITVECTOR_NEG: break;
+        default: return false;
       }
       for (const Node& cn : cur)
       {
@@ -314,12 +314,14 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
       {
         if (v.getKind() == BOUND_VARIABLE)
         {
-          outVars << "(declare-var " << v << " " << v.getType() << ")" << std::endl;
+          outVars << "(declare-var " << v << " " << v.getType() << ")"
+                  << std::endl;
         }
       }
       if (options().proof.alfPrintReference)
       {
-        out << "(reference \"" << options().driver.filename << "\")" << std::endl;
+        out << "(reference \"" << options().driver.filename << "\")"
+            << std::endl;
         // [2] print the universal variables
         out << outVars.str();
       }

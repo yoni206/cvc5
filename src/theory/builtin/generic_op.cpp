@@ -61,7 +61,8 @@ bool GenericOp::isNumeralIndexedOperatorKind(Kind k)
          || k == FLOATINGPOINT_TO_FP_FROM_FP
          || k == FLOATINGPOINT_TO_FP_FROM_IEEE_BV
          || k == FLOATINGPOINT_TO_FP_FROM_SBV
-         || k == FLOATINGPOINT_TO_FP_FROM_REAL  || k == FLOATINGPOINT_TO_FP_FROM_UBV || k == FLOATINGPOINT_TO_SBV
+         || k == FLOATINGPOINT_TO_FP_FROM_REAL
+         || k == FLOATINGPOINT_TO_FP_FROM_UBV || k == FLOATINGPOINT_TO_SBV
          || k == FLOATINGPOINT_TO_UBV || k == FLOATINGPOINT_TO_SBV_TOTAL
          || k == FLOATINGPOINT_TO_UBV_TOTAL || k == RELATION_AGGREGATE
          || k == RELATION_PROJECT || k == RELATION_GROUP || k == TABLE_PROJECT
@@ -157,7 +158,7 @@ std::vector<Node> GenericOp::getIndicesForOperator(Kind k, Node n)
       indices.push_back(nm->mkConstInt(fubv.getSize().significandWidth()));
     }
     break;
-      
+
     case FLOATINGPOINT_TO_FP_FROM_REAL:
     {
       const FloatingPointToFPReal& fr = n.getConst<FloatingPointToFPReal>();

@@ -156,7 +156,7 @@ bool AlfProofPostprocessCallback::update(Node res,
           Assert(lam1.getNumChildren() == 2 && lam2.getNumChildren() == 2);
           Node varEq = lam1[0].eqNode(lam1[0]);
           cdp->addStep(varEq, PfRule::REFL, {}, {lam1[0]});
-          Node bodyEq = i+1==nvars ? children[1] : lam1[1].eqNode(lam2[1]);
+          Node bodyEq = i + 1 == nvars ? children[1] : lam1[1].eqNode(lam2[1]);
           Node lamEq = lam1.eqNode(lam2);
           Node conclusion = i == 0 ? res : lam1.eqNode(lam2);
           addAlfStep(AlfRule::CONG,

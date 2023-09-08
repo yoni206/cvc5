@@ -538,7 +538,7 @@ void Smt2Printer::toStream(std::ostream& out,
     }
     return;
   }
-  else if (k == kind::DATATYPE_TYPE || k==kind::TUPLE_TYPE)
+  else if (k == kind::DATATYPE_TYPE || k == kind::TUPLE_TYPE)
   {
     const DType& dt = NodeManager::currentNM()->getDTypeFor(n);
     if (dt.isTuple())
@@ -546,7 +546,7 @@ void Smt2Printer::toStream(std::ostream& out,
       unsigned int nargs = dt[0].getNumArgs();
       if (nargs == 0)
       {
-        out << "UnitTuple";
+              out << "UnitTuple";
       }
       else
       {
@@ -843,13 +843,13 @@ void Smt2Printer::toStream(std::ostream& out,
     if (dt.isTuple())
     {
       stillNeedToPrintParams = false;
-      if (dt[0].getNumArgs()==0)
+      if (dt[0].getNumArgs() == 0)
       {
-        out << "tuple.unit";
+          out << "tuple.unit";
       }
       else
       {
-        out << "tuple ";
+          out << "tuple ";
       }
     }
     break;
