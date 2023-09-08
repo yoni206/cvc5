@@ -194,15 +194,20 @@ bool AlfProofPostprocessCallback::update(Node res,
       // Note we use the first block of code if we have more than 2 children.
       // special case: constructors and apply uf are not treated as n-ary; these
       // symbols have function types that expect n arguments.
-      bool isNary = NodeManager::isNAryKind(k) && k != kind::APPLY_CONSTRUCTOR
-                    && k != kind::APPLY_UF;
+      bool isNary = false;
+      Node nullt;
+      if (NodeManager::isNAryKind(k))
+      {
+        nullt = d_tproc.getNullTerminator(k, res[0].getType());
+        isNary = !nullt.isNull();
+      }
       if (isNary)
       {
         std::vector<Node> rchildren = children;
         std::reverse(rchildren.begin(), rchildren.end());
         std::vector<Node> cargs;
         cargs.push_back(op);
-        cargs.push_back(d_tproc.getNullTerminator(k, res[0].getType()));
+        cargs.push_back(nullt);
         // use n-ary rule, must reverse children
         addAlfStep(AlfRule::NARY_CONG, res, rchildren, cargs, *cdp);
       }

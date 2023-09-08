@@ -405,6 +405,17 @@ Node AlfNodeConverter::getNullTerminator(Kind k, TypeNode tn)
 {
   switch (k)
   {
+    case kind::APPLY_UF:
+      return Node::null();
+    case kind::APPLY_CONSTRUCTOR:
+      // tuple constructor is n-ary with unit tuple as null terminator
+      if (tn.isTuple())
+      {
+        TypeNode tnu = NodeManager::currentNM()->mkTupleType({});
+        return NodeManager::currentNM()->mkGroundValue(tnu);
+      }
+      return Node::null();
+      break;
     case kind::OR:
       return NodeManager::currentNM()->mkConst(false);
     case kind::AND:
