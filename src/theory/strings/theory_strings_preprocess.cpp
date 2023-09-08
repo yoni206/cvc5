@@ -345,7 +345,7 @@ Node StringsPreprocess::reduce(Node t,
     std::vector< TypeNode > argTypes;
     argTypes.push_back(nm->integerType());
     TypeNode itosResType = nm->mkFunctionType(argTypes, nm->integerType());
-    Node u = sc->mkSkolemFun(SkolemFunId::STRINGS_ITOS_RESULT, itosResType, t);
+    Node u = sc->mkSkolemFun(SkolemFunId::STRINGS_ITOS_RESULT, itosResType, t[0]);
 
     Node lem = nm->mkNode(GEQ, leni, one);
     conc.push_back(lem);
