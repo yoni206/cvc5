@@ -243,11 +243,22 @@ Node AlfNodeConverter::postConvert(Node n)
   {
     // kinds where the operator may be different
     Node opc = getOperatorOfTerm(n);
+    std::vector<Node> newArgs;
     if (n.getNumChildren() == 0)
     {
       return opc;
     }
-    return mkApplyUf(opc, std::vector<Node>(n.begin(), n.end()));
+    else if (opc.getNumChildren()>0)
+    {
+      newArgs.insert(newArgs.end(), opc.begin(), opc.end());
+      newArgs.insert(newArgs.end(), n.begin(), n.end());
+      opc = opc.getOperator();
+      std::stringstream ss;
+      ss << opc;
+      return mkInternalApp(ss.str(), newArgs, tn);
+    }
+    newArgs.insert(newArgs.end(), n.begin(), n.end());
+    return mkApplyUf(opc, newArgs);
   }
   else if (k==INDEXED_ROOT_PREDICATE)
   {
