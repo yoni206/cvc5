@@ -24,6 +24,7 @@
 #include "smt/env.h"
 #include "theory/builtin/generic_op.h"
 #include "util/rational.h"
+#include "expr/skolem_manager.h"
 
 using namespace cvc5::internal::kind;
 
@@ -51,7 +52,8 @@ bool AlfProofPostprocessCallback::shouldUpdate(std::shared_ptr<ProofNode> pn,
   {
     case PfRule::SCOPE:
     case PfRule::CONG:
-    case PfRule::CONCAT_CONFLICT: return true;
+    case PfRule::CONCAT_CONFLICT:
+    case PfRule::SKOLEM_INTRO:return true;
     default: return false;
   }
 }
@@ -235,6 +237,17 @@ bool AlfProofPostprocessCallback::update(Node res,
       Node tn = d_tproc.typeAsNode(children[0][0].getType());
       newArgs.push_back(tn);
       addAlfStep(AlfRule::CONCAT_CONFLICT_DEQ, res, children, newArgs, *cdp);
+    }
+    break;
+    case PfRule::SKOLEM_INTRO:
+    {
+      Node t = SkolemManager::getUnpurifiedForm(args[0]);
+      if (t.getKind()!=WITNESS)
+      {
+        // no change necessary
+        return false;
+      }
+      addAlfStep(AlfRule::SKOLEM_WITNESS_INTRO, res, {}, {t}, *cdp);
     }
     break;
     default: return false;

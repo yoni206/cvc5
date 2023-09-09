@@ -34,6 +34,7 @@ enum class AlfRule : uint32_t
   SCOPE,
   PROCESS_SCOPE,
   CONCAT_CONFLICT_DEQ,
+  SKOLEM_WITNESS_INTRO,
   // ======== undefined
   // Used in case that a step in the proof rule could not be translated.
   UNDEFINED
