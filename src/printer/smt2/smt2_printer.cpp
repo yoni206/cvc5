@@ -1182,6 +1182,7 @@ std::string Smt2Printer::smtKindString(Kind k)
     case kind::INT_TO_BITVECTOR: return "int2bv";
     case kind::BITVECTOR_BB_TERM: return "bbT";
     case kind::BITVECTOR_BITOF: return "bitOf";
+    case kind::BITVECTOR_ITE: return "bvite";
 
     // datatypes theory
     case kind::APPLY_TESTER: return "is";

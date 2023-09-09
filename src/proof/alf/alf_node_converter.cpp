@@ -119,7 +119,7 @@ Node AlfNodeConverter::postConvert(Node n)
   }
   else if (k == VARIABLE)
   {
-    // TODO: overloading
+    // note that we do not handle overloading here
     return n;
   }
   else if (k == APPLY_UF)
@@ -276,6 +276,17 @@ Node AlfNodeConverter::postConvert(Node n)
   {
     // TODO
     return n;
+  }
+  else if (k==FLOATINGPOINT_COMPONENT_NAN ||
+    k==FLOATINGPOINT_COMPONENT_INF ||
+    k==FLOATINGPOINT_COMPONENT_ZERO ||
+    k==FLOATINGPOINT_COMPONENT_SIGN ||
+    k==FLOATINGPOINT_COMPONENT_EXPONENT ||
+    k==FLOATINGPOINT_COMPONENT_SIGNIFICAND)
+  {
+    // dummy symbol, provide the return type
+    Node tnn = typeAsNode(tn);
+    return mkInternalApp(printer::smt2::Smt2Printer::smtKindString(k), {tnn}, tn);
   }
   else if (GenericOp::isIndexedOperatorKind(k))
   {
