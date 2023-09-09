@@ -71,14 +71,14 @@ Node AlfNodeConverter::postConvert(Node n)
   Kind k = n.getKind();
   // we eliminate MATCH at preConvert above
   Assert(k != MATCH);
+  Trace("alf-term-process-debug")
+      << "postConvert " << n << " " << k << std::endl;
   if (k == ASCRIPTION_TYPE || k == RAW_SYMBOL)
   {
     // dummy node, return it
     return n;
   }
   TypeNode tn = n.getType();
-  Trace("alf-term-process-debug")
-      << "postConvert " << n << " " << k << std::endl;
   if (k == SKOLEM)
   {
     // constructors/selectors are represented by skolems, which are defined
@@ -193,11 +193,7 @@ Node AlfNodeConverter::postConvert(Node n)
     // notice that intentionally we drop annotations here
     std::vector<Node> args;
     args.push_back(vl);
-    args.push_back(n[1]);
-    if (k == SET_COMPREHENSION)
-    {
-      args.push_back(n[2]);
-    }
+    args.insert(args.end(), n.begin()+1, n.begin()+getNumChildrenForClosure(k));
     return mkInternalApp(
         printer::smt2::Smt2Printer::smtKindString(k), args, tn);
   }
@@ -252,13 +248,6 @@ Node AlfNodeConverter::postConvert(Node n)
     }
     return curr;
   }
-  /*
-  else if (k==RELATION_GROUP || k == TABLE_GROUP)
-  {
-    // TODO: cannot take arbitrary number of premises
-    return n;
-  }
-  */
   else if (k == APPLY_TESTER || k == APPLY_UPDATER || k == NEG
            || k == DIVISION_TOTAL || k == INTS_DIVISION_TOTAL
            || k == INTS_MODULUS_TOTAL || k == APPLY_CONSTRUCTOR
@@ -293,9 +282,17 @@ Node AlfNodeConverter::postConvert(Node n)
     // return app of?
     std::vector<Node> args =
         GenericOp::getIndicesForOperator(k, n.getOperator());
+    if (k==RELATION_GROUP || k == TABLE_GROUP)
+    {
+      Node list = mkList(args);
+      std::vector<Node> children;
+      children.push_back(list);
+      children.insert(children.end(), n.begin(), n.end());
+      return mkInternalApp(printer::smt2::Smt2Printer::smtKindString(k), children, tn);
+    }
     args.insert(args.end(), n.begin(), n.end());
     return mkInternalApp(
-        printer::smt2::Smt2Printer::smtKindString(k), args, n.getType());
+        printer::smt2::Smt2Printer::smtKindString(k), args, tn);
   }
   return n;
 }
@@ -417,6 +414,10 @@ Node AlfNodeConverter::typeAsNode(TypeNode tn)
   Node ret = mkInternalSymbol(ss.str(), d_sortType, true);
   d_typeAsNode[tn] = ret;
   return ret;
+}
+size_t AlfNodeConverter::getNumChildrenForClosure(Kind k) const
+{
+  return k==SET_COMPREHENSION ? 3 : 2;
 }
 
 Node AlfNodeConverter::mkNil(TypeNode tn)

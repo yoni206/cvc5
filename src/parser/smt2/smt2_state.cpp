@@ -155,7 +155,7 @@ void Smt2State::addDatatypesOperators()
     // and defineVar here.
     addOperator(Kind::APPLY_CONSTRUCTOR, "tuple");
     defineVar("tuple", d_solver->mkTuple({}));
-    defineVar("unit.tuple", d_solver->mkTuple({}));
+    defineVar("tuple.unit", d_solver->mkTuple({}));
     addIndexedOperator(Kind::UNDEFINED_KIND, "tuple.select");
     addIndexedOperator(Kind::UNDEFINED_KIND, "tuple.update");
   }

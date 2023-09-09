@@ -183,7 +183,8 @@ bool AlfProofPostprocessCallback::update(Node res,
         Node vl = d_tproc.mkList(vars);
         Node opc = d_tproc.mkInternalApp(
             printer::smt2::Smt2Printer::smtKindString(k), {vl}, vl.getType());
-        addAlfStep(AlfRule::CONG, res, {children[1]}, {opc}, *cdp);
+        std::vector<Node> newChildren(children.begin()+1, children.begin() + d_tproc.getNumChildrenForClosure(k));
+        addAlfStep(AlfRule::CONG, res, newChildren, {opc}, *cdp);
         return true;
       }
       // Note that indexed operators are "collected" at the base of ordinary

@@ -89,7 +89,8 @@ class AlfNodeConverter : public NodeConverter
    * converted to internal form (via the convertType method of this class).
    */
   Node typeAsNode(TypeNode tni);
-
+  /** Number of children for closure */
+  size_t getNumChildrenForClosure(Kind k) const;
  private:
   /** Should we traverse n? */
   bool shouldTraverse(Node n) override;
