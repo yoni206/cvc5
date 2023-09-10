@@ -440,7 +440,14 @@ Node AlfNodeConverter::getNullTerminator(Kind k, TypeNode tn)
 {
   switch (k)
   {
-    case kind::APPLY_UF: return Node::null();
+    case kind::APPLY_UF:
+    case kind::DISTINCT:
+    case kind::FLOATINGPOINT_LT:
+    case kind::FLOATINGPOINT_LEQ:
+    case kind::FLOATINGPOINT_GT:
+    case kind::FLOATINGPOINT_GEQ:
+      // the above operators may take arbitrary number of arguments but are not marked as n-ary in ALF
+      return Node::null();
     case kind::APPLY_CONSTRUCTOR:
       // tuple constructor is n-ary with unit tuple as null terminator
       if (tn.isTuple())
