@@ -278,7 +278,8 @@ class AlfTester(Tester):
                 benchmark_info.benchmark_dir,
                 benchmark_info.timeout,
             )
-            tmpf.write("(include \"/home/andrew/alfc/proofs/rules/Cvc5.smt2\")".encode())
+            alf_sig_dir = os.path.abspath(g_args.alf_sig_dir)
+            tmpf.write(("(include \"" + alf_sig_dir + "/rules/Cvc5.smt2\")").encode())
             tmpf.write(output.strip("unsat\n".encode()))
             tmpf.flush()
             output, error = output.decode(), error.decode()
@@ -650,6 +651,7 @@ def run_regression(
     lfsc_binary,
     lfsc_sigs,
     alfc_binary,
+    alf_sig,
     benchmark_path,
     timeout,
 ):
@@ -839,6 +841,7 @@ def main():
     parser.add_argument("--lfsc-binary", default="")
     parser.add_argument("--lfsc-sig-dir", default="")
     parser.add_argument("--alfc-binary", default="")
+    parser.add_argument("--alf-sig-dir", default="")
     parser.add_argument("wrapper", nargs="*")
     parser.add_argument("cvc5_binary")
     parser.add_argument("benchmark")
@@ -877,7 +880,8 @@ def main():
                      "strings_programs", "strings_rules", "quantifiers_rules"]
         lfsc_sigs = [os.path.join(lfsc_sig_dir, sig + ".plf")
                      for sig in lfsc_sigs]
-
+    alf_sig_dir = os.path.abspath(g_args.alf_sig_dir)
+    alf_sig = os.path.join(alf_sig_dir, "rules/Cvc5.smt2")
     return run_regression(
         testers,
         wrapper,
@@ -885,6 +889,7 @@ def main():
         lfsc_binary,
         lfsc_sigs,
         alfc_binary,
+        alf_sig,
         g_args.benchmark,
         timeout,
     )
