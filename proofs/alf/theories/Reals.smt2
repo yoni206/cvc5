@@ -12,5 +12,7 @@
                            T U
                            (! Real :requires ((is_arith_type T) true) :requires ((is_arith_type U) true))) :left-assoc)
 
+(declare-const INDEXED_ROOT_PREDICATE (-> Int Bool Real Bool))
+
 ; skolems
 (declare-const @k.DIV_BY_ZERO (-> Real Real))

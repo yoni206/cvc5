@@ -40,6 +40,7 @@
 #include "util/iand.h"
 #include "util/rational.h"
 #include "util/regexp.h"
+#include "util/indexed_root_predicate.h"
 #include "util/string.h"
 
 using namespace cvc5::internal::kind;
@@ -210,6 +211,12 @@ Node AlfNodeConverter::postConvert(Node n)
     Node t = typeAsNode(tn);
     return mkInternalApp(printer::smt2::Smt2Printer::smtKindString(k), {t}, tn);
   }
+  else if (k == SET_INSERT)
+  {
+    std::vector<Node> iargs(n.begin(), n.begin()+n.getNumChildren()-1);
+    Node list = mkList(iargs);
+    return mkInternalApp("set.insert", {list, n[n.getNumChildren()-1]}, tn);
+  }
   else if (k == CONST_SEQUENCE)
   {
     if (n.getConst<Sequence>().empty())
@@ -274,8 +281,11 @@ Node AlfNodeConverter::postConvert(Node n)
   }
   else if (k == INDEXED_ROOT_PREDICATE)
   {
-    // TODO
-    return n;
+    const IndexedRootPredicate& irp = n.getOperator().getConst<IndexedRootPredicate>();
+    std::vector<Node> newArgs;
+    newArgs.push_back(nm->mkConstInt(irp.d_index));
+    newArgs.insert(newArgs.end(), n.begin(), n.end());
+    return mkInternalApp("INDEXED_ROOT_PREDICATE", newArgs, tn);
   }
   else if (k==FLOATINGPOINT_COMPONENT_NAN ||
     k==FLOATINGPOINT_COMPONENT_INF ||

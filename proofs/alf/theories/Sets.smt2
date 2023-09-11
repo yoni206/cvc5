@@ -25,6 +25,7 @@
 (declare-const set.fold (-> (! Type :var T :implicit) (! Type :var U :implicit) (-> T U U) U (Set T) U))
 
 (declare-const set.comprehension (-> (! Type :var T :implicit) @List Bool T (Set T)))
+(declare-const set.insert (-> (! Type :var T :implicit) @List (Set T) (Set T)))
 
 (declare-const rel.tclosure (-> (! Type :var T :implicit) (Set (Tuple T T)) (Set (Tuple T T))))
 (declare-const rel.transpose (-> (! Type :var T :implicit) (Set T) (Set (nary.reverse Tuple UnitTuple T))))

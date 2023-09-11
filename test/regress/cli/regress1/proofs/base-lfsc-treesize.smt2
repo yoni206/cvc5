@@ -1,5 +1,4 @@
 ; EXPECT: unsat
-; DISABLE-TESTER: alf
 (set-logic QF_UFLIRA)
 (declare-sort FArray 2)
 
