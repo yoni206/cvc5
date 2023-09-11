@@ -471,6 +471,17 @@ enum class PfRule : uint32_t
    * SAT solver. \endverbatim
    */
   SAT_REFUTATION,
+  /**
+   * \verbatim embed:rst:leading-asterisk
+   * **SAT Refutation for assumption-based unsat cores**
+   *
+   * .. math::
+   *   \inferrule{F_1 \dots F_n \mid s}{\bot}
+   *
+   * where :math:`F_1 \dots F_n` correspond to the preprocessed input clauses
+   * and s is the file name of a DRAT proof. \endverbatim
+   */
+  DRAT_REFUTATION,
 
   /**
    * \verbatim embed:rst:leading-asterisk

@@ -1,6 +1,6 @@
 /******************************************************************************
  * Top contributors (to current version):
- *   Hans-Jörg Schurr
+ *   Andrew Reynolds, Hans-Jörg Schurr
  *
  * This file is part of the cvc5 project.
  *
@@ -43,7 +43,7 @@ class AlfProofPostprocessCallback : public ProofNodeUpdaterCallback
    * initializes static information to be used by successive calls to update.
    */
   void initializeUpdate();
-
+  /** Should update */
   bool shouldUpdate(std::shared_ptr<ProofNode> pn,
                     const std::vector<Node>& fa,
                     bool& continueUpdate) override;
@@ -59,11 +59,7 @@ class AlfProofPostprocessCallback : public ProofNodeUpdaterCallback
  private:
   /** The proof node manager */
   ProofNodeManager* d_pnm;
-  /** The proof checker is used to generate conclusions from local
-   * proof steps. This is currently only used in the resolution rule.
-   */
-  ProofChecker* d_pc;
-  /**  */
+  /** Reference to the node converter */
   AlfNodeConverter& d_tproc;
   /**
    * Are we in the first 2 calls to update? This is to distinguish the top-most
@@ -72,12 +68,15 @@ class AlfProofPostprocessCallback : public ProofNodeUpdaterCallback
   uint8_t d_numIgnoredScopes;
   /** Optimization to only do unique refl */
   std::map<Node, std::shared_ptr<ProofNode> > d_refl;
-
+  /**
+   * Add a ALF step to the proof cdp with given conclusion, children and args.
+   */
   bool addAlfStep(AlfRule rule,
                   Node conclusion,
                   const std::vector<Node>& children,
                   const std::vector<Node>& args,
                   CDProof& cdp);
+  /** Add a refl step to the proof for n */
   void addReflStep(const Node& n, CDProof& cdp);
 };
 

@@ -1,6 +1,6 @@
 /******************************************************************************
  * Top contributors (to current version):
- *   Andrew Reynolds, Abdalrhman Mohamed, Aina Niemetz
+ *   Andrew Reynolds
  *
  * This file is part of the cvc5 project.
  *
@@ -10,7 +10,7 @@
  * directory for licensing information.
  * ****************************************************************************
  *
- * Implementation of LFSC node conversion
+ * Implementation of ALF node conversion
  */
 
 #include "proof/alf/alf_node_converter.h"

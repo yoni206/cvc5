@@ -33,7 +33,7 @@ namespace proof {
 
 AlfProofPostprocessCallback::AlfProofPostprocessCallback(ProofNodeManager* pnm,
                                                          AlfNodeConverter& ltp)
-    : d_pnm(pnm), d_pc(pnm->getChecker()), d_tproc(ltp), d_numIgnoredScopes(0)
+    : d_pnm(pnm), d_tproc(ltp), d_numIgnoredScopes(0)
 {
 }
 

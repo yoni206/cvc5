@@ -173,6 +173,22 @@ name   = "Proof"
   help       = "Flatten steps in the proof (for LFSC or ALF)"
 
 [[option]]
+  name       = "proofUseDrat"
+  category   = "expert"
+  long       = "proof-use-drat"
+  type       = "bool"
+  default    = "false"
+  help       = "Use DRAT proofs for the SAT portion of proofs"
+
+[[option]]
+  name       = "proofElimDefs"
+  category   = "expert"
+  long       = "proof-elim-defs"
+  type       = "bool"
+  default    = "false"
+  help       = "Eliminate definitions from proofs"
+
+[[option]]
   name       = "alfPrintReference"
   category   = "expert"
   long       = "alf-print-reference"

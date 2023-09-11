@@ -1,6 +1,6 @@
 /******************************************************************************
  * Top contributors (to current version):
- *   Andrew Reynolds, Abdalrhman Mohamed
+ *   Andrew Reynolds
  *
  * This file is part of the cvc5 project.
  *
@@ -48,13 +48,6 @@ class AlfNodeConverter : public NodeConverter
    */
   Node getOperatorOfTerm(Node n);
   /**
-   * Get the variable index for free variable fv, or assign a fresh index if it
-   * is not yet assigned.
-   */
-  size_t getOrAssignIndexForConst(Node c);
-  /** */
-  Node mkNil(TypeNode tn);
-  /**
    * Get the null terminator for kind k and type tn. The type tn can be
    * omitted if applications of kind k do not have parametric type.
    *
@@ -85,13 +78,19 @@ class AlfNodeConverter : public NodeConverter
   /**
    * Type as node, returns a node that prints in the form that ALF will
    * interpret as the type tni. This method is required since types can be
-   * passed as arguments to terms. This method assumes that tni has been
-   * converted to internal form (via the convertType method of this class).
+   * passed as arguments to terms.
    */
   Node typeAsNode(TypeNode tni);
   /** Number of children for closure */
   size_t getNumChildrenForClosure(Kind k) const;
  private:
+  /** */
+  Node mkNil(TypeNode tn);
+  /**
+   * Get the variable index for free variable fv, or assign a fresh index if it
+   * is not yet assigned.
+   */
+  size_t getOrAssignIndexForConst(Node c);
   /** Should we traverse n? */
   bool shouldTraverse(Node n) override;
   /**
@@ -115,10 +114,9 @@ class AlfNodeConverter : public NodeConverter
   std::unordered_set<Node> d_symbols;
   /** the type of ALF sorts, which can appear in terms */
   TypeNode d_sortType;
-  /** Used for getting unique index for free variable */
+  /** Used for getting unique index for uncategorized skolems */
   std::map<Node, size_t> d_constIndex;
-  /**
-   */
+  /** Used for getting unique names for bound variables */
   std::map<std::string, size_t> d_varIndex;
   /** Cache for typeAsNode */
   std::map<TypeNode, Node> d_typeAsNode;
