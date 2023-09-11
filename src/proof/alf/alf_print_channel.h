@@ -10,28 +10,26 @@
  * directory for licensing information.
  * ****************************************************************************
  *
- * Print channels for LFSC proofs.
+ * Print channels for ALF proofs.
  */
 
 #include "cvc5_private.h"
 
-#ifndef CVC4__PROOF__LFSC__LFSC_PRINT_CHANNEL_H
-#define CVC4__PROOF__LFSC__LFSC_PRINT_CHANNEL_H
+#ifndef CVC4__PROOF__ALF__ALF_PRINT_CHANNEL_H
+#define CVC4__PROOF__ALF__ALF_PRINT_CHANNEL_H
 
 #include <iostream>
 #include <map>
 
 #include "expr/node.h"
 #include "printer/let_binding.h"
-#include "proof/lfsc/lfsc_util.h"
 #include "proof/proof_node.h"
-#include "rewriter/rewrite_proof_rule.h"
 
 namespace cvc5::internal {
 namespace proof {
 
 /**
- * LFSC proofs are printed in two phases: the first phase computes the
+ * ALF proofs are printed in two phases: the first phase computes the
  * letification of terms in the proof as well as other information that is
  * required for printing the preamble of the proof. The second phase prints the
  * proof to an output stream. This is the base class for these two phases.
@@ -79,11 +77,11 @@ class AlfPrintChannelOut : public AlfPrintChannel
   void printTrust(PfRule r, TNode n, size_t i, TNode conc) override;
 
   /**
-   * Print node to stream in the expected format of LFSC.
+   * Print node to stream in the expected format of ALF.
    */
   void printNodeInternal(std::ostream& out, Node n);
   /**
-   * Print type node to stream in the expected format of LFSC.
+   * Print type node to stream in the expected format of ALF.
    */
   void printTypeNodeInternal(std::ostream& out, TypeNode tn);
 
@@ -101,7 +99,7 @@ class AlfPrintChannelOut : public AlfPrintChannel
 /**
  * Run on the proof before it is printed, and does two preparation steps:
  * - Computes the letification of nodes that appear in the proof.
- * - Computes the set of DSL rules that appear in the proof.
+ * - Computes the set of variables that appear in the proof.
  */
 class AlfPrintChannelPre : public AlfPrintChannel
 {
@@ -117,7 +115,7 @@ class AlfPrintChannelPre : public AlfPrintChannel
                  bool isPop = false) override;
   void printTrust(PfRule r, TNode n, size_t i, TNode conc) override;
 
-  /** Get variables */
+  /** Get variables we encountered in printing */
   const std::unordered_set<TNode>& getVariables() const;
 
  private:
@@ -125,8 +123,11 @@ class AlfPrintChannelPre : public AlfPrintChannel
   LetBinding& d_lbind;
   /** For computing free variables */
   std::unordered_set<Node> d_keep;
+  /** The set of variables we have encountered */
   std::unordered_set<TNode> d_vars;
+  /** The visited cache for computing variables */
   std::unordered_set<TNode> d_varsVisited;
+  /** Process that we will print node n in the final proof */
   void processInternal(const Node& n);
 };
 

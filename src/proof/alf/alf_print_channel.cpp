@@ -1,6 +1,6 @@
 /******************************************************************************
  * Top contributors (to current version):
- *   Andrew Reynolds, Gereon Kremer
+ *   Andrew Reynolds
  *
  * This file is part of the cvc5 project.
  *
@@ -10,7 +10,7 @@
  * directory for licensing information.
  * ****************************************************************************
  *
- * Print channels for LFSC proofs.
+ * Print channels for ALF proofs.
  */
 
 #include "proof/alf/alf_print_channel.h"
@@ -19,8 +19,6 @@
 
 #include "expr/node_algorithm.h"
 #include "proof/alf/alf_proof_rule.h"
-
-using namespace cvc5::internal::rewriter;
 
 namespace cvc5::internal {
 namespace proof {

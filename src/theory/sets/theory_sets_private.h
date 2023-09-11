@@ -118,7 +118,7 @@ class TheorySetsPrivate : protected EnvObj
    *       (set.member x A)
    *     )
    *   )
-   *   where x is a fresh skolem
+   *   where x is a fresh skolem   
    */
   void checkMapDown();
   void checkGroups();
