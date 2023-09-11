@@ -279,7 +279,7 @@ class AlfTester(Tester):
                 benchmark_info.timeout,
             )
             alf_sig_dir = os.path.abspath(g_args.alf_sig_dir)
-            tmpf.write(("(include \"" + alf_sig_dir + "/rules/Cvc5.smt2\")").encode())
+            tmpf.write(("(include \"" + alf_sig_dir + "/Cvc5.smt2\")").encode())
             tmpf.write(output.strip("unsat\n".encode()))
             tmpf.flush()
             output, error = output.decode(), error.decode()
@@ -881,7 +881,7 @@ def main():
         lfsc_sigs = [os.path.join(lfsc_sig_dir, sig + ".plf")
                      for sig in lfsc_sigs]
     alf_sig_dir = os.path.abspath(g_args.alf_sig_dir)
-    alf_sig = os.path.join(alf_sig_dir, "rules/Cvc5.smt2")
+    alf_sig = os.path.join(alf_sig_dir, "Cvc5.smt2")
     return run_regression(
         testers,
         wrapper,
