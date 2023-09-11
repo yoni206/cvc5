@@ -68,7 +68,7 @@ class PropPfManager : protected EnvObj
    * assertion and theory lemmas are free assumptions in the returned proof
    * instead of being connected to their proofs.
    */
-  std::shared_ptr<ProofNode> getProof(bool connectCnf);
+  std::shared_ptr<ProofNode> getProof(const context::CDList<Node>& assertions, bool connectCnf);
 
   /** Return the vector of proofs for the respective proof component requested.
    *
@@ -76,7 +76,7 @@ class PropPfManager : protected EnvObj
    * clauses) or of preprocessed assertion proofs (them the preprocessed
    * assertion assumptions to the added clauses to the SAT solver).
    */
-  std::vector<std::shared_ptr<ProofNode>> getProofLeaves(
+  std::vector<std::shared_ptr<ProofNode>> getProofLeaves(const context::CDList<Node>& assertions,
       modes::ProofComponent pc);
 
   /**

@@ -21,6 +21,7 @@
 #include "prop/theory_proxy.h"
 #include "util/resource_manager.h"
 #include "util/statistics_registry.h"
+#include "util/string.h"
 
 namespace cvc5::internal {
 namespace prop {
@@ -630,6 +631,11 @@ CadicalSolver::CadicalSolver(Env& env,
       d_assertionLevel(0),
       d_statistics(registry, name)
 {
+  if (env.isSatProofProducing())
+  {
+    d_pfFile="drat-proof.txt";
+    d_solver->trace_proof(d_pfFile.c_str());
+  }
 }
 
 void CadicalSolver::init()
@@ -889,10 +895,20 @@ std::vector<SatLiteral> CadicalSolver::getDecisions() const
 
 std::vector<Node> CadicalSolver::getOrderHeap() const { return {}; }
 
-std::shared_ptr<ProofNode> CadicalSolver::getProof()
+std::shared_ptr<ProofNode> CadicalSolver::getProof(const context::CDList<Node>& assertions)
 {
-  // TODO
-  return nullptr;
+  if (!d_env.isSatProofProducing())
+  {
+    return nullptr;
+  }
+  NodeManager * nm = NodeManager::currentNM();
+  CDProof cdp(d_env);
+  Node falsen = nm->mkConst(false);
+  std::vector<Node> children(assertions.begin(), assertions.end());
+  Node arg = nm->mkConst(String(d_pfFile));
+  cdp.addStep(falsen, PfRule::DRAT_REFUTATION, children, {arg});
+  d_pf = cdp.getProofFor(falsen);
+  return d_pf;
 }
 
 SatProofManager* CadicalSolver::getProofManager()

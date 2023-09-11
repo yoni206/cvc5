@@ -108,7 +108,7 @@ class MinisatSatSolver : public CDCLTSatSolver, protected EnvObj
   SatProofManager* getProofManager() override;
 
   /** Retrieve the refutation proof of this SAT solver. */
-  std::shared_ptr<ProofNode> getProof() override;
+  std::shared_ptr<ProofNode> getProof(const context::CDList<Node>& assertions) override;
 
  private:
 

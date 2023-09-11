@@ -84,8 +84,7 @@ PropEngine::PropEngine(Env& env, TheoryEngine* te)
   context::UserContext* userContext = d_env.getUserContext();
   ProofNodeManager* pnm = d_env.getProofNodeManager();
 
-  if (options().prop.satSolver == options::SatSolverMode::MINISAT
-      || d_env.isSatProofProducing())
+  if (options().prop.satSolver == options::SatSolverMode::MINISAT)
   {
     d_satSolver =
         SatSolverFactory::createCDCLTMinisat(d_env, statisticsRegistry());
@@ -722,7 +721,7 @@ void PropEngine::checkProof(const context::CDList<Node>& assertions)
 
 ProofCnfStream* PropEngine::getProofCnfStream() { return d_pfCnfStream.get(); }
 
-std::shared_ptr<ProofNode> PropEngine::getProof(bool connectCnf)
+std::shared_ptr<ProofNode> PropEngine::getProof(const context::CDList<Node>& assertions, bool connectCnf)
 {
   if (!d_env.isSatProofProducing())
   {
@@ -731,17 +730,17 @@ std::shared_ptr<ProofNode> PropEngine::getProof(bool connectCnf)
   Trace("sat-proof") << "PropEngine::getProof: getting proof with cnfStream's "
                         "lazycdproof cxt lvl "
                      << userContext()->getLevel() << "\n";
-  return d_ppm->getProof(connectCnf);
+  return d_ppm->getProof(assertions, connectCnf);
 }
 
-std::vector<std::shared_ptr<ProofNode>> PropEngine::getProofLeaves(modes::ProofComponent pc)
+std::vector<std::shared_ptr<ProofNode>> PropEngine::getProofLeaves(const context::CDList<Node>& assertions, modes::ProofComponent pc)
 {
-  return d_ppm->getProofLeaves(pc);
+  return d_ppm->getProofLeaves(assertions, pc);
 }
 
 bool PropEngine::isProofEnabled() const { return d_pfCnfStream != nullptr; }
 
-void PropEngine::getUnsatCore(std::vector<Node>& core)
+void PropEngine::getUnsatCore(const context::CDList<Node>& assertions, std::vector<Node>& core)
 {
   if (options().smt.unsatCoresMode == options::UnsatCoresMode::ASSUMPTIONS)
   {
@@ -758,7 +757,7 @@ void PropEngine::getUnsatCore(std::vector<Node>& core)
   {
     Trace("unsat-core") << "PropEngine::getUnsatCore: via proof" << std::endl;
     // otherwise, it is just the free assumptions of the proof
-    std::shared_ptr<ProofNode> pfn = getProof();
+    std::shared_ptr<ProofNode> pfn = getProof(assertions);
     expr::getFreeAssumptions(pfn.get(), core);
   }
 }

@@ -15,6 +15,8 @@
 (include "./rules/Quantifiers.smt2")
 (include "./theories/Datatypes.smt2")
 (include "./theories/SepLogic.smt2")
+; specific plugins
+(include "./rules/drat/Drat.smt2")
 
 ; TODO: proper place for these
 (declare-const fmf.card (-> Type Int Bool))
