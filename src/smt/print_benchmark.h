@@ -44,11 +44,18 @@ class PrintBenchmark
   {
   }
   /**
+   * Print the declarations and definitions from a set of definitions and terms.
+   * 
+   * @param outTypes The output stream to print the type declarations on
+   * @param outFuns The output stream to print the function declarations and
+   * definitions on.
+   * @param def The definitions to print.
+   * @param term The terms to print declarations and definitions from.
    */
   void printDeclarationsFrom(std::ostream& outTypes,
                              std::ostream& outFuns,
                              const std::vector<Node>& defs,
-                             const std::vector<Node>& assertions);
+                             const std::vector<Node>& terms);
   /**
    * Print assertions. This prints a parsable set of commands on the output
    * stream out that defines (recursive) functions in defs, and asserts

@@ -28,7 +28,7 @@ namespace smt {
 void PrintBenchmark::printDeclarationsFrom(std::ostream& outTypes,
                                            std::ostream& outFuns,
                                            const std::vector<Node>& defs,
-                                           const std::vector<Node>& assertions)
+                                           const std::vector<Node>& terms)
 {
   std::unordered_set<TypeNode> types;
   std::unordered_set<TNode> typeVisited;
@@ -36,7 +36,7 @@ void PrintBenchmark::printDeclarationsFrom(std::ostream& outTypes,
   {
     expr::getTypes(a, types, typeVisited);
   }
-  for (const Node& a : assertions)
+  for (const Node& a : terms)
   {
     Assert(!expr::hasFreeVar(a));
     expr::getTypes(a, types, typeVisited);
@@ -147,7 +147,7 @@ void PrintBenchmark::printDeclarationsFrom(std::ostream& outTypes,
 
   // print the remaining declared symbols
   std::unordered_set<Node> syms;
-  for (const Node& a : assertions)
+  for (const Node& a : terms)
   {
     expr::getSymbols(a, syms, visited);
   }
