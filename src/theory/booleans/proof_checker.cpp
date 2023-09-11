@@ -929,7 +929,7 @@ Node BoolProofRuleChecker::checkInternal(PfRule id,
         args[0], args[0][1].notNode(), args[0][2].notNode()};
     return NodeManager::currentNM()->mkNode(kind::OR, disjuncts);
   }
-  if (id == PfRule::SAT_REFUTATION || id==PfRule::DRAT_REFUTATION)
+  if (id == PfRule::SAT_REFUTATION || id == PfRule::DRAT_REFUTATION)
   {
     Assert(args.size() == (id == PfRule::SAT_REFUTATION ? 0 : 1));
     return NodeManager::currentNM()->mkConst(false);

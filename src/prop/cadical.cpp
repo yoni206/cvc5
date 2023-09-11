@@ -124,7 +124,8 @@ class CadicalPropagator : public CaDiCaL::ExternalPropagator
       if (info.is_theory_atom)
       {
         Trace("cadical::propagator") << "enqueue: " << slit << std::endl;
-        Trace("cadical::propagator") << "node:    " << d_proxy->getNode(slit) << std::endl;
+        Trace("cadical::propagator")
+            << "node:    " << d_proxy->getNode(slit) << std::endl;
         d_proxy->enqueueTheoryLiteral(slit);
       }
     }
@@ -554,10 +555,10 @@ class CadicalPropagator : public CaDiCaL::ExternalPropagator
   struct VarInfo
   {
     bool is_theory_atom = false;  // is variable a theory atom
-    bool is_fixed = false;       // has variable fixed assignment
-    bool is_active = true;       // is variable active
-    int32_t assignment = 0;      // current variable assignment
-    int8_t phase = 0;            // preferred phase
+    bool is_fixed = false;        // has variable fixed assignment
+    bool is_active = true;        // is variable active
+    int32_t assignment = 0;       // current variable assignment
+    int8_t phase = 0;             // preferred phase
   };
   /** Maps SatVariable to corresponding info struct. */
   std::vector<VarInfo> d_var_info;
@@ -633,7 +634,7 @@ CadicalSolver::CadicalSolver(Env& env,
 {
   if (env.isSatProofProducing())
   {
-    d_pfFile="drat-proof.txt";
+    d_pfFile = "drat-proof.txt";
     d_solver->trace_proof(d_pfFile.c_str());
   }
 }
@@ -895,13 +896,14 @@ std::vector<SatLiteral> CadicalSolver::getDecisions() const
 
 std::vector<Node> CadicalSolver::getOrderHeap() const { return {}; }
 
-std::shared_ptr<ProofNode> CadicalSolver::getProof(const context::CDList<Node>& assertions)
+std::shared_ptr<ProofNode> CadicalSolver::getProof(
+    const context::CDList<Node>& assertions)
 {
   if (!d_env.isSatProofProducing())
   {
     return nullptr;
   }
-  NodeManager * nm = NodeManager::currentNM();
+  NodeManager* nm = NodeManager::currentNM();
   CDProof cdp(d_env);
   Node falsen = nm->mkConst(false);
   std::vector<Node> children(assertions.begin(), assertions.end());

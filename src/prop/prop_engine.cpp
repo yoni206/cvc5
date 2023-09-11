@@ -721,7 +721,8 @@ void PropEngine::checkProof(const context::CDList<Node>& assertions)
 
 ProofCnfStream* PropEngine::getProofCnfStream() { return d_pfCnfStream.get(); }
 
-std::shared_ptr<ProofNode> PropEngine::getProof(const context::CDList<Node>& assertions, bool connectCnf)
+std::shared_ptr<ProofNode> PropEngine::getProof(
+    const context::CDList<Node>& assertions, bool connectCnf)
 {
   if (!d_env.isSatProofProducing())
   {
@@ -733,14 +734,16 @@ std::shared_ptr<ProofNode> PropEngine::getProof(const context::CDList<Node>& ass
   return d_ppm->getProof(assertions, connectCnf);
 }
 
-std::vector<std::shared_ptr<ProofNode>> PropEngine::getProofLeaves(const context::CDList<Node>& assertions, modes::ProofComponent pc)
+std::vector<std::shared_ptr<ProofNode>> PropEngine::getProofLeaves(
+    const context::CDList<Node>& assertions, modes::ProofComponent pc)
 {
   return d_ppm->getProofLeaves(assertions, pc);
 }
 
 bool PropEngine::isProofEnabled() const { return d_pfCnfStream != nullptr; }
 
-void PropEngine::getUnsatCore(const context::CDList<Node>& assertions, std::vector<Node>& core)
+void PropEngine::getUnsatCore(const context::CDList<Node>& assertions,
+                              std::vector<Node>& core)
 {
   if (options().smt.unsatCoresMode == options::UnsatCoresMode::ASSUMPTIONS)
   {

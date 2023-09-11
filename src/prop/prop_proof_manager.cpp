@@ -70,8 +70,8 @@ void PropPfManager::checkProof(const context::CDList<Node>& assertions)
                      "PropPfManager::checkProof");
 }
 
-std::vector<std::shared_ptr<ProofNode>> PropPfManager::getProofLeaves(const context::CDList<Node>& assertions,
-    modes::ProofComponent pc)
+std::vector<std::shared_ptr<ProofNode>> PropPfManager::getProofLeaves(
+    const context::CDList<Node>& assertions, modes::ProofComponent pc)
 {
   Trace("sat-proof") << "PropPfManager::getProofLeaves: Getting " << pc
                      << " component proofs\n";
@@ -97,7 +97,8 @@ std::vector<std::shared_ptr<ProofNode>> PropPfManager::getProofLeaves(const cont
   return usedPfs;
 }
 
-std::shared_ptr<ProofNode> PropPfManager::getProof(const context::CDList<Node>& assertions, bool connectCnf)
+std::shared_ptr<ProofNode> PropPfManager::getProof(
+    const context::CDList<Node>& assertions, bool connectCnf)
 {
   auto it = d_propProofs.find(connectCnf);
   if (it != d_propProofs.end())

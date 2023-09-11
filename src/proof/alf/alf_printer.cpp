@@ -126,7 +126,7 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::RE_UNFOLD_POS:
     case PfRule::REMOVE_TERM_FORMULA_AXIOM:
     case PfRule::INSTANTIATE:
-    case PfRule::SKOLEMIZE: 
+    case PfRule::SKOLEMIZE:
     case PfRule::DRAT_REFUTATION: return true;
     // alf rule is handled
     case PfRule::ALF_RULE: return true;

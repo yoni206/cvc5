@@ -312,7 +312,8 @@ class PropEngine : protected EnvObj
    * assertion and theory lemmas are free assumptions in the returned proof
    * instead of being connected to their proofs.
    */
-  std::shared_ptr<ProofNode> getProof(const context::CDList<Node>& assertions, bool connectCnf = true);
+  std::shared_ptr<ProofNode> getProof(const context::CDList<Node>& assertions,
+                                      bool connectCnf = true);
 
   /** Return the vector of proofs for the respective proof component requested.
    *
@@ -320,8 +321,8 @@ class PropEngine : protected EnvObj
    * clauses) or of preprocessed assertion proofs (them the preprocessed
    * assertion assumptions to the added clauses to the SAT solver).
    */
-  std::vector<std::shared_ptr<ProofNode>> getProofLeaves(const context::CDList<Node>& assertions,
-      modes::ProofComponent pc);
+  std::vector<std::shared_ptr<ProofNode>> getProofLeaves(
+      const context::CDList<Node>& assertions, modes::ProofComponent pc);
 
   /** Is proof enabled? */
   bool isProofEnabled() const;
@@ -333,7 +334,8 @@ class PropEngine : protected EnvObj
    * For proof-based unsat cores, this is computed via the free assumptions of
    * the proof.
    */
-  void getUnsatCore(const context::CDList<Node>& assertions, std::vector<Node>& core);
+  void getUnsatCore(const context::CDList<Node>& assertions,
+                    std::vector<Node>& core);
 
   /** Get the zero-level assertions of the given type */
   std::vector<Node> getLearnedZeroLevelLiterals(
