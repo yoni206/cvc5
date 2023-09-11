@@ -329,10 +329,8 @@ Node GenericOp::getOperatorForIndices(Kind k, const std::vector<Node>& indices)
         return nm->mkConst(TABLE_PROJECT_OP, ProjectOp(numerals));
       case TABLE_AGGREGATE:
         return nm->mkConst(TABLE_AGGREGATE_OP, ProjectOp(numerals));
-      case TABLE_JOIN:
-        return nm->mkConst(TABLE_JOIN_OP, ProjectOp(numerals));
-      case TABLE_GROUP:
-        return nm->mkConst(TABLE_GROUP_OP, ProjectOp(numerals));
+      case TABLE_JOIN: return nm->mkConst(TABLE_JOIN_OP, ProjectOp(numerals));
+      case TABLE_GROUP: return nm->mkConst(TABLE_GROUP_OP, ProjectOp(numerals));
       default:
         Unhandled() << "GenericOp::getOperatorForIndices: unhandled kind " << k;
         break;

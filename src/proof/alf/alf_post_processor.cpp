@@ -17,6 +17,7 @@
 
 #include <vector>
 
+#include "expr/skolem_manager.h"
 #include "printer/smt2/smt2_printer.h"
 #include "proof/lazy_proof.h"
 #include "proof/proof_node_algorithm.h"
@@ -24,7 +25,6 @@
 #include "smt/env.h"
 #include "theory/builtin/generic_op.h"
 #include "util/rational.h"
-#include "expr/skolem_manager.h"
 
 using namespace cvc5::internal::kind;
 
@@ -53,7 +53,7 @@ bool AlfProofPostprocessCallback::shouldUpdate(std::shared_ptr<ProofNode> pn,
     case PfRule::SCOPE:
     case PfRule::CONG:
     case PfRule::CONCAT_CONFLICT:
-    case PfRule::SKOLEM_INTRO:return true;
+    case PfRule::SKOLEM_INTRO: return true;
     default: return false;
   }
 }
@@ -185,7 +185,9 @@ bool AlfProofPostprocessCallback::update(Node res,
         Node vl = d_tproc.mkList(vars);
         Node opc = d_tproc.mkInternalApp(
             printer::smt2::Smt2Printer::smtKindString(k), {vl}, vl.getType());
-        std::vector<Node> newChildren(children.begin()+1, children.begin() + d_tproc.getNumChildrenForClosure(k));
+        std::vector<Node> newChildren(
+            children.begin() + 1,
+            children.begin() + d_tproc.getNumChildrenForClosure(k));
         addAlfStep(AlfRule::CONG, res, newChildren, {opc}, *cdp);
         return true;
       }
@@ -242,7 +244,7 @@ bool AlfProofPostprocessCallback::update(Node res,
     case PfRule::SKOLEM_INTRO:
     {
       Node t = SkolemManager::getUnpurifiedForm(args[0]);
-      if (t.getKind()!=WITNESS)
+      if (t.getKind() != WITNESS)
       {
         // no change necessary
         return false;

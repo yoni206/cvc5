@@ -45,7 +45,7 @@ class PrintBenchmark
   }
   /**
    * Print the declarations and definitions from a set of definitions and terms.
-   * 
+   *
    * @param outTypes The output stream to print the type declarations on
    * @param outFuns The output stream to print the function declarations and
    * definitions on.

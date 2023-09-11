@@ -83,6 +83,7 @@ class AlfNodeConverter : public NodeConverter
   Node typeAsNode(TypeNode tni);
   /** Number of children for closure */
   size_t getNumChildrenForClosure(Kind k) const;
+
  private:
   /** */
   Node mkNil(TypeNode tn);

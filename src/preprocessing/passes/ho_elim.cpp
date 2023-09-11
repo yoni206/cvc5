@@ -34,7 +34,8 @@ namespace preprocessing {
 namespace passes {
 
 HoElim::HoElim(PreprocessingPassContext* preprocContext)
-    : PreprocessingPass(preprocContext, "ho-elim"){
+    : PreprocessingPass(preprocContext, "ho-elim")
+{
   d_hoElimSc = NodeManager::currentNM()->mkSortConstructor("ho-elim-sort", 1);
 }
 

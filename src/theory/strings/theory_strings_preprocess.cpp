@@ -747,7 +747,8 @@ Node StringsPreprocess::reduce(Node t,
     Node us = sc->mkSkolemFun(
         SkolemFunId::STRINGS_REPLACE_ALL_RESULT, raResultType, t);
     TypeNode ufType = nm->mkFunctionType(argTypes, nm->integerType());
-    Node uf = sc->mkSkolemFun(SkolemFunId::STRINGS_OCCUR_INDEX_RE, ufType, x, y);
+    Node uf =
+        sc->mkSkolemFun(SkolemFunId::STRINGS_OCCUR_INDEX_RE, ufType, x, y);
     Node ul = sc->mkSkolemFun(SkolemFunId::STRINGS_OCCUR_LEN_RE, ufType, x, y);
 
     Node emp = Word::mkEmptyWord(t.getType());

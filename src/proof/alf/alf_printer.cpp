@@ -244,7 +244,8 @@ bool AlfPrinter::canEvaluate(Node n) const
         case BITVECTOR_SUB:
         case BITVECTOR_NEG: break;
         default:
-          Trace("alf-printer-debug") << "Cannot evaluate " << cur.getKind() << std::endl;
+          Trace("alf-printer-debug")
+              << "Cannot evaluate " << cur.getKind() << std::endl;
           return false;
       }
       for (const Node& cn : cur)

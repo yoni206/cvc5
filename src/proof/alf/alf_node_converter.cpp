@@ -38,9 +38,9 @@
 #include "util/finite_field_value.h"
 #include "util/floatingpoint.h"
 #include "util/iand.h"
+#include "util/indexed_root_predicate.h"
 #include "util/rational.h"
 #include "util/regexp.h"
-#include "util/indexed_root_predicate.h"
 #include "util/string.h"
 
 using namespace cvc5::internal::kind;
@@ -194,7 +194,8 @@ Node AlfNodeConverter::postConvert(Node n)
     // notice that intentionally we drop annotations here
     std::vector<Node> args;
     args.push_back(vl);
-    args.insert(args.end(), n.begin()+1, n.begin()+getNumChildrenForClosure(k));
+    args.insert(
+        args.end(), n.begin() + 1, n.begin() + getNumChildrenForClosure(k));
     return mkInternalApp(
         printer::smt2::Smt2Printer::smtKindString(k), args, tn);
   }
@@ -213,9 +214,9 @@ Node AlfNodeConverter::postConvert(Node n)
   }
   else if (k == SET_INSERT)
   {
-    std::vector<Node> iargs(n.begin(), n.begin()+n.getNumChildren()-1);
+    std::vector<Node> iargs(n.begin(), n.begin() + n.getNumChildren() - 1);
     Node list = mkList(iargs);
-    return mkInternalApp("set.insert", {list, n[n.getNumChildren()-1]}, tn);
+    return mkInternalApp("set.insert", {list, n[n.getNumChildren() - 1]}, tn);
   }
   else if (k == CONST_SEQUENCE)
   {
@@ -281,35 +282,37 @@ Node AlfNodeConverter::postConvert(Node n)
   }
   else if (k == INDEXED_ROOT_PREDICATE)
   {
-    const IndexedRootPredicate& irp = n.getOperator().getConst<IndexedRootPredicate>();
+    const IndexedRootPredicate& irp =
+        n.getOperator().getConst<IndexedRootPredicate>();
     std::vector<Node> newArgs;
     newArgs.push_back(nm->mkConstInt(irp.d_index));
     newArgs.insert(newArgs.end(), n.begin(), n.end());
     return mkInternalApp("INDEXED_ROOT_PREDICATE", newArgs, tn);
   }
-  else if (k==FLOATINGPOINT_COMPONENT_NAN ||
-    k==FLOATINGPOINT_COMPONENT_INF ||
-    k==FLOATINGPOINT_COMPONENT_ZERO ||
-    k==FLOATINGPOINT_COMPONENT_SIGN ||
-    k==FLOATINGPOINT_COMPONENT_EXPONENT ||
-    k==FLOATINGPOINT_COMPONENT_SIGNIFICAND)
+  else if (k == FLOATINGPOINT_COMPONENT_NAN || k == FLOATINGPOINT_COMPONENT_INF
+           || k == FLOATINGPOINT_COMPONENT_ZERO
+           || k == FLOATINGPOINT_COMPONENT_SIGN
+           || k == FLOATINGPOINT_COMPONENT_EXPONENT
+           || k == FLOATINGPOINT_COMPONENT_SIGNIFICAND)
   {
     // dummy symbol, provide the return type
     Node tnn = typeAsNode(tn);
-    return mkInternalApp(printer::smt2::Smt2Printer::smtKindString(k), {tnn}, tn);
+    return mkInternalApp(
+        printer::smt2::Smt2Printer::smtKindString(k), {tnn}, tn);
   }
   else if (GenericOp::isIndexedOperatorKind(k))
   {
     // return app of?
     std::vector<Node> args =
         GenericOp::getIndicesForOperator(k, n.getOperator());
-    if (k==RELATION_GROUP || k == TABLE_GROUP)
+    if (k == RELATION_GROUP || k == TABLE_GROUP)
     {
       Node list = mkList(args);
       std::vector<Node> children;
       children.push_back(list);
       children.insert(children.end(), n.begin(), n.end());
-      return mkInternalApp(printer::smt2::Smt2Printer::smtKindString(k), children, tn);
+      return mkInternalApp(
+          printer::smt2::Smt2Printer::smtKindString(k), children, tn);
     }
     args.insert(args.end(), n.begin(), n.end());
     return mkInternalApp(
@@ -438,7 +441,7 @@ Node AlfNodeConverter::typeAsNode(TypeNode tn)
 }
 size_t AlfNodeConverter::getNumChildrenForClosure(Kind k) const
 {
-  return k==SET_COMPREHENSION ? 3 : 2;
+  return k == SET_COMPREHENSION ? 3 : 2;
 }
 
 Node AlfNodeConverter::mkNil(TypeNode tn)
@@ -456,7 +459,8 @@ Node AlfNodeConverter::getNullTerminator(Kind k, TypeNode tn)
     case kind::FLOATINGPOINT_LEQ:
     case kind::FLOATINGPOINT_GT:
     case kind::FLOATINGPOINT_GEQ:
-      // the above operators may take arbitrary number of arguments but are not marked as n-ary in ALF
+      // the above operators may take arbitrary number of arguments but are not
+      // marked as n-ary in ALF
       return Node::null();
     case kind::APPLY_CONSTRUCTOR:
       // tuple constructor is n-ary with unit tuple as null terminator
