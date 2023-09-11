@@ -1447,10 +1447,10 @@ void SolverEngine::checkProof()
   // internal check the proof
   PropEngine* pe = d_smtSolver->getPropEngine();
   Assert(pe != nullptr);
-  Assert(pe->getProof() != nullptr);
   const context::CDList<Node>& assertions =
       d_smtSolver->getPreprocessedAssertions();
   std::shared_ptr<ProofNode> pePfn = pe->getProof(assertions);
+  Assert(pePfn != nullptr);
   if (d_env->getOptions().proof.proofCheck == options::ProofCheckMode::EAGER)
   {
     pe->checkProof(d_smtSolver->getAssertions().getAssertionList());
@@ -1608,10 +1608,10 @@ void SolverEngine::getRelevantQuantTermVectors(
   // generate with new proofs
   PropEngine* pe = d_smtSolver->getPropEngine();
   Assert(pe != nullptr);
-  Assert(pe->getProof() != nullptr);
   const context::CDList<Node>& assertions =
       d_smtSolver->getPreprocessedAssertions();
   std::shared_ptr<ProofNode> pfn = pe->getProof(assertions);
+  Assert(pfn != nullptr);
   // note that we don't have to connect the SAT proof to the input assertions,
   // and preprocessing proofs don't impact what instantiations are used
   d_ucManager->getRelevantQuantTermVectors(pfn, insts, sks, getDebugInfo);

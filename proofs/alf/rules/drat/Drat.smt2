@@ -38,16 +38,16 @@
 ; - A DRAT proof file, whose file name is given as a String.
 ; It returns "true" if the DRAT proof file is a valid refutation proof.
 
-(declare-oracle-fun drat-check (String) Bool ./drat-check.sh)
+(declare-oracle-fun drat-check (String String) Bool ./drat-check.sh)
 
 ; The DRAT proof rule.
 ; Takes arbitrary list of premises, an atom mapping, and the file name of a DRAT
 ; proof and invokes the two oracles above.
 
-(declare-rule drat_refutation ((F Bool) (P String))
+(declare-rule drat_refutation ((F Bool) (D String) (P String))
   :premise-list F and
-  :args (P)
-  :requires (((drat-verify (to_drat_input F) P) true) ((drat-check P) true))
+  :args (D P)
+  :requires (((drat-verify (to_drat_input F) D) true) ((drat-check D P) true))
   :conclusion false
 )
 

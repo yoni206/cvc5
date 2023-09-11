@@ -931,7 +931,7 @@ Node BoolProofRuleChecker::checkInternal(PfRule id,
   }
   if (id == PfRule::SAT_REFUTATION || id == PfRule::DRAT_REFUTATION)
   {
-    Assert(args.size() == (id == PfRule::SAT_REFUTATION ? 0 : 1));
+    Assert(args.size() == (id == PfRule::SAT_REFUTATION ? 0 : 2));
     return NodeManager::currentNM()->mkConst(false);
   }
   // no rule

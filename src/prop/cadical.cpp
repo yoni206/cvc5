@@ -907,8 +907,11 @@ std::shared_ptr<ProofNode> CadicalSolver::getProof(
   CDProof cdp(d_env);
   Node falsen = nm->mkConst(false);
   std::vector<Node> children(assertions.begin(), assertions.end());
-  Node arg = nm->mkConst(String(d_pfFile));
-  cdp.addStep(falsen, PfRule::DRAT_REFUTATION, children, {arg});
+  Node pfile = nm->mkConst(String(d_pfFile));
+  std::string dimacs("drat-input.txt");
+  d_solver->write_dimacs(dimacs.c_str());
+  Node dfile = nm->mkConst(String(dimacs));
+  cdp.addStep(falsen, PfRule::DRAT_REFUTATION, children, {dfile, pfile});
   d_pf = cdp.getProofFor(falsen);
   return d_pf;
 }
