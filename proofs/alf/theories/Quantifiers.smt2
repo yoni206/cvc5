@@ -6,7 +6,5 @@
 
 (declare-const witness (-> (! Type :var T :implicit) T Bool T))
 
-
-; maybe just change to lists
-
+; skolems
 (declare-const @k.QUANTIFIERS_SKOLEMIZE (-> (! Type :var T :implicit) Bool T T))

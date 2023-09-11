@@ -4,7 +4,6 @@
 (include "../programs/Nary.smt2")
 
 ; SCOPE
-
 (declare-rule scope
   ((F Bool) (G Bool))
   :assumption F

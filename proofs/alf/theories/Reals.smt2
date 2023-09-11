@@ -7,6 +7,8 @@
                      T U
                      (! Real :requires ((is_arith_type T) true) :requires ((is_arith_type U) true))) :left-assoc)
 
+; internal
+
 (declare-const /_total (-> (! Type :var T :implicit)
                            (! Type :var U :implicit)
                            T U

@@ -306,13 +306,3 @@
   (BitVec m) Int))
 
 (declare-const BITVECTOR_EAGER_ATOM (-> Bool Bool))
-
-; Internal definitions for Bitblasting
-;(declare f_BITVECTOR_EAGER_ATOM term)
-;(define BITVECTOR_EAGER_ATOM (# x term (apply f_BITVECTOR_EAGER_ATOM x)))
-;(declare f_BITVECTOR_ITE term)
-;(define BITVECTOR_ITE (# x term (# y term (# z term (apply (apply (apply f_BITVECTOR_ITE x) y) z)))))
-;(declare f_BITVECTOR_SLTBV term)
-;(define BITVECTOR_SLTBV (# x term (# y term (apply (apply f_BITVECTOR_SLTBV x) y))))
-;(declare f_BITVECTOR_ULTBV term)
-;(define BITVECTOR_ULTBV (# x term (# y term (apply (apply f_BITVECTOR_ULTBV x) y))))

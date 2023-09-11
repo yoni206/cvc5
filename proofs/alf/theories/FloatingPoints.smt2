@@ -10,9 +10,6 @@
 
 ; A floating point constant is a term having 3 bitvector children.
 ; Note this is used for both FLOATINGPOINT_FP and CONST_FLOATINGPOINT
-;(declare-const fp term)
-;(define fp (# x term (# y term (# z term (apply (apply (apply fp x) y) z)))))
-
 (declare-const fp
   (-> (! Int :var e :implicit) (! Int :var s :implicit)
       (BitVec 1) (BitVec e) (BitVec s) (FloatingPoint e (alf.add s 1))))
