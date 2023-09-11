@@ -18,7 +18,7 @@
 
 ; TODO: proper place for these
 (declare-const fmf.card (-> Type Int Bool))
-(declare-sort ho-elim-sort 1)
+(declare-sort @ho-elim-sort 1)
 
 ; skolems
 ;INPUT_VARIABLE
