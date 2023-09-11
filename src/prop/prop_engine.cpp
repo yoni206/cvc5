@@ -722,7 +722,7 @@ void PropEngine::checkProof(const context::CDList<Node>& assertions)
 ProofCnfStream* PropEngine::getProofCnfStream() { return d_pfCnfStream.get(); }
 
 std::shared_ptr<ProofNode> PropEngine::getProof(
-    const context::CDList<Node>& assertions, bool connectCnf)
+    bool connectCnf)
 {
   if (!d_env.isSatProofProducing())
   {
@@ -731,19 +731,18 @@ std::shared_ptr<ProofNode> PropEngine::getProof(
   Trace("sat-proof") << "PropEngine::getProof: getting proof with cnfStream's "
                         "lazycdproof cxt lvl "
                      << userContext()->getLevel() << "\n";
-  return d_ppm->getProof(assertions, connectCnf);
+  return d_ppm->getProof(connectCnf);
 }
 
 std::vector<std::shared_ptr<ProofNode>> PropEngine::getProofLeaves(
-    const context::CDList<Node>& assertions, modes::ProofComponent pc)
+    modes::ProofComponent pc)
 {
-  return d_ppm->getProofLeaves(assertions, pc);
+  return d_ppm->getProofLeaves(pc);
 }
 
 bool PropEngine::isProofEnabled() const { return d_pfCnfStream != nullptr; }
 
-void PropEngine::getUnsatCore(const context::CDList<Node>& assertions,
-                              std::vector<Node>& core)
+void PropEngine::getUnsatCore(std::vector<Node>& core)
 {
   if (options().smt.unsatCoresMode == options::UnsatCoresMode::ASSUMPTIONS)
   {
@@ -760,7 +759,7 @@ void PropEngine::getUnsatCore(const context::CDList<Node>& assertions,
   {
     Trace("unsat-core") << "PropEngine::getUnsatCore: via proof" << std::endl;
     // otherwise, it is just the free assumptions of the proof
-    std::shared_ptr<ProofNode> pfn = getProof(assertions);
+    std::shared_ptr<ProofNode> pfn = getProof();
     expr::getFreeAssumptions(pfn.get(), core);
   }
 }

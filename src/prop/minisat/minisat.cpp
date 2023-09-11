@@ -295,7 +295,7 @@ SatProofManager* MinisatSatSolver::getProofManager()
 }
 
 std::shared_ptr<ProofNode> MinisatSatSolver::getProof(
-    const context::CDList<Node>& assertions)
+    const std::vector<Node>& assertions)
 {
   return d_minisat->getProof();
 }

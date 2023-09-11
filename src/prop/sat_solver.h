@@ -172,7 +172,7 @@ class CDCLTSatSolver : public SatSolver
   virtual std::vector<Node> getOrderHeap() const = 0;
 
   virtual std::shared_ptr<ProofNode> getProof(
-      const context::CDList<Node>& assertions) = 0;
+      const std::vector<Node>& assertions) = 0;
 
   virtual SatProofManager* getProofManager() = 0;
 

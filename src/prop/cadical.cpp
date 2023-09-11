@@ -897,7 +897,7 @@ std::vector<SatLiteral> CadicalSolver::getDecisions() const
 std::vector<Node> CadicalSolver::getOrderHeap() const { return {}; }
 
 std::shared_ptr<ProofNode> CadicalSolver::getProof(
-    const context::CDList<Node>& assertions)
+    const std::vector<Node>& assertions)
 {
   if (!d_env.isSatProofProducing())
   {

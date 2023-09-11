@@ -1447,9 +1447,7 @@ void SolverEngine::checkProof()
   // internal check the proof
   PropEngine* pe = d_smtSolver->getPropEngine();
   Assert(pe != nullptr);
-  const context::CDList<Node>& assertions =
-      d_smtSolver->getPreprocessedAssertions();
-  std::shared_ptr<ProofNode> pePfn = pe->getProof(assertions);
+  std::shared_ptr<ProofNode> pePfn = pe->getProof();
   Assert(pePfn != nullptr);
   if (d_env->getOptions().proof.proofCheck == options::ProofCheckMode::EAGER)
   {
@@ -1514,10 +1512,8 @@ UnsatCore SolverEngine::getUnsatCoreInternal(bool isInternal)
 
   // make the proof corresponding to a dummy step (SAT_REFUTATION) of the
   // unsat core computed by the prop engine
-  const context::CDList<Node>& assertions =
-      d_smtSolver->getPreprocessedAssertions();
   std::vector<Node> pcore;
-  pe->getUnsatCore(assertions, pcore);
+  pe->getUnsatCore(pcore);
   std::vector<Node> core = convertPreprocessedToInput(pcore, isInternal);
   return UnsatCore(core);
 }
@@ -1608,9 +1604,7 @@ void SolverEngine::getRelevantQuantTermVectors(
   // generate with new proofs
   PropEngine* pe = d_smtSolver->getPropEngine();
   Assert(pe != nullptr);
-  const context::CDList<Node>& assertions =
-      d_smtSolver->getPreprocessedAssertions();
-  std::shared_ptr<ProofNode> pfn = pe->getProof(assertions);
+  std::shared_ptr<ProofNode> pfn = pe->getProof();
   Assert(pfn != nullptr);
   // note that we don't have to connect the SAT proof to the input assertions,
   // and preprocessing proofs don't impact what instantiations are used
@@ -1658,20 +1652,20 @@ std::string SolverEngine::getProof(modes::ProofComponent c)
   }
   else if (c == modes::ProofComponent::SAT)
   {
-    ps.push_back(pe->getProof(assertions, false));
+    ps.push_back(pe->getProof(false));
     // don't need to comment that it proves false
     commentProves = false;
   }
   else if (c == modes::ProofComponent::THEORY_LEMMAS
            || c == modes::ProofComponent::PREPROCESS)
   {
-    ps = pe->getProofLeaves(assertions, c);
+    ps = pe->getProofLeaves(c);
     // connect to preprocess proofs for preprocess mode
     connectToPreprocess = (c == modes::ProofComponent::PREPROCESS);
   }
   else if (c == modes::ProofComponent::FULL)
   {
-    ps.push_back(pe->getProof(assertions, true));
+    ps.push_back(pe->getProof(true));
     connectToPreprocess = true;
     connectMkOuterScope = true;
     // don't need to comment that it proves false

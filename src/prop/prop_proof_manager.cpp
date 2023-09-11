@@ -53,7 +53,10 @@ void PropPfManager::checkProof(const context::CDList<Node>& assertions)
 {
   Trace("sat-proof") << "PropPfManager::checkProof: Checking if resolution "
                         "proof of false is closed\n";
-  std::shared_ptr<ProofNode> conflictProof = d_satSolver->getProof(assertions);
+  std::vector<Node> input = d_proofCnfStream->getInputClauses();
+  std::vector<Node> lemmas = d_proofCnfStream->getLemmaClauses();
+  input.insert(input.end(), lemmas.begin(), lemmas.end());
+  std::shared_ptr<ProofNode> conflictProof = d_satSolver->getProof(input);
   Assert(conflictProof);
   // connect it with CNF proof
   d_pfpp->process(conflictProof);
@@ -71,7 +74,7 @@ void PropPfManager::checkProof(const context::CDList<Node>& assertions)
 }
 
 std::vector<std::shared_ptr<ProofNode>> PropPfManager::getProofLeaves(
-    const context::CDList<Node>& assertions, modes::ProofComponent pc)
+    modes::ProofComponent pc)
 {
   Trace("sat-proof") << "PropPfManager::getProofLeaves: Getting " << pc
                      << " component proofs\n";
@@ -82,7 +85,7 @@ std::vector<std::shared_ptr<ProofNode>> PropPfManager::getProofLeaves(
       pc == modes::ProofComponent::THEORY_LEMMAS
           ? d_proofCnfStream->getLemmaClausesProofs()
           : d_proofCnfStream->getInputClausesProofs();
-  std::shared_ptr<ProofNode> satPf = getProof(assertions, false);
+  std::shared_ptr<ProofNode> satPf = getProof(false);
   std::vector<Node> satLeaves;
   expr::getFreeAssumptions(satPf.get(), satLeaves);
   std::vector<std::shared_ptr<ProofNode>> usedPfs;
@@ -97,8 +100,7 @@ std::vector<std::shared_ptr<ProofNode>> PropPfManager::getProofLeaves(
   return usedPfs;
 }
 
-std::shared_ptr<ProofNode> PropPfManager::getProof(
-    const context::CDList<Node>& assertions, bool connectCnf)
+std::shared_ptr<ProofNode> PropPfManager::getProof(bool connectCnf)
 {
   auto it = d_propProofs.find(connectCnf);
   if (it != d_propProofs.end())
@@ -108,7 +110,10 @@ std::shared_ptr<ProofNode> PropPfManager::getProof(
   // retrieve the SAT solver's refutation proof
   Trace("sat-proof")
       << "PropPfManager::getProof: Getting resolution proof of false\n";
-  std::shared_ptr<ProofNode> conflictProof = d_satSolver->getProof(assertions);
+  std::vector<Node> input = d_proofCnfStream->getInputClauses();
+  std::vector<Node> lemmas = d_proofCnfStream->getLemmaClauses();
+  input.insert(input.end(), lemmas.begin(), lemmas.end());
+  std::shared_ptr<ProofNode> conflictProof = d_satSolver->getProof(input);
   Assert(conflictProof);
   if (TraceIsOn("sat-proof"))
   {
