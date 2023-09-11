@@ -25,6 +25,7 @@
 #include "expr/node.h"
 #include "proof/clause_id.h"
 #include "proof/proof_node_manager.h"
+#include "prop/sat_proof_manager.h"
 #include "prop/sat_solver_types.h"
 #include "util/statistics_stats.h"
 
@@ -160,6 +161,7 @@ class CDCLTSatSolver : public SatSolver
 
   /**
    * Return the current list of decisions made by the SAT solver.
+   * TODO: this should return a reference
    */
   virtual std::vector<SatLiteral> getDecisions() const = 0;
 
@@ -170,6 +172,8 @@ class CDCLTSatSolver : public SatSolver
   virtual std::vector<Node> getOrderHeap() const = 0;
 
   virtual std::shared_ptr<ProofNode> getProof() = 0;
+
+  virtual SatProofManager* getProofManager() = 0;
 
 }; /* class CDCLTSatSolver */
 
