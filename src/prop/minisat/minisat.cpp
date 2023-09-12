@@ -20,10 +20,12 @@
 #include "options/base_options.h"
 #include "options/decision_options.h"
 #include "options/prop_options.h"
+#include "options/proof_options.h"
 #include "options/smt_options.h"
 #include "proof/clause_id.h"
 #include "prop/minisat/simp/SimpSolver.h"
 #include "util/statistics_stats.h"
+#include "util/string.h"
 
 namespace cvc5::internal {
 namespace prop {
@@ -297,6 +299,26 @@ SatProofManager* MinisatSatSolver::getProofManager()
 std::shared_ptr<ProofNode> MinisatSatSolver::getProof(
     const std::vector<Node>& assertions)
 {
+
+  if (!d_env.isSatProofProducing())
+  {
+    return nullptr;
+  }
+  if (options().proof.proofUseDrat)
+  {
+    // dummy code
+    NodeManager* nm = NodeManager::currentNM();
+    CDProof cdp(d_env);
+    Node falsen = nm->mkConst(false);
+    std::vector<Node> children;//(assertions.begin(), assertions.end());
+    std::string pfFile("drat-proof.txt");
+    Node pfile = nm->mkConst(String(pfFile));
+    std::string dimacs("drat-input.txt");
+    Node dfile = nm->mkConst(String(dimacs));
+    cdp.addStep(falsen, PfRule::DRAT_REFUTATION, children, {dfile, pfile});
+    d_pf = cdp.getProofFor(falsen);
+    return d_pf;
+  }
   return d_minisat->getProof();
 }
 

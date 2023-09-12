@@ -143,6 +143,8 @@ class MinisatSatSolver : public CDCLTSatSolver, protected EnvObj
    void deinit();
   };/* class MinisatSatSolver::Statistics */
   Statistics d_statistics;
+  /** Current cache of a proof we constructed */
+  std::shared_ptr<ProofNode> d_pf;
 
 }; /* class MinisatSatSolver */
 
