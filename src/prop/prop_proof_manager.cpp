@@ -118,8 +118,8 @@ std::shared_ptr<ProofNode> PropPfManager::getProof(bool connectCnf)
     std::vector<Node> lemmas = d_proofCnfStream->getLemmaClauses();
     Trace("cnf-input") << "#lemmas=" << lemmas.size() << std::endl;
     input.insert(input.end(), lemmas.begin(), lemmas.end());
-    std::fstream dout("drat-input-2.txt", std::ios::out);
-    dout << "p cnf " << input.size() << " ";
+    std::stringstream dclauses;
+    SatVariable maxVar = 0;
     for (const Node& i : input)
     {
       std::vector<Node> lits;
@@ -131,17 +131,22 @@ std::shared_ptr<ProofNode> PropPfManager::getProof(bool connectCnf)
       {
         lits.push_back(i);
       }
+      Trace("cnf-input") << "Print " << i << std::endl;
       for (const Node& l : lits)
       {
         SatLiteral lit = d_proofCnfStream->getLiteral(l);
         SatVariable v = lit.getSatVariable();
-        dout << (lit.isNegated() ? "-" : "") << v << " ";
+        maxVar = v>maxVar ? v : maxVar;
+        dclauses << (lit.isNegated() ? "-" : "") << v << " ";
       }
-      dout << "0" << std::endl;
+      dclauses << "0" << std::endl;
     }
+    std::fstream dout("drat-input.txt", std::ios::out);
+    dout << "p cnf " << maxVar << " " << input.size() << std::endl;
+    dout << dclauses.str();
     dout.close();
     
-  
+    /*
     std::vector<Node> core;
     std::vector<SatLiteral> unsat_assumptions;
     d_satSolver->getUnsatAssumptions(unsat_assumptions);
@@ -150,9 +155,10 @@ std::shared_ptr<ProofNode> PropPfManager::getProof(bool connectCnf)
       core.push_back(d_proofCnfStream->getNode(lit));
     }
     Trace("sat-proof") << "Core is " << core << std::endl;
+    */
     CDProof cdp(d_env);
     Node falsen = NodeManager::currentNM()->mkConst(false);
-    cdp.addStep(falsen, r, core, args);
+    cdp.addStep(falsen, r, input, args);
     conflictProof = cdp.getProofFor(falsen);
   }
   else

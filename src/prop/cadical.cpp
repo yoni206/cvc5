@@ -909,7 +909,7 @@ bool CadicalSolver::hasExternalProof(PfRule& r, std::vector<Node>& args)
   d_solver->flush_proof_trace();
   NodeManager * nm = NodeManager::currentNM();
   std::string dimacs("drat-input.txt");
-  d_solver->write_dimacs(dimacs.c_str());
+  //d_solver->write_dimacs(dimacs.c_str());
   Node dfile = nm->mkConst(String(dimacs));
   args.push_back(dfile);
   Node pfile = nm->mkConst(String(d_pfFile));

@@ -217,6 +217,7 @@ void ProofCnfStream::convertAndAssert(TNode node, bool negated)
     {
       // negate
       Node nnode = negated ? node.negate() : static_cast<Node>(node);
+      Trace("cnf-input") << "Look at " << node << std::endl;
       // Atoms
       SatLiteral lit = toCNF(node, negated);
       bool added = d_cnfStream.assertClause(nnode, lit);
@@ -231,12 +232,16 @@ void ProofCnfStream::convertAndAssert(TNode node, bool negated)
             << "ProofCnfStream::convertAndAssert: NOT_NOT_ELIM added norm "
             << nnode << "\n";
       }
-      if (added && d_satPM)
+      if (added)
       {
         // note that we do not need to do the normalization here since this is
         // not a clause and double negation is tracked in a dedicated manner
         // above
-        d_satPM->registerSatAssumptions({nnode});
+        if (d_satPM)
+        {
+          d_satPM->registerSatAssumptions({nnode});
+        }
+        Trace("cnf-input") << "New clause (2): " << nnode << " " << d_input << std::endl;
         if (d_input)
         {
           d_inputClauses.insert(nnode);
