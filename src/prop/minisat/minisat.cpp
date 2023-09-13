@@ -296,30 +296,29 @@ SatProofManager* MinisatSatSolver::getProofManager()
   return d_minisat->getProofManager();
 }
 
-std::shared_ptr<ProofNode> MinisatSatSolver::getProof(
-    const std::vector<Node>& assertions)
+std::shared_ptr<ProofNode> MinisatSatSolver::getProof()
 {
+  Assert (d_env.isSatProofProducing());
+  return d_minisat->getProof();
+}
 
-  if (!d_env.isSatProofProducing())
-  {
-    return nullptr;
-  }
+bool MinisatSatSolver::hasExternalProof(PfRule& r, std::vector<Node>& args)
+{
+  Assert (d_env.isSatProofProducing());
   if (options().proof.proofUseDrat)
   {
     // dummy code
+    r =  PfRule::DRAT_REFUTATION;
     NodeManager* nm = NodeManager::currentNM();
-    CDProof cdp(d_env);
-    Node falsen = nm->mkConst(false);
-    std::vector<Node> children;//(assertions.begin(), assertions.end());
     std::string pfFile("drat-proof.txt");
     Node pfile = nm->mkConst(String(pfFile));
+    args.push_back(pfile);
     std::string dimacs("drat-input.txt");
     Node dfile = nm->mkConst(String(dimacs));
-    cdp.addStep(falsen, PfRule::DRAT_REFUTATION, children, {dfile, pfile});
-    d_pf = cdp.getProofFor(falsen);
-    return d_pf;
+    args.push_back(dfile);
+    return true;
   }
-  return d_minisat->getProof();
+  return false;
 }
 
 /** Incremental interface */

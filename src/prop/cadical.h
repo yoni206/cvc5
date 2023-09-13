@@ -88,11 +88,11 @@ class CadicalSolver : public CDCLTSatSolver, protected EnvObj
 
   std::vector<Node> getOrderHeap() const override;
 
-  std::shared_ptr<ProofNode> getProof(
-      const std::vector<Node>& assertions) override;
+  std::shared_ptr<ProofNode> getProof() override;
 
   SatProofManager* getProofManager() override;
 
+  bool hasExternalProof(PfRule& r, std::vector<Node>& args) override;
  private:
   /**
    * Constructor.
@@ -142,8 +142,6 @@ class CadicalSolver : public CDCLTSatSolver, protected EnvObj
 
   /** The proof file */
   std::string d_pfFile;
-  /** Current cache of a proof we constructed */
-  std::shared_ptr<ProofNode> d_pf;
 
   unsigned d_nextVarIdx;
   context::CDHashSet<SatVariable> d_observedVars;

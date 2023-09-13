@@ -53,10 +53,7 @@ void PropPfManager::checkProof(const context::CDList<Node>& assertions)
 {
   Trace("sat-proof") << "PropPfManager::checkProof: Checking if resolution "
                         "proof of false is closed\n";
-  std::vector<Node> input = d_proofCnfStream->getInputClauses();
-  std::vector<Node> lemmas = d_proofCnfStream->getLemmaClauses();
-  input.insert(input.end(), lemmas.begin(), lemmas.end());
-  std::shared_ptr<ProofNode> conflictProof = d_satSolver->getProof(input);
+  std::shared_ptr<ProofNode> conflictProof = getProof(false);
   Assert(conflictProof);
   // connect it with CNF proof
   d_pfpp->process(conflictProof);
@@ -110,10 +107,58 @@ std::shared_ptr<ProofNode> PropPfManager::getProof(bool connectCnf)
   // retrieve the SAT solver's refutation proof
   Trace("sat-proof")
       << "PropPfManager::getProof: Getting resolution proof of false\n";
-  std::vector<Node> input = d_proofCnfStream->getInputClauses();
-  std::vector<Node> lemmas = d_proofCnfStream->getLemmaClauses();
-  input.insert(input.end(), lemmas.begin(), lemmas.end());
-  std::shared_ptr<ProofNode> conflictProof = d_satSolver->getProof(input);
+  std::shared_ptr<ProofNode> conflictProof;
+  PfRule r;
+  std::vector<Node> args;
+  if (d_satSolver->hasExternalProof(r, args))
+  {
+    Assert (r==PfRule::DRAT_REFUTATION);
+    std::vector<Node> input = d_proofCnfStream->getInputClauses();
+    Trace("cnf-input") << "#input=" << input.size() << std::endl;
+    std::vector<Node> lemmas = d_proofCnfStream->getLemmaClauses();
+    Trace("cnf-input") << "#lemmas=" << lemmas.size() << std::endl;
+    input.insert(input.end(), lemmas.begin(), lemmas.end());
+    std::fstream dout("drat-input-2.txt", std::ios::out);
+    dout << "p cnf " << input.size() << " ";
+    for (const Node& i : input)
+    {
+      std::vector<Node> lits;
+      if (i.getKind()==kind::OR)
+      {
+        lits.insert(lits.end(), i.begin(), i.end());
+      }
+      else
+      {
+        lits.push_back(i);
+      }
+      for (const Node& l : lits)
+      {
+        SatLiteral lit = d_proofCnfStream->getLiteral(l);
+        SatVariable v = lit.getSatVariable();
+        dout << (lit.isNegated() ? "-" : "") << v << " ";
+      }
+      dout << "0" << std::endl;
+    }
+    dout.close();
+    
+  
+    std::vector<Node> core;
+    std::vector<SatLiteral> unsat_assumptions;
+    d_satSolver->getUnsatAssumptions(unsat_assumptions);
+    for (const SatLiteral& lit : unsat_assumptions)
+    {
+      core.push_back(d_proofCnfStream->getNode(lit));
+    }
+    Trace("sat-proof") << "Core is " << core << std::endl;
+    CDProof cdp(d_env);
+    Node falsen = NodeManager::currentNM()->mkConst(false);
+    cdp.addStep(falsen, r, core, args);
+    conflictProof = cdp.getProofFor(falsen);
+  }
+  else
+  {
+    conflictProof = d_satSolver->getProof();
+  }
   Assert(conflictProof);
   if (TraceIsOn("sat-proof"))
   {

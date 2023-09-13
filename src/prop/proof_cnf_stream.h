@@ -78,6 +78,12 @@ class ProofCnfStream : protected EnvObj, public ProofGenerator
                         bool removable,
                         bool input,
                         ProofGenerator* pg);
+  /**
+   * Get the node that is represented by the given SatLiteral.
+   * @param literal the literal from the sat solver
+   * @return the actual node
+   */
+  TNode getNode(const SatLiteral& literal);
 
   /**
    * Clausifies the given propagation lemma *without* registering the resoluting

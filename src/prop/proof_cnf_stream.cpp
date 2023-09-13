@@ -126,6 +126,7 @@ Node ProofCnfStream::normalizeAndRegister(TNode clauseNode)
                  << normClauseNode << "\n"
                  << pop;
   }
+  Trace("cnf-input") << "New clause: " << normClauseNode << " " << d_input << std::endl;
   if (d_input)
   {
     d_inputClauses.insert(normClauseNode);
@@ -173,6 +174,11 @@ void ProofCnfStream::convertAndAssert(TNode node,
   }
   d_psb.clear();
   d_input = false;
+}
+
+TNode ProofCnfStream::getNode(const SatLiteral& literal)
+{
+  return d_cnfStream.getNode(literal);
 }
 
 void ProofCnfStream::convertAndAssert(TNode node, bool negated)

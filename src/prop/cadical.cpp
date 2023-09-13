@@ -635,6 +635,8 @@ CadicalSolver::CadicalSolver(Env& env,
   if (env.isSatProofProducing())
   {
     d_pfFile = "drat-proof.txt";
+    d_solver->set("binary", 0);
+    d_solver->set("inprocessing", 0);
     d_solver->trace_proof(d_pfFile.c_str());
   }
 }
@@ -896,24 +898,24 @@ std::vector<SatLiteral> CadicalSolver::getDecisions() const
 
 std::vector<Node> CadicalSolver::getOrderHeap() const { return {}; }
 
-std::shared_ptr<ProofNode> CadicalSolver::getProof(
-    const std::vector<Node>& assertions)
+std::shared_ptr<ProofNode> CadicalSolver::getProof()
 {
-  if (!d_env.isSatProofProducing())
-  {
-    return nullptr;
-  }
-  NodeManager* nm = NodeManager::currentNM();
-  CDProof cdp(d_env);
-  Node falsen = nm->mkConst(false);
-  std::vector<Node> children(assertions.begin(), assertions.end());
-  Node pfile = nm->mkConst(String(d_pfFile));
+  return nullptr;
+}
+
+bool CadicalSolver::hasExternalProof(PfRule& r, std::vector<Node>& args)
+{
+  Assert (d_env.isSatProofProducing());
+  d_solver->flush_proof_trace();
+  NodeManager * nm = NodeManager::currentNM();
   std::string dimacs("drat-input.txt");
   d_solver->write_dimacs(dimacs.c_str());
   Node dfile = nm->mkConst(String(dimacs));
-  cdp.addStep(falsen, PfRule::DRAT_REFUTATION, children, {dfile, pfile});
-  d_pf = cdp.getProofFor(falsen);
-  return d_pf;
+  args.push_back(dfile);
+  Node pfile = nm->mkConst(String(d_pfFile));
+  args.push_back(pfile);
+  r = PfRule::DRAT_REFUTATION;
+  return true;
 }
 
 SatProofManager* CadicalSolver::getProofManager()

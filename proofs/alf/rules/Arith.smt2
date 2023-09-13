@@ -6,20 +6,14 @@
 (include "../programs/Arith.smt2")
 (include "../programs/Utils.smt2")
 
-
-(program mk_arith_sum_ub_step
-  ((T Type) (U Type) (S Type) (V Type) (r1 (-> T U Bool)) (a1 T) (b1 U) (r2 (-> S V Bool)) (a2 S :list) (b2 V :list))
-  (Bool Bool) Bool
-  (
-    ((mk_arith_sum_ub_step (r1 a1 b1) (r2 a2 b2)) (_ (arith_rel_sum r1 r2) (+ a1 a2) (+ b1 b2)))
-  )
-)
-
 (program mk_arith_sum_ub ((T Type) (U Type) (r (-> T U Bool)) (a T) (b U) (tail Bool :list))
     (Bool) Bool
     (
         ((mk_arith_sum_ub true)               (= 0 0))
-        ((mk_arith_sum_ub (and (r a b) tail)) (mk_arith_sum_ub_step (r a b) (mk_arith_sum_ub tail)))
+        ((mk_arith_sum_ub (and (r a b) tail)) 
+          (alf.match ((S Type) (V Type) (r2 (-> S V Bool)) (a2 S :list) (b2 V :list))
+            (mk_arith_sum_ub tail)
+            ((r2 a2 b2) (_ (arith_rel_sum r r2) (+ a a2) (+ b b2)))))
     )
 )
 

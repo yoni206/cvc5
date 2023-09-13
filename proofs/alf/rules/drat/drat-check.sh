@@ -10,7 +10,7 @@ PROOF=$2
 
 RESULT=$(drat-trim $INPUT $PROOF)
 
-if [[ $RESULT == *"VERIFIED"* ]];
+if [[ $RESULT == *"s VERIFIED"* ]];
 then
       echo "true"
       exit 0
