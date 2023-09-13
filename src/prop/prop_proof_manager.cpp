@@ -124,17 +124,18 @@ std::shared_ptr<ProofNode> PropPfManager::getProof(const context::CDList<Node>& 
     std::stringstream dclauses;
     SatVariable maxVar = 0;
     // get the unsat core from cadical
-    //std::vector<SatLiteral> unsatAssumptions;
-    //d_satSolver->getUnsatAssumptions(unsatAssumptions);
+    std::vector<SatLiteral> unsatAssumptions;
+    d_satSolver->getUnsatAssumptions(unsatAssumptions);
     for (const Node& i : clauses)
     {
-      /*
-      SatLiteral il = d_proofCnfStream->getLiteral(i);
-      if (std::find(unsatAssumptions.begin(), unsatAssumptions.end(), il)==unsatAssumptions.end())
+      if (d_proofCnfStream->hasLiteral(i))
       {
-        continue;
+        SatLiteral il = d_proofCnfStream->getLiteral(i);
+        if (std::find(unsatAssumptions.begin(), unsatAssumptions.end(), il)==unsatAssumptions.end())
+        {
+          continue;
+        }
       }
-      */
       std::vector<Node> lits;
       if (i.getKind()==kind::OR)
       {
