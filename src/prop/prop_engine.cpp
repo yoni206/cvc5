@@ -258,6 +258,46 @@ void PropEngine::assertTrustedLemmaInternal(TrustNode trn, bool removable)
 void PropEngine::assertInternal(
     TNode node, bool negated, bool removable, bool input, ProofGenerator* pg)
 {
+#if 0
+  bool addAssumption = false;
+  if (isProofEnabled())
+  {
+    if (options().smt.unsatCoresMode == options::UnsatCoresMode::ASSUMPTIONS)
+    {
+      d_pfCnfStream->ensureLiteral(node);
+      addAssumption = true;
+    }
+    else
+    {
+      d_pfCnfStream->convertAndAssert(node, negated, removable, input, pg);
+      // if input, register the assertion in the proof manager
+      if (input)
+      {
+        d_ppm->registerAssertion(node);
+      }
+    }
+  }
+  else if ((input && d_env.getUserContext()->getLevel() > 1) || options().smt.unsatCoresMode == options::UnsatCoresMode::ASSUMPTIONS)
+  {
+    d_cnfStream->ensureLiteral(node);
+    addAssumption = true;
+  }
+  else
+  {
+    d_cnfStream->convertAndAssert(node, removable, negated);
+  }
+  if (addAssumption)
+  {
+    if (negated)
+    {
+      d_assumptions.push_back(node.notNode());
+    }
+    else
+    {
+      d_assumptions.push_back(node);
+    }
+  }
+#else
   // Assert as (possibly) removable
   if (options().smt.unsatCoresMode == options::UnsatCoresMode::ASSUMPTIONS)
   {
@@ -303,6 +343,7 @@ void PropEngine::assertInternal(
   {
     d_cnfStream->convertAndAssert(node, removable, negated);
   }
+#endif
 }
 
 void PropEngine::assertLemmasInternal(
@@ -716,7 +757,7 @@ void PropEngine::checkProof(const context::CDList<Node>& assertions)
   {
     return;
   }
-  return d_ppm->checkProof(assertions);
+  return d_ppm->checkProof(d_assumptions, assertions);
 }
 
 ProofCnfStream* PropEngine::getProofCnfStream() { return d_pfCnfStream.get(); }
@@ -731,13 +772,13 @@ std::shared_ptr<ProofNode> PropEngine::getProof(
   Trace("sat-proof") << "PropEngine::getProof: getting proof with cnfStream's "
                         "lazycdproof cxt lvl "
                      << userContext()->getLevel() << "\n";
-  return d_ppm->getProof(connectCnf);
+  return d_ppm->getProof(d_assumptions, connectCnf);
 }
 
 std::vector<std::shared_ptr<ProofNode>> PropEngine::getProofLeaves(
     modes::ProofComponent pc)
 {
-  return d_ppm->getProofLeaves(pc);
+  return d_ppm->getProofLeaves(d_assumptions, pc);
 }
 
 bool PropEngine::isProofEnabled() const { return d_pfCnfStream != nullptr; }

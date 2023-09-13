@@ -172,12 +172,12 @@ void SetDefaults::setDefaultsPre(Options& opts)
     if (opts.smt.unsatCoresMode != options::UnsatCoresMode::SAT_PROOF)
     {
       SET_AND_NOTIFY(Smt, produceUnsatCores, true, "enabling proofs");
-      if (true || options().prop.satSolver==options::SatSolverMode::MINISAT)
+      if (options().prop.satSolver==options::SatSolverMode::MINISAT)
       {
         SET_AND_NOTIFY(Smt,
                       unsatCoresMode,
                       options::UnsatCoresMode::SAT_PROOF,
-                      "enabling proofs");
+                      "enabling proofs, minisat");
       }
       else
       {
