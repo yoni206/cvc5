@@ -19,6 +19,7 @@
 
 #include "expr/attribute.h"
 #include "expr/dtype.h"
+#include "expr/cardinality_constraint.h"
 
 namespace cvc5::internal {
 namespace expr {
@@ -642,6 +643,11 @@ void getTypes(TNode n,
     {
       visited.insert(cur);
       types.insert(cur.getType());
+      // special cases where the type is not part of the AST
+      if (cur.getKind()==kind::CARDINALITY_CONSTRAINT)
+      {
+        types.insert(cur.getOperator().getConst<CardinalityConstraint>().getType());
+      }
       visit.insert(visit.end(), cur.begin(), cur.end());
     }
   } while (!visit.empty());
