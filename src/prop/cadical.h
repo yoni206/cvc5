@@ -93,6 +93,7 @@ class CadicalSolver : public CDCLTSatSolver, protected EnvObj
   SatProofManager* getProofManager() override;
 
   bool hasExternalProof(PfRule& r, std::vector<Node>& args) override;
+
  private:
   /**
    * Constructor.

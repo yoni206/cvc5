@@ -49,7 +49,8 @@ void PropPfManager::registerAssertion(Node assertion)
   d_assertions.push_back(assertion);
 }
 
-void PropPfManager::checkProof(const context::CDList<Node>& assumptions, const context::CDList<Node>& assertions)
+void PropPfManager::checkProof(const context::CDList<Node>& assumptions,
+                               const context::CDList<Node>& assertions)
 {
   Trace("sat-proof") << "PropPfManager::checkProof: Checking if resolution "
                         "proof of false is closed\n";
@@ -97,7 +98,8 @@ std::vector<std::shared_ptr<ProofNode>> PropPfManager::getProofLeaves(
   return usedPfs;
 }
 
-std::shared_ptr<ProofNode> PropPfManager::getProof(const context::CDList<Node>& assumptions, bool connectCnf)
+std::shared_ptr<ProofNode> PropPfManager::getProof(
+    const context::CDList<Node>& assumptions, bool connectCnf)
 {
   auto it = d_propProofs.find(connectCnf);
   if (it != d_propProofs.end())
@@ -112,7 +114,7 @@ std::shared_ptr<ProofNode> PropPfManager::getProof(const context::CDList<Node>& 
   std::vector<Node> args;
   if (d_satSolver->hasExternalProof(r, args))
   {
-    Assert (r==PfRule::DRAT_REFUTATION);
+    Assert(r == PfRule::DRAT_REFUTATION);
     std::vector<Node> clauses(assumptions.begin(), assumptions.end());
     Trace("cnf-input") << "#assumptions=" << assumptions.size() << std::endl;
     std::vector<Node> input = d_proofCnfStream->getInputClauses();
@@ -131,13 +133,14 @@ std::shared_ptr<ProofNode> PropPfManager::getProof(const context::CDList<Node>& 
       if (d_proofCnfStream->hasLiteral(i))
       {
         SatLiteral il = d_proofCnfStream->getLiteral(i);
-        if (std::find(unsatAssumptions.begin(), unsatAssumptions.end(), il)==unsatAssumptions.end())
+        if (std::find(unsatAssumptions.begin(), unsatAssumptions.end(), il)
+            == unsatAssumptions.end())
         {
           continue;
         }
       }
       std::vector<Node> lits;
-      if (i.getKind()==kind::OR)
+      if (i.getKind() == kind::OR)
       {
         lits.insert(lits.end(), i.begin(), i.end());
       }
@@ -150,7 +153,7 @@ std::shared_ptr<ProofNode> PropPfManager::getProof(const context::CDList<Node>& 
       {
         SatLiteral lit = d_proofCnfStream->getLiteral(l);
         SatVariable v = lit.getSatVariable();
-        maxVar = v>maxVar ? v : maxVar;
+        maxVar = v > maxVar ? v : maxVar;
         dclauses << (lit.isNegated() ? "-" : "") << v << " ";
       }
       dclauses << "0" << std::endl;
@@ -159,7 +162,7 @@ std::shared_ptr<ProofNode> PropPfManager::getProof(const context::CDList<Node>& 
     dout << "p cnf " << maxVar << " " << clauses.size() << std::endl;
     dout << dclauses.str();
     dout.close();
-    
+
     /*
     std::vector<Node> core;
     std::vector<SatLiteral> unsat_assumptions;

@@ -124,7 +124,8 @@ class CadicalPropagator : public CaDiCaL::ExternalPropagator
       if (info.is_theory_atom)
       {
         Trace("cadical::propagator") << "enqueue: " << slit << std::endl;
-        Trace("cadical::propagator") << "node:    " << d_proxy->getNode(slit) << std::endl;
+        Trace("cadical::propagator")
+            << "node:    " << d_proxy->getNode(slit) << std::endl;
         d_proxy->enqueueTheoryLiteral(slit);
       }
     }
@@ -951,11 +952,11 @@ std::shared_ptr<ProofNode> CadicalSolver::getProof()
 
 bool CadicalSolver::hasExternalProof(PfRule& r, std::vector<Node>& args)
 {
-  Assert (d_env.isSatProofProducing());
+  Assert(d_env.isSatProofProducing());
   d_solver->flush_proof_trace();
-  NodeManager * nm = NodeManager::currentNM();
+  NodeManager* nm = NodeManager::currentNM();
   std::string dimacs("drat-input.txt");
-  //d_solver->write_dimacs(dimacs.c_str());
+  // d_solver->write_dimacs(dimacs.c_str());
   Node dfile = nm->mkConst(String(dimacs));
   args.push_back(dfile);
   Node pfile = nm->mkConst(String(d_pfFile));
@@ -963,7 +964,6 @@ bool CadicalSolver::hasExternalProof(PfRule& r, std::vector<Node>& args)
   r = PfRule::DRAT_REFUTATION;
   return true;
 }
-
 
 SatProofManager* CadicalSolver::getProofManager()
 {

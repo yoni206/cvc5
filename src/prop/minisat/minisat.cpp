@@ -19,8 +19,8 @@
 
 #include "options/base_options.h"
 #include "options/decision_options.h"
-#include "options/prop_options.h"
 #include "options/proof_options.h"
+#include "options/prop_options.h"
 #include "options/smt_options.h"
 #include "proof/clause_id.h"
 #include "prop/minisat/simp/SimpSolver.h"
@@ -298,17 +298,17 @@ SatProofManager* MinisatSatSolver::getProofManager()
 
 std::shared_ptr<ProofNode> MinisatSatSolver::getProof()
 {
-  Assert (d_env.isSatProofProducing());
+  Assert(d_env.isSatProofProducing());
   return d_minisat->getProof();
 }
 
 bool MinisatSatSolver::hasExternalProof(PfRule& r, std::vector<Node>& args)
 {
-  Assert (d_env.isSatProofProducing());
+  Assert(d_env.isSatProofProducing());
   if (options().proof.proofUseDrat)
   {
     // dummy code
-    r =  PfRule::DRAT_REFUTATION;
+    r = PfRule::DRAT_REFUTATION;
     NodeManager* nm = NodeManager::currentNM();
     std::string pfFile("drat-proof.txt");
     Node pfile = nm->mkConst(String(pfFile));

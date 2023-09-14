@@ -112,6 +112,7 @@ class MinisatSatSolver : public CDCLTSatSolver, protected EnvObj
 
   /** Returns false */
   bool hasExternalProof(PfRule& r, std::vector<Node>& args) override;
+
  private:
 
   /** The SatSolver used */

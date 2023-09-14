@@ -126,7 +126,8 @@ Node ProofCnfStream::normalizeAndRegister(TNode clauseNode)
                  << normClauseNode << "\n"
                  << pop;
   }
-  Trace("cnf-input") << "New clause: " << normClauseNode << " " << d_input << std::endl;
+  Trace("cnf-input") << "New clause: " << normClauseNode << " " << d_input
+                     << std::endl;
   if (d_input)
   {
     d_inputClauses.insert(normClauseNode);
@@ -241,7 +242,8 @@ void ProofCnfStream::convertAndAssert(TNode node, bool negated)
         {
           d_satPM->registerSatAssumptions({nnode});
         }
-        Trace("cnf-input") << "New clause (2): " << nnode << " " << d_input << std::endl;
+        Trace("cnf-input") << "New clause (2): " << nnode << " " << d_input
+                           << std::endl;
         if (d_input)
         {
           d_inputClauses.insert(nnode);

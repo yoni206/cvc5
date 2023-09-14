@@ -258,11 +258,14 @@ void PropEngine::assertTrustedLemmaInternal(TrustNode trn, bool removable)
 void PropEngine::assertInternal(
     TNode node, bool negated, bool removable, bool input, ProofGenerator* pg)
 {
-  Trace("ajr-temp") << "assert " << isProofEnabled() << " " << options().smt.unsatCoresMode << " " << input << std::endl;
+  Trace("ajr-temp") << "assert " << isProofEnabled() << " "
+                    << options().smt.unsatCoresMode << " " << input
+                    << std::endl;
   bool addAssumption = false;
   if (isProofEnabled())
   {
-    if (input && options().smt.unsatCoresMode == options::UnsatCoresMode::ASSUMPTIONS)
+    if (input
+        && options().smt.unsatCoresMode == options::UnsatCoresMode::ASSUMPTIONS)
     {
       // use the proof CNF stream to ensure the literal
       d_pfCnfStream->ensureLiteral(node);
@@ -278,7 +281,9 @@ void PropEngine::assertInternal(
       }
     }
   }
-  else if (input && options().smt.unsatCoresMode == options::UnsatCoresMode::ASSUMPTIONS)
+  else if (input
+           && options().smt.unsatCoresMode
+                  == options::UnsatCoresMode::ASSUMPTIONS)
   {
     d_cnfStream->ensureLiteral(node);
     addAssumption = true;
@@ -716,8 +721,7 @@ void PropEngine::checkProof(const context::CDList<Node>& assertions)
 
 ProofCnfStream* PropEngine::getProofCnfStream() { return d_pfCnfStream.get(); }
 
-std::shared_ptr<ProofNode> PropEngine::getProof(
-    bool connectCnf)
+std::shared_ptr<ProofNode> PropEngine::getProof(bool connectCnf)
 {
   if (!d_env.isSatProofProducing())
   {

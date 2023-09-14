@@ -321,7 +321,7 @@ class PropEngine : protected EnvObj
    * assertion assumptions to the added clauses to the SAT solver).
    */
   std::vector<std::shared_ptr<ProofNode>> getProofLeaves(
-       modes::ProofComponent pc);
+      modes::ProofComponent pc);
 
   /** Is proof enabled? */
   bool isProofEnabled() const;

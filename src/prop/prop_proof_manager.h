@@ -68,7 +68,8 @@ class PropPfManager : protected EnvObj
    * assertion and theory lemmas are free assumptions in the returned proof
    * instead of being connected to their proofs.
    */
-  std::shared_ptr<ProofNode> getProof(const context::CDList<Node>& assumptions, bool connectCnf);
+  std::shared_ptr<ProofNode> getProof(const context::CDList<Node>& assumptions,
+                                      bool connectCnf);
 
   /** Return the vector of proofs for the respective proof component requested.
    *
@@ -90,7 +91,8 @@ class PropPfManager : protected EnvObj
    * engine's proof with the preprocessing proof) and these changes survive for
    * a next check-sat call.
    */
-  void checkProof(const context::CDList<Node>& assumptions, const context::CDList<Node>& assertions);
+  void checkProof(const context::CDList<Node>& assumptions,
+                  const context::CDList<Node>& assertions);
 
  private:
   /** The proofs of this proof manager, which are saved once requested (note the

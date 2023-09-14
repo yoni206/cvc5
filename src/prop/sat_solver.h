@@ -172,7 +172,7 @@ class CDCLTSatSolver : public SatSolver
   virtual std::vector<Node> getOrderHeap() const = 0;
 
   virtual std::shared_ptr<ProofNode> getProof() = 0;
-  
+
   /**
    * If this SAT solver can produce an external proof, return the proof rule
    * corresponding to that proof and populate the arguments. The children
