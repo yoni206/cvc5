@@ -259,7 +259,7 @@ Node AlfNodeConverter::postConvert(Node n)
   else if (k == APPLY_TESTER || k == APPLY_UPDATER || k == NEG
            || k == DIVISION_TOTAL || k == INTS_DIVISION_TOTAL
            || k == INTS_MODULUS_TOTAL || k == APPLY_CONSTRUCTOR
-           || k == APPLY_SELECTOR)
+           || k == APPLY_SELECTOR || k == FLOATINGPOINT_TO_FP_FROM_IEEE_BV)
   {
     // kinds where the operator may be different
     Node opc = getOperatorOfTerm(n);
@@ -592,6 +592,12 @@ Node AlfNodeConverter::getOperatorOfTerm(Node n)
         {
           opName << "update-" << dt[cindex][index].getSelector();
         }
+      }
+      else if (k == FLOATINGPOINT_TO_FP_FROM_IEEE_BV)
+      {
+        // this does not take a rounding mode, we change the smt2 syntax
+        // to distinguish this case.
+        opName << "to_fp_bv";
       }
       else
       {

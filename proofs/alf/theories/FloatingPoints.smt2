@@ -99,12 +99,22 @@
 (declare-const fp.to_ubv
   (->
   (! Int :var e :implicit) (! Int :var s :implicit)
-  (! Int :var m :implicit) RoundingMode (FloatingPoint e s) (BitVec m)))
+  (! Int :var m) RoundingMode (FloatingPoint e s) (BitVec m)))
+
+(declare-const fp.to_ubv_total
+  (->
+  (! Int :var e :implicit) (! Int :var s :implicit)
+  (! Int :var m) RoundingMode (FloatingPoint e s) (BitVec m) (BitVec m)))
 
 (declare-const fp.to_sbv
   (->
   (! Int :var e :implicit) (! Int :var s :implicit)
-  (! Int :var m :implicit) RoundingMode (FloatingPoint e s) (BitVec m)))
+  (! Int :var m) RoundingMode (FloatingPoint e s) (BitVec m)))
+
+(declare-const fp.to_sbv_total
+  (->
+  (! Int :var e :implicit) (! Int :var s :implicit)
+  (! Int :var m) RoundingMode (FloatingPoint e s) (BitVec m) (BitVec m)))
 
 (declare-const fp.to_real
   (-> (! Int :var e :implicit) (! Int :var s :implicit)
@@ -117,6 +127,11 @@
 (declare-const to_fp_unsigned
   (-> (! Type :var T :implicit)
       (! Int :var e) (! Int :var s) RoundingMode T (FloatingPoint e s)))
+
+; different syntax (adds _bv) since it does not take RoundingMode
+(declare-const to_fp_bv
+  (-> (! Int :var w :implicit)
+      (! Int :var e) (! Int :var s) (BitVec w) (FloatingPoint e s)))
 
 ; internally generated terms
 (declare-const EXPONENT (-> (! Type :var T) T))
