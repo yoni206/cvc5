@@ -124,8 +124,7 @@ class CadicalPropagator : public CaDiCaL::ExternalPropagator
       if (info.is_theory_atom)
       {
         Trace("cadical::propagator") << "enqueue: " << slit << std::endl;
-        Trace("cadical::propagator")
-            << "node:    " << d_proxy->getNode(slit) << std::endl;
+        Trace("cadical::propagator") << "node:    " << d_proxy->getNode(slit) << std::endl;
         d_proxy->enqueueTheoryLiteral(slit);
       }
     }
@@ -221,10 +220,23 @@ class CadicalPropagator : public CaDiCaL::ExternalPropagator
       return true;
     }
 
-    // Check full model. Theory engine may trigger a recheck, unless new
-    // variables were added during check. If so, we break out of the check and
-    // have the SAT solver extend the model with the new variables.
+    // Check full model.
+    //
+    // First, we have to ensure that if the SAT solver determines sat without
+    // making any decisions, theory decisions are still requested until fixed
+    // point at least once since some modules, e.g., finite model finding, rely
+    // on this. If new variables are added, we interrupt the check to force
+    // the SAT solver to extend the model with the new variables.
     size_t size = d_var_info.size();
+    bool requirePhase, stopSearch;
+    d_proxy->getNextDecisionRequest(requirePhase, stopSearch, true);
+    if (d_var_info.size() != size)
+    {
+      return false;
+    }
+    // Theory engine may trigger a recheck, unless new variables were added
+    // during check. If so, we break out of the check and have the SAT solver
+    // extend the model with the new variables.
     do
     {
       Trace("cadical::propagator")
@@ -290,13 +302,16 @@ class CadicalPropagator : public CaDiCaL::ExternalPropagator
     }
     if (!stopSearch && lit != undefSatLiteral)
     {
-      int8_t phase = d_var_info[lit.getSatVariable()].phase;
-      if (phase != 0)
+      if (!requirePhase)
       {
-        if ((phase == -1 && !lit.isNegated())
-            || (phase == 1 && lit.isNegated()))
+        int8_t phase = d_var_info[lit.getSatVariable()].phase;
+        if (phase != 0)
         {
-          lit = ~lit;
+          if ((phase == -1 && !lit.isNegated())
+              || (phase == 1 && lit.isNegated()))
+          {
+            lit = ~lit;
+          }
         }
       }
       Trace("cadical::propagator") << "cb::decide: " << lit << std::endl;
@@ -425,7 +440,17 @@ class CadicalPropagator : public CaDiCaL::ExternalPropagator
     }
   }
 
-  void add_new_var(const SatVariable& var, bool is_theory_atom, bool in_search)
+  /**
+   * Add new CaDiCaL variable.
+   * @param var            The variable to add.
+   * @param level          The current user assertion level.
+   * @param is_theory_atom True if variable is a theory atom.
+   * @param in_search      True if SAT solver is currently in search().
+   */
+  void add_new_var(const SatVariable& var,
+                   uint32_t level,
+                   bool is_theory_atom,
+                   bool in_search)
   {
     Assert(d_var_info.size() == var);
 
@@ -435,9 +460,11 @@ class CadicalPropagator : public CaDiCaL::ExternalPropagator
     d_solver.add_observed_var(toCadicalVar(var));
     d_active_vars.push_back(var);
     Trace("cadical::propagator")
-        << "new var: " << var << " (theoryAtom: " << is_theory_atom
-        << ", inSearch: " << in_search << ")" << std::endl;
+        << "new var: " << var << " (level: " << level
+        << ", is_theory_atom: " << is_theory_atom
+        << ", in_search: " << in_search << ")" << std::endl;
     auto& info = d_var_info.emplace_back();
+    info.level = level;
     info.is_theory_atom = is_theory_atom;
   }
 
@@ -473,17 +500,25 @@ class CadicalPropagator : public CaDiCaL::ExternalPropagator
 
   void user_push()
   {
+    Trace("cadical::propagator")
+        << "user push: " << d_active_vars_control.size();
     d_active_vars_control.push_back(d_active_vars.size());
     Trace("cadical::propagator")
-        << "user push: " << d_active_vars_control.size() << std::endl;
+        << " -> " << d_active_vars_control.size() << std::endl;
   }
 
+  /**
+   * Pop user assertion level.
+   */
   void user_pop()
   {
+    uint32_t level = d_active_vars_control.size();
     Trace("cadical::propagator")
-        << "user pop: " << d_active_vars_control.size() << std::endl;
+        << "user pop: " << d_active_vars_control.size();
     size_t pop_to = d_active_vars_control.back();
     d_active_vars_control.pop_back();
+    Trace("cadical::propagator")
+        << " -> " << d_active_vars_control.size() << std::endl;
 
     // Unregister popped variables so that CaDiCaL does not notify us anymore
     // about assignments.
@@ -497,23 +532,32 @@ class CadicalPropagator : public CaDiCaL::ExternalPropagator
       Trace("cadical::propagator") << "set inactive: " << var << std::endl;
     }
 
-    // Re-enqueue fixed theory literals on level 0
+    // Re-enqueue active fixed theory literals on level 0.
     for (SatLiteral lit : d_assignments)
     {
-      Trace("cadical::propagator") << "re-enqueue: " << lit << std::endl;
-      d_proxy->enqueueTheoryLiteral(lit);
+      const auto& info = d_var_info[lit.getSatVariable()];
+      if (info.level < level && info.is_active)
+      {
+        Trace("cadical::propagator")
+            << "re-enqueue: level: " << level << " lit: " << lit
+            << " (level: " << d_var_info[lit.getSatVariable()].level << ")"
+            << std::endl;
+        d_proxy->enqueueTheoryLiteral(lit);
+      }
     }
   }
 
   bool is_fixed(SatVariable var) const { return d_var_info[var].is_fixed; }
 
   /**
-   * Record preferred phase of variable.
-   * @param var The variable.
-   * @param phase The phase, -1 if negative, 1 if positive, 0 if no phase
-   *              is configured.
+   * Configure and record preferred phase of variable.
+   * @param lit The literal.
    */
-  void phase(SatVariable var, uint8_t phase) { d_var_info[var].phase = phase; }
+  void phase(SatLiteral lit)
+  {
+    d_solver.phase(toCadicalLit(lit));
+    d_var_info[lit.getSatVariable()].phase = lit.isNegated() ? -1 : 1;
+  }
 
  private:
   /** Retrieve theory propagations and add them to the propagations list. */
@@ -554,6 +598,7 @@ class CadicalPropagator : public CaDiCaL::ExternalPropagator
   /** Struct to store information on variables. */
   struct VarInfo
   {
+    uint32_t level = 0;           // the assertion level on creation
     bool is_theory_atom = false;  // is variable a theory atom
     bool is_fixed = false;        // has variable fixed assignment
     bool is_active = true;        // is variable active
@@ -756,7 +801,8 @@ SatVariable CadicalSolver::newVar(bool isTheoryAtom, bool canErase)
   ++d_statistics.d_numVariables;
   if (d_propagator)
   {
-    d_propagator->add_new_var(d_nextVarIdx, isTheoryAtom, d_in_search);
+    d_propagator->add_new_var(
+        d_nextVarIdx, d_assertionLevel, isTheoryAtom, d_in_search);
   }
   return d_nextVarIdx++;
 }
@@ -849,9 +895,9 @@ void CadicalSolver::pop()
   //  d_pfManager->notifyPop();
   //}
 
-  --d_assertionLevel;
   d_context->pop();  // SAT context for cvc5
   d_propagator->user_pop();
+  --d_assertionLevel;
   // CaDiCaL issues notify_backtrack(0) when done, we don't have to call this
   // explicitly here
 }
@@ -865,8 +911,7 @@ void CadicalSolver::resetTrail()
 void CadicalSolver::preferPhase(SatLiteral lit)
 {
   Trace("cadical::propagator") << "phase: " << lit << std::endl;
-  d_solver->phase(toCadicalLit(lit));
-  d_propagator->phase(lit.getSatVariable(), lit.isNegated() ? -1 : 1);
+  d_propagator->phase(lit);
 }
 
 bool CadicalSolver::isDecision(SatVariable var) const
@@ -900,6 +945,7 @@ std::vector<Node> CadicalSolver::getOrderHeap() const { return {}; }
 
 std::shared_ptr<ProofNode> CadicalSolver::getProof()
 {
+  // TODO
   return nullptr;
 }
 
@@ -917,6 +963,7 @@ bool CadicalSolver::hasExternalProof(PfRule& r, std::vector<Node>& args)
   r = PfRule::DRAT_REFUTATION;
   return true;
 }
+
 
 SatProofManager* CadicalSolver::getProofManager()
 {

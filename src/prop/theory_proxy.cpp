@@ -55,7 +55,6 @@ TheoryProxy::TheoryProxy(Env& env,
       d_zll(nullptr),
       d_prr(nullptr),
       d_stopSearch(userContext(), false),
-      d_decisionExhausted(context(), false),
       d_activatedSkDefs(false)
 {
   bool trackZeroLevel =
@@ -234,24 +233,6 @@ void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
   }
   if (!d_stopSearch.get())
   {
-    if (effort == theory::Theory::EFFORT_FULL)
-    {
-      if (!d_decisionExhausted)
-      {
-        // Some modules, e.g., finite model finding, require that theory
-        // decisions have been requested exhaustively at least once. It can
-        // only happen that this is false at full effort if the SAT solver
-        // determines sat without making a decision. We discard the decision
-        // request, the only thing required is that it is added to the SAT
-        // solver via Valuation::ensureLiteral() (via getNextDecisionRequest()).
-        bool requirePhase, stopSearch;
-        SatLiteral l = getNextDecisionRequest(requirePhase, stopSearch);
-        if (l != undefSatLiteral)
-        {
-          return;
-        }
-      }
-    }
     d_theoryEngine->check(effort);
   }
 }
@@ -327,9 +308,11 @@ void TheoryProxy::enqueueTheoryLiteral(const SatLiteral& l) {
 }
 
 SatLiteral TheoryProxy::getNextDecisionRequest(bool& requirePhase,
-                                               bool& stopSearch)
+                                               bool& stopSearch,
+                                               bool theoryOnly)
 {
-  Trace("theory-proxy") << "TheoryProxy: getNextDecisionRequest" << std::endl;
+  Trace("theory-proxy") << "TheoryProxy: getNextDecisionRequest"
+                        << (theoryOnly ? " (theory only)" : "") << std::endl;
   SatLiteral res = undefSatLiteral;
   TNode n = d_theoryEngine->getNextDecisionRequest();
   if (!n.isNull())
@@ -338,14 +321,14 @@ SatLiteral TheoryProxy::getNextDecisionRequest(bool& requirePhase,
     requirePhase = true;
     res = d_cnfStream->getLiteral(n);
   }
-  else
+  else if (!theoryOnly)
   {
     Assert(d_decisionEngine != nullptr);
     Assert(stopSearch != true);
     requirePhase = false;
     if (d_stopSearch.get())
     {
-      Trace("theory-proxy") << "...stopped search, finish" << std::endl;
+      Trace("theory-proxy") << "...stop search, finished" << std::endl;
       stopSearch = true;
     }
     else
@@ -358,12 +341,8 @@ SatLiteral TheoryProxy::getNextDecisionRequest(bool& requirePhase,
       }
       else
       {
-        Trace("theory-proxy") << "...returned next decision" << std::endl;
+        Trace("theory-proxy") << "...return next decision" << std::endl;
       }
-    }
-    if (res == undefSatLiteral)
-    {
-      d_decisionExhausted = true;
     }
   }
   return res;
@@ -375,7 +354,7 @@ bool TheoryProxy::theoryNeedCheck() const
   {
     return false;
   }
-  else if (d_activatedSkDefs || !d_decisionExhausted.get())
+  else if (d_activatedSkDefs)
   {
     // a new skolem definition became active on the last call to theoryCheck
     return true;
@@ -426,8 +405,9 @@ void TheoryProxy::spendResource(Resource r)
   d_theoryEngine->spendResource(r);
 }
 
-bool TheoryProxy::isDecisionEngineDone() {
-  return (d_decisionEngine->isDone() && d_decisionExhausted.get()) || d_stopSearch.get();
+bool TheoryProxy::isDecisionEngineDone()
+{
+  return d_decisionEngine->isDone() || d_stopSearch.get();
 }
 
 CnfStream* TheoryProxy::getCnfStream() const { return d_cnfStream; }

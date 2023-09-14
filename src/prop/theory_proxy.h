@@ -131,6 +131,10 @@ class TheoryProxy : protected EnvObj, public Registrar
   /**
    * Get the next decision request.
    *
+   * This first queries the theory engine for a decision request. If the theory
+   * engine does not request a decision, the decision engine is queried, unless
+   * only theory decision requests are queried (`theoryOnly` is true).
+   *
    * If `requirePhase` is true, the decision must be decided as is, in the
    * given polarity. Else it should respect the polarity configured via
    * PropEngine::requirePhase, if any.
@@ -139,9 +143,12 @@ class TheoryProxy : protected EnvObj, public Registrar
    *                     as-is, in its given polarity.
    * @param stopSearch   True if the current search should be terminated. In
    *                     this case, lit_Undef is returned.
+   * @param theoryOnly   True to query the theory engine for decision requests.
    * @return The next decision.
    */
-  SatLiteral getNextDecisionRequest(bool& requirePhase, bool& stopSearch);
+  SatLiteral getNextDecisionRequest(bool& requirePhase,
+                                    bool& stopSearch,
+                                    bool theoryOnly = false);
 
   bool theoryNeedCheck() const;
 
@@ -256,12 +263,6 @@ class TheoryProxy : protected EnvObj, public Registrar
 
   /** Whether we have been requested to stop the search */
   context::CDO<bool> d_stopSearch;
-
-  /**
-   * True if theory decisions have been requested until exhaustion at least
-   * once.
-   */
-  context::CDO<bool> d_decisionExhausted;
 
   /**
    * Whether we activated new skolem definitions on the last call to
