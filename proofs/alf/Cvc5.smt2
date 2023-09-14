@@ -21,6 +21,7 @@
 ; TODO: proper place for these
 (declare-const fmf.card (-> Type Int Bool))
 (declare-sort @ho-elim-sort 1)
+(declare-const @fmf-fun-sort (-> (! Type :var T :implicit) T Type))
 
 ; skolems
 ;INPUT_VARIABLE
