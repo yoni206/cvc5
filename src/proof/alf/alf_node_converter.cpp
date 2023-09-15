@@ -492,12 +492,7 @@ Node AlfNodeConverter::mkList(const std::vector<Node>& args)
   {
     return mkNil(tn);
   }
-  else if (args.size() == 1)
-  {
-    std::vector<Node> aargs(args.begin(), args.end());
-    aargs.push_back(mkNil(tn));
-    return mkInternalApp("@list", aargs, tn);
-  }
+  // singleton lists are handled due to (@list x) ---> (@list x alf.nil)
   return mkInternalApp("@list", args, tn);
 }
 
