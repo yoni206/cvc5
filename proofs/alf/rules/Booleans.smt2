@@ -59,8 +59,8 @@
         (let ((lp (alf.ite pol L (not L))))
         (let ((ln (alf.ite pol (not L) L)))
             (alf.from_list or (alf.append or
-                    (removeSelf lp (list.intro or false C1))
-                    (removeSelf ln (list.intro or false C2)))))))
+                    (removeSelf lp (alf.to_list or C1))
+                    (removeSelf ln (alf.to_list or C2)))))))
     )
 )
 

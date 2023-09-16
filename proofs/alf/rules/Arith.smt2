@@ -62,6 +62,19 @@
   :conclusion (mk_arith_trichotomy (arith_normalize_lit (not F1)) (arith_normalize_lit (not F2)))
 )
 
+; Returns true if c is a rational between zero and one, inclusive
+(program between_zero_and_one ((R Type) (c R))
+  (R) Bool
+  (
+    ((between_zero_and_one c)
+      (alf.ite (alf.is_neg c)
+        false
+        (alf.ite (alf.is_eq c 1)
+          true
+          (alf.is_neg (alf.add c (alf.neg 1.0))))))
+  )
+)
+
 ; Returns true if c is the greatest integer less than (integer or real) constant
 ; t. We compute this via conditions 0 <= c-t ^ (c-t)-1 <= 0.
 (declare-rule int_tight_ub ((s Int) (t Real) (c Int))

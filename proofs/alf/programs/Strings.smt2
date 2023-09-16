@@ -236,10 +236,10 @@
 )
 
 ; Returns true if the length of s evaluates to one, false otherwise.
-(define check_length_one ((s String)) (check_true (alf.is_eq (alf.len s) 1)))
+(define check_length_one ((s String)) (alf.is_eq (alf.len s) 1))
 
 ; Returns true if the length of s evaluates to greater than one, false otherwise.
-(define check_length_gt_one ((s String)) (check_true (alf.is_neg (alf.add 1 (alf.neg (alf.len s))))))
+(define check_length_gt_one ((s String)) (alf.is_eq (alf.is_neg (alf.add 1 (alf.neg (alf.len s)))) true))
 
 ; Get first character or empty string from term t.
 ; If t is of the form (str.++ "A" ...), return "A".
