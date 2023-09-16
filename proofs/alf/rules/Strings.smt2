@@ -55,7 +55,7 @@
           (alf.match ((s1 U) (s2 U :list))
             (string_to_flat_form U s rev)
             ((str.++ s1 s2)
-              (alf.requires (check_length_one s1) true    ; checks if char
+              (alf.requires (string_check_length_one s1) true    ; checks if char
                 (= u
                   (alf.ite rev
                     (str.++ (skolem (skolem_prefix U u (- (str.len u) 1))) s1)
@@ -73,19 +73,26 @@
            (string_to_flat_form String s rev)
            (string_to_flat_form String t rev))
       ((@pair ss ts)
-          ; ensure the LHS is char or empty
-          (let ((cs (string_first_char_or_empty ss)))
-          (alf.ite (alf.is_eq cs alf.fail) alf.fail
-            ; ensure the RHS is char or empty
-            (let ((ct (string_first_char_or_empty ts)))
-            (alf.ite (alf.is_eq ct alf.fail) alf.fail
-              ; ensure they are disequal, return false
-              (alf.requires (alf.is_eq cs ct) false false)))))
-          ))
+          (let ((cs (string_head_or_empty ss)))
+          (let ((ct (string_head_or_empty ts)))
+            ; ensure they are disequal, return false
+            (alf.requires
+              (alf.ite (alf.is_eq cs alf.nil)
+                (string_check_length_one ct)
+                (alf.ite (string_check_length_one cs)
+                  (alf.ite (alf.is_eq ct alf.nil)
+                    true
+                    (alf.ite (string_check_length_one ct)
+                      (alf.not (alf.is_eq cs ct))
+                      false))
+                  false))
+              true
+              false))))
+    )
 )
 ; the PfRule::CONCAT_CONFLICT_DEQ rule, for sequences only
 (declare-rule concat_conflict_deq ((U Type) (s (Seq U)) (t (Seq U)) (x U) (y U) (rev Bool))
-  :premises ((= s t) (not (= x y)))
+  :premises ((= s t) (not (= (seq.unit x) (seq.unit y))))
   :args (rev (Seq U))
   :conclusion
     ; strip the prefix of the equality
@@ -95,8 +102,8 @@
            (string_to_flat_form (Seq U) t rev))
       ((@pair ss ts)
           ; take the first character from each side, should give x and y
-          (alf.requires (string_first_char_or_empty ss) x
-          (alf.requires (string_first_char_or_empty ts) y
+          (alf.requires (string_head_or_empty ss) (seq.unit x)
+          (alf.requires (string_head_or_empty ts) (seq.unit y)
               false))))
 )
 

@@ -236,23 +236,19 @@
 )
 
 ; Returns true if the length of s evaluates to one, false otherwise.
-(define check_length_one ((s String)) (alf.is_eq (alf.len s) 1))
+(define string_check_length_one ((s String)) (alf.is_eq (alf.len s) 1))
 
 ; Returns true if the length of s evaluates to greater than one, false otherwise.
 (define check_length_gt_one ((s String)) (alf.is_eq (alf.is_neg (alf.add 1 (alf.neg (alf.len s)))) true))
 
 ; Get first character or empty string from term t.
-; If t is of the form (str.++ "A" ...), return "A".
+; If t is of the form (str.++ t ...), return t.
 ; If t is of the form alf.nil, return alf.nil.
-; Otherwise, this side condition fails
-(program string_first_char_or_empty ((U Type) (T Type) (t U) (tail U :list) (s T))
+(program string_head_or_empty ((U Type) (T Type) (t U) (tail U :list) (s T))
   (U) U
   (
-    ((string_first_char_or_empty alf.nil)                    alf.nil)
-    ; Required for sequences
-    ((string_first_char_or_empty (str.++ (seq.unit s) tail)) (seq.unit s))
-    ; Check if the length of t evaluates to one.
-    ((string_first_char_or_empty (str.++ t tail))            (alf.ite (check_length_one t) t alf.fail))
+    ((string_head_or_empty (str.++ t tail)) t)
+    ((string_head_or_empty alf.nil)         alf.nil)
   )
 )
 
@@ -284,7 +280,7 @@
   (String) String
   (
     ((string_flatten_word t) 
-      (alf.ite (check_length_one t) 
+      (alf.ite (string_check_length_one t)
         (alf.cons str.++ t alf.nil)
         (alf.cons str.++ (alf.extract 0 1 t) (string_flatten_word (alf.extract 1 (alf.len t) t)))))
   )
@@ -320,7 +316,7 @@
     ; TODO: sequences
     ; Check if t is a word constant
     ((string_collect_acc (str.++ t tail))
-      (alf.ite (check_length_one t)
+      (alf.ite (string_check_length_one t)
         (alf.match ((s1 U) (s2 U)) 
           (string_collect_acc tail)
           ((@pair alf.nil s2)  (@pair t s2))
