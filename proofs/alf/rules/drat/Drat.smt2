@@ -12,7 +12,7 @@
   (Bool) String
   (
     ((to_drat_clause false)    "0")
-    ((to_drat_clause (or l C)) (alf.concat (alf.to_str (to_drat_lit l)) (alf.concat " " (to_drat_clause C))))
+    ((to_drat_clause (or l C)) (alf.concat (alf.to_str (to_drat_lit l)) " " (to_drat_clause C)))
     ((to_drat_clause l)        (alf.concat (alf.to_str (to_drat_lit l)) " 0"))
   )
 )
@@ -21,7 +21,7 @@
   (Bool) String
   (
     ((to_drat_input true)       "")
-    ((to_drat_input (and C F)) (alf.concat (to_drat_clause C) (alf.concat " " (to_drat_input F))))
+    ((to_drat_input (and C F)) (alf.concat (to_drat_clause C) " " (to_drat_input F)))
   )
 )
 
@@ -48,6 +48,7 @@
   :premise-list F and
   :args (D P)
   :requires (((drat-verify (to_drat_input F) D) true) ((drat-check D P) true))
+;  :requires (((drat-verify (to_drat_input F) D) true))
 ;  :requires (((drat-check D P) true))
   :conclusion false
 )

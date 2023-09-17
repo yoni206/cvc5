@@ -58,7 +58,7 @@
       ((resolve C1 C2 pol L)
         (let ((lp (alf.ite pol L (not L))))
         (let ((ln (alf.ite pol (not L) L)))
-            (alf.from_list or (alf.append or
+            (alf.from_list or (alf.concat or
                     (removeSelf lp (alf.to_list or C1))
                     (removeSelf ln (alf.to_list or C2)))))))
     )
@@ -80,7 +80,7 @@
             (chainResolveRec
                 (let ((lp (alf.ite pol L (not L))))
                 (let ((ln (alf.ite pol (not L) L)))
-                    (alf.append or
+                    (alf.concat or
                             (removeSelf lp C1)
                             (removeSelf ln (alf.to_list or C2))))) Cs args))
     )
@@ -155,7 +155,7 @@
 (declare-rule and_elim ((Fs Bool) (i Int))
     :premises (Fs)
     :args (i)
-    :conclusion (nary.at and true i Fs)
+    :conclusion (alf.extract and Fs i)
 )
 
 ; AND_INTRO
@@ -168,7 +168,7 @@
 (declare-rule not_or_elim ((Fs Bool) (i Int))
     :premises ((not Fs))
     :args (i)
-    :conclusion (not (nary.at or false i Fs))
+    :conclusion (not (alf.extract or Fs i))
 )
 
 ; IMPLIES_ELIM
@@ -282,7 +282,7 @@
 ; CNF_AND_POS
 (declare-rule cnf_and_pos ((Fs Bool) (i Int))
     :args (Fs i)
-    :conclusion (or (not Fs) (nary.at and true i Fs))
+    :conclusion (or (not Fs) (alf.extract and Fs i))
 )
 
 ; CNF_AND_NEG
@@ -300,7 +300,7 @@
 ; CNF_OR_NEG
 (declare-rule cnf_or_neg ((Fs Bool) (i Int))
     :args (Fs i)
-    :conclusion (or Fs (not (nary.at or false i Fs)))
+    :conclusion (or Fs (not (alf.extract or Fs i)))
 )
 
 ; CNF_IMPLIES_POS

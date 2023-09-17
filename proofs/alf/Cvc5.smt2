@@ -61,15 +61,14 @@
       ; strings
       ((run_evaluate (str.++ x y))      (alf.concat (run_evaluate x) (run_evaluate y)))
       ((run_evaluate (str.len x))       (alf.len (run_evaluate x)))
-      ((run_evaluate (str.substr x n m))(alf.extract (run_evaluate n)
-                                          (alf.add (run_evaluate n) (run_evaluate m))
-                                          (run_evaluate x)))
+      ((run_evaluate (str.substr x n m))(let ((r (run_evaluate n)))
+                                           (alf.extract (run_evaluate x) r (alf.add r (run_evaluate m)))))
       ; bitvectors
       ((run_evaluate (bvadd x ys))      (alf.add (run_evaluate x) (run_evaluate ys)))
       ((run_evaluate (bvsub x y))       (alf.add (run_evaluate x) (alf.neg (run_evaluate y))))
       ((run_evaluate (bvmul x ys))      (alf.mul (run_evaluate x) (run_evaluate ys)))
       ((run_evaluate (concat x ys))     (alf.concat (run_evaluate x) (run_evaluate ys)))
-      ((run_evaluate (extract m n x))   (alf.extract n m (run_evaluate x))) ; note swap n/m
+      ((run_evaluate (extract m n x))   (alf.extract (run_evaluate x) n m)) ; note swap n/m
       ((run_evaluate (bvult x y))       (run_evaluate (< (alf.to_z x) (alf.to_z y))))
       ((run_evaluate (bvule x y))       (run_evaluate (<= (alf.to_z x) (alf.to_z y))))
       ((run_evaluate (bvugt x y))       (run_evaluate (> (alf.to_z x) (alf.to_z y))))

@@ -25,7 +25,7 @@
 (declare-const bag.filter (-> (! Type :var T :implicit) (-> T Bool) (Bag T) (Bag T)))
 (declare-const bag.map (-> (! Type :var T :implicit) (! Type :var U :implicit) (-> T U) (Bag T) (Bag U)))
 (declare-const bag.fold (-> (! Type :var T :implicit) (! Type :var U :implicit) (-> T U U) U (Bag T) U))
-(declare-const table.product (-> (! Type :var T :implicit) (! Type :var U :implicit) (Bag T) (Bag U) (Bag (alf.append Tuple U T))))
+(declare-const table.product (-> (! Type :var T :implicit) (! Type :var U :implicit) (Bag T) (Bag U) (Bag (alf.concat Tuple U T))))
 (declare-const table.group (-> (! Type :var T :implicit) @List (Bag T) (Bag (Bag T))))
 
 (declare-const @k.BAGS_DEQ_DIFF (-> (! Type :var T :implicit) (Bag T) (Bag T) T))

@@ -8,7 +8,7 @@
                          T U (alf.cons Tuple T U)) :right-assoc-nil tuple.unit)
 (declare-const tuple.select
     (-> (! Type :var T :implicit)
-        (! Int :var i) T (nary.at Tuple UnitTuple i T)))
+        (! Int :var i) T (alf.extract Tuple T i)))
 (declare-const tuple.update
     (-> (! Type :var T :implicit) (! Type :var S :implicit)
         Int T S T))

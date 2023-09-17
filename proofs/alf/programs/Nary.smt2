@@ -104,18 +104,6 @@
     )
 )
 
-; nary.at cons i xs
-; I should be a numeral
-(program nary.at
-    ((L Type) (I Type) (cons (-> L L L)) (nil L) (i I) (x L) (xs L :list))
-    ((-> L L L) L I L) L
-    (
-        ((nary.at cons nil 0 (cons x xs)) x)
-        ((nary.at cons nil i (cons x xs)) (nary.at cons nil (alf.add i (alf.neg 1)) xs))
-        ((nary.at cons nil 0 x)           x) ; if not in list form
-    )
-)
-
 ; returns the number of children of the input
 (program nary.nchild
     ((L Type) (I Type) (cons (-> L L L)) (nil L) (i I) (x L) (xs L :list))
