@@ -56,7 +56,7 @@ AlfNodeConverter::AlfNodeConverter()
 
 Node AlfNodeConverter::preConvert(Node n)
 {
-  // match is not supported in LFSC syntax, we eliminate it at pre-order
+  // match is not supported in ALF syntax, we eliminate it at pre-order
   // traversal, which avoids type-checking errors during conversion, since e.g.
   // match case nodes are required but cannot be preserved
   if (n.getKind() == MATCH)
@@ -195,7 +195,7 @@ Node AlfNodeConverter::postConvert(Node n)
     std::vector<Node> args;
     args.push_back(vl);
     args.insert(
-        args.end(), n.begin() + 1, n.begin() + getNumChildrenForClosure(k));
+        args.end(), n.begin() + 1, n.begin() + getNumChildrenToProcessForClosure(k));
     return mkInternalApp(
         printer::smt2::Smt2Printer::smtKindString(k), args, tn);
   }
@@ -263,12 +263,12 @@ Node AlfNodeConverter::postConvert(Node n)
   {
     // kinds where the operator may be different
     Node opc = getOperatorOfTerm(n);
-    std::vector<Node> newArgs;
     if (n.getNumChildren() == 0)
     {
       return opc;
     }
-    else if (opc.getNumChildren() > 0)
+    std::vector<Node> newArgs;
+    if (opc.getNumChildren() > 0)
     {
       newArgs.insert(newArgs.end(), opc.begin(), opc.end());
       newArgs.insert(newArgs.end(), n.begin(), n.end());
@@ -277,8 +277,9 @@ Node AlfNodeConverter::postConvert(Node n)
       ss << opc;
       return mkInternalApp(ss.str(), newArgs, tn);
     }
+    newArgs.push_back(opc);
     newArgs.insert(newArgs.end(), n.begin(), n.end());
-    return mkApplyUf(opc, newArgs);
+    return nm->mkNode(APPLY_UF, newArgs);
   }
   else if (k == INDEXED_ROOT_PREDICATE)
   {
@@ -319,28 +320,6 @@ Node AlfNodeConverter::postConvert(Node n)
         printer::smt2::Smt2Printer::smtKindString(k), args, tn);
   }
   return n;
-}
-
-Node AlfNodeConverter::mkApplyUf(Node op, const std::vector<Node>& args) const
-{
-  NodeManager* nm = NodeManager::currentNM();
-  std::vector<Node> aargs;
-  if (op.isVar())
-  {
-    aargs.push_back(op);
-  }
-  else
-  {
-    // Note that dag threshold is disabled for printing operators.
-    std::stringstream ss;
-    options::ioutils::applyOutputLanguage(ss, Language::LANG_SMTLIB_V2_6);
-    options::ioutils::applyDagThresh(ss, 0);
-    ss << op;
-    Node opv = nm->mkRawSymbol(ss.str(), op.getType());
-    aargs.push_back(opv);
-  }
-  aargs.insert(aargs.end(), args.begin(), args.end());
-  return nm->mkNode(APPLY_UF, aargs);
 }
 
 bool AlfNodeConverter::shouldTraverse(Node n)
@@ -439,7 +418,8 @@ Node AlfNodeConverter::typeAsNode(TypeNode tn)
   d_typeAsNode[tn] = ret;
   return ret;
 }
-size_t AlfNodeConverter::getNumChildrenForClosure(Kind k) const
+
+size_t AlfNodeConverter::getNumChildrenToProcessForClosure(Kind k) const
 {
   return k == SET_COMPREHENSION ? 3 : 2;
 }
