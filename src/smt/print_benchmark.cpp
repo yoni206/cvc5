@@ -85,10 +85,13 @@ void PrintBenchmark::printDeclarationsFrom(std::ostream& outDecl,
   // first, record all the defined symbols
   for (const Node& a : defs)
   {
-    bool isRec;
+    bool isRec = false;
     Node defSym;
     Node defBody;
-    decomposeDefinition(a, isRec, defSym, defBody);
+    if (!decomposeDefinition(a, isRec, defSym, defBody))
+    {
+      continue;
+    }
     if (!defSym.isNull())
     {
       Assert(defMap.find(defSym) == defMap.end());
