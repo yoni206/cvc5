@@ -194,8 +194,9 @@ Node AlfNodeConverter::postConvert(Node n)
     // notice that intentionally we drop annotations here
     std::vector<Node> args;
     args.push_back(vl);
-    args.insert(
-        args.end(), n.begin() + 1, n.begin() + getNumChildrenToProcessForClosure(k));
+    args.insert(args.end(),
+                n.begin() + 1,
+                n.begin() + getNumChildrenToProcessForClosure(k));
     return mkInternalApp(
         printer::smt2::Smt2Printer::smtKindString(k), args, tn);
   }
