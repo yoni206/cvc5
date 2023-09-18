@@ -77,6 +77,12 @@
       ((run_evaluate z)                 z)
     )
 )
+;(program parse_normalize ((T Type) (x T) (y T))
+;    (S) S
+;    (
+;      ((parse_normalize (/ x y)) (
+;    )
+;)
 
 (declare-rule evaluate ((U Type) (t U))
   :args (t)
