@@ -640,7 +640,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
   // if we don't handle the rule, print trust
   if (!handled)
   {
-    out->printTrust(pn->getRule(), conclusionPrint, id, conclusion);
+    out->printTrustStep(pn->getRule(), conclusionPrint, id, conclusion);
     return;
   }
   std::vector<Node> premises;
