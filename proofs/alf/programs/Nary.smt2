@@ -25,25 +25,13 @@
 ; will create a unit list.
 
 
-; nary.ctn cons nil c c
-; Retuns `true` if l inList c.
-(program nary.ctn
-    ((L Type) (cons (-> L L L)) (nil L) (c L) (x L) (xs L :list))
-    ((-> L L L) L L L) Bool
-    (
-        ((nary.ctn cons nil c (cons c xs)) true)
-        ((nary.ctn cons nil c (cons x xs)) (nary.ctn cons nil c xs))
-        ((nary.ctn cons nil c nil)         false)
-    )
-)
-
 ; nary.is_subset cons nil c l
 ; Retuns `true` if l nary.ctn c.
 (program nary.is_subset
     ((L Type) (cons (-> L L L)) (nil L) (c L) (t L) (xs L :list))
     ((-> L L L) L L L) Bool
     (
-        ((nary.is_subset cons nil (cons c xs) t) (alf.ite (nary.ctn cons nil c t) (nary.is_subset cons nil xs t) false))
+        ((nary.is_subset cons nil (cons c xs) t) (alf.ite (alf.is_neg (alf.find cons t c)) false (nary.is_subset cons nil xs t)))
         ((nary.is_subset cons nil nil t)         true)
     )
 )

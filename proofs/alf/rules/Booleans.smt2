@@ -106,11 +106,11 @@
 (program factorLiterals ((xs Bool :list) (l Bool) (ls Bool :list))
     (Bool Bool) Bool
     (
-        ((factorLiterals xs (or l ls)) (let ((cond (nary.ctn or false l xs)))
+        ((factorLiterals xs (or l ls)) (let ((cond (alf.is_neg (alf.find or xs l))))
                                        (let ((ret (factorLiterals
-                                                    (alf.ite cond xs (alf.cons or l xs))
+                                                    (alf.ite cond (alf.cons or l xs) xs)
                                                     ls)))
-                                            (alf.ite cond ret (alf.cons or l ret)))))
+                                            (alf.ite cond (alf.cons or l ret) ret))))
         ((factorLiterals xs false)      false)
     )
 )
