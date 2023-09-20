@@ -1,4 +1,4 @@
-(include "../programs/Utils.smt2")
+(include "../programs/Utils.smt3")
 
 ; Bool is builtin
 ;(declare-type Bool ())

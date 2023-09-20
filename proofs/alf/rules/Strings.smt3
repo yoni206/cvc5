@@ -1,5 +1,5 @@
-(include "../theories/Strings.smt2")
-(include "../programs/Strings.smt2")
+(include "../theories/Strings.smt3")
+(include "../programs/Strings.smt3")
 
 
 ;;;;;;;;;; Core

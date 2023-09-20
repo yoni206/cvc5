@@ -1,6 +1,6 @@
-(include "../theories/Builtin.smt2")
-(include "../theories/Arith.smt2")
-(include "../theories/BitVectors.smt2")
+(include "../theories/Builtin.smt3")
+(include "../theories/Arith.smt3")
+(include "../theories/BitVectors.smt3")
 
 (declare-const FloatingPoint
   ;(-> (! Int :var e) (! Int :var s) Type)

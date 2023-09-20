@@ -1,5 +1,5 @@
-(include "../theories/Builtin.smt2")
-(include "../theories/Quantifiers.smt2")
+(include "../theories/Builtin.smt3")
+(include "../theories/Quantifiers.smt3")
 
 (program substitute
   ((T Type) (U Type) (S Type) (V Type) (x S) (y S) (f (-> T U)) (a T) (z U) (w V))

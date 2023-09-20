@@ -1,9 +1,9 @@
 
-(include "../theories/Builtin.smt2")
-(include "../programs/Nary.smt2")
+(include "../theories/Builtin.smt3")
+(include "../programs/Nary.smt3")
 
-(include "../theories/Arith.smt2")
-(include "../theories/Strings.smt2")
+(include "../theories/Arith.smt3")
+(include "../theories/Strings.smt3")
 
 
 ; This signature is used for both strings and sequences, where we often

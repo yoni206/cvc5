@@ -1,6 +1,6 @@
-(include "../programs/Utils.smt2")
-(include "../theories/Builtin.smt2")
-(include "../theories/Arith.smt2")
+(include "../programs/Utils.smt3")
+(include "../theories/Builtin.smt3")
+(include "../theories/Arith.smt3")
 
 (declare-sort Bag 1)
 

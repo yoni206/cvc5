@@ -1,10 +1,10 @@
-(include "../theories/Builtin.smt2")
+(include "../theories/Builtin.smt3")
 
 (declare-sort Int 0)
 (declare-sort Real 0)
 
 (declare-consts <numeral> Int)
-(declare-consts <decimal> Real)
+(declare-consts <rational> Real)
 
 ; used for right-assoc-nil operators, must consider the nil terminator
 (program arith_typeunion_nary ()

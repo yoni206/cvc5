@@ -1,4 +1,4 @@
-(include "../theories/Arith.smt2")
+(include "../theories/Arith.smt3")
 
 (program arith_rel_sum ((T Type) (U Type) (S Type) (r1 T) (r2 U))
   (T U) S

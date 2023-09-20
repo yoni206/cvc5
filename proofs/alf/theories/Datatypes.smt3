@@ -1,4 +1,4 @@
-(include "../programs/Nary.smt2")
+(include "../programs/Nary.smt3")
 
 (declare-const UnitTuple Type)
 (declare-const Tuple (-> Type Type Type) :right-assoc-nil UnitTuple)

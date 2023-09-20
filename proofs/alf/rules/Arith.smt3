@@ -1,10 +1,10 @@
 ; depends: arith_programs.plf
 
-(include "../theories/Builtin.smt2")
-(include "../theories/Reals.smt2")
-(include "../theories/Ints.smt2")
-(include "../programs/Arith.smt2")
-(include "../programs/Utils.smt2")
+(include "../theories/Builtin.smt3")
+(include "../theories/Reals.smt3")
+(include "../theories/Ints.smt3")
+(include "../programs/Arith.smt3")
+(include "../programs/Utils.smt3")
 
 (program mk_arith_sum_ub ((T Type) (U Type) (r (-> T U Bool)) (a T) (b U) (tail Bool :list))
     (Bool) Bool

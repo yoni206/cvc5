@@ -1,7 +1,7 @@
-(include "../theories/Builtin.smt2")
-(include "../theories/Ints.smt2")
+(include "../theories/Builtin.smt3")
+(include "../theories/Ints.smt3")
 
-(include "../programs/Nary.smt2")
+(include "../programs/Nary.smt3")
 
 ; SCOPE
 (declare-rule scope

@@ -1,6 +1,6 @@
 ; Programs to work with n-ary operators
 
-(include "../programs/Utils.smt2")
+(include "../programs/Utils.smt3")
 
 ; =============================================
 ;  Right-associative null-terminated operators
