@@ -89,7 +89,7 @@ void TheoryPreregistrar::notifyBacktrack()
     // potentially has an impact on performance (quantified instances).
     auto& [node, node_level] = d_sat_literals[n - i - 1];
 
-    if (node_level <= lvl)
+    if (node_level <= level)
     {
       break;
     }
@@ -97,7 +97,7 @@ void TheoryPreregistrar::notifyBacktrack()
     // Update SAT context level the reregistered SAT literal has been
     // registered at. This is necessary to not reregister literals that
     // are already registered.
-    node_level = lvl;
+    node_level = level;
     // Reregister all sat literals that have originally been preregistered
     // at a higher level than the current SAT context level. These literals
     // are popped from the SAT context on backtrack but remain in the SAT

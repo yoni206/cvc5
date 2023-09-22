@@ -62,7 +62,7 @@
       ((run_evaluate (str.++ x y))      (alf.concat (run_evaluate x) (run_evaluate y)))
       ((run_evaluate (str.len x))       (alf.len (run_evaluate x)))
       ((run_evaluate (str.substr x n m))(let ((r (run_evaluate n)))
-                                           (alf.extract (run_evaluate x) r (alf.add r (alf.add (run_evaluate m) (alf.neg 1))))))
+                                           (alf.extract (run_evaluate x) r (alf.add r (alf.add (run_evaluate m) -1)))))
       ; bitvectors
       ((run_evaluate (bvadd x ys))      (alf.add (run_evaluate x) (run_evaluate ys)))
       ((run_evaluate (bvsub x y))       (alf.add (run_evaluate x) (alf.neg (run_evaluate y))))

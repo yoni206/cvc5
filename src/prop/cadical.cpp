@@ -155,6 +155,7 @@ class CadicalPropagator : public CaDiCaL::ExternalPropagator
     }
     d_found_solution = false;
 
+    // Backtrack decisions
     Assert(d_decisions.size() > level);
     Assert(d_context.getLevel() > level);
     for (size_t cur_level = d_decisions.size(); cur_level > level; --cur_level)
@@ -168,7 +169,7 @@ class CadicalPropagator : public CaDiCaL::ExternalPropagator
     size_t pop_to = d_assignment_control[level];
     d_assignment_control.resize(level);
 
-    std::vector<SatLiteral> reenqueue_fixed;
+    std::vector<SatLiteral> fixed;
     while (pop_to < d_assignments.size())
     {
       SatLiteral lit = d_assignments.back();
@@ -180,7 +181,7 @@ class CadicalPropagator : public CaDiCaL::ExternalPropagator
         if (info.is_theory_atom)
         {
           Assert(info.is_active);
-          reenqueue_fixed.push_back(lit);
+          fixed.push_back(lit);
         }
       }
       else
@@ -190,13 +191,14 @@ class CadicalPropagator : public CaDiCaL::ExternalPropagator
       }
     }
 
-    d_proxy->notifyBacktrack(level);
+    // Notify theory proxy about backtrack
+    d_proxy->notifyBacktrack();
+    // Clear the propgations since they are not valid anymore.
     d_propagations.clear();
 
-    // Re-enqueue fixed theory literals that got removed.
-    for (auto it = reenqueue_fixed.rbegin(), end = reenqueue_fixed.rend();
-         it != end;
-         ++it)
+    // Re-enqueue fixed theory literals that got removed. Re-enqueue in the
+    // order they got assigned in, i.e., reverse order on vector `fixed`.
+    for (auto it = fixed.rbegin(), end = fixed.rend(); it != end; ++it)
     {
       SatLiteral lit = *it;
       Trace("cadical::propagator") << "re-enqueue: " << lit << std::endl;
