@@ -160,11 +160,6 @@ class TheoryProxy : protected EnvObj, public Registrar
   /** Get unsound id, valid when isRefutationUnsound is true. */
   theory::IncompleteId getRefutationUnsoundId() const;
 
-  /**
-   * Notifies of a new variable at a decision level.
-   */
-  void variableNotify(SatVariable var);
-
   TNode getNode(SatLiteral lit);
 
   void notifyRestart();
@@ -211,12 +206,9 @@ class TheoryProxy : protected EnvObj, public Registrar
   void notifySatLiteral(Node n) override;
 
   /**
-   * Callback to notify that the SAT solver backtracked to the given level.
-   * Forwards the notification to the theory preregistrar via
-   * TheoryPreregistrar::notifyBacktrack();
-   * @param level The level the SAT solver backtracked to.
+   * Callback to notify that the SAT solver backtracked.
    */
-  void notifyBacktrack(uint32_t level);
+  void notifyBacktrack();
 
   /** Get the zero-level assertions */
   std::vector<Node> getLearnedZeroLevelLiterals(

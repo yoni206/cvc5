@@ -80,11 +80,9 @@ void TheoryPreregistrar::notifySatLiteral(TNode n)
   }
 }
 
-void TheoryPreregistrar::notifyBacktrack(uint32_t level)
+void TheoryPreregistrar::notifyBacktrack()
 {
-  (void)level;
-
-  uint32_t lvl = d_env.getContext()->getLevel();
+  uint32_t level = d_env.getContext()->getLevel();
   for (size_t i = 0, n = d_sat_literals.size(); i < n; ++i)
   {
     // We reregister SAT literals from newest to oldest. Changing this order
@@ -104,7 +102,7 @@ void TheoryPreregistrar::notifyBacktrack(uint32_t level)
     // at a higher level than the current SAT context level. These literals
     // are popped from the SAT context on backtrack but remain in the SAT
     // solver, and thus must be reregistered.
-    Trace("prereg") << "reregister: " << n << std::endl;
+    Trace("prereg") << "reregister: " << node << std::endl;
     // Note: This call potentially adds to d_sat_literals, which we are
     //       currently iterating over. This is not an issue, though, since
     //       a) we access it by index and b) any literals added through this
