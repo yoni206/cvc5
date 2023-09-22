@@ -37,24 +37,24 @@
 ; naively is exponential.
 
 ; Get the term corresponding to the prefix of term s of fixed length n.
-(define skolem_prefix ((U Type) (s U) (n Int))
+(define skolem_prefix ((U Type :implicit) (s U) (n Int))
   (str.substr s 0 n)
 )
 
 ; Get the term corresponding to the suffix of term s of fixed length n.
-(define skolem_suffix_rem ((U Type) (s U) (n Int))
+(define skolem_suffix_rem ((U Type :implicit) (s U) (n Int))
   (str.substr s n (- (str.len s) n))
 )
 
 ; Get the term corresponding to the prefix of s before the first occurrence of
 ; t in s.
-(define skolem_first_ctn_pre ((U Type) (s U) (t U))
-  (skolem_prefix U s (str.indexof s t 0)))
+(define skolem_first_ctn_pre ((U Type :implicit) (s U) (t U))
+  (skolem_prefix s (str.indexof s t 0)))
 
 ; Get the term corresponding to the suffix of s after the first occurrence of
 ; t in s.
-(define skolem_first_ctn_post ((U Type) (s U) (t U))
-  (skolem_suffix_rem U s (+ (str.len (skolem (skolem_first_ctn_pre U s t))) (str.len t))))
+(define skolem_first_ctn_post ((U Type :implicit) (s U) (t U))
+  (skolem_suffix_rem s (+ (str.len (skolem (skolem_first_ctn_pre s t))) (str.len t))))
 
 ;;-------------------- Utilities
 
@@ -66,7 +66,7 @@
 )
 
 ; Return reverse of t if rev = tt, return t unchanged otherwise.
-(define string_rev ((U Type) (rev Bool) (t U)) (alf.ite rev (nary.reverse str.++ alf.nil t) t))
+(define string_rev ((U Type :implicit) (rev Bool) (t U)) (alf.ite rev (nary.reverse str.++ alf.nil t) t))
 
 ;;-------------------- Reductions
 
@@ -80,8 +80,8 @@
     ((string_reduction_substr x n m U)
       (let ((k (skolem (str.substr x n m))))
       (let ((npm (+ n m)))
-      (let ((k1 (skolem (skolem_prefix U x n))))
-      (let ((k2 (skolem (skolem_suffix_rem U x npm))))
+      (let ((k1 (skolem (skolem_prefix x n))))
+      (let ((k2 (skolem (skolem_suffix_rem x npm))))
       (ite
         ; condition
         (and (>= n 0)(> (str.len x) n) (> m 0))
@@ -104,8 +104,8 @@
     ((string_reduction_indexof x y n U)
       (let ((k (skolem (str.indexof x y n))))
       (let ((xn (str.substr x n (- (str.len x) n))))
-      (let ((k1 (skolem (skolem_first_ctn_pre U xn y))))
-      (let ((k2 (skolem (skolem_first_ctn_post U xn y))))
+      (let ((k1 (skolem (skolem_first_ctn_pre xn y))))
+      (let ((k2 (skolem (skolem_first_ctn_post xn y))))
       (ite
         (or (not (str.contains xn y)) (> n (str.len x)) (> 0 n))
         (= k (alf.neg 1))
@@ -145,11 +145,11 @@
 ; This is the formula:
 ;    (ite (str.contains t r) (= t (str.++ sk1 r sk2)) (not (= t r)))
 (program string_eager_reduction_contains ((U Type) (t U) (r U))
-  (U U Type) Bool
+  (U U) Bool
   (
-    ((string_eager_reduction_contains t r U)
-        (let ((k1 (skolem (skolem_first_ctn_pre U t r))))
-        (let ((k2 (skolem (skolem_first_ctn_post U t r))))
+    ((string_eager_reduction_contains t r)
+        (let ((k1 (skolem (skolem_first_ctn_pre t r))))
+        (let ((k2 (skolem (skolem_first_ctn_post t r))))
         (ite
           (str.contains t r)
           (= t (str.++ k1 r k2))
@@ -184,7 +184,7 @@
   (U Type) Bool
   (
     ((mk_string_eager_reduction (str.to_code x) U) (string_eager_reduction_to_code x))
-    ((mk_string_eager_reduction (str.contains x y) U) (string_eager_reduction_contains x y U))
+    ((mk_string_eager_reduction (str.contains x y) U) (string_eager_reduction_contains x y))
     ((mk_string_eager_reduction (str.indexof x y n) U) (string_eager_reduction_indexof x y n))
   )
 )
@@ -374,7 +374,7 @@
 ; (3) (optionally) reverse.
 (define string_to_flat_form ((U Type) (s U) (rev Bool))
   ; intro, flatten, reverse
-  (string_rev U rev (string_flatten (nary.intro str.++ (mk_emptystr U) alf.nil s))))
+  (string_rev rev (string_flatten (nary.intro str.++ (mk_emptystr U) alf.nil s))))
 
 ; Converts a term in "flat form" to a term that is in a form that corresponds
 ; to one in cvc5 rewritten form. This is the dual method to
@@ -384,4 +384,4 @@
 ; (3) eliminate n-ary form to its element if the term is a singleton list.
 (define string_from_flat_form ((U Type) (s U) (rev Bool))
   ; reverse, collect, elim
-  (nary.elim str.++ alf.nil (mk_emptystr U) (string_collect (string_rev U rev s))))
+  (nary.elim str.++ alf.nil (mk_emptystr U) (string_collect (string_rev rev s))))

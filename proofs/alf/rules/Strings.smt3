@@ -58,8 +58,8 @@
               (alf.requires (string_check_length_one s1) true    ; checks if char
                 (= u
                   (alf.ite rev
-                    (str.++ (skolem (skolem_prefix U u (- (str.len u) 1))) s1)
-                    (str.++ s1 (skolem (skolem_suffix_rem U u 1)))))))))))
+                    (str.++ (skolem (skolem_prefix u (- (str.len u) 1))) s1)
+                    (str.++ s1 (skolem (skolem_suffix_rem u 1)))))))))))
 )
 
 ; the PfRule::CONCAT_CONFLICT rule, for strings only
