@@ -28,6 +28,20 @@
 ;SHARED_SELECTOR
 ;HO_TYPE_MATCH_PRED
 
+; side condition for normalizing inputs for the purposes of the reference command
+(program parse_normalize ((T Type) (U Type) (S Type) (x T) (y U) (f (-> T S)) (z S))
+  (S) S
+  (
+    ((parse_normalize (/ x y))  (let ((xz (alf.to_z (parse_normalize x))) (yz (alf.to_z (parse_normalize y))))
+                                (alf.ite (alf.and (alf.is_eq xz x) (alf.is_eq yz y) (alf.not (alf.is_eq yz 0)))
+                                  (alf.qdiv x y)
+                                  (/ x y))))
+    ((parse_normalize (f x))    (_ (parse_normalize f) (parse_normalize x)))
+    ((parse_normalize z)        z)
+  )
+)
+
+
 ; evaluate, for all theories
 (program run_evaluate ((T Type) (S Type) 
                        (x T) (y T) (z S) (ys S :list)
