@@ -3,7 +3,7 @@
 (declare-const FiniteField (-> Int Type))
 
 ; A finite field constant is a term having 2 integer children.
-; TODO: native syntax?
+; NOTE: we do not support the native syntax.
 (declare-const ff.value
     (-> (! Int :var p) Int (FiniteField p)))
 

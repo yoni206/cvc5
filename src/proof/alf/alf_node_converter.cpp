@@ -451,6 +451,7 @@ Node AlfNodeConverter::getNullTerminator(Kind k, TypeNode tn)
       return Node::null();
       break;
     case kind::OR: return NodeManager::currentNM()->mkConst(false);
+    case kind::SEP_STAR:
     case kind::AND: return NodeManager::currentNM()->mkConst(true);
     case kind::ADD: return NodeManager::currentNM()->mkConstInt(Rational(0));
     case kind::MULT:

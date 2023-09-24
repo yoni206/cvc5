@@ -1,14 +1,22 @@
 (include "../theories/Builtin.smt3")
 (include "../theories/Arith.smt3")
 
-(declare-sort RegLan 0)
+; The sequence type.
 (declare-type Seq (Type))
+
+; String is treated as a sequence of characters in the ALF signature.
+; Note that this is only for the purposes of simplifying the type rules below.
+; Internally, cvc5 will never generate any proofs involving the Char type.
 (declare-sort Char 0)
 (define-fun String () Type (Seq Char))
 
+; The regular expression type.
+(declare-sort RegLan 0)
+
+; String literals are strings.
 (declare-consts <string> String)
 
-; core
+; Core functions of strings.
 (declare-const str.len 
   (-> (! Type :var T :implicit)
       (Seq T) Int))
@@ -16,7 +24,7 @@
   (-> (! Type :var T :implicit)
       (Seq T) (Seq T) (Seq T)) :right-assoc-nil)
 
-; extended functions
+; Extended functions for strings.
 (declare-const str.substr (-> (! Type :var T :implicit)
                               (Seq T) Int Int (Seq T)))
 (declare-const str.contains (-> (! Type :var T :implicit)
@@ -51,7 +59,7 @@
 (declare-const str.replace_re_all (-> String RegLan String String))
 (declare-const str.indexof_re (-> String RegLan Int Int))
 
-; regular expressions
+; Regular expression operators.
 (declare-const re.allchar RegLan)
 (declare-const re.none RegLan)
 (declare-const re.all RegLan)
@@ -69,14 +77,13 @@
 (declare-const re.loop (-> Int Int RegLan RegLan))
 (declare-const str.in_re (-> String RegLan Bool))
 
-
-; Sequences
+; Sequence-specific operators.
 (declare-const seq.empty (-> (! Type :var T) T))
 (declare-const seq.unit (-> (! Type :var T :implicit) T (Seq T)))
 (declare-const seq.nth (-> (! Type :var T :implicit) (Seq T) Int (alf.ite (alf.is_eq T Char) Int T)))
 (declare-const seq.len (-> (! Type :var T :implicit) (Seq T) Int))
 
-; sequence operators just convert to the string operators
+; Sequence operators are automatically translated to the string operators.
 (define seq.++ () str.++)
 (define seq.extract () str.substr)
 (define seq.contains () str.contains)
@@ -87,7 +94,8 @@
 (define seq.rev () str.rev)
 (define seq.update () str.update)
 
-; skolems
+; Skolem functions for strings and sequences.
+
 (declare-const @k.RE_UNFOLD_POS_COMPONENT (-> String RegLan Int String))
 (declare-const @k.STRINGS_DEQ_DIFF (-> (! Type :var T :implicit) (Seq T) (Seq T) Int))
 (declare-const @k.STRINGS_STOI_RESULT (-> String Int Int))

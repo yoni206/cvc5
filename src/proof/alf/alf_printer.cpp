@@ -280,13 +280,13 @@ void AlfPrinter::printLetList(std::ostream& out, LetBinding& lbind)
   std::vector<Node> letList;
   lbind.letify(letList);
   std::map<Node, size_t>::const_iterator it;
-  Printer* p = Printer::getPrinter(out);
   for (size_t i = 0, nlets = letList.size(); i < nlets; i++)
   {
     Node n = letList[i];
     Node def = lbind.convert(n, d_termLetPrefix, false);
     Node f = lbind.convert(n, d_termLetPrefix, true);
-    p->toStreamCmdDefineFunction(out, f, def);
+    // use define function which does not invoke type checking
+    out << "(define " << f << " () " << def << ")" << std::endl;
   }
 }
 
