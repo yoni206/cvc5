@@ -6,17 +6,12 @@
 (declare-consts <numeral> Int)
 (declare-consts <rational> Real)
 
-; used for right-assoc-nil operators, must consider the nil terminator
-(program arith_typeunion_nary ()
-    (Type Type) Type
-    (
-      ((arith_typeunion_nary Int Real) Real)
-      ((arith_typeunion_nary Int Int) Int)
-      ((arith_typeunion_nary Real Real) Real)
-      ((arith_typeunion_nary Real Int) Real)
-    )
-)
-(program arith_typeunion ((x Type) (y Type))
+; arith_typeunion
+;   @param x a type
+;   @param y a Type
+;   @return the "union" of x and y.
+; The returned type is the type of the result of mixed arithmetic operators taking arguments x and y.
+(program arith_typeunion ()
     (Type Type) Type
     (
       ((arith_typeunion Int Int) Int)
@@ -26,7 +21,10 @@
     )
 )
 
-(program is_arith_type ((x Type))
+; is_arith_type
+;   @param x
+;   @returns true if x is Int or Real
+(program is_arith_type ()
     (Type) Bool
     (
       ((is_arith_type Int) true)
@@ -34,17 +32,19 @@
     )
 )
 
-; Must use integer nil terminators to avoid confusion with subtyping
+; Core operators of arithmetic, which are used in mixed Int/Real arithmetic.
+; Using integer nil terminators ensures typing is accurate.
 (declare-const + (-> (! Type :var T :implicit)
                      (! Type :var U :implicit)
-                     T U (arith_typeunion_nary T U)) :right-assoc-nil 0)
+                     T U (arith_typeunion T U)) :right-assoc-nil 0)
 (declare-const - (-> (! Type :var T :implicit)
                      (! Type :var U :implicit)
                      T U (arith_typeunion T U)) :left-assoc)
 (declare-const * (-> (! Type :var T :implicit)
                      (! Type :var U :implicit)
-                     T U (arith_typeunion_nary T U)) :right-assoc-nil 1)
+                     T U (arith_typeunion T U)) :right-assoc-nil 1)
 
+; Core arithmetic predicates
 (declare-const < (-> (! Type :var T :implicit)
                      (! Type :var U :implicit)
                      (! T :requires ((is_arith_type T) true))
@@ -70,6 +70,7 @@
                       Bool)
                       :chainable and)
 
+; Conversion functions.
 (declare-const to_real (-> (! Type :var T :implicit)
                            (! T :requires ((is_arith_type T) true))
                            Real))
@@ -83,12 +84,12 @@
                        (! T :requires ((is_arith_type T) true))
                        T))
 
-; power
+; Power function.
 (declare-const ^ (-> (! Type :var T :implicit)
                      (! Type :var U :implicit)
                      T U (arith_typeunion T U)))
 
-; currently unary negation cannot use overload
+; Currently unary negation cannot use overload.
 (declare-const u- (-> (! Type :var T :implicit)
                       (! T :requires ((is_arith_type T) true))
                       T))
