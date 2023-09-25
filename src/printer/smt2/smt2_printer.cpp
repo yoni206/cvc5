@@ -1115,6 +1115,8 @@ std::string Smt2Printer::smtKindString(Kind k)
     case kind::INTS_DIVISION: return "div";
     case kind::INTS_MODULUS_TOTAL:
     case kind::INTS_MODULUS: return "mod";
+    case kind::INTS_LOG2: return "int.log2";
+    case kind::INTS_ISPOW2: return "int.ispow2";
     case kind::ABS: return "abs";
     case kind::IS_INTEGER: return "is_int";
     case kind::TO_INTEGER: return "to_int";
@@ -1185,6 +1187,9 @@ std::string Smt2Printer::smtKindString(Kind k)
     case kind::BITVECTOR_ITE: return "bvite";
     case kind::BITVECTOR_ULTBV: return "bvultbv";
     case kind::BITVECTOR_SLTBV: return "bvsltbv";
+
+    case kind::BITVECTOR_SIZE: return "bvsize";
+    case kind::CONST_BITVECTOR_SYMBOLIC: return "bv";
 
     // datatypes theory
     case kind::APPLY_TESTER: return "is";

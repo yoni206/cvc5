@@ -283,6 +283,14 @@
 )
 
 
+(declare-const bvredand
+    (-> (! Int :var m :implicit)
+        (BitVec m) (BitVec 1))
+)
+(declare-const bvredor
+    (-> (! Int :var m :implicit)
+        (BitVec m) (BitVec 1))
+)
 
 (declare-const bbT (->
   (! Int :var n :implicit)

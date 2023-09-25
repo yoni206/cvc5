@@ -113,6 +113,12 @@ void SetDefaults::setDefaults(LogicInfo& logic, Options& opts)
 
 void SetDefaults::setDefaultsPre(Options& opts)
 {
+  // TEMPORARY for testing
+  if (opts.proof.proofReq && !opts.smt.produceProofs)
+  {
+    AlwaysAssert(false) << "Fail due to --proof-req "
+                        << opts.smt.produceProofsWasSetByUser;
+  }
   // implied options
   if (opts.smt.debugCheckModels)
   {
@@ -574,9 +580,12 @@ void SetDefaults::setDefaultsPost(const LogicInfo& logic, Options& opts) const
   // by default, symmetry breaker is on only for non-incremental QF_UF
   if (!opts.uf.ufSymmetryBreakerWasSetByUser)
   {
+    // we disable this technique for *any* unsat core production, since it
+    // uses a non-standard implementation that sends (unsound) lemmas during
+    // presolve.
     bool qf_uf_noinc = logic.isPure(THEORY_UF) && !logic.isQuantified()
                        && !opts.base.incrementalSolving
-                       && !safeUnsatCores(opts);
+                       && !opts.smt.produceUnsatCores;
     SET_AND_NOTIFY_VAL_SYM(
         Uf, ufSymmetryBreaker, qf_uf_noinc, "logic and options");
   }
@@ -714,6 +723,12 @@ void SetDefaults::setDefaultsPost(const LogicInfo& logic, Options& opts) const
   if (logic.isHigherOrder())
   {
     SET_AND_NOTIFY(Theory, assignFunctionValues, true, "higher-order logic");
+  }
+
+  // if Alethe proofs, print lambda applications in non-curried manner
+  if (opts.proof.proofFormatMode == options::ProofFormatMode::ALETHE)
+  {
+    options::ioutils::setDefaultFlattenHOChains(true);
   }
 
   // set all defaults in the quantifiers theory, which includes sygus
@@ -1677,6 +1692,7 @@ void SetDefaults::disableChecking(Options& opts)
   opts.writeSmt().debugCheckModels = false;
   opts.writeSmt().checkModels = false;
   opts.writeProof().checkProofSteps = false;
+  opts.writeProof().proofReq = false;
 }
 
 }  // namespace smt
