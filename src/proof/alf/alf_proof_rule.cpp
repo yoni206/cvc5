@@ -1,6 +1,6 @@
 /******************************************************************************
  * Top contributors (to current version):
- *   Hanna Lachnitt, Haniel Barbosa
+ *   Andrew Reynolds
  *
  * This file is part of the cvc5 project.
  *
@@ -20,7 +20,6 @@
 #include "proof/proof_checker.h"
 
 namespace cvc5::internal {
-
 namespace proof {
 
 const char* AlfRuleToString(AlfRule id)
@@ -56,5 +55,4 @@ AlfRule getAlfRule(Node n)
 }
 
 }  // namespace proof
-
 }  // namespace cvc5::internal
