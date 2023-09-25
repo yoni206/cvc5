@@ -127,7 +127,8 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case PfRule::REMOVE_TERM_FORMULA_AXIOM:
     case PfRule::INSTANTIATE:
     case PfRule::SKOLEMIZE:
-    case PfRule::DRAT_REFUTATION: return true;
+    case PfRule::DRAT_REFUTATION:
+    case PfRule::ENCODE_PRED_TRANSFORM:
     // alf rule is handled
     case PfRule::ALF_RULE: return true;
     case PfRule::STRING_REDUCTION:
@@ -422,13 +423,6 @@ void AlfPrinter::printProofInternal(AlfPrintChannel* out, const ProofNode* pn)
         visit.pop_back();
         continue;
       }
-      else if (r == PfRule::ENCODE_PRED_TRANSFORM)
-      {
-        // just add child
-        visit.pop_back();
-        visit.push_back(cur->getChildren()[0].get());
-        continue;
-      }
       printStepPre(out, cur);
       // a normal rule application, compute the proof arguments, which
       // notice in the case of PI also may modify our passumeMap.
@@ -558,6 +552,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
     conclusionPrint = conclusion;
   }
   PfRule r = pn->getRule();
+  const std::vector<std::shared_ptr<ProofNode>>& children = pn->getChildren();
   std::vector<Node> args;
   bool handled = isHandled(pn);
   if (r == PfRule::ALF_RULE)
@@ -580,11 +575,33 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
       }
     }
   }
+  else if (r==PfRule::ENCODE_PRED_TRANSFORM)
+  {
+    // just reference the child, do not print a step
+    Assert (children.size()==1);
+    Assert (d_pletMap.find(children[0].get())!=d_pletMap.end());
+    d_pletMap[pn] = d_pletMap[children[0].get()];
+    return;
+  }
+  else if (r==PfRule::DSL_REWRITE)
+  {
+    const std::vector<Node> aargs = pn->getArguments();
+    // if its a DSL rule, remember it
+    Node idn = aargs[0];
+    rewriter::DslPfRule di;
+    if (rewriter::getDslPfRule(idn, di))
+    {
+      d_dprs.insert(di);
+    }
+    else
+    {
+      Unhandled();
+    }
+  }
   else if (handled)
   {
     getArgsFromPfRule(pn, args);
   }
-  const std::vector<std::shared_ptr<ProofNode>>& children = pn->getChildren();
   // if not flattening proofs
   if (!d_proofFlatten)
   {

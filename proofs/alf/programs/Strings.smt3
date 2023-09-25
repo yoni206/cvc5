@@ -207,15 +207,20 @@
       ; match recursive call
       (alf.match ((c String :list) (M Bool :list))
         (re_unfold_pos_concat_rec t r2 ro (alf.add i 1))
-        ((@pair c M)
+        (((@pair c M)
           ; match on what r1 is
           (alf.match ((s String) (r RegLan))
             r1
-            ; a constant regular expression, append s
-            ((str.to_re s) (@pair (str.++ s c) M))
-            ; otherwise, make the skolem and append with constraint
-            (r             (let ((k (skolem (@k.RE_UNFOLD_POS_COMPONENT t ro i))))
-                           (@pair (str.++ k c) (and (str.in_re k r) M)))))))
+            (
+              ; a constant regular expression, append s
+              ((str.to_re s) (@pair (str.++ s c) M))
+              ; otherwise, make the skolem and append with constraint
+              (r             (let ((k (skolem (@k.RE_UNFOLD_POS_COMPONENT t ro i))))
+                            (@pair (str.++ k c) (and (str.in_re k r) M))))
+            )
+          )
+        ))
+      )
     )
   )
 )
@@ -319,8 +324,10 @@
       (alf.ite (string_check_length_one t)
         (alf.match ((s1 U) (s2 U)) 
           (string_collect_acc tail)
-          ((@pair alf.nil s2)  (@pair t s2))
-          ((@pair s1 s2)       (@pair (alf.concat t s1) s2))    ; concatentate the constant
+          (
+            ((@pair alf.nil s2)  (@pair t s2))
+            ((@pair s1 s2)       (@pair (alf.concat t s1) s2))    ; concatentate the constant
+          )
         )
         (@pair alf.nil (str.++ t tail))))
     ((string_collect_acc alf.nil)            (@pair alf.nil alf.nil))
@@ -341,12 +348,14 @@
     ((string_collect (str.++ t s))
       (alf.match ((s1 U) (s2 U))
         (string_collect_acc (str.++ t s))
-        ; did not strip a constant prefix, just append t to the result of processing s
-        ((@pair alf.nil s2)
-          (alf.cons str.++ t (string_collect s)))
-        ; stripped a constant prefix, append it to second term in the pair
-        ((@pair s1 s2)
-          (alf.cons str.++ s1 (string_collect s2)))
+        (
+          ; did not strip a constant prefix, just append t to the result of processing s
+          ((@pair alf.nil s2)
+            (alf.cons str.++ t (string_collect s)))
+          ; stripped a constant prefix, append it to second term in the pair
+          ((@pair s1 s2)
+            (alf.cons str.++ s1 (string_collect s2)))
+        )
       )
     )
   )

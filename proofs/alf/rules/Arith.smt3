@@ -28,7 +28,7 @@
         ((mk_arith_sum_ub (and (r a b) tail)) 
           (alf.match ((S Type) (V Type) (r2 (-> S V Bool)) (a2 S :list) (b2 V :list))
             (mk_arith_sum_ub tail)
-            ((r2 a2 b2) (_ (arith_rel_sum r r2) (+ a a2) (+ b b2)))))
+            (((r2 a2 b2) (_ (arith_rel_sum r r2) (+ a a2) (+ b b2))))))
     )
 )
 

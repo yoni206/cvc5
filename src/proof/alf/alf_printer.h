@@ -28,6 +28,7 @@
 #include "proof/proof_checker.h"
 #include "proof/proof_node.h"
 #include "smt/env_obj.h"
+#include "rewriter/rewrite_proof_rule.h"
 
 namespace cvc5::internal {
 
@@ -84,6 +85,8 @@ class AlfPrinter : protected EnvObj
   /** Flatten */
   bool d_proofFlatten;
   Node d_false;
+  /** The DSL rules we have seen */
+  std::unordered_set<rewriter::DslPfRule> d_dprs;
 };
 
 }  // namespace proof
