@@ -27,8 +27,8 @@
 #include "proof/alf/alf_print_channel.h"
 #include "proof/proof_checker.h"
 #include "proof/proof_node.h"
-#include "smt/env_obj.h"
 #include "rewriter/rewrite_proof_rule.h"
+#include "smt/env_obj.h"
 
 namespace cvc5::internal {
 
@@ -37,7 +37,10 @@ namespace proof {
 class AlfPrinter : protected EnvObj
 {
  public:
-  AlfPrinter(Env& env, AlfNodeConverter& atp, bool flatten, rewriter::RewriteDb* rdb);
+  AlfPrinter(Env& env,
+             AlfNodeConverter& atp,
+             bool flatten,
+             rewriter::RewriteDb* rdb);
   ~AlfPrinter() {}
 
   /**

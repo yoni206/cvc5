@@ -1365,21 +1365,21 @@ RewriteResponse maxTotal(TNode node, bool isPreRewrite)
 
 RewriteResponse TheoryFpRewriter::preRewrite(TNode node)
 {
-  if (expr::hasAbstractSubterm(node))
-  {
-    return RewriteResponse(REWRITE_DONE, node);
-  }
-  Trace("fp-rewrite") << "TheoryFpRewriter::preRewrite(): " << node
-                      << std::endl;
-  RewriteResponse res = d_preRewriteTable[node.getKind()](node, true);
-  if (res.d_node != node)
-  {
-    Trace("fp-rewrite") << "TheoryFpRewriter::preRewrite(): before " << node
+    if (expr::hasAbstractSubterm(node))
+    {
+      return RewriteResponse(REWRITE_DONE, node);
+    }
+    Trace("fp-rewrite") << "TheoryFpRewriter::preRewrite(): " << node
                         << std::endl;
-    Trace("fp-rewrite") << "TheoryFpRewriter::preRewrite(): after  "
-                        << res.d_node << std::endl;
-  }
-  return res;
+    RewriteResponse res = d_preRewriteTable[node.getKind()](node, true);
+    if (res.d_node != node)
+    {
+      Trace("fp-rewrite") << "TheoryFpRewriter::preRewrite(): before " << node
+                          << std::endl;
+      Trace("fp-rewrite") << "TheoryFpRewriter::preRewrite(): after  "
+                          << res.d_node << std::endl;
+    }
+    return res;
 }
 
   /**

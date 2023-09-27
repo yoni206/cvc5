@@ -18,7 +18,6 @@
 
 #include "proof/proof_checker.h"
 #include "smt/env.h"
-
 #include "theory/bv/theory_bv_rewrite_rules.h"
 
 using namespace cvc5::internal::kind;
@@ -69,7 +68,6 @@ bool BasicRewriteRCons::postProve(
   Trace("trewrite-rcons") << "...(fail)" << std::endl;
   return false;
 }
-
 
 bool BasicRewriteRCons::tryRule(CDProof* cdp,
                                 Node eq,

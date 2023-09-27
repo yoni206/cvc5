@@ -52,7 +52,8 @@ class BasicRewriteRCons : protected EnvObj
   case we need to use proof rules which are not written in RARE. It is only used
   as a last resort method so this is executed only when other rules fail.
    */
-  bool postProve(CDProof* cdp, Node a, Node b, theory::TheoryId tid, MethodId mid);
+  bool postProve(
+      CDProof* cdp, Node a, Node b, theory::TheoryId tid, MethodId mid);
 
  private:
   /**

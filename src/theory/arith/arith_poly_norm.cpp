@@ -76,13 +76,13 @@ void PolyNorm::multiplyMonomial(TNode x, const Rational& c)
 void PolyNorm::mod(const Rational& c)
 {
   Assert(c.sgn() != 0);
-  Assert (c.isIntegral());
+  Assert(c.isIntegral());
   const Integer& ci = c.getNumerator();
   // multiply by constant
   for (std::pair<const Node, Rational>& m : d_polyNorm)
   {
     // c1*x*c2 = (c1*c2)*x
-    Assert (m.second.isIntegral());
+    Assert(m.second.isIntegral());
     m.second = Rational(m.second.getNumerator().euclidianDivideRemainder(ci));
   }
 }
@@ -337,7 +337,7 @@ PolyNorm PolyNorm::mkPolyNorm(TNode n)
 
 bool PolyNorm::isArithPolyNorm(TNode a, TNode b)
 {
-  if (a==b)
+  if (a == b)
   {
     return true;
   }
