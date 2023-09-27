@@ -45,6 +45,7 @@ AlfPrinter::AlfPrinter(Env& env,
       d_tproc(atp),
       d_termLetPrefix("@t"),
       d_proofFlatten(flatten),
+      d_ltproc(atp),
       d_rdb(rdb)
 {
   d_pfType = NodeManager::currentNM()->mkSort("proofType");
@@ -235,6 +236,11 @@ bool AlfPrinter::canEvaluate(Node n) const
       visited.insert(cur);
       switch (cur.getKind())
       {
+        case NOT:
+        case AND:
+        case OR:
+        case XOR:
+        case CONST_BOOLEAN:
         case CONST_INTEGER:
         case CONST_RATIONAL:
         case CONST_STRING:
@@ -251,6 +257,7 @@ bool AlfPrinter::canEvaluate(Node n) const
         case STRING_CONCAT:
         case STRING_SUBSTR:
         case STRING_LENGTH:
+        case STRING_CONTAINS:
         case BITVECTOR_ADD:
         case BITVECTOR_SUB:
         case BITVECTOR_NEG: break;
@@ -300,7 +307,7 @@ void AlfPrinter::printDslRule(std::ostream& out, rewriter::DslProofRule r)
   const std::vector<Node>& varList = rpr.getVarList();
   const std::vector<Node>& uvarList = rpr.getUserVarList();
   const std::vector<Node>& conds = rpr.getConditions();
-  Node conc = rpr.getConclusion();
+  Node conc = rpr.getConclusion(true);
 
   Subs su;
 
@@ -315,6 +322,7 @@ void AlfPrinter::printDslRule(std::ostream& out, rewriter::DslProofRule r)
     std::stringstream sss;
     sss << uv;
     Node uvi = d_tproc.mkInternalSymbol(sss.str(), uv.getType());
+    expr::markListVar(uvi);
     su.add(varList[i], uvi);
     out << "(" << uv << " " << uv.getType();
     if (expr::isListVar(uv))
@@ -352,7 +360,9 @@ void AlfPrinter::printDslRule(std::ostream& out, rewriter::DslProofRule r)
     out << uvarList[i];
   }
   out << ")" << std::endl;
-  out << "  :conclusion " << d_tproc.convert(su.apply(conc)) << std::endl;
+  Node sconc = d_tproc.convert(su.apply(conc));
+  Assert (sconc.getKind()==EQUAL);
+  out << "  :conclusion (= " << sconc[0] << " " << d_ltproc.convert(sconc[1]) << ")" << std::endl;
   out << ")" << std::endl;
 }
 
@@ -629,7 +639,7 @@ void AlfPrinter::getArgsFromProofRule(const ProofNode* pn,
       for (size_t i = 0, nvars = varList.size(); i < nvars; i++)
       {
         Node v = varList[i];
-        Node pa = pargs[i + 1];
+        Node pa = d_tproc.convert(pargs[i + 1]);
         if (expr::isListVar(v))
         {
           std::vector<Node> children(pa.begin(), pa.end());
@@ -692,14 +702,6 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
         args.push_back(d_tproc.convert(aargs[i]));
       }
     }
-  }
-  else if (r == ProofRule::ENCODE_PRED_TRANSFORM && handled)
-  {
-    // just reference the child, do not print a step
-    Assert(children.size() == 1);
-    Assert(d_pletMap.find(children[0].get()) != d_pletMap.end());
-    d_pletMap[pn] = d_pletMap[children[0].get()];
-    return;
   }
   else if (handled)
   {

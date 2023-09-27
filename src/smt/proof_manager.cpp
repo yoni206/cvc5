@@ -246,7 +246,7 @@ void PfManager::printProof(std::ostream& out,
   }
   else if (mode == options::ProofFormatMode::ALF)
   {
-    Assert(fp->getRule() == PfRule::SCOPE);
+    Assert(fp->getRule() == ProofRule::SCOPE);
     proof::AlfNodeConverter atp;
     proof::AlfProofPostprocess alfpp(d_env, atp);
     alfpp.process(fp);

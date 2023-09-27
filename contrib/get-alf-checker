@@ -24,7 +24,7 @@ ALFC_DIR="$BASE_DIR/alf-checker"
 mkdir -p $ALFC_DIR
 
 # download and unpack ALFC
-version="30d4cc4fe859c812dbc21a7d7ec9f2e0fd15bdb2"
+version="1b6042f77d8f740ec6e5753bca43d4439840324d"
 download "https://github.com/ajreynol/AletheLF-tc/archive/$version.tar.gz" $BASE_DIR/tmp/alfc.tgz
 tar --strip 1 -xzf $BASE_DIR/tmp/alfc.tgz -C $ALFC_DIR
 

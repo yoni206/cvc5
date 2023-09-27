@@ -41,6 +41,25 @@
   )
 )
 
+; converts x to an equivalent form
+(program encode_transform ((T Type) (S Type) (f (-> S T)) (x T) (y S))
+  (T) T
+  (
+    ((encode_transform (f y)) (_ (encode_transform f) (encode_transform y)))
+    ((encode_transform x)     (alf.ite (alf.is_eq (alf.to_str x) x)
+                                (alf.ite (check_length_gt_one x)
+                                  (string_flatten_word x)
+                                  x)
+                                x))
+  )
+)
+
+(declare-rule encode_pred_transform ((F Bool) (G Bool))
+  :premises (F)
+  :args (G)
+  :requires (((encode_transform F) (encode_transform G)))
+  :conclusion G)
+
 
 ; evaluate, for all theories
 (program run_evaluate ((T Type) (S Type) 
@@ -49,10 +68,12 @@
     (S) S
     (
       ; core
-      ((run_evaluate (= x y))           (alf.is_eq (run_evaluate x) (run_evaluate y)))
+      ((run_evaluate (= x y))           (alf.is_eq (run_evaluate x) (run_evaluate y))) ; FIXME
+      ((run_evaluate (not b))           (alf.not (run_evaluate b)))
       ((run_evaluate (ite b x y))       (alf.ite (run_evaluate b) (run_evaluate x) (run_evaluate y)))
       ((run_evaluate (or x ys))         (alf.or (run_evaluate x) (run_evaluate ys)))
       ((run_evaluate (and x ys))        (alf.and (run_evaluate x) (run_evaluate ys)))
+      ((run_evaluate (xor x y))         (alf.xor (run_evaluate x) (run_evaluate y)))
   
       ; arithmetic
       ((run_evaluate (< x z))           (alf.is_neg (arith_eval_qsub x z)))
@@ -76,7 +97,8 @@
       ((run_evaluate (str.++ x y))      (alf.concat (run_evaluate x) (run_evaluate y)))
       ((run_evaluate (str.len x))       (alf.len (run_evaluate x)))
       ((run_evaluate (str.substr x n m))(let ((r (run_evaluate n)))
-                                           (alf.extract (run_evaluate x) r (alf.add r (alf.add (run_evaluate m) -1)))))
+                                           (alf.extract (run_evaluate x) r (alf.add r (run_evaluate m) -1))))
+      ((run_evaluate (str.contains x y))(alf.not (alf.is_neg (alf.find (run_evaluate x) (run_evaluate y)))))
       ; bitvectors
       ((run_evaluate (bvadd x ys))      (alf.add (run_evaluate x) (run_evaluate ys)))
       ((run_evaluate (bvsub x y))       (alf.add (run_evaluate x) (alf.neg (run_evaluate y))))
