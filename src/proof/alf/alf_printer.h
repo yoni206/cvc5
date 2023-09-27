@@ -37,7 +37,7 @@ namespace proof {
 class AlfPrinter : protected EnvObj
 {
  public:
-  AlfPrinter(Env& env, AlfNodeConverter& atp, bool flatten);
+  AlfPrinter(Env& env, AlfNodeConverter& atp, bool flatten, rewriter::RewriteDb* rdb);
   ~AlfPrinter() {}
 
   /**
@@ -62,6 +62,8 @@ class AlfPrinter : protected EnvObj
   size_t allocateAssumeId(const Node& n, bool& wasAlloc);
   size_t allocateProofId(const ProofNode* pn, bool& wasAlloc);
   Node allocatePremise(size_t id);
+  /** Print DSL rule */
+  void printDslRule(std::ostream& out, rewriter::DslProofRule r);
   /** Print let list */
   void printLetList(std::ostream& out, LetBinding& lbind);
   /** The term processor */
@@ -85,6 +87,8 @@ class AlfPrinter : protected EnvObj
   /** Flatten */
   bool d_proofFlatten;
   Node d_false;
+  /** Pointer to the rewrite database */
+  rewriter::RewriteDb* d_rdb;
   /** The DSL rules we have seen */
   std::unordered_set<rewriter::DslProofRule> d_dprs;
 };

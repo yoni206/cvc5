@@ -21,6 +21,7 @@
 #include <ostream>
 #include <sstream>
 
+#include "expr/subs.h"
 #include "expr/node_algorithm.h"
 #include "options/main_options.h"
 #include "printer/printer.h"
@@ -28,6 +29,7 @@
 #include "proof/proof_node_to_sexpr.h"
 #include "smt/print_benchmark.h"
 #include "theory/strings/theory_strings_utils.h"
+#include "rewriter/rewrite_db.h"
 
 using namespace cvc5::internal::kind;
 
@@ -35,8 +37,8 @@ namespace cvc5::internal {
 
 namespace proof {
 
-AlfPrinter::AlfPrinter(Env& env, AlfNodeConverter& atp, bool flatten)
-    : EnvObj(env), d_tproc(atp), d_termLetPrefix("@t"), d_proofFlatten(flatten)
+AlfPrinter::AlfPrinter(Env& env, AlfNodeConverter& atp, bool flatten, rewriter::RewriteDb* rdb)
+    : EnvObj(env), d_tproc(atp), d_termLetPrefix("@t"), d_proofFlatten(flatten), d_rdb(rdb)
 {
   d_pfType = NodeManager::currentNM()->mkSort("proofType");
   d_false = NodeManager::currentNM()->mkConst(false);
@@ -129,6 +131,7 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     case ProofRule::SKOLEMIZE:
     case ProofRule::DRAT_REFUTATION:
     case ProofRule::ENCODE_PRED_TRANSFORM:
+    case ProofRule::DSL_REWRITE:
     // alf rule is handled
     case ProofRule::ALF_RULE: return true;
     case ProofRule::STRING_REDUCTION:
@@ -158,7 +161,6 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     }
     break;
     case ProofRule::ANNOTATION:
-    case ProofRule::DSL_REWRITE:
     case ProofRule::THEORY_EXPAND_DEF:
     case ProofRule::WITNESS_AXIOM:
     case ProofRule::HO_APP_ENCODE:
@@ -262,18 +264,91 @@ bool AlfPrinter::canEvaluate(Node n) const
 std::string AlfPrinter::getRuleName(const ProofNode* pfn)
 {
   std::string name;
-  if (pfn->getRule() == ProofRule::ALF_RULE)
+  ProofRule r = pfn->getRule();
+  switch (r)
   {
+    case ProofRule::ALF_RULE:
     name = AlfRuleToString(getAlfRule(pfn->getArguments()[0]));
-  }
-  else
-  {
+    break;
+    case ProofRule::DSL_REWRITE:
+    {
+      rewriter::DslProofRule dr;
+      rewriter::getDslProofRule(pfn->getArguments()[0], dr);
+      std::stringstream ss;
+      ss << "dsl." << dr;
+      return ss.str();
+    }
+      break;
+    default:
     name = toString(pfn->getRule());
+    break;
   }
   std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) {
     return std::tolower(c);
   });
   return name;
+}
+
+void AlfPrinter::printDslRule(std::ostream& out, rewriter::DslProofRule r)
+{
+  const rewriter::RewriteProofRule& rpr = d_rdb->getRule(r);
+  const std::vector<Node>& varList = rpr.getVarList();
+  const std::vector<Node>& uvarList = rpr.getUserVarList();
+  const std::vector<Node>& conds = rpr.getConditions();
+  Node conc = rpr.getConclusion();
+  
+  Subs su;
+  
+  out << "(declare-rule dsl." << r << " (";
+  for (size_t i=0, nvars=uvarList.size(); i<nvars; i++)
+  {
+    if (i>0)
+    {
+      out << " ";
+    }
+    const Node& uv = uvarList[i];
+    std::stringstream sss;
+    sss << uv;
+    Node uvi = d_tproc.mkInternalSymbol(sss.str(), uv.getType());
+    su.add(varList[i], uvi);
+    out << "(" << uv << " " << uv.getType();
+    if (expr::isListVar(uv))
+    {
+      out << " :list";
+    }
+    out << ")";
+  }
+  out << ")" << std::endl;
+  if (!conds.empty())
+  {
+    out << "  :premises (";
+    bool firstTime = true;
+    for (const Node& c : conds)
+    {
+      if (firstTime)
+      {
+        firstTime = false;
+      }
+      else
+      {
+        out << " ";
+      }
+      out << d_tproc.convert(su.apply(c));
+    }
+    out << ")" << std::endl;
+  }
+  out << "  :args (";
+  for (size_t i=0, nvars=uvarList.size(); i<nvars; i++)
+  {
+    if (i>0)
+    {
+      out << " ";
+    }
+    out << uvarList[i];
+  }
+  out << ")" << std::endl;
+  out << "  :conclusion " << d_tproc.convert(su.apply(conc)) << std::endl;
+  out << ")" << std::endl;
 }
 
 void AlfPrinter::printLetList(std::ostream& out, LetBinding& lbind)
@@ -331,9 +406,15 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
                   << std::endl;
         }
       }
+      // [1] print DSL rules
+      for (rewriter::DslProofRule r : d_dprs)
+      {
+        printDslRule(out, r);
+      }
       if (options().proof.alfPrintReference)
       {
         // parse_normalize is used as the normalization function for the input
+        // [1] print the reference
         out << "(reference \"" << options().driver.filename << "\" parse_normalize)"
             << std::endl;
         // [2] print the universal variables
@@ -528,6 +609,36 @@ void AlfPrinter::getArgsFromProofRule(const ProofNode* pn, std::vector<Node>& ar
       args.push_back(ts);
       return;
     }
+    case ProofRule::DSL_REWRITE:
+    {
+      rewriter::DslProofRule dr;
+      if (!rewriter::getDslProofRule(pargs[0], dr))
+      {
+        Unhandled() << "Failed to get DSL proof rule";
+      }
+      const rewriter::RewriteProofRule& rpr = d_rdb->getRule(dr);
+      const std::vector<Node>& varList = rpr.getVarList();
+      Assert (varList.size()+1==pargs.size());
+      NodeManager* nm = NodeManager::currentNM();
+      for (size_t i=0, nvars=varList.size(); i<nvars; i++)
+      {
+        Node v = varList[i];
+        Node pa = pargs[i+1];
+        if (expr::isListVar(v))
+        {
+          std::vector<Node> children(pa.begin(), pa.end());
+          Kind k = rpr.getListContext(v);
+          Node t = children.empty() ? d_tproc.getNullTerminator(k, v.getType()) : nm->mkNode(k, children);
+          args.push_back(t);
+        }
+        else
+        {
+          args.push_back(pa);
+        }
+        Assert (args.back().getType()==v.getType());
+      }
+      return;
+    }
     default: break;
   }
   ProofNodeToSExpr pntse;
@@ -575,7 +686,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
       }
     }
   }
-  else if (r==ProofRule::ENCODE_PRED_TRANSFORM)
+  else if (r==ProofRule::ENCODE_PRED_TRANSFORM && handled)
   {
     // just reference the child, do not print a step
     Assert (children.size()==1);
@@ -583,23 +694,23 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
     d_pletMap[pn] = d_pletMap[children[0].get()];
     return;
   }
-  else if (r==ProofRule::DSL_REWRITE)
-  {
-    const std::vector<Node> aargs = pn->getArguments();
-    // if its a DSL rule, remember it
-    Node idn = aargs[0];
-    rewriter::DslProofRule di;
-    if (rewriter::getDslProofRule(idn, di))
-    {
-      d_dprs.insert(di);
-    }
-    else
-    {
-      Unhandled();
-    }
-  }
   else if (handled)
   {
+    if (r==ProofRule::DSL_REWRITE)
+    {
+      const std::vector<Node> aargs = pn->getArguments();
+      // if its a DSL rule, remember it
+      Node idn = aargs[0];
+      rewriter::DslProofRule di;
+      if (rewriter::getDslProofRule(idn, di))
+      {
+        d_dprs.insert(di);
+      }
+      else
+      {
+        Unhandled();
+      }
+    }
     getArgsFromProofRule(pn, args);
   }
   // if not flattening proofs

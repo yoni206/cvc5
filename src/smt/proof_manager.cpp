@@ -255,7 +255,7 @@ void PfManager::printProof(std::ostream& out,
     {
       flatten = options().proof.proofFlatten;
     }
-    proof::AlfPrinter alfp(d_env, atp, flatten);
+    proof::AlfPrinter alfp(d_env, atp, flatten, d_rewriteDb.get());
     alfp.print(out, fp);
   }
   else if (mode == options::ProofFormatMode::ALETHE)
