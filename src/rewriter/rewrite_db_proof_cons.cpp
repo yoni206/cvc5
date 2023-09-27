@@ -80,33 +80,45 @@ bool RewriteDbProofCons::prove(CDProof* cdp,
   Trace("rpc-debug") << "- convert to internal" << std::endl;
   DslProofRule id;
   Node eq = a.eqNode(b);
-  Node eqi = d_rdnc.convert(eq);
-  if (!proveInternalBase(eqi, id))
+  bool success = false;
+  for (size_t i=0; i<2; i++)
   {
-    Trace("rpc-debug") << "- prove internal" << std::endl;
-    // add one to recursion limit, since it is decremented whenever we initiate
-    // the getMatches routine.
-    d_currRecLimit = recLimit + 1;
-    d_currStepLimit = stepLimit;
-    // Otherwise, we call the main prove internal method, which recurisvely
-    // tries to find a matched conclusion whose conditions can be proven
-    id = proveInternal(eqi);
-    Trace("rpc-debug") << "- finished prove internal" << std::endl;
-  }
-  bool success = (id != DslProofRule::FAIL);
-  // if a proof was provided, fill it in
-  if (success && cdp != nullptr)
-  {
-    ++d_statTotalInputSuccess;
-    Trace("rpc-debug") << "- ensure proof" << std::endl;
-    // if it changed encoding, account for this
-    if (eq != eqi)
+    Node eqi = i==0 ? eq : d_rdnc.convert(eq);
+    if (i==1 && eqi==eq)
     {
-      cdp->addStep(eq, ProofRule::ENCODE_PRED_TRANSFORM, {eqi}, {eq});
+      break;
     }
-    ensureProofInternal(cdp, eqi);
-    AlwaysAssert(cdp->hasStep(eqi)) << eqi;
-    Trace("rpc-debug") << "- finish ensure proof" << std::endl;
+    if (!proveInternalBase(eqi, id))
+    {
+      Trace("rpc-debug") << "- prove internal" << std::endl;
+      // add one to recursion limit, since it is decremented whenever we initiate
+      // the getMatches routine.
+      d_currRecLimit = recLimit + 1;
+      d_currStepLimit = stepLimit;
+      // Otherwise, we call the main prove internal method, which recurisvely
+      // tries to find a matched conclusion whose conditions can be proven
+      id = proveInternal(eqi);
+      Trace("rpc-debug") << "- finished prove internal" << std::endl;
+    }
+    success = (id != DslProofRule::FAIL);
+    // if a proof was provided, fill it in
+    if (success && cdp != nullptr)
+    {
+      ++d_statTotalInputSuccess;
+      Trace("rpc-debug") << "- ensure proof" << std::endl;
+      // if it changed encoding, account for this
+      if (eq != eqi)
+      {
+        cdp->addStep(eq, ProofRule::ENCODE_PRED_TRANSFORM, {eqi}, {eq});
+      }
+      ensureProofInternal(cdp, eqi);
+      AlwaysAssert(cdp->hasStep(eqi)) << eqi;
+      Trace("rpc-debug") << "- finish ensure proof" << std::endl;
+    }
+    if (success)
+    {
+      break;
+    }
   }
   if (!success && d_trrc.postProve(cdp, a, b, tid, mid))
   {
