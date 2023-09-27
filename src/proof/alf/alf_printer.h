@@ -53,7 +53,7 @@ class AlfPrinter : protected EnvObj
   static std::string getRuleName(const ProofNode* pfn);
 
   //-------------
-  void getArgsFromPfRule(const ProofNode* pn, std::vector<Node>& args);
+  void getArgsFromProofRule(const ProofNode* pn, std::vector<Node>& args);
   void printProofInternal(AlfPrintChannel* out, const ProofNode* pn);
   void printStepPre(AlfPrintChannel* out, const ProofNode* pn);
   void printStepPost(AlfPrintChannel* out, const ProofNode* pn);
@@ -86,7 +86,7 @@ class AlfPrinter : protected EnvObj
   bool d_proofFlatten;
   Node d_false;
   /** The DSL rules we have seen */
-  std::unordered_set<rewriter::DslPfRule> d_dprs;
+  std::unordered_set<rewriter::DslProofRule> d_dprs;
 };
 
 }  // namespace proof

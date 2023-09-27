@@ -111,7 +111,7 @@ class MinisatSatSolver : public CDCLTSatSolver, protected EnvObj
   std::shared_ptr<ProofNode> getProof() override;
 
   /** Returns false */
-  bool hasExternalProof(PfRule& r, std::vector<Node>& args) override;
+  bool hasExternalProof(ProofRule& r, std::vector<Node>& args) override;
 
  private:
 

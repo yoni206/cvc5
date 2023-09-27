@@ -50,10 +50,10 @@ bool AlfProofPostprocessCallback::shouldUpdate(std::shared_ptr<ProofNode> pn,
 {
   switch (pn->getRule())
   {
-    case PfRule::SCOPE:
-    case PfRule::CONG:
-    case PfRule::CONCAT_CONFLICT:
-    case PfRule::SKOLEM_INTRO: return true;
+    case ProofRule::SCOPE:
+    case ProofRule::CONG:
+    case ProofRule::CONCAT_CONFLICT:
+    case ProofRule::SKOLEM_INTRO: return true;
     default: return false;
   }
 }
@@ -74,7 +74,7 @@ bool AlfProofPostprocessCallback::addAlfStep(AlfRule rule,
   }
   Trace("alethels-proof") << "... add alf step " << conclusion << " " << rule
                           << " " << children << " / " << newArgs << std::endl;
-  return cdp.addStep(conclusion, PfRule::ALF_RULE, children, newArgs);
+  return cdp.addStep(conclusion, ProofRule::ALF_RULE, children, newArgs);
 }
 
 void AlfProofPostprocessCallback::addReflStep(const Node& n, CDProof& cdp)
@@ -83,14 +83,14 @@ void AlfProofPostprocessCallback::addReflStep(const Node& n, CDProof& cdp)
   std::map<Node, std::shared_ptr<ProofNode> >::iterator it = d_refl.find(n);
   if (it == d_refl.end())
   {
-    d_refl[n] = d_pnm->mkNode(PfRule::REFL, {}, {n});
+    d_refl[n] = d_pnm->mkNode(ProofRule::REFL, {}, {n});
     it = d_refl.find(n);
   }
   cdp.addProof(it->second);
 }
 
 bool AlfProofPostprocessCallback::update(Node res,
-                                         PfRule id,
+                                         ProofRule id,
                                          const std::vector<Node>& children,
                                          const std::vector<Node>& args,
                                          CDProof* cdp,
@@ -102,7 +102,7 @@ bool AlfProofPostprocessCallback::update(Node res,
 
   switch (id)
   {
-    case PfRule::SCOPE:
+    case ProofRule::SCOPE:
     {
       // On the first two calls to update, the proof node is the outermost
       // scopes of the proof. These scopes should not be printed in the LFSC
@@ -127,7 +127,7 @@ bool AlfProofPostprocessCallback::update(Node res,
       addAlfStep(AlfRule::PROCESS_SCOPE, res, {curr}, {children[0]}, *cdp);
     }
     break;
-    case PfRule::CONG:
+    case ProofRule::CONG:
     {
       Assert(res.getKind() == EQUAL);
       Assert(res[0].getOperator() == res[1].getOperator());
@@ -138,7 +138,7 @@ bool AlfProofPostprocessCallback::update(Node res,
       if (k == HO_APPLY)
       {
         // HO_APPLY congruence is a single application of HO_CONG
-        cdp->addStep(res, PfRule::HO_CONG, children, {});
+        cdp->addStep(res, ProofRule::HO_CONG, children, {});
         return true;
       }
       // NOTE: as optimization can collect REFL steps. This would subsume
@@ -157,7 +157,7 @@ bool AlfProofPostprocessCallback::update(Node res,
         {
           Assert(lam1.getNumChildren() == 2 && lam2.getNumChildren() == 2);
           Node varEq = lam1[0].eqNode(lam1[0]);
-          cdp->addStep(varEq, PfRule::REFL, {}, {lam1[0]});
+          cdp->addStep(varEq, ProofRule::REFL, {}, {lam1[0]});
           Node bodyEq = i + 1 == nvars ? children[1] : lam1[1].eqNode(lam2[1]);
           Node lamEq = lam1.eqNode(lam2);
           Node conclusion = i == 0 ? res : lam1.eqNode(lam2);
@@ -223,7 +223,7 @@ bool AlfProofPostprocessCallback::update(Node res,
       }
     }
     break;
-    case PfRule::CONCAT_CONFLICT:
+    case ProofRule::CONCAT_CONFLICT:
     {
       if (children.size() == 1)
       {
@@ -241,7 +241,7 @@ bool AlfProofPostprocessCallback::update(Node res,
       addAlfStep(AlfRule::CONCAT_CONFLICT_DEQ, res, children, newArgs, *cdp);
     }
     break;
-    case PfRule::SKOLEM_INTRO:
+    case ProofRule::SKOLEM_INTRO:
     {
       Node t = SkolemManager::getUnpurifiedForm(args[0]);
       if (t.getKind() != WITNESS)

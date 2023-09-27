@@ -178,8 +178,9 @@ class CDCLTSatSolver : public SatSolver
    * corresponding to that proof and populate the arguments. The children
    * of the constructed proof node will be the unsat core.
    */
-  virtual bool hasExternalProof(PfRule& r, std::vector<Node>& args) = 0;
+  virtual bool hasExternalProof(ProofRule& r, std::vector<Node>& args) = 0;
 
+  /** This is temporary until SAT DRAT proofs are integrated. */
   virtual SatProofManager* getProofManager() = 0;
 
 }; /* class CDCLTSatSolver */

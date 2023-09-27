@@ -110,11 +110,11 @@ std::shared_ptr<ProofNode> PropPfManager::getProof(
   Trace("sat-proof")
       << "PropPfManager::getProof: Getting resolution proof of false\n";
   std::shared_ptr<ProofNode> conflictProof;
-  PfRule r;
+  ProofRule r;
   std::vector<Node> args;
   if (d_satSolver->hasExternalProof(r, args))
   {
-    Assert(r == PfRule::DRAT_REFUTATION);
+    Assert(r == ProofRule::DRAT_REFUTATION);
     std::vector<Node> clauses(assumptions.begin(), assumptions.end());
     Trace("cnf-input") << "#assumptions=" << assumptions.size() << std::endl;
     std::vector<Node> input = d_proofCnfStream->getInputClauses();

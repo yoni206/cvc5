@@ -47,91 +47,91 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
   const std::vector<Node> pargs = pfn->getArguments();
   switch (pfn->getRule())
   {
-    case PfRule::REFL:
-    case PfRule::SYMM:
-    case PfRule::TRANS:
-    case PfRule::CONG:
-    case PfRule::HO_CONG:
-    case PfRule::TRUE_INTRO:
-    case PfRule::TRUE_ELIM:
-    case PfRule::FALSE_INTRO:
-    case PfRule::FALSE_ELIM:
-    case PfRule::SPLIT:
-    case PfRule::EQ_RESOLVE:
-    case PfRule::MODUS_PONENS:
-    case PfRule::NOT_NOT_ELIM:
-    case PfRule::CONTRA:
-    case PfRule::AND_ELIM:
-    case PfRule::AND_INTRO:
-    case PfRule::NOT_OR_ELIM:
-    case PfRule::IMPLIES_ELIM:
-    case PfRule::NOT_IMPLIES_ELIM1:
-    case PfRule::NOT_IMPLIES_ELIM2:
-    case PfRule::EQUIV_ELIM1:
-    case PfRule::EQUIV_ELIM2:
-    case PfRule::NOT_EQUIV_ELIM1:
-    case PfRule::NOT_EQUIV_ELIM2:
-    case PfRule::XOR_ELIM1:
-    case PfRule::XOR_ELIM2:
-    case PfRule::NOT_XOR_ELIM1:
-    case PfRule::NOT_XOR_ELIM2:
-    case PfRule::ITE_ELIM1:
-    case PfRule::ITE_ELIM2:
-    case PfRule::NOT_ITE_ELIM1:
-    case PfRule::NOT_ITE_ELIM2:
-    case PfRule::NOT_AND:
-    case PfRule::CNF_AND_NEG:
-    case PfRule::CNF_OR_POS:
-    case PfRule::CNF_OR_NEG:
-    case PfRule::CNF_IMPLIES_POS:
-    case PfRule::CNF_IMPLIES_NEG1:
-    case PfRule::CNF_IMPLIES_NEG2:
-    case PfRule::CNF_EQUIV_POS1:
-    case PfRule::CNF_EQUIV_POS2:
-    case PfRule::CNF_EQUIV_NEG1:
-    case PfRule::CNF_EQUIV_NEG2:
-    case PfRule::CNF_XOR_POS1:
-    case PfRule::CNF_XOR_POS2:
-    case PfRule::CNF_XOR_NEG1:
-    case PfRule::CNF_XOR_NEG2:
-    case PfRule::CNF_ITE_POS1:
-    case PfRule::CNF_ITE_POS2:
-    case PfRule::CNF_ITE_POS3:
-    case PfRule::CNF_ITE_NEG1:
-    case PfRule::CNF_ITE_NEG2:
-    case PfRule::CNF_ITE_NEG3:
-    case PfRule::CNF_AND_POS:
-    case PfRule::FACTORING:
-    case PfRule::REORDERING:
-    case PfRule::RESOLUTION:
-    case PfRule::CHAIN_RESOLUTION:
-    case PfRule::ARRAYS_READ_OVER_WRITE:
-    case PfRule::ARRAYS_READ_OVER_WRITE_CONTRA:
-    case PfRule::ARRAYS_READ_OVER_WRITE_1:
-    case PfRule::ARRAYS_EXT:
-    case PfRule::ARITH_SUM_UB:
-    case PfRule::ARITH_MULT_POS:
-    case PfRule::ARITH_MULT_NEG:
-    case PfRule::ARITH_TRICHOTOMY:
-    case PfRule::INT_TIGHT_LB:
-    case PfRule::INT_TIGHT_UB:
-    case PfRule::SKOLEM_INTRO:
-    case PfRule::CONCAT_EQ:
-    case PfRule::CONCAT_UNIFY:
-    case PfRule::CONCAT_CSPLIT:
-    case PfRule::CONCAT_CONFLICT:
-    case PfRule::STRING_LENGTH_POS:
-    case PfRule::STRING_LENGTH_NON_EMPTY:
-    case PfRule::RE_INTER:
-    case PfRule::RE_UNFOLD_POS:
-    case PfRule::REMOVE_TERM_FORMULA_AXIOM:
-    case PfRule::INSTANTIATE:
-    case PfRule::SKOLEMIZE:
-    case PfRule::DRAT_REFUTATION:
-    case PfRule::ENCODE_PRED_TRANSFORM:
+    case ProofRule::REFL:
+    case ProofRule::SYMM:
+    case ProofRule::TRANS:
+    case ProofRule::CONG:
+    case ProofRule::HO_CONG:
+    case ProofRule::TRUE_INTRO:
+    case ProofRule::TRUE_ELIM:
+    case ProofRule::FALSE_INTRO:
+    case ProofRule::FALSE_ELIM:
+    case ProofRule::SPLIT:
+    case ProofRule::EQ_RESOLVE:
+    case ProofRule::MODUS_PONENS:
+    case ProofRule::NOT_NOT_ELIM:
+    case ProofRule::CONTRA:
+    case ProofRule::AND_ELIM:
+    case ProofRule::AND_INTRO:
+    case ProofRule::NOT_OR_ELIM:
+    case ProofRule::IMPLIES_ELIM:
+    case ProofRule::NOT_IMPLIES_ELIM1:
+    case ProofRule::NOT_IMPLIES_ELIM2:
+    case ProofRule::EQUIV_ELIM1:
+    case ProofRule::EQUIV_ELIM2:
+    case ProofRule::NOT_EQUIV_ELIM1:
+    case ProofRule::NOT_EQUIV_ELIM2:
+    case ProofRule::XOR_ELIM1:
+    case ProofRule::XOR_ELIM2:
+    case ProofRule::NOT_XOR_ELIM1:
+    case ProofRule::NOT_XOR_ELIM2:
+    case ProofRule::ITE_ELIM1:
+    case ProofRule::ITE_ELIM2:
+    case ProofRule::NOT_ITE_ELIM1:
+    case ProofRule::NOT_ITE_ELIM2:
+    case ProofRule::NOT_AND:
+    case ProofRule::CNF_AND_NEG:
+    case ProofRule::CNF_OR_POS:
+    case ProofRule::CNF_OR_NEG:
+    case ProofRule::CNF_IMPLIES_POS:
+    case ProofRule::CNF_IMPLIES_NEG1:
+    case ProofRule::CNF_IMPLIES_NEG2:
+    case ProofRule::CNF_EQUIV_POS1:
+    case ProofRule::CNF_EQUIV_POS2:
+    case ProofRule::CNF_EQUIV_NEG1:
+    case ProofRule::CNF_EQUIV_NEG2:
+    case ProofRule::CNF_XOR_POS1:
+    case ProofRule::CNF_XOR_POS2:
+    case ProofRule::CNF_XOR_NEG1:
+    case ProofRule::CNF_XOR_NEG2:
+    case ProofRule::CNF_ITE_POS1:
+    case ProofRule::CNF_ITE_POS2:
+    case ProofRule::CNF_ITE_POS3:
+    case ProofRule::CNF_ITE_NEG1:
+    case ProofRule::CNF_ITE_NEG2:
+    case ProofRule::CNF_ITE_NEG3:
+    case ProofRule::CNF_AND_POS:
+    case ProofRule::FACTORING:
+    case ProofRule::REORDERING:
+    case ProofRule::RESOLUTION:
+    case ProofRule::CHAIN_RESOLUTION:
+    case ProofRule::ARRAYS_READ_OVER_WRITE:
+    case ProofRule::ARRAYS_READ_OVER_WRITE_CONTRA:
+    case ProofRule::ARRAYS_READ_OVER_WRITE_1:
+    case ProofRule::ARRAYS_EXT:
+    case ProofRule::ARITH_SUM_UB:
+    case ProofRule::ARITH_MULT_POS:
+    case ProofRule::ARITH_MULT_NEG:
+    case ProofRule::ARITH_TRICHOTOMY:
+    case ProofRule::INT_TIGHT_LB:
+    case ProofRule::INT_TIGHT_UB:
+    case ProofRule::SKOLEM_INTRO:
+    case ProofRule::CONCAT_EQ:
+    case ProofRule::CONCAT_UNIFY:
+    case ProofRule::CONCAT_CSPLIT:
+    case ProofRule::CONCAT_CONFLICT:
+    case ProofRule::STRING_LENGTH_POS:
+    case ProofRule::STRING_LENGTH_NON_EMPTY:
+    case ProofRule::RE_INTER:
+    case ProofRule::RE_UNFOLD_POS:
+    case ProofRule::REMOVE_TERM_FORMULA_AXIOM:
+    case ProofRule::INSTANTIATE:
+    case ProofRule::SKOLEMIZE:
+    case ProofRule::DRAT_REFUTATION:
+    case ProofRule::ENCODE_PRED_TRANSFORM:
     // alf rule is handled
-    case PfRule::ALF_RULE: return true;
-    case PfRule::STRING_REDUCTION:
+    case ProofRule::ALF_RULE: return true;
+    case ProofRule::STRING_REDUCTION:
     {
       // depends on the operator
       Assert(!pargs.empty());
@@ -139,7 +139,7 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
       return k == STRING_SUBSTR || k == STRING_INDEXOF;
     }
     break;
-    case PfRule::STRING_EAGER_REDUCTION:
+    case ProofRule::STRING_EAGER_REDUCTION:
     {
       // depends on the operator
       Assert(!pargs.empty());
@@ -148,7 +148,7 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
     }
     break;
     //
-    case PfRule::EVALUATE:
+    case ProofRule::EVALUATE:
     {
       if (canEvaluate(pargs[0]))
       {
@@ -157,55 +157,55 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
       }
     }
     break;
-    case PfRule::ANNOTATION:
-    case PfRule::DSL_REWRITE:
-    case PfRule::THEORY_EXPAND_DEF:
-    case PfRule::WITNESS_AXIOM:
-    case PfRule::HO_APP_ENCODE:
-    case PfRule::BETA_REDUCE:
-    case PfRule::ARRAYS_EQ_RANGE_EXPAND:
-    case PfRule::BV_BITBLAST:
-    case PfRule::BV_BITBLAST_STEP:
-    case PfRule::BV_EAGER_ATOM:
-    case PfRule::DT_UNIF:
-    case PfRule::DT_INST:
-    case PfRule::DT_COLLAPSE:
-    case PfRule::DT_SPLIT:
-    case PfRule::DT_CLASH:
-    case PfRule::ALPHA_EQUIV:
-    case PfRule::QUANTIFIERS_PREPROCESS:
-    case PfRule::CONCAT_SPLIT:
-    case PfRule::CONCAT_LPROP:
-    case PfRule::CONCAT_CPROP:
-    case PfRule::STRING_DECOMPOSE:
-    case PfRule::RE_UNFOLD_NEG:
-    case PfRule::RE_UNFOLD_NEG_CONCAT_FIXED:
-    case PfRule::RE_ELIM:
-    case PfRule::STRING_CODE_INJ:
-    case PfRule::STRING_SEQ_UNIT_INJ:
-    case PfRule::ARITH_MULT_SIGN:
-    case PfRule::ARITH_MULT_TANGENT:
-    case PfRule::ARITH_OP_ELIM_AXIOM:
-    case PfRule::ARITH_POLY_NORM:
-    case PfRule::ARITH_TRANS_PI:
-    case PfRule::ARITH_TRANS_EXP_NEG:
-    case PfRule::ARITH_TRANS_EXP_POSITIVITY:
-    case PfRule::ARITH_TRANS_EXP_SUPER_LIN:
-    case PfRule::ARITH_TRANS_EXP_ZERO:
-    case PfRule::ARITH_TRANS_EXP_APPROX_ABOVE_NEG:
-    case PfRule::ARITH_TRANS_EXP_APPROX_ABOVE_POS:
-    case PfRule::ARITH_TRANS_EXP_APPROX_BELOW:
-    case PfRule::ARITH_TRANS_SINE_BOUNDS:
-    case PfRule::ARITH_TRANS_SINE_SHIFT:
-    case PfRule::ARITH_TRANS_SINE_SYMMETRY:
-    case PfRule::ARITH_TRANS_SINE_TANGENT_ZERO:
-    case PfRule::ARITH_TRANS_SINE_TANGENT_PI:
-    case PfRule::ARITH_TRANS_SINE_APPROX_ABOVE_NEG:
-    case PfRule::ARITH_TRANS_SINE_APPROX_ABOVE_POS:
-    case PfRule::ARITH_TRANS_SINE_APPROX_BELOW_NEG:
-    case PfRule::ARITH_TRANS_SINE_APPROX_BELOW_POS:
-    case PfRule::ARITH_NL_COVERING_DIRECT:
-    case PfRule::ARITH_NL_COVERING_RECURSIVE:
+    case ProofRule::ANNOTATION:
+    case ProofRule::DSL_REWRITE:
+    case ProofRule::THEORY_EXPAND_DEF:
+    case ProofRule::WITNESS_AXIOM:
+    case ProofRule::HO_APP_ENCODE:
+    case ProofRule::BETA_REDUCE:
+    case ProofRule::ARRAYS_EQ_RANGE_EXPAND:
+    case ProofRule::BV_BITBLAST:
+    case ProofRule::BV_BITBLAST_STEP:
+    case ProofRule::BV_EAGER_ATOM:
+    case ProofRule::DT_UNIF:
+    case ProofRule::DT_INST:
+    case ProofRule::DT_COLLAPSE:
+    case ProofRule::DT_SPLIT:
+    case ProofRule::DT_CLASH:
+    case ProofRule::ALPHA_EQUIV:
+    case ProofRule::QUANTIFIERS_PREPROCESS:
+    case ProofRule::CONCAT_SPLIT:
+    case ProofRule::CONCAT_LPROP:
+    case ProofRule::CONCAT_CPROP:
+    case ProofRule::STRING_DECOMPOSE:
+    case ProofRule::RE_UNFOLD_NEG:
+    case ProofRule::RE_UNFOLD_NEG_CONCAT_FIXED:
+    case ProofRule::RE_ELIM:
+    case ProofRule::STRING_CODE_INJ:
+    case ProofRule::STRING_SEQ_UNIT_INJ:
+    case ProofRule::ARITH_MULT_SIGN:
+    case ProofRule::ARITH_MULT_TANGENT:
+    case ProofRule::ARITH_OP_ELIM_AXIOM:
+    case ProofRule::ARITH_POLY_NORM:
+    case ProofRule::ARITH_TRANS_PI:
+    case ProofRule::ARITH_TRANS_EXP_NEG:
+    case ProofRule::ARITH_TRANS_EXP_POSITIVITY:
+    case ProofRule::ARITH_TRANS_EXP_SUPER_LIN:
+    case ProofRule::ARITH_TRANS_EXP_ZERO:
+    case ProofRule::ARITH_TRANS_EXP_APPROX_ABOVE_NEG:
+    case ProofRule::ARITH_TRANS_EXP_APPROX_ABOVE_POS:
+    case ProofRule::ARITH_TRANS_EXP_APPROX_BELOW:
+    case ProofRule::ARITH_TRANS_SINE_BOUNDS:
+    case ProofRule::ARITH_TRANS_SINE_SHIFT:
+    case ProofRule::ARITH_TRANS_SINE_SYMMETRY:
+    case ProofRule::ARITH_TRANS_SINE_TANGENT_ZERO:
+    case ProofRule::ARITH_TRANS_SINE_TANGENT_PI:
+    case ProofRule::ARITH_TRANS_SINE_APPROX_ABOVE_NEG:
+    case ProofRule::ARITH_TRANS_SINE_APPROX_ABOVE_POS:
+    case ProofRule::ARITH_TRANS_SINE_APPROX_BELOW_NEG:
+    case ProofRule::ARITH_TRANS_SINE_APPROX_BELOW_POS:
+    case ProofRule::ARITH_NL_COVERING_DIRECT:
+    case ProofRule::ARITH_NL_COVERING_RECURSIVE:
     default: break;
   }
   return false;
@@ -262,7 +262,7 @@ bool AlfPrinter::canEvaluate(Node n) const
 std::string AlfPrinter::getRuleName(const ProofNode* pfn)
 {
   std::string name;
-  if (pfn->getRule() == PfRule::ALF_RULE)
+  if (pfn->getRule() == ProofRule::ALF_RULE)
   {
     name = AlfRuleToString(getAlfRule(pfn->getArguments()[0]));
   }
@@ -416,8 +416,8 @@ void AlfPrinter::printProofInternal(AlfPrintChannel* out, const ProofNode* pn)
     pit = processingChildren.find(cur);
     if (pit == processingChildren.end())
     {
-      PfRule r = cur->getRule();
-      if (r == PfRule::ASSUME)
+      ProofRule r = cur->getRule();
+      if (r == ProofRule::ASSUME)
       {
         // ignore
         visit.pop_back();
@@ -449,8 +449,8 @@ void AlfPrinter::printProofInternal(AlfPrintChannel* out, const ProofNode* pn)
 void AlfPrinter::printStepPre(AlfPrintChannel* out, const ProofNode* pn)
 {
   // if we haven't yet allocated a proof id, do it now
-  PfRule r = pn->getRule();
-  if (r == PfRule::ALF_RULE)
+  ProofRule r = pn->getRule();
+  if (r == ProofRule::ALF_RULE)
   {
     Assert(!pn->getArguments().empty());
     Node rn = pn->getArguments()[0];
@@ -466,14 +466,14 @@ void AlfPrinter::printStepPre(AlfPrintChannel* out, const ProofNode* pn)
   }
 }
 
-void AlfPrinter::getArgsFromPfRule(const ProofNode* pn, std::vector<Node>& args)
+void AlfPrinter::getArgsFromProofRule(const ProofNode* pn, std::vector<Node>& args)
 {
   Node res = pn->getResult();
   const std::vector<Node> pargs = pn->getArguments();
-  PfRule r = pn->getRule();
+  ProofRule r = pn->getRule();
   switch (r)
   {
-    case PfRule::CHAIN_RESOLUTION:
+    case ProofRule::CHAIN_RESOLUTION:
     {
       // we combine into a list
       NodeManager* nm = NodeManager::currentNM();
@@ -484,34 +484,34 @@ void AlfPrinter::getArgsFromPfRule(const ProofNode* pn, std::vector<Node>& args)
     }
     break;
     // several strings proof rules require adding the type as the first argument
-    case PfRule::CONCAT_EQ:
-    case PfRule::CONCAT_UNIFY:
-    case PfRule::CONCAT_CSPLIT:
+    case ProofRule::CONCAT_EQ:
+    case ProofRule::CONCAT_UNIFY:
+    case ProofRule::CONCAT_CSPLIT:
     {
       Assert(res.getKind() == EQUAL);
       args.push_back(d_tproc.typeAsNode(res[0].getType()));
     }
     break;
-    case PfRule::STRING_LENGTH_POS:
+    case ProofRule::STRING_LENGTH_POS:
       args.push_back(d_tproc.typeAsNode(pargs[0].getType()));
       break;
-    case PfRule::STRING_REDUCTION:
-    case PfRule::STRING_EAGER_REDUCTION:
+    case ProofRule::STRING_REDUCTION:
+    case ProofRule::STRING_EAGER_REDUCTION:
     {
       TypeNode towner = theory::strings::utils::getOwnerStringType(pargs[0]);
       args.push_back(d_tproc.typeAsNode(towner));
     }
     break;
-    case PfRule::INT_TIGHT_LB:
-    case PfRule::INT_TIGHT_UB:
+    case ProofRule::INT_TIGHT_LB:
+    case ProofRule::INT_TIGHT_UB:
       Assert(res.getNumChildren() == 2);
       // provide the target constant explicitly
       args.push_back(d_tproc.convert(res[1]));
       break;
-    case PfRule::ARITH_TRICHOTOMY:
+    case ProofRule::ARITH_TRICHOTOMY:
       // argument is redundant
       return;
-    case PfRule::INSTANTIATE:
+    case ProofRule::INSTANTIATE:
     {
       // ignore arguments past the term vector, collect them into an sexpr
       Node q = pn->getChildren()[0]->getResult();
@@ -551,11 +551,11 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
   {
     conclusionPrint = conclusion;
   }
-  PfRule r = pn->getRule();
+  ProofRule r = pn->getRule();
   const std::vector<std::shared_ptr<ProofNode>>& children = pn->getChildren();
   std::vector<Node> args;
   bool handled = isHandled(pn);
-  if (r == PfRule::ALF_RULE)
+  if (r == ProofRule::ALF_RULE)
   {
     const std::vector<Node> aargs = pn->getArguments();
     Node rn = aargs[0];
@@ -575,7 +575,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
       }
     }
   }
-  else if (r==PfRule::ENCODE_PRED_TRANSFORM)
+  else if (r==ProofRule::ENCODE_PRED_TRANSFORM)
   {
     // just reference the child, do not print a step
     Assert (children.size()==1);
@@ -583,13 +583,13 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
     d_pletMap[pn] = d_pletMap[children[0].get()];
     return;
   }
-  else if (r==PfRule::DSL_REWRITE)
+  else if (r==ProofRule::DSL_REWRITE)
   {
     const std::vector<Node> aargs = pn->getArguments();
     // if its a DSL rule, remember it
     Node idn = aargs[0];
-    rewriter::DslPfRule di;
-    if (rewriter::getDslPfRule(idn, di))
+    rewriter::DslProofRule di;
+    if (rewriter::getDslProofRule(idn, di))
     {
       d_dprs.insert(di);
     }
@@ -600,7 +600,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
   }
   else if (handled)
   {
-    getArgsFromPfRule(pn, args);
+    getArgsFromProofRule(pn, args);
   }
   // if not flattening proofs
   if (!d_proofFlatten)
@@ -620,7 +620,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
       for (const std::shared_ptr<ProofNode>& c : children)
       {
         Node arg;
-        if (c->getRule() == PfRule::ASSUME)
+        if (c->getRule() == ProofRule::ASSUME)
         {
           ita = d_passumeMap.find(c->getResult());
           Assert(ita != d_passumeMap.end());
@@ -669,7 +669,7 @@ void AlfPrinter::printStepPost(AlfPrintChannel* out, const ProofNode* pn)
   {
     size_t pid;
     // if assume, lookup in passumeMap
-    if (c->getRule() == PfRule::ASSUME)
+    if (c->getRule() == ProofRule::ASSUME)
     {
       ita = d_passumeMap.find(c->getResult());
       Assert(ita != d_passumeMap.end());
