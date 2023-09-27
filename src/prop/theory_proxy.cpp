@@ -304,8 +304,7 @@ void TheoryProxy::enqueueTheoryLiteral(const SatLiteral& l) {
 }
 
 SatLiteral TheoryProxy::getNextDecisionRequest(bool& requirePhase,
-                                               bool& stopSearch,
-                                               bool theoryOnly)
+                                               bool& stopSearch)
 {
   Trace("theory-proxy") << "TheoryProxy: getNextDecisionRequest" << std::endl;
   requirePhase = false;
@@ -318,7 +317,7 @@ SatLiteral TheoryProxy::getNextDecisionRequest(bool& requirePhase,
     requirePhase = true;
     res = d_cnfStream->getLiteral(n);
   }
-  else if (!theoryOnly)
+  else
   {
     Assert(d_decisionEngine != nullptr);
     Assert(stopSearch != true);
