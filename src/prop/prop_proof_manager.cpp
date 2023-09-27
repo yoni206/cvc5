@@ -71,11 +71,11 @@ void PropPfManager::checkProof(const context::CDList<Node>& assumptions,
                      "PropPfManager::checkProof");
 }
 
-std::vector<Node> PropPfManager::getUnsatCoreLemmas()
+std::vector<Node> PropPfManager::getUnsatCoreLemmas(const context::CDList<Node>& assumptions)
 {
   std::vector<Node> usedLemmas;
   std::vector<Node> allLemmas = d_proofCnfStream->getLemmaClauses();
-  std::shared_ptr<ProofNode> satPf = getProof(false);
+  std::shared_ptr<ProofNode> satPf = getProof(assumptions, false);
   std::vector<Node> satLeaves;
   expr::getFreeAssumptions(satPf.get(), satLeaves);
   for (const Node& lemma : allLemmas)
