@@ -31,8 +31,6 @@
 #include "smt/print_benchmark.h"
 #include "theory/strings/theory_strings_utils.h"
 
-using namespace cvc5::internal::kind;
-
 namespace cvc5::internal {
 
 namespace proof {
@@ -147,7 +145,7 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
       // depends on the operator
       Assert(!pargs.empty());
       Kind k = pargs[0].getKind();
-      return k == STRING_SUBSTR || k == STRING_INDEXOF;
+      return k == Kind::STRING_SUBSTR || k == Kind::STRING_INDEXOF;
     }
     break;
     case ProofRule::STRING_EAGER_REDUCTION:
@@ -155,7 +153,7 @@ bool AlfPrinter::isHandled(const ProofNode* pfn) const
       // depends on the operator
       Assert(!pargs.empty());
       Kind k = pargs[0].getKind();
-      return k == STRING_CONTAINS || k == STRING_TO_CODE || k == STRING_INDEXOF;
+      return k == Kind::STRING_CONTAINS || k == Kind::STRING_TO_CODE || k == Kind::STRING_INDEXOF;
     }
     break;
     //
@@ -236,31 +234,31 @@ bool AlfPrinter::canEvaluate(Node n) const
       visited.insert(cur);
       switch (cur.getKind())
       {
-        case NOT:
-        case AND:
-        case OR:
-        case XOR:
-        case CONST_BOOLEAN:
-        case CONST_INTEGER:
-        case CONST_RATIONAL:
-        case CONST_STRING:
-        case ADD:
-        case SUB:
-        case NEG:
-        case EQUAL:
-        case LT:
-        case GT:
-        case GEQ:
-        case LEQ:
-        case MULT:
-        case NONLINEAR_MULT:
-        case STRING_CONCAT:
-        case STRING_SUBSTR:
-        case STRING_LENGTH:
-        case STRING_CONTAINS:
-        case BITVECTOR_ADD:
-        case BITVECTOR_SUB:
-        case BITVECTOR_NEG: break;
+        case Kind::NOT:
+        case Kind::AND:
+        case Kind::OR:
+        case Kind::XOR:
+        case Kind::CONST_BOOLEAN:
+        case Kind::CONST_INTEGER:
+        case Kind::CONST_RATIONAL:
+        case Kind::CONST_STRING:
+        case Kind::ADD:
+        case Kind::SUB:
+        case Kind::NEG:
+        case Kind::EQUAL:
+        case Kind::LT:
+        case Kind::GT:
+        case Kind::GEQ:
+        case Kind::LEQ:
+        case Kind::MULT:
+        case Kind::NONLINEAR_MULT:
+        case Kind::STRING_CONCAT:
+        case Kind::STRING_SUBSTR:
+        case Kind::STRING_LENGTH:
+        case Kind::STRING_CONTAINS:
+        case Kind::BITVECTOR_ADD:
+        case Kind::BITVECTOR_SUB:
+        case Kind::BITVECTOR_NEG: break;
         default:
           Trace("alf-printer-debug")
               << "Cannot evaluate " << cur.getKind() << std::endl;
@@ -361,7 +359,7 @@ void AlfPrinter::printDslRule(std::ostream& out, rewriter::DslProofRule r)
   }
   out << ")" << std::endl;
   Node sconc = d_tproc.convert(su.apply(conc));
-  Assert (sconc.getKind()==EQUAL);
+  Assert (sconc.getKind()==Kind::EQUAL);
   out << "  :conclusion (= " << sconc[0] << " " << d_ltproc.convert(sconc[1]) << ")" << std::endl;
   out << ")" << std::endl;
 }
@@ -415,7 +413,7 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
       const std::unordered_set<TNode>& vars = aletify.getVariables();
       for (TNode v : vars)
       {
-        if (v.getKind() == BOUND_VARIABLE)
+        if (v.getKind() == Kind::BOUND_VARIABLE)
         {
           outVars << "(declare-var " << v << " " << v.getType() << ")"
                   << std::endl;
@@ -464,7 +462,7 @@ void AlfPrinter::print(std::ostream& out, std::shared_ptr<ProofNode> pfn)
     }
     for (const Node& n : definitions)
     {
-      if (n.getKind() != EQUAL)
+      if (n.getKind() != Kind::EQUAL)
       {
         // skip define-fun-rec?
         continue;
@@ -574,7 +572,7 @@ void AlfPrinter::getArgsFromProofRule(const ProofNode* pn,
     {
       // we combine into a list
       NodeManager* nm = NodeManager::currentNM();
-      Node argsList = nm->mkNode(AND, pargs);
+      Node argsList = nm->mkNode(Kind::AND, pargs);
       argsList = d_tproc.convert(argsList);
       args.push_back(argsList);
       return;
@@ -585,7 +583,7 @@ void AlfPrinter::getArgsFromProofRule(const ProofNode* pn,
     case ProofRule::CONCAT_UNIFY:
     case ProofRule::CONCAT_CSPLIT:
     {
-      Assert(res.getKind() == EQUAL);
+      Assert(res.getKind() == Kind::EQUAL);
       args.push_back(d_tproc.typeAsNode(res[0].getType()));
     }
     break;
@@ -612,7 +610,7 @@ void AlfPrinter::getArgsFromProofRule(const ProofNode* pn,
     {
       // ignore arguments past the term vector, collect them into an sexpr
       Node q = pn->getChildren()[0]->getResult();
-      Assert(q.getKind() == FORALL);
+      Assert(q.getKind() == Kind::FORALL);
       // only provide arguments up to the variable list length
       std::vector<Node> targs;
       for (size_t i = 0, nvars = q[0].getNumChildren(); i < nvars; i++)

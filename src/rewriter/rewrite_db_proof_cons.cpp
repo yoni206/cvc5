@@ -359,7 +359,7 @@ bool RewriteDbProofCons::proveWithRule(DslProofRule id,
   }
   else if (id == DslProofRule::TRUE_INTRO)
   {
-    if (target[1] != d_true || target[0].getKind() != EQUAL)
+    if (target[1] != d_true || target[0].getKind() != Kind::EQUAL)
     {
       // only works for (= (= t1 t2) true)
       return false;
@@ -382,7 +382,7 @@ bool RewriteDbProofCons::proveWithRule(DslProofRule id,
     const RewriteProofRule& rpr = d_db->getRule(id);
     // does it conclusion match what we are trying to show?
     Node conc = rpr.getConclusion();
-    Assert(conc.getKind() == EQUAL && target.getKind() == EQUAL);
+    Assert(conc.getKind() == Kind::EQUAL && target.getKind() == Kind::EQUAL);
     // get rule conclusion, which may incorporate fixed point semantics when
     // doFixedPoint is true. This stores the rule for the conclusion in pic,
     // which is either id or DslProofRule::TRANS.
@@ -435,7 +435,7 @@ bool RewriteDbProofCons::proveWithRule(DslProofRule id,
   std::vector<Node> condToProve;
   for (const Node& cond : vcs)
   {
-    Assert(cond.getKind() == kind::EQUAL);
+    Assert(cond.getKind() == Kind::EQUAL);
     // substitute to get the condition-to-prove
     DslProofRule cid;
     // check whether condition is already known to hold or not hold

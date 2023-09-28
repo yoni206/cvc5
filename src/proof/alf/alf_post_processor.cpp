@@ -118,7 +118,7 @@ bool AlfProofPostprocessCallback::update(Node res,
       for (size_t i = 0, nargs = args.size(); i < nargs; i++)
       {
         size_t ii = (nargs - 1) - i;
-        Node next = nm->mkNode(IMPLIES, args[ii], curr);
+        Node next = nm->mkNode(Kind::IMPLIES, args[ii], curr);
         addAlfStep(AlfRule::SCOPE, next, {curr}, {args[ii]}, *cdp);
         curr = next;
       }
@@ -129,13 +129,13 @@ bool AlfProofPostprocessCallback::update(Node res,
     break;
     case ProofRule::CONG:
     {
-      Assert(res.getKind() == EQUAL);
+      Assert(res.getKind() == Kind::EQUAL);
       Assert(res[0].getOperator() == res[1].getOperator());
       Trace("alf-proof") << "Processing congruence for " << res << " "
                          << res[0].getKind() << std::endl;
 
       Kind k = res[0].getKind();
-      if (k == HO_APPLY)
+      if (k == Kind::HO_APPLY)
       {
         // HO_APPLY congruence is a single application of HO_CONG
         cdp->addStep(res, ProofRule::HO_CONG, children, {});
@@ -148,7 +148,7 @@ bool AlfProofPostprocessCallback::update(Node res,
       Node op = d_tproc.getOperatorOfTerm(res[0]);
       Trace("alf-proof") << "Processing cong for op " << op << " "
                          << op.getType() << std::endl;
-      if (k == LAMBDA || k == WITNESS)
+      if (k == Kind::LAMBDA || k == Kind::WITNESS)
       {
         Assert(res[1].getKind() == k && res[0][0] == res[1][0]);
         Node lam1 = d_tproc.convert(res[0]);
@@ -231,7 +231,7 @@ bool AlfProofPostprocessCallback::update(Node res,
         return false;
       }
       Assert(children.size() == 2);
-      Assert(children[0].getKind() == EQUAL);
+      Assert(children[0].getKind() == Kind::EQUAL);
       Assert(children[0][0].getType().isSequence());
       // must use the sequences version of the rule
       Node falsen = nm->mkConst(false);
@@ -244,7 +244,7 @@ bool AlfProofPostprocessCallback::update(Node res,
     case ProofRule::SKOLEM_INTRO:
     {
       Node t = SkolemManager::getUnpurifiedForm(args[0]);
-      if (t.getKind() != WITNESS)
+      if (t.getKind() != Kind::WITNESS)
       {
         // no change necessary
         return false;

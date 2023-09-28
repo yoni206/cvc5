@@ -157,7 +157,7 @@ std::shared_ptr<ProofNode> PropPfManager::getProof(
         }
       }
       std::vector<Node> lits;
-      if (i.getKind() == kind::OR)
+      if (i.getKind() == Kind::OR)
       {
         lits.insert(lits.end(), i.begin(), i.end());
       }

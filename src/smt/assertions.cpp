@@ -118,7 +118,7 @@ void Assertions::addFormula(TNode n,
       BetaReduceNodeConverter brnc;
       ns = brnc.convert(ns);
     }
-    if (isFunDef && ns.getKind() == EQUAL && ns[0].isVar())
+    if (isFunDef && ns.getKind() == Kind::EQUAL && ns[0].isVar())
     {
       // add the definition substitution
       d_definitionSubs.addSubstitution(ns[0], ns[1]);
@@ -145,7 +145,7 @@ void Assertions::addFormula(TNode n,
   if (isFunDef)
   {
     // if a non-recursive define-fun, just add as a top-level substitution
-    if (n.getKind() == EQUAL && ns[0].isVar())
+    if (n.getKind() == Kind::EQUAL && ns[0].isVar())
     {
       // A define-fun is an assumption in the overall proof, thus
       // we justify the substitution with ASSUME here.
