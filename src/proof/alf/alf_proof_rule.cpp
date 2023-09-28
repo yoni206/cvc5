@@ -24,10 +24,6 @@
 #include "proof/proof_checker.h"
 
 namespace cvc5::internal {
-<<<<<<< HEAD
-=======
-
->>>>>>> 997fc0465335fcff477c127500cc335bc9400470
 namespace proof {
 
 const char* AlfRuleToString(AlfRule id)
@@ -63,8 +59,4 @@ AlfRule getAlfRule(Node n)
 }
 
 }  // namespace proof
-<<<<<<< HEAD
-=======
-
->>>>>>> 997fc0465335fcff477c127500cc335bc9400470
 }  // namespace cvc5::internal
