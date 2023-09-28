@@ -1449,12 +1449,12 @@ void SolverEngine::checkProof()
   // internal check the proof
   PropEngine* pe = d_smtSolver->getPropEngine();
   Assert(pe != nullptr);
-  std::shared_ptr<ProofNode> pePfn = pe->getProof();
-  Assert(pePfn != nullptr);
   if (d_env->getOptions().proof.proofCheck == options::ProofCheckMode::EAGER)
   {
     pe->checkProof(d_smtSolver->getAssertions().getAssertionList());
   }
+  Assert(pe->getProof() != nullptr);
+  std::shared_ptr<ProofNode> pePfn = pe->getProof();
   if (d_env->getOptions().smt.checkProofs)
   {
     // connect proof to assertions, which will fail if the proof is malformed
@@ -1627,8 +1627,8 @@ void SolverEngine::getRelevantQuantTermVectors(
   // generate with new proofs
   PropEngine* pe = d_smtSolver->getPropEngine();
   Assert(pe != nullptr);
+  Assert(pe->getProof() != nullptr);
   std::shared_ptr<ProofNode> pfn = pe->getProof();
-  Assert(pfn != nullptr);
   // note that we don't have to connect the SAT proof to the input assertions,
   // and preprocessing proofs don't impact what instantiations are used
   d_ucManager->getRelevantQuantTermVectors(pfn, insts, sks, getDebugInfo);
@@ -1658,12 +1658,12 @@ std::string SolverEngine::getProof(modes::ProofComponent c)
   bool connectToPreprocess = false;
   bool connectMkOuterScope = false;
   bool commentProves = true;
-  const context::CDList<Node>& assertions =
-      d_smtSolver->getPreprocessedAssertions();
   options::ProofFormatMode mode = options::ProofFormatMode::NONE;
   if (c == modes::ProofComponent::RAW_PREPROCESS)
   {
     // use all preprocessed assertions
+    const context::CDList<Node>& assertions =
+        d_smtSolver->getPreprocessedAssertions();
     connectToPreprocess = true;
     // We start with (ASSUME a) for each preprocessed assertion a. This
     // proof will be connected to the proof of preprocessing for a.
