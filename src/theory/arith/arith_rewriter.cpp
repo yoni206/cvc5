@@ -231,6 +231,7 @@ RewriteResponse ArithRewriter::preRewriteTerm(TNode t){
       case Kind::MULT:
       case Kind::NONLINEAR_MULT: return preRewriteMult(t);
       case Kind::IAND: return RewriteResponse(REWRITE_DONE, t);
+      case Kind::BV2NAT: return RewriteResponse(REWRITE_DONE, t);
       case Kind::POW2: return RewriteResponse(REWRITE_DONE, t);
       case Kind::INTS_ISPOW2: return RewriteResponse(REWRITE_DONE, t);
       case Kind::INTS_LOG2: return RewriteResponse(REWRITE_DONE, t);
@@ -281,7 +282,7 @@ RewriteResponse ArithRewriter::postRewriteTerm(TNode t){
       case Kind::ADD: return postRewritePlus(t);
       case Kind::MULT:
       case Kind::NONLINEAR_MULT: return postRewriteMult(t);
-      case Kind::IAND: return postRewriteIAnd(t);
+      case Kind::BV2NAT: return postRewriteBV2NAT(t);
       case Kind::POW2: return postRewritePow2(t);
       case Kind::INTS_ISPOW2: return postRewriteIntsIsPow2(t);
       case Kind::INTS_LOG2: return postRewriteIntsLog2(t);
@@ -861,6 +862,35 @@ RewriteResponse ArithRewriter::postRewriteIAnd(TNode t)
   }
   return RewriteResponse(REWRITE_DONE, t);
 }
+
+
+RewriteResponse ArithRewriter::postRewriteIAnd(TNode t)
+{
+  Assert(t.getKind() == Kind::BV2NAT);
+  uint32_t bsize = t[0].getBitVectorSize();
+  NodeManager* nm = nodeManager();
+  // if constant, we eliminate
+  if (t[0].isConst() && t[1].isConst())
+  {
+    Assert(false);
+  }
+  else if (t[0].getKind() == Kind::BITVECTOR_PLUS)
+  {
+    // (bv2nat (x + y)) -> ((bv2nat x) + (bv2nat y)) mod 2^k
+    Node bvplus == t[0];
+    Node x = bvplus[0];
+    Node y = bvplus[1];
+    Node k = x.getType().getBitvectorSize();
+    Node bv2natx = nm->mkNode(Kind::BITVECTOR_TO_NAT, x);
+    Node bv2naty = nm->mkNode(Kind::BITVECTOR_TO_NAT, y);
+    Node intplus = nm->mkNode(Kind::PLUS, bv2natx, bv2naty);
+    Node tk = nm->mkNode(Kind::POW, 2, k);
+    Node ret = nm->mkNode(Kind::INTS_MODULUS, intplus, tk);
+    return RewriteResponse(REWRITE_AGAIN, ret);
+  }
+  return RewriteResponse(REWRITE_DONE, t);
+}
+
 
 RewriteResponse ArithRewriter::postRewritePow2(TNode t)
 {

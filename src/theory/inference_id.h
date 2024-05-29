@@ -153,6 +153,15 @@ enum class InferenceId
   ARITH_NL_T_TANGENT,
   // secant refinement, the dual of the above inference
   ARITH_NL_T_SECANT,
+  //-------------------- nonlinear bv2nat solver
+  // initial refinements (IAndSolver::checkInitialRefine)
+  ARITH_NL_BV2NAT_INIT_REFINE,
+  // value refinements (IAndSolver::checkFullRefine)
+  ARITH_NL_BV2NAT_VALUE_REFINE,
+  // sum refinements (IAndSolver::checkFullRefine)
+  ARITH_NL_BV2NAT_SUM_REFINE,
+  // bitwise refinements (IAndSolver::checkFullRefine)
+  ARITH_NL_BV2NAT_BITWISE_REFINE,
   //-------------------- nonlinear iand solver
   // initial refinements (IAndSolver::checkInitialRefine)
   ARITH_NL_IAND_INIT_REFINE,

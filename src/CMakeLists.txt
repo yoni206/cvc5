@@ -449,6 +449,8 @@ libcvc5_add_sources(
   theory/arith/linear/tableau_sizes.h
   theory/arith/linear/theory_arith_private.cpp
   theory/arith/linear/theory_arith_private.h
+  theory/arith/nl/bv2nat_solver.cpp
+  theory/arith/nl/bv2nat_solver.h
   theory/arith/nl/coverings_solver.cpp
   theory/arith/nl/coverings_solver.h
   theory/arith/nl/coverings/cdcac.cpp
