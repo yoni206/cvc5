@@ -305,6 +305,18 @@ RewriteResponse TheoryUfRewriter::rewriteBVToNat(TNode node)
     Node resultNode = nm->mkNode(Kind::INTS_MODULUS_TOTAL, node[0][0], sn);
     return RewriteResponse(REWRITE_AGAIN_FULL, resultNode);
   }
+  else if (node[0].getKind() == Kind::BITVECTOR_ADD) {
+    std::vector<Node> bv2nats;
+    for (Node child : node[0]) {
+      Node bv2nat = nm->mkNode(Kind::BITVECTOR_TO_NAT, child);
+      bv2nats.push_back(bv2nat);
+    }
+    const uint32_t size = node[0].getType().getBitVectorSize();
+    Node twottsize = nm->mkConstInt(Rational(Integer(2).pow(size)));
+    Node addition = nm->mkNode(Kind::ADD, bv2nats);
+    Node resultNode = nm->mkNode(Kind::INTS_MODULUS_TOTAL, addition, twottsize);
+    return RewriteResponse(REWRITE_AGAIN_FULL, resultNode);
+  }
   return RewriteResponse(REWRITE_DONE, node);
 }
 
