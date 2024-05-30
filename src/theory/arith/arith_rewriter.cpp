@@ -231,7 +231,7 @@ RewriteResponse ArithRewriter::preRewriteTerm(TNode t){
       case Kind::MULT:
       case Kind::NONLINEAR_MULT: return preRewriteMult(t);
       case Kind::IAND: return RewriteResponse(REWRITE_DONE, t);
-      case Kind::BV2NAT: return RewriteResponse(REWRITE_DONE, t);
+      case Kind::BITVECTOR_TO_NAT: return RewriteResponse(REWRITE_DONE, t);
       case Kind::POW2: return RewriteResponse(REWRITE_DONE, t);
       case Kind::INTS_ISPOW2: return RewriteResponse(REWRITE_DONE, t);
       case Kind::INTS_LOG2: return RewriteResponse(REWRITE_DONE, t);
@@ -282,7 +282,7 @@ RewriteResponse ArithRewriter::postRewriteTerm(TNode t){
       case Kind::ADD: return postRewritePlus(t);
       case Kind::MULT:
       case Kind::NONLINEAR_MULT: return postRewriteMult(t);
-      case Kind::BV2NAT: return postRewriteBV2NAT(t);
+      case Kind::BITVECTOR_TO_NAT: return postRewriteBV2NAT(t);
       case Kind::POW2: return postRewritePow2(t);
       case Kind::INTS_ISPOW2: return postRewriteIntsIsPow2(t);
       case Kind::INTS_LOG2: return postRewriteIntsLog2(t);
@@ -864,9 +864,9 @@ RewriteResponse ArithRewriter::postRewriteIAnd(TNode t)
 }
 
 
-RewriteResponse ArithRewriter::postRewriteIAnd(TNode t)
+RewriteResponse ArithRewriter::postRewriteBV2Nat(TNode t)
 {
-  Assert(t.getKind() == Kind::BV2NAT);
+  Assert(t.getKind() == Kind::BITVECTOR_TO_NAT);
   uint32_t bsize = t[0].getBitVectorSize();
   NodeManager* nm = nodeManager();
   // if constant, we eliminate

@@ -31,6 +31,7 @@
 #include "theory/arith/nl/ext/tangent_plane_check.h"
 #include "theory/arith/nl/ext_theory_callback.h"
 #include "theory/arith/nl/iand_solver.h"
+#include "theory/arith/nl/bv2nat_solver.h"
 #include "theory/arith/nl/icp/icp_solver.h"
 #include "theory/arith/nl/nl_model.h"
 #include "theory/arith/nl/pow2_solver.h"
@@ -248,6 +249,8 @@ class NonlinearExtension : EnvObj
    * constraints involving integer and.
    */
   IAndSolver d_iandSlv;
+  
+  BV2NatSolver d_bv2natSlv;
 
   /** The pow2 solver
    *

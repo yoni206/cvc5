@@ -54,9 +54,9 @@ void BV2NatSolver::initLastCall(const std::vector<Node>& assertions,
                               const std::vector<Node>& false_asserts,
                               const std::vector<Node>& xts)
 {
-  d_iands.clear();
+  d_bv2nats.clear();
 
-  Trace("bv2nat-mv") << "IAND terms : " << std::endl;
+  Trace("bv2nat-mv") << "BV2NAT terms : " << std::endl;
   for (const Node& a : xts)
   {
     Kind ak = a.getKind();
@@ -73,9 +73,9 @@ void BV2NatSolver::initLastCall(const std::vector<Node>& assertions,
 
 void BV2NatSolver::checkInitialRefine()
 {
-  Trace("iand-check") << "BV2NatSolver::checkInitialRefine" << std::endl;
+  Trace("bv2nat-check") << "BV2NatSolver::checkInitialRefine" << std::endl;
   NodeManager* nm = nodeManager();
-  for (const std::pair<const unsigned, std::vector<Node> >& is : d_iands)
+  for (const std::pair<const unsigned, std::vector<Node> >& is : d_bv2nats)
   {
     // the reference bitwidth
     unsigned k = is.first;
@@ -88,106 +88,68 @@ void BV2NatSolver::checkInitialRefine()
       }
       d_initRefine.insert(i);
       Node op = i.getOperator();
-      uint32_t bsize = op.getConst<IntAnd>().d_size;
+      uint32_t bsize = i.getType().getBitvectorSize();
       Node twok = nm->mkConstInt(Rational(Integer(2).pow(bsize)));
       Node arg0Mod = nm->mkNode(Kind::INTS_MODULUS, i[0], twok);
-      Node arg1Mod = nm->mkNode(Kind::INTS_MODULUS, i[1], twok);
       // initial refinement lemmas
       std::vector<Node> conj;
-      // iand(x,y)=iand(y,x) is guaranteed by rewriting
-      Assert(i[0] <= i[1]);
-      // conj.push_back(i.eqNode(nm->mkNode(IAND, op, i[1], i[0])));
-      // 0 <= iand(x,y) < 2^k
+      // 0 <= bv2nat x < 2^k
       conj.push_back(nm->mkNode(Kind::LEQ, d_zero, i));
-      conj.push_back(nm->mkNode(Kind::LT, i, rewrite(d_iandUtils.twoToK(k))));
-      // iand(x,y)<=mod(x, 2^k)
-      conj.push_back(nm->mkNode(Kind::LEQ, i, arg0Mod));
-      // iand(x,y)<=mod(y, 2^k)
-      conj.push_back(nm->mkNode(Kind::LEQ, i, arg1Mod));
-      // x=y => iand(x,y)=mod(x, 2^k)
-      conj.push_back(
-          nm->mkNode(Kind::IMPLIES, i[0].eqNode(i[1]), i.eqNode(arg0Mod)));
+      conj.push_back(nm->mkNode(Kind::LT, i, rewrite(nm->mkNode(Kind::POW, d_two, nm->mkConstInt(Rational(k)));)));
       Node lem = conj.size() == 1 ? conj[0] : nm->mkNode(Kind::AND, conj);
-      Trace("iand-lemma") << "BV2NatSolver::Lemma: " << lem << " ; INIT_REFINE"
+      Trace("bv2nat-lemma") << "BV2NatSolver::Lemma: " << lem << " ; INIT_REFINE"
                           << std::endl;
-      d_im.addPendingLemma(lem, InferenceId::ARITH_NL_IAND_INIT_REFINE);
+      d_im.addPendingLemma(lem, InferenceId::ARITH_NL_BV2NAT_INIT_REFINE);
     }
   }
 }
 
 void BV2NatSolver::checkFullRefine()
 {
-  Trace("iand-check") << "BV2NatSolver::checkFullRefine";
-  Trace("iand-check") << "IAND terms: " << std::endl;
-  for (const std::pair<const unsigned, std::vector<Node> >& is : d_iands)
+  Trace("bv2nat-check") << "BV2NatSolver::checkFullRefine";
+  Trace("bv2nat-check") << "BV2NAT terms: " << std::endl;
+  for (const std::pair<const unsigned, std::vector<Node> >& is : d_bv2nats)
   {
     // the reference bitwidth
     unsigned k = is.first;
     for (const Node& i : is.second)
     {
-      Node valAndXY = d_model.computeAbstractModelValue(i);
-      Node valAndXYC = d_model.computeConcreteModelValue(i);
-      if (TraceIsOn("iand-check"))
+      Node valBV2Natx = d_model.computeAbstractModelValue(i);
+      Node valBV2NatxC = d_model.computeConcreteModelValue(i);
+      if (TraceIsOn("bv2nat-check"))
       {
         Node x = i[0];
-        Node y = i[1];
 
         Node valX = d_model.computeConcreteModelValue(x);
-        Node valY = d_model.computeConcreteModelValue(y);
 
-        Trace("iand-check")
-            << "* " << i << ", value = " << valAndXY << std::endl;
-        Trace("iand-check") << "  actual (" << valX << ", " << valY
-                            << ") = " << valAndXYC << std::endl;
+        Trace("bv2nat-check")
+            << "* " << i << ", value = " << valBV2NatX << std::endl;
+        Trace("bv2nat-check") << "  actual (" << valX  
+                            << ") = " << valBV2NatxC << std::endl;
         // print the bit-vector versions
         Node bvalX = convertToBvK(k, valX);
-        Node bvalY = convertToBvK(k, valY);
-        Node bvalAndXY = convertToBvK(k, valAndXY);
-        Node bvalAndXYC = convertToBvK(k, valAndXYC);
+        Node bvalBV2NatX = convertToBvK(k, valBV2NatX);
+        Node bvalBV2NatXC = convertToBvK(k, valBV2NatXC);
 
-        Trace("iand-check") << "  bv-value = " << bvalAndXY << std::endl;
-        Trace("iand-check") << "  bv-actual (" << bvalX << ", " << bvalY
-                            << ") = " << bvalAndXYC << std::endl;
+        Trace("bv2nat-check") << "  bv-value = " << bvalBV2NatX << std::endl;
+        Trace("bv2nat-check") << "  bv-actual (" << bvalX << ", " << bvalY
+                            << ") = " << bvalBV2NatXC << std::endl;
       }
-      if (valAndXY == valAndXYC)
+      if (valBV2NatX == valBV2NatXC)
       {
-        Trace("iand-check") << "...already correct" << std::endl;
+        Trace("bv2nat-check") << "...already correct" << std::endl;
         continue;
       }
 
-      // ************* additional lemma schemas go here
-      if (options().smt.iandMode == options::IandMode::SUM)
-      {
-        Node lem = sumBasedLemma(i);  // add lemmas based on sum mode
-        Trace("iand-lemma")
-            << "BV2NatSolver::Lemma: " << lem << " ; SUM_REFINE" << std::endl;
-        // note that lemma can contain div/mod, and will be preprocessed in the
-        // prop engine
-        d_im.addPendingLemma(
-            lem, InferenceId::ARITH_NL_IAND_SUM_REFINE, nullptr, true);
-      }
-      else if (options().smt.iandMode == options::IandMode::BITWISE)
-      {
-        Node lem = bitwiseLemma(i);  // check for violated bitwise axioms
-        Trace("iand-lemma")
-            << "BV2NatSolver::Lemma: " << lem << " ; BITWISE_REFINE" << std::endl;
-        // note that lemma can contain div/mod, and will be preprocessed in the
-        // prop engine
-        d_im.addPendingLemma(
-            lem, InferenceId::ARITH_NL_IAND_BITWISE_REFINE, nullptr, true);
-      }
-      else
-      {
         // this is the most naive model-based schema based on model values
         Node lem = valueBasedLemma(i);
-        Trace("iand-lemma")
+        Trace("bv2nat-lemma")
             << "BV2NatSolver::Lemma: " << lem << " ; VALUE_REFINE" << std::endl;
         // send the value lemma
         d_im.addPendingLemma(lem,
-                             InferenceId::ARITH_NL_IAND_VALUE_REFINE,
+                             InferenceId::ARITH_NL_BV2NAT_VALUE_REFINE,
                              nullptr,
                              true);
-      }
     }
   }
 }
@@ -201,123 +163,28 @@ Node BV2NatSolver::convertToBvK(unsigned k, Node n) const
   return rewrite(bn);
 }
 
-Node BV2NatSolver::mkIAnd(unsigned k, Node x, Node y) const
-{
-  NodeManager* nm = nodeManager();
-  Node iAndOp = nm->mkConst(IntAnd(k));
-  Node ret = nm->mkNode(Kind::IAND, iAndOp, x, y);
-  ret = rewrite(ret);
-  return ret;
-}
-
-Node BV2NatSolver::mkIOr(unsigned k, Node x, Node y) const
-{
-  Node ret = mkINot(k, mkIAnd(k, mkINot(k, x), mkINot(k, y)));
-  ret = rewrite(ret);
-  return ret;
-}
-
-Node BV2NatSolver::mkINot(unsigned k, Node x) const
-{
-  NodeManager* nm = nodeManager();
-  Node ret = nm->mkNode(Kind::SUB, d_iandUtils.twoToKMinusOne(k), x);
-  ret = rewrite(ret);
-  return ret;
-}
-
 Node BV2NatSolver::valueBasedLemma(Node i)
 {
   NodeManager* nm = nodeManager();
-  Assert(i.getKind() == Kind::IAND);
+  Assert(i.getKind() == Kind::BITVECTOR_TO_NAT);
   Node x = i[0];
-  Node y = i[1];
 
-  uint32_t bvsize = i.getOperator().getConst<IntAnd>().d_size;
+  uint32_t bvsize = x.getType().getBitVectorSize();
   Node twok = nm->mkConstInt(Rational(Integer(2).pow(bvsize)));
   Node valX = d_model.computeConcreteModelValue(x);
-  Node valY = d_model.computeConcreteModelValue(y);
   valX = nm->mkNode(Kind::INTS_MODULUS, valX, twok);
-  valY = nm->mkNode(Kind::INTS_MODULUS, valY, twok);
 
-  Node valC = nm->mkNode(Kind::IAND, i.getOperator(), valX, valY);
+  Node valC = nm->mkNode(Kind::BITVECTOR_TO_NAT, valX;
   valC = rewrite(valC);
 
   Node xm = nm->mkNode(Kind::INTS_MODULUS, x, twok);
-  Node ym = nm->mkNode(Kind::INTS_MODULUS, y, twok);
 
-  // (=>
-  //   (and (= (mod x 2^n) (mod c1 2^n)) (= (mod y 2^n) (mod c2 2^n)))
-  //   (= ((_ iand n) x y) rewrite(((_ iand n) (mod c1 2^n) (mod c2 2^n))))
-  // Note we use mod above since it ensures the the set of possible literals
-  // introduced is finite, since there are finitely many values mod 2^n.
   Node lem = nm->mkNode(Kind::IMPLIES,
-                        nm->mkNode(Kind::AND, xm.eqNode(valX), ym.eqNode(valY)),
+                        nm->mkNode(xm.eqNode(valX),
                         i.eqNode(valC));
   return lem;
 }
 
-Node BV2NatSolver::sumBasedLemma(Node i)
-{
-  Assert(i.getKind() == Kind::IAND);
-  Node x = i[0];
-  Node y = i[1];
-  uint32_t bvsize = i.getOperator().getConst<IntAnd>().d_size;
-  Assert(options().smt.BVAndIntegerGranularity <= 8);
-  uint32_t granularity = static_cast<uint32_t>(options().smt.BVAndIntegerGranularity);
-  NodeManager* nm = nodeManager();
-  Node lem = nm->mkNode(
-      Kind::EQUAL, i, d_iandUtils.createSumNode(x, y, bvsize, granularity));
-  return lem;
-}
-
-Node BV2NatSolver::bitwiseLemma(Node i)
-{
-  Assert(i.getKind() == Kind::IAND);
-  Node x = i[0];
-  Node y = i[1];
-
-  unsigned bvsize = i.getOperator().getConst<IntAnd>().d_size;
-  Assert(options().smt.BVAndIntegerGranularity <= 8);
-  uint32_t granularity = static_cast<uint32_t>(options().smt.BVAndIntegerGranularity);
-
-  Rational absI = d_model.computeAbstractModelValue(i).getConst<Rational>();
-  Rational concI = d_model.computeConcreteModelValue(i).getConst<Rational>();
-
-  Assert(absI.isIntegral());
-  Assert(concI.isIntegral());
-
-  BitVector bvAbsI = BitVector(bvsize, absI.getNumerator());
-  BitVector bvConcI = BitVector(bvsize, concI.getNumerator());
-
-  NodeManager* nm = nodeManager();
-  Node lem = d_true;
-
-  // compare each bit to bvI
-  Node cond;
-  Node bitIAnd;
-  uint32_t high_bit;
-  for (uint32_t j = 0; j < bvsize; j += granularity)
-  {
-    high_bit = j + granularity - 1;
-    // don't let high_bit pass bvsize
-    if (high_bit >= bvsize)
-    {
-      high_bit = bvsize - 1;
-    }
-
-    // check if the abstraction differs from the concrete one on these bits
-    if (bvAbsI.extract(high_bit, j) != bvConcI.extract(high_bit, j))
-    {
-      bitIAnd = d_iandUtils.createBitwiseIAndNode(x, y, high_bit, j);
-      // enforce bitwise equality
-      lem = nm->mkNode(
-          Kind::AND,
-          lem,
-          rewrite(d_iandUtils.iextract(high_bit, j, i)).eqNode(bitIAnd));
-    }
-  }
-  return lem;
-}
 
 }  // namespace nl
 }  // namespace arith

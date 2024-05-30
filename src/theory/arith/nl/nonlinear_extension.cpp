@@ -58,6 +58,7 @@ NonlinearExtension::NonlinearExtension(Env& env, TheoryArith& containing)
       d_covSlv(d_env, d_im, d_model),
       d_icpSlv(d_env, d_im),
       d_iandSlv(env, d_im, d_model),
+      d_bv2natSlv(env, d_im, d_model),
       d_pow2Slv(env, d_im, d_model)
 {
   d_extTheory.addFunctionKind(Kind::NONLINEAR_MULT);
@@ -65,6 +66,7 @@ NonlinearExtension::NonlinearExtension(Env& env, TheoryArith& containing)
   d_extTheory.addFunctionKind(Kind::SINE);
   d_extTheory.addFunctionKind(Kind::PI);
   d_extTheory.addFunctionKind(Kind::IAND);
+  d_extTheory.addFunctionKind(Kind::Bitvector_TO_NAT);
   d_extTheory.addFunctionKind(Kind::POW2);
   d_true = nodeManager()->mkConst(true);
 }
@@ -478,6 +480,11 @@ void NonlinearExtension::runStrategy(Theory::Effort effort,
         break;
       case InferStep::IAND_FULL: d_iandSlv.checkFullRefine(); break;
       case InferStep::IAND_INITIAL: d_iandSlv.checkInitialRefine(); break;
+      case InferStep::BV2NAT_INIT:
+        d_bv2natSlv.initLastCall(assertions, false_asserts, xts);
+        break;
+      case InferStep::BV2NAT_FULL: d_bv2natSlv.checkFullRefine(); break;
+      case InferStep::BV2NAT_INITIAL: d_bv2natSlv.checkInitialRefine(); break;
       case InferStep::POW2_INIT:
         d_pow2Slv.initLastCall(assertions, false_asserts, xts);
         break;
