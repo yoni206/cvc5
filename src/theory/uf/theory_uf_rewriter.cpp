@@ -306,7 +306,8 @@ RewriteResponse TheoryUfRewriter::rewriteBVToNat(TNode node)
     return RewriteResponse(REWRITE_AGAIN_FULL, resultNode);
   }
   else if (node[0].getKind() == Kind::BITVECTOR_ADD) {
-    if (options().uf.bv2natPlusDistRR) {
+    // if (options().uf.bv2natPlusDistRR) 
+    {
       std::vector<Node> bv2nats;
       for (Node child : node[0]) {
         Node bv2nat = nm->mkNode(Kind::BITVECTOR_TO_NAT, child);
