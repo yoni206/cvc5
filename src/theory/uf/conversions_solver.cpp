@@ -86,6 +86,17 @@ void ConversionsSolver::checkReduction(Node n)
     Trace("bv-convs-debug") << "  evaluated = " << eval << std::endl;
     Node lem = nm->mkNode(Kind::IMPLIES, n[0].eqNode(argval), n.eqNode(eval));
     d_im.lemma(lem, InferenceId::UF_ARITH_BV_CONV_VALUE_REFINE);
+
+
+    Node zero = nm->mkConstInt(Rational(0));
+    uint32_t k = n[0].getType().getBitVectorSize();
+    Node max_val = nm->mkConstInt(Rational(2^k));
+
+    Node lower_bound = nm->mkNode(Kind::LEQ, zero, n);
+    Node upper_bound = nm->mkNode(Kind::LEQ, n, max_val);
+    Node range_lemma = nm->mkNode(Kind::AND, lower_bound, upper_bound);
+    d_im.lemma(range_lemma, InferenceId::UF_ARITH_BV_CONV_RANGE);
+
     return;
   }
 

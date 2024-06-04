@@ -973,6 +973,8 @@ enum class InferenceId
   UF_ARITH_BV_CONV_REDUCTION,
   // value-based refinement of an arithmetic/bit-vector conversion term
   UF_ARITH_BV_CONV_VALUE_REFINE,
+  // range-based refinement of an arithmetic/bit-vector conversion term
+  UF_ARITH_BV_CONV_RANGE,
   //-------------------------------------- end uf theory
 
   //-------------------------------------- lemma from modules

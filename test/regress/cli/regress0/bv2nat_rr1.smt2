@@ -1,4 +1,5 @@
 ; EXPECT: unsat
+; COMMAND: --bv2nat-plus-dist-rr
 (set-logic ALL)
 (declare-fun x () (_ BitVec 4000))
 (declare-fun y () (_ BitVec 4000))
