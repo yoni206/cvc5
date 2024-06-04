@@ -90,7 +90,7 @@ void ConversionsSolver::checkReduction(Node n)
     if (n.getKind() == Kind::BITVECTOR_TO_NAT) {
       Node zero = nm->mkConstInt(Rational(0));
       uint32_t k = n[0].getType().getBitVectorSize();
-      Node max_val = nm->mkConstInt(Rational(2^k));
+      Node max_val = nm->mkConstInt(Rational(Integer(2).pow(k)));
 
       Node lower_bound = nm->mkNode(Kind::LEQ, zero, n);
       Node upper_bound = nm->mkNode(Kind::LEQ, n, max_val);

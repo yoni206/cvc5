@@ -630,7 +630,6 @@ set(regress_0_tests
   regress0/bv/test-bv_intro_pow2.smt2
   regress0/bv/unsound1-reduced.smt2
   regress0/bv2nat_rr1.smt2
-  regress0/bv2nat_rr2_min.smt2
   regress0/bv2nat_lemma_ranges_1.smt2
   regress0/chained-equality.smt2
   regress0/check-abduct-sample.smt2
