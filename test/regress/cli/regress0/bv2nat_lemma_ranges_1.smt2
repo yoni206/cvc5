@@ -1,4 +1,4 @@
-; COMMAND: --model-based-arith-bv-conv
+; COMMAND-LINE: --model-based-arith-bv-conv
 ; EXPECT: unsat
 (set-logic ALL)
 (declare-fun x () (_ BitVec 4000))
