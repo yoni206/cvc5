@@ -294,8 +294,7 @@ void TheoryProxy::explainPropagation(SatLiteral l, SatClause& explanation) {
   Node theoryExplanation = tte.getNode();
   if (d_env.isSatProofProducing())
   {
-    Assert(options().smt.proofMode != options::ProofMode::FULL
-           || tte.getGenerator());
+    Assert(!d_env.isTheoryProofProducing() || tte.getGenerator());
     // notify the prop engine of the explanation, which is only relevant if
     // we are proof producing for the purposes of storing the CNF of the
     // explanation.
@@ -336,7 +335,7 @@ void TheoryProxy::notifySatClause(const SatClause& clause)
     // nothing to do if no plugins
     return;
   }
-  if (!d_inSolve && options().prop.pluginNotifySatClauseInSolve)
+  if (!d_inSolve && options().base.pluginNotifySatClauseInSolve)
   {
     // We are not in solving mode. We do not inform plugins of SAT clauses
     // if pluginNotifySatClauseInSolve is true (default).
@@ -349,8 +348,8 @@ void TheoryProxy::notifySatClause(const SatClause& clause)
     clauseNodes.push_back(d_cnfStream->getNode(l));
   }
   Node cln = NodeManager::currentNM()->mkOr(clauseNodes);
-  // getSharableFormula is independent of specific plugin, just use first
-  Node clns = plugins[0]->getSharableFormula(cln);
+  // get the sharable form of cln
+  Node clns = d_env.getSharableFormula(cln);
   if (!clns.isNull())
   {
     Trace("theory-proxy")

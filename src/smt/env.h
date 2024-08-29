@@ -98,16 +98,15 @@ class Env
 
   /**
    * Check whether the SAT solver should produce proofs. Other than whether
-   * the proof node manager is set, SAT proofs are only generated when the
-   * unsat core mode is not ASSUMPTIONS.
+   * the proof node manager is set, SAT proofs are only generated if the proof
+   * mode is not PP_ONLY.
    */
   bool isSatProofProducing() const;
 
   /**
    * Check whether theories should produce proofs as well. Other than whether
-   * the proof node manager is set, theory engine proofs are conditioned on the
-   * relationship between proofs and unsat cores: the unsat cores are in
-   * FULL_PROOF mode, no proofs are generated on theory engine.
+   * the proof node manager is set, theory engine proofs are generated if the
+   * proof mode is FULL or FULL_STRICT.
    */
   bool isTheoryProofProducing() const;
 
@@ -299,6 +298,20 @@ class Env
    * @return true if k is a Boolean term skolem.
    */
   bool isBooleanTermSkolem(const Node& k) const;
+  /**
+   * Get sharable formula. This returns an equivalent version of the given
+   * lemma n that can be shared externally. In particular, if the option
+   * pluginShareSkolems is false, we require that the returned formula does not
+   * have any internally generated symbols, i.e. skolems. We additionally
+   * exclude terms that have internally generated symbols (e.g. DUMMY_SKOLEM
+   * or INST_CONSTANT). If n cannot be converted to a suitable formula, we
+   * return the null node.
+   *
+   * @param n The candidate formula to share.
+   * @return A tranformed version of n that is its represenation in a sharable
+   * form. If n cannot be tranformed, this returns null.
+   */
+  Node getSharableFormula(const Node& n) const;
 
  private:
   /* Private initialization ------------------------------------------------- */

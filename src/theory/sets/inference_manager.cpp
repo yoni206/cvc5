@@ -44,7 +44,7 @@ InferenceManager::InferenceManager(Env& env,
 bool InferenceManager::assertFactRec(Node fact, InferenceId id, Node exp, int inferType)
 {
   // should we send this fact out as a lemma?
-  if ((options().sets.setsInferAsLemmas && inferType != -1) || inferType == 1)
+  if (inferType != -1)
   {
     if (d_state.isEntailed(fact, true))
     {
@@ -120,6 +120,8 @@ bool InferenceManager::assertSetsFact(Node atom,
                                       Node exp)
 {
   Node conc = polarity ? atom : atom.notNode();
+  // notify before asserting below, since that call may induce a conflict which
+  // needs immediate explanation.
   if (d_ipc)
   {
     d_ipc->notifyFact(conc, exp, id);

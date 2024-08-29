@@ -29,6 +29,7 @@
 #include "options/main_options.h"
 #include "options/option_exception.h"
 #include "options/parallel_options.h"
+#include "options/parser_options.h"
 #include "options/printer_options.h"
 #include "options/proof_options.h"
 #include "options/prop_options.h"
@@ -162,7 +163,8 @@ void SetDefaults::setDefaultsPre(Options& opts)
   // if check-proofs, dump-proofs, or proof-mode=full, then proofs being fully
   // enabled is implied
   if (opts.smt.checkProofs || opts.driver.dumpProofs
-      || opts.smt.proofMode == options::ProofMode::FULL)
+      || opts.smt.proofMode == options::ProofMode::FULL
+      || opts.smt.proofMode == options::ProofMode::FULL_STRICT)
   {
     SET_AND_NOTIFY(smt, produceProofs, true, "option requiring proofs");
   }
@@ -170,8 +172,23 @@ void SetDefaults::setDefaultsPre(Options& opts)
   // this check assumes the user has requested *full* proofs
   if (opts.smt.produceProofs)
   {
-    // if the user requested proofs, proof mode is full
-    SET_AND_NOTIFY(smt, proofMode, options::ProofMode::FULL, "enabling proofs");
+    // if the user requested proofs, proof mode is (at least) full
+    if (opts.smt.proofMode < options::ProofMode::FULL)
+    {
+      SET_AND_NOTIFY(
+          smt, proofMode, options::ProofMode::FULL, "enabling proofs");
+    }
+    // Default granularity is theory rewrite if we are intentionally using
+    // proofs, otherwise it is MACRO (e.g. if produce unsat cores is true)
+    if (!opts.proof.proofGranularityModeWasSetByUser
+        && opts.proof.proofGranularityMode
+               < options::ProofGranularityMode::THEORY_REWRITE)
+    {
+      SET_AND_NOTIFY(proof,
+                     proofGranularityMode,
+                     options::ProofGranularityMode::THEORY_REWRITE,
+                     "enabling proofs");
+    }
     // unsat cores are available due to proofs being enabled
     if (opts.smt.unsatCoresMode != options::UnsatCoresMode::SAT_PROOF)
     {
@@ -382,7 +399,7 @@ void SetDefaults::finalizeLogic(LogicInfo& logic, Options& opts) const
     if (logic.isTheoryEnabled(THEORY_BV))
     {
       logic = logic.getUnlockedCopy();
-      logic.enableTheory(THEORY_ARITH);
+      logic.enableIntegers();
       logic.arithNonLinear();
       logic.lock();
     }
@@ -626,11 +643,17 @@ void SetDefaults::setDefaultsPost(const LogicInfo& logic, Options& opts) const
   // by default, symmetry breaker is on only for non-incremental QF_UF
   if (!opts.uf.ufSymmetryBreakerWasSetByUser)
   {
+    // Only applies to non-incremental QF_UF.
     bool qf_uf_noinc = logic.isPure(THEORY_UF) && !logic.isQuantified()
-                       && !opts.base.incrementalSolving
-                       && !safeUnsatCores(opts);
-    SET_AND_NOTIFY_VAL_SYM(
-        uf, ufSymmetryBreaker, qf_uf_noinc, "logic and options");
+                       && !opts.base.incrementalSolving;
+    // We disable this technique when using unsat core production, since it
+    // uses a non-standard implementation that sends (unsound) lemmas during
+    // presolve.
+    // We also disable it by default if safe unsat cores are enabled, or if
+    // the proof mode is FULL_STRICT.
+    bool val = qf_uf_noinc && !safeUnsatCores(opts)
+               && opts.smt.proofMode != options::ProofMode::FULL_STRICT;
+    SET_AND_NOTIFY_VAL_SYM(uf, ufSymmetryBreaker, val, "logic and options");
   }
 
   // If in arrays, set the UF handler to arrays
@@ -656,7 +679,7 @@ void SetDefaults::setDefaultsPost(const LogicInfo& logic, Options& opts) const
   // Turn off array eager index splitting for QF_AUFLIA
   if (!opts.arrays.arraysEagerIndexSplittingWasSetByUser)
   {
-    if (not logic.isQuantified() && logic.isTheoryEnabled(THEORY_ARRAYS)
+    if (!logic.isQuantified() && logic.isTheoryEnabled(THEORY_ARRAYS)
         && logic.isTheoryEnabled(THEORY_UF)
         && logic.isTheoryEnabled(THEORY_ARITH))
     {
@@ -971,6 +994,12 @@ bool SetDefaults::usesInputConversion(const Options& opts,
 bool SetDefaults::incompatibleWithProofs(Options& opts,
                                          std::ostream& reason) const
 {
+  if (opts.parser.freshBinders)
+  {
+    // When fresh-binders is true, we do not support proof output.
+    reason << "fresh-binders";
+    return true;
+  }
   if (opts.quantifiers.globalNegate)
   {
     // When global negate answers "unsat", it is not due to showing a set of
@@ -978,6 +1007,8 @@ bool SetDefaults::incompatibleWithProofs(Options& opts,
     reason << "global-negate";
     return true;
   }
+  bool isFullPf = (opts.smt.proofMode == options::ProofMode::FULL
+                   || opts.smt.proofMode == options::ProofMode::FULL_STRICT);
   if (isSygus(opts))
   {
     // we don't support proofs with SyGuS. One issue is that SyGuS evaluation
@@ -985,7 +1016,7 @@ bool SetDefaults::incompatibleWithProofs(Options& opts,
     // proofs for sygus (sub)solvers is irrelevant, since they are not given
     // check-sat queries. Note however that we allow proofs in non-full modes
     // (e.g. unsat cores).
-    if (opts.smt.proofMode == options::ProofMode::FULL)
+    if (isFullPf)
     {
       reason << "sygus";
       return true;
@@ -998,7 +1029,7 @@ bool SetDefaults::incompatibleWithProofs(Options& opts,
   }
   // If proofs are required and the user did not specify a specific BV solver,
   // we make sure to use the proof producing BITBLAST_INTERNAL solver.
-  if (opts.smt.proofMode == options::ProofMode::FULL)
+  if (isFullPf)
   {
     SET_AND_NOTIFY_IF_NOT_USER_VAL_SYM(
         bv, bvSolver, options::BVSolver::BITBLAST_INTERNAL, "proofs");
@@ -1679,51 +1710,49 @@ void SetDefaults::setDefaultDecisionMode(const LogicInfo& logic,
       usesSygus(opts) ? options::DecisionMode::INTERNAL :
                       // ALL or its supersets
           logic.hasEverything()
-              ? options::DecisionMode::JUSTIFICATION
-              : (  // QF_BV
-                    (not logic.isQuantified() && logic.isPure(THEORY_BV)) ||
-                            // QF_AUFBV or QF_ABV or QF_UFBV
-                            (not logic.isQuantified()
-                             && (logic.isTheoryEnabled(THEORY_ARRAYS)
-                                 || logic.isTheoryEnabled(THEORY_UF))
-                             && logic.isTheoryEnabled(THEORY_BV))
-                            ||
-                            // QF_AUFLIA (and may be ends up enabling
-                            // QF_AUFLRA?)
-                            (not logic.isQuantified()
-                             && logic.isTheoryEnabled(THEORY_ARRAYS)
-                             && logic.isTheoryEnabled(THEORY_UF)
-                             && logic.isTheoryEnabled(THEORY_ARITH))
-                            ||
-                            // QF_LRA
-                            (not logic.isQuantified()
-                             && logic.isPure(THEORY_ARITH) && logic.isLinear()
-                             && !logic.isDifferenceLogic()
-                             && !logic.areIntegersUsed())
-                            ||
-                            // Quantifiers
-                            logic.isQuantified() ||
-                            // Strings
-                            logic.isTheoryEnabled(THEORY_STRINGS)
-                        ? options::DecisionMode::JUSTIFICATION
-                        : options::DecisionMode::INTERNAL);
+          ? options::DecisionMode::JUSTIFICATION
+          : (  // QF_BV
+              (!logic.isQuantified() && logic.isPure(THEORY_BV)) ||
+                      // QF_AUFBV or QF_ABV or QF_UFBV
+                      (!logic.isQuantified()
+                       && (logic.isTheoryEnabled(THEORY_ARRAYS)
+                           || logic.isTheoryEnabled(THEORY_UF))
+                       && logic.isTheoryEnabled(THEORY_BV))
+                      ||
+                      // QF_AUFLIA (and may be ends up enabling
+                      // QF_AUFLRA?)
+                      (!logic.isQuantified()
+                       && logic.isTheoryEnabled(THEORY_ARRAYS)
+                       && logic.isTheoryEnabled(THEORY_UF)
+                       && logic.isTheoryEnabled(THEORY_ARITH))
+                      ||
+                      // QF_LRA
+                      (!logic.isQuantified() && logic.isPure(THEORY_ARITH)
+                       && logic.isLinear() && !logic.isDifferenceLogic()
+                       && !logic.areIntegersUsed())
+                      ||
+                      // Quantifiers
+                      logic.isQuantified() ||
+                      // Strings
+                      logic.isTheoryEnabled(THEORY_STRINGS)
+                  ? options::DecisionMode::JUSTIFICATION
+                  : options::DecisionMode::INTERNAL);
 
   bool stoponly =
       // ALL or its supersets
       logic.hasEverything() || logic.isTheoryEnabled(THEORY_STRINGS)
           ? false
           : (  // QF_AUFLIA
-                (not logic.isQuantified()
-                 && logic.isTheoryEnabled(THEORY_ARRAYS)
-                 && logic.isTheoryEnabled(THEORY_UF)
-                 && logic.isTheoryEnabled(THEORY_ARITH))
-                        ||
-                        // QF_LRA
-                        (not logic.isQuantified() && logic.isPure(THEORY_ARITH)
-                         && logic.isLinear() && !logic.isDifferenceLogic()
-                         && !logic.areIntegersUsed())
-                    ? true
-                    : false);
+              (!logic.isQuantified() && logic.isTheoryEnabled(THEORY_ARRAYS)
+               && logic.isTheoryEnabled(THEORY_UF)
+               && logic.isTheoryEnabled(THEORY_ARITH))
+                      ||
+                      // QF_LRA
+                      (!logic.isQuantified() && logic.isPure(THEORY_ARITH)
+                       && logic.isLinear() && !logic.isDifferenceLogic()
+                       && !logic.areIntegersUsed())
+                  ? true
+                  : false);
 
   if (stoponly)
   {
