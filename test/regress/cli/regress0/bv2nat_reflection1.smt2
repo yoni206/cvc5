@@ -1,5 +1,5 @@
 ; EXPECT: unsat
-; COMMAND-LINE: --model-based-arith-bv-conv
+; COMMAND-LINE: --model-based-arith-bv-conv=values
 (set-logic ALL)
 (declare-fun x () (_ BitVec 4000))
 (declare-fun y () (_ BitVec 4000))

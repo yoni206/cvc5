@@ -336,7 +336,7 @@ RewriteResponse TheoryUfRewriter::rewriteBVToNat(TNode node)
     return RewriteResponse(REWRITE_AGAIN_FULL, resultNode);
   }
   else if (node[0].getKind() == Kind::BITVECTOR_ADD) {
-    // if (options().uf.bv2natPlusDistRR) 
+    //if (options().uf.bv2natDistRR) 
     {
       std::vector<Node> bv2nats;
       for (Node child : node[0]) {
@@ -347,6 +347,45 @@ RewriteResponse TheoryUfRewriter::rewriteBVToNat(TNode node)
       Node twottsize = nm->mkConstInt(Rational(Integer(2).pow(size)));
       Node addition = nm->mkNode(Kind::ADD, bv2nats);
       Node resultNode = nm->mkNode(Kind::INTS_MODULUS_TOTAL, addition, twottsize);
+      return RewriteResponse(REWRITE_AGAIN_FULL, resultNode);
+    }
+  }
+  else if (node[0].getKind() == Kind::BITVECTOR_MULT) {
+    //if (options().uf.bv2natDistRR) 
+    {
+      std::vector<Node> bv2nats;
+      for (Node child : node[0]) {
+        Node bv2nat = nm->mkNode(Kind::BITVECTOR_TO_NAT, child);
+        bv2nats.push_back(bv2nat);
+      }
+      const uint32_t size = node[0].getType().getBitVectorSize();
+      Node twottsize = nm->mkConstInt(Rational(Integer(2).pow(size)));
+      Node multiplication = nm->mkNode(Kind::MULT, bv2nats);
+      Node resultNode = nm->mkNode(Kind::INTS_MODULUS_TOTAL, multiplication, twottsize);
+      return RewriteResponse(REWRITE_AGAIN_FULL, resultNode);
+    }
+  }
+  else if (node[0].getKind() == Kind::BITVECTOR_NEG) {
+    //if (options().uf.bv2natDistRR) 
+    {
+      Node child = node[0][0];
+      Node bv2nat = nm->mkNode(Kind::BITVECTOR_TO_NAT, child);
+      Node plusOne = nm->mkNode(Kind::ADD, bv2nat, nm->mkConstInt(Rational(Integer(2))));
+      const uint32_t size = node[0].getType().getBitVectorSize();
+      Node twottsize = nm->mkConstInt(Rational(Integer(2).pow(size)));
+      Node resultNode = nm->mkNode(Kind::SUB, twottsize, plusOne);
+      return RewriteResponse(REWRITE_AGAIN_FULL, resultNode);
+    }
+  }
+  else if (node[0].getKind() == Kind::BITVECTOR_NOT) {
+    //if (options().uf.bv2natDistRR) 
+    {
+      Node child = node[0][0];
+      Node bv2nat = nm->mkNode(Kind::BITVECTOR_TO_NAT, child);
+      const uint32_t size = node[0].getType().getBitVectorSize();
+      Node twottsize = nm->mkConstInt(Rational(Integer(2).pow(size)));
+      Node sub = nm->mkNode(Kind::SUB, twottsize, bv2nat);
+      Node resultNode = nm->mkNode(Kind::INTS_MODULUS_TOTAL, sub, twottsize);
       return RewriteResponse(REWRITE_AGAIN_FULL, resultNode);
     }
   }

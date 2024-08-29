@@ -77,9 +77,9 @@ void ConversionsSolver::checkReduction(Node n)
     Trace("bv-convs") << "...already correct in model" << std::endl;
     return;
   }
-  if (options().uf.modelBasedArithBvConv)
+  NodeManager* nm = NodeManager::currentNM();
+  if (options().uf.arithBvConvMode == options::ArithBVConvMode::VALUES)
   {
-    NodeManager* nm = NodeManager::currentNM();
     Node argval = d_state.getModel()->getValue(n[0]);
     Trace("bv-convs-debug") << "  arg value = " << argval << std::endl;
     Node eval = rewrite(nm->mkNode(n.getOperator(), argval));
@@ -87,18 +87,25 @@ void ConversionsSolver::checkReduction(Node n)
     Node lem = nm->mkNode(Kind::IMPLIES, n[0].eqNode(argval), n.eqNode(eval));
     d_im.lemma(lem, InferenceId::UF_ARITH_BV_CONV_VALUE_REFINE);
 
-    if (n.getKind() == Kind::BITVECTOR_TO_NAT) {
-      Node zero = nm->mkConstInt(Rational(0));
-      uint32_t k = n[0].getType().getBitVectorSize();
-      Node max_val = nm->mkConstInt(Rational(Integer(2).pow(k)));
-
-      Node lower_bound = nm->mkNode(Kind::LEQ, zero, n);
-      Node upper_bound = nm->mkNode(Kind::LEQ, n, max_val);
-      Node range_lemma = nm->mkNode(Kind::AND, lower_bound, upper_bound);
-      d_im.lemma(range_lemma, InferenceId::UF_ARITH_BV_CONV_RANGE);
-    }
 
     return;
+  }
+
+
+  if ((options().uf.arithBvConvMode == options::ArithBVConvMode::LEMMAS) && n.getKind() == Kind::BITVECTOR_TO_NAT) {
+    Node zero = nm->mkConstInt(Rational(0));
+    uint32_t k = n[0].getType().getBitVectorSize();
+    Node max_val = nm->mkConstInt(Rational(Integer(2).pow(k)));
+
+    Node lower_bound = nm->mkNode(Kind::LEQ, zero, n);
+    Node upper_bound = nm->mkNode(Kind::LEQ, n, max_val);
+    Node range_lemma = nm->mkNode(Kind::AND, lower_bound, upper_bound);
+    std::cout << "panda " << d_state.getModel()->getValue(range_lemma)  << std::endl;
+    //if (d_state.getModel()->getValue(range_lemma) == nm->mkConst(false)) 
+    {
+      d_im.lemma(range_lemma, InferenceId::UF_ARITH_BV_CONV_RANGE);
+      return;
+    }
   }
 
   Node lem;

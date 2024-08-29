@@ -84,17 +84,16 @@ name   = "Uninterpreted Functions Theory"
   help       = "eagerly expand bit-vector to arithmetic conversions during preprocessing"
 
 [[option]]
-  name       = "bv2natPlusDistRR"
+  name       = "arithBvConvMode"
   category   = "expert"
-  long       = "bv2nat-plus-dist-rr"
-  type       = "bool"
-  default    = "false"
-  help       = "distribute bv2nat over addition in a rewrite rule"
-
-[[option]]
-  name       = "modelBasedArithBvConv"
-  category   = "expert"
-  long       = "model-based-arith-bv-conv"
-  type       = "bool"
-  default    = "false"
+  long       = "model-based-arith-bv-conv=MODE"
+  type       = "ArithBVConvMode"
+  default    = "VALUES"
   help       = "model-based inferences for bit-vector to arithmetic conversions"
+  help_mode  = "How to convert"
+[[option.mode.VALUES]]
+  name = "values"
+  help = "model values"
+[[option.mode.LEMMAS]]
+  name = "lemmas"
+  help = "lemmas"
