@@ -1,0 +1,12 @@
+(include "../rules/Booleans.eo")
+(include "../theories/Ints.eo")
+(include "../programs/Arith.eo")
+(include "../theories/Strings.eo")
+(include "../rules/Strings.eo")
+(include "../programs/Strings.eo")
+(include "../rules/Strings.eo")
+(define @t1 () (str.in_re "a" (str.to_re "b")))
+(assume @p1 @t1)
+(step @p2 :rule str-in-re-consume :args ((= @t1 false)))
+(step @p3 false :rule eq_resolve :premises (@p1 @p2))
+

@@ -1,0 +1,9 @@
+(include "theories/Ints.eo")
+(include "programs/Arith.eo")
+(include "theories/Strings.eo")
+(include "rules/Strings.eo")
+(include "programs/Strings.eo")
+(include "rules/Strings.eo")
+
+(step @p1 (= (str.in_re "s" (str.to_re "s")) true) :rule str-in-re-eval :args ((= (str.in_re "s" (str.to_re "s")) true)))
+
