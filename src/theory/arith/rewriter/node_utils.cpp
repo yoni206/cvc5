@@ -1,10 +1,10 @@
 /******************************************************************************
  * Top contributors (to current version):
- *   Gereon Kremer, Andrew Reynolds
+ *   Gereon Kremer, Andrew Reynolds, Daniel Larraz
  *
  * This file is part of the cvc5 project.
  *
- * Copyright (c) 2009-2023 by the authors listed in the file AUTHORS
+ * Copyright (c) 2009-2025 by the authors listed in the file AUTHORS
  * in the top-level source directory and their institutional affiliations.
  * All rights reserved.  See the file COPYING in the top-level source
  * directory for licensing information.
@@ -33,8 +33,7 @@ Node mkMultTerm(const Rational& multiplicity, TNode monomial)
   {
     return monomial;
   }
-  return NodeManager::currentNM()->mkNode(
-      Kind::MULT, mkConst(multiplicity), monomial);
+  return NodeManager::mkNode(Kind::MULT, mkConst(multiplicity), monomial);
 }
 
 Node mkMultTerm(const RealAlgebraicNumber& multiplicity, TNode monomial)
@@ -86,10 +85,8 @@ TNode removeToReal(TNode t) { return t.getKind() == Kind::TO_REAL ? t[0] : t; }
 Node maybeEnsureReal(TypeNode tn, TNode t)
 {
   // if we require being a real
-  if (!tn.isInteger())
+  if (tn.isReal())
   {
-    // ensure that t has type real
-    Assert(tn.isReal());
     return ensureReal(t);
   }
   return t;
@@ -107,7 +104,7 @@ Node ensureReal(TNode t)
       return ret;
     }
     Trace("arith-rewriter-debug") << "maybeEnsureReal: " << t << std::endl;
-    return NodeManager::currentNM()->mkNode(Kind::TO_REAL, t);
+    return NodeManager::mkNode(Kind::TO_REAL, t);
   }
   return t;
 }
