@@ -182,7 +182,8 @@ void IdlExtension::postCheck(Theory::Effort level)
     // Return a conflict that includes all the literals that have been asserted
     // to this theory solver. A better implementation would only include the
     // literals involved in the conflict here.
-    NodeBuilder conjunction(Kind::AND);
+    NodeManager* nm = nodeManager();
+    NodeBuilder conjunction(nm, Kind::AND);
     for (Node fact : d_facts)
     {
       conjunction << fact;

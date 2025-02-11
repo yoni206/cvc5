@@ -1296,6 +1296,7 @@ bool SetDefaults::incompatibleWithUnsatCores(Options& opts,
   if (opts.arith.arithIdlExt) {
     reason << "arithmetic IDL extension";
     return true;
+  }
   if (opts.prop.satSolver == options::SatSolverMode::CADICAL)
   {
     SET_AND_NOTIFY(prop,
