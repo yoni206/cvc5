@@ -107,7 +107,16 @@ class InferenceGenerator
    *   where skolem = (as bag.empty (Bag E))
    */
   InferInfo empty(Node n, Node e);
+
+
   /**
+   * bla bla bla what is thelam
+   */
+  InferInfo bagToInt(Node e1, Node e2);
+
+
+
+/**
    * @param n is (bag.union_disjoint A B) where A, B are bags of type (Bag E)
    * @param e is a node of Type E
    * @return an inference that represents the following implication

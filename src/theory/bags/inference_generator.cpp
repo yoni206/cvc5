@@ -177,6 +177,19 @@ InferInfo InferenceGenerator::empty(Node n, Node e)
   return inferInfo;
 }
 
+
+
+InferInfo InferenceGenerator::bagToInt(Node e1, Node e2)
+{
+// here we should assert that we have the right kind
+
+....
+  leq = ...
+  inferInfo.d_conclusion = leq;
+  return inferInfo;
+}
+
+
 InferInfo InferenceGenerator::unionDisjoint(Node n, Node e)
 {
   Assert(n.getKind() == Kind::BAG_UNION_DISJOINT && n[0].getType().isBag());
