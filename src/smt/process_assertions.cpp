@@ -164,6 +164,11 @@ bool ProcessAssertions::apply(AssertionPipeline& ap)
     applyPass("ackermann", ap);
   }
 
+  if (options().smt.expandEnums)
+  {
+    applyPass("expand-enums", ap);
+  }
+
   Trace("smt") << " assertions     : " << ap.size() << endl;
 
   bool noConflict = true;

@@ -32,6 +32,7 @@
 #include "preprocessing/passes/bv_intro_pow2.h"
 #include "preprocessing/passes/bv_to_bool.h"
 #include "preprocessing/passes/bv_to_int.h"
+#include "preprocessing/passes/expand-enums.h"
 #include "preprocessing/passes/extended_rewriter_pass.h"
 #include "preprocessing/passes/ff_bitsum.h"
 #include "preprocessing/passes/ff_disjunctive_bit.h"
@@ -152,6 +153,7 @@ PreprocessingPassRegistry::PreprocessingPassRegistry()
   registerPassInfo("miplib-trick", callCtor<MipLibTrick>);
   registerPassInfo("non-clausal-simp", callCtor<NonClausalSimp>);
   registerPassInfo("ackermann", callCtor<Ackermann>);
+  registerPassInfo("expand-enums", callCtor<ExpandEnums>);
   registerPassInfo("ext-rew-pre", callCtor<ExtRewPre>);
   registerPassInfo("theory-preprocess", callCtor<TheoryPreprocess>);
   registerPassInfo("nl-ext-purify", callCtor<NlExtPurify>);

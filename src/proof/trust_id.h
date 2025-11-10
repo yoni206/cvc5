@@ -70,6 +70,8 @@ enum class TrustId : uint32_t
   /** Ackermann preprocessing pass */
   PREPROCESS_ACKERMANN,
   PREPROCESS_ACKERMANN_LEMMA,
+  /** Expand Enums preprocessing pass */
+  PREPROCESS_EXPAND_ENUMS,
   /** StaticLearning preprocessing pass */
   PREPROCESS_STATIC_LEARNING_LEMMA,
   /** HoElim preprocessing pass */
