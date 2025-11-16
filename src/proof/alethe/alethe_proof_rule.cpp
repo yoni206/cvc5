@@ -125,6 +125,8 @@ const char* aletheRuleToString(AletheRule id)
     case AletheRule::SYMM: return "symm";
     case AletheRule::NOT_SYMM: return "not_symm";
     case AletheRule::REORDERING: return "reordering";
+    case AletheRule::BV_INTBLAST: return "bv_intblast";
+    case AletheRule::BV_INTBLAST_BOUNDS: return "bv_intblast_bounds";
     case AletheRule::BV_BITBLAST_STEP_VAR: return "bv_bitblast_step_var";
     case AletheRule::BV_BITBLAST_STEP_BVAND: return "bv_bitblast_step_bvand";
     case AletheRule::BV_BITBLAST_STEP_BVOR: return "bv_bitblast_step_bvor";

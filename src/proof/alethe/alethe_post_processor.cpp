@@ -1664,6 +1664,24 @@ bool AletheProofPostprocessCallback::update(Node res,
                            {},
                            *cdp);
     }
+    case ProofRule::BV_INTBLAST:
+    {
+      Trace("alethe-proof") << "..case BV_INTBLAST, res: " << res << std::endl;
+      Trace("alethe-proof") << "..case BV_INTBLAST, res[0][0]: " << res[0][0] << std::endl;
+      Trace("alethe-proof") << "..case BV_INTBLAST, res[1]: " << res[1] << std::endl;
+      Assert(res.getKind() == Kind::EQUAL);
+      Node newRes = res;
+      return addAletheStep(AletheRule::BV_INTBLAST, res,nm->mkNode(Kind::SEXPR, d_cl, newRes), children, {}, *cdp);
+    }
+    case ProofRule::BV_INTBLAST_BOUNDS:
+    {
+      Trace("alethe-proof") << "..case BV_INTBLAST_BOUNDS, res: " << res << std::endl;
+      Trace("alethe-proof") << "..case BV_INTBLAST_BOUNDS, res[0][0]: " << res[0][0] << std::endl;
+      Trace("alethe-proof") << "..case BV_INTBLAST_BOUNDS, res[1]: " << res[1] << std::endl;
+      Assert(res.getKind() == Kind::AND);
+      Node newRes = res;
+      return addAletheStep(AletheRule::BV_INTBLAST_BOUNDS, res,nm->mkNode(Kind::SEXPR, d_cl, newRes), children, {}, *cdp);
+    }
     //================================================= Quantifiers rules
     // ======== Instantiate
     //

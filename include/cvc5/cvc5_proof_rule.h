@@ -1382,6 +1382,8 @@ enum ENUM(ProofRule)
    * \endverbatim
    */
   EVALUE(BV_BITBLAST_STEP),
+  EVALUE(BV_INTBLAST),
+  EVALUE(BV_INTBLAST_BOUNDS),
   /**
    * \verbatim embed:rst:leading-asterisk
    * **Bit-vectors -- Bit-vector eager atom**

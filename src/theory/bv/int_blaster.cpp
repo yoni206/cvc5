@@ -73,7 +73,18 @@ std::shared_ptr<ProofNode> IntBlaster::getProofFor(Node fact)
 {
   // proofs not yet supported
   CDProof cdp(d_env);
-  cdp.addTrustedStep(fact, TrustId::INT_BLASTER, {}, {});
+ if (fact.getKind() == Kind::EQUAL)
+  {
+    // step for equality between vector formula and intblasted formula
+    Assert(fact.getNumChildren() == 2);
+    cdp.addStep(fact, ProofRule::BV_INTBLAST, {}, {fact});
+  }
+  else
+  {
+    Assert(fact.getKind() == Kind::AND);
+    // otherwise step for lemma bounds
+    cdp.addStep(fact, ProofRule::BV_INTBLAST_BOUNDS, {}, {fact});
+  }
   return cdp.getProofFor(fact);
 }
 

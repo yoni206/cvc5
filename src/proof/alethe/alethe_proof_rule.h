@@ -456,6 +456,8 @@ enum class AletheRule : uint32_t
   REORDERING,
   // ======== bitvector
   //  > i. (cl (= t bbt(t)))
+  BV_INTBLAST,
+  BV_INTBLAST_BOUNDS,
   BV_BITBLAST_STEP_VAR,
   BV_BITBLAST_STEP_BVAND,
   BV_BITBLAST_STEP_BVOR,
