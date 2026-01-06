@@ -71,6 +71,7 @@ IntBlaster::~IntBlaster() {}
 
 std::shared_ptr<ProofNode> IntBlaster::getProofFor(Node fact)
 {
+  Trace("int-blaster-debug") << "getProofFor:" << fact <<std::endl;
   // proofs not yet supported
   CDProof cdp(d_env);
  if (fact.getKind() == Kind::EQUAL)
@@ -83,6 +84,7 @@ std::shared_ptr<ProofNode> IntBlaster::getProofFor(Node fact)
   {
     Assert(fact.getKind() == Kind::AND);
     // otherwise step for lemma bounds
+    Trace("int-blaster-debug") << "getProofFor bound:" << fact <<std::endl;
     cdp.addStep(fact, ProofRule::BV_INTBLAST_BOUNDS, {}, {fact});
   }
   return cdp.getProofFor(fact);
@@ -94,16 +96,20 @@ void IntBlaster::addRangeConstraint(Node node,
                                     uint32_t size,
                                     std::vector<TrustNode>& lemmas)
 {
+  if (node.getKind() == Kind::BITVECTOR_UBV_TO_INT) {
+    Trace("int-blaster-debug") << "no range constraint is needed for ubv_to_int" <<std::endl;
+    Assert(false);
+  }
   Node rangeConstraint = mkRangeConstraint(node, size);
   Trace("int-blaster-debug")
       << "range constraint computed: " << rangeConstraint << std::endl;
   if (d_rangeAssertions.find(rangeConstraint) == d_rangeAssertions.end())
   {
-    Trace("int-blaster-debug")
-        << "range constraint added to cache and lemmas " << std::endl;
     d_rangeAssertions.insert(rangeConstraint);
     TrustNode trn = TrustNode::mkTrustLemma(rangeConstraint, this);
     lemmas.push_back(trn);
+    Trace("int-blaster-debug")
+        << "range constraint added to cache and lemmas " << std::endl;
   }
 }
 
@@ -273,6 +279,7 @@ TrustNode IntBlaster::trustedIntBlast(Node n,
   {
     return TrustNode::null();
   }
+  Trace("int-blaster-debug") << "panda right before trustnode, n: " << n << std::endl;
   return TrustNode::mkTrustRewrite(n, res, this);
 }
 
@@ -280,6 +287,8 @@ Node IntBlaster::intBlast(Node n,
                           std::vector<Node>& lemmas,
                           std::map<Node, Node>& skolems)
 {
+
+  Trace("int-blaster-debug") << "intBlast function. n: " << n << std::endl;
   std::vector<TrustNode> tlemmas;
   TrustNode tr = trustedIntBlast(n, tlemmas, skolems);
   for (TrustNode& tlem : tlemmas)
@@ -810,6 +819,7 @@ Node IntBlaster::translateNoChildren(Node original,
         Node bvCast;
         // we introduce a fresh variable, add range constraints, and save the
         // connection between original and the new variable via intCast
+
         translation = d_nm->getSkolemManager()->mkPurifySkolem(intCast);
         uint32_t bvsize = original.getType().getBitVectorSize();
         addRangeConstraint(translation, bvsize, lemmas);
