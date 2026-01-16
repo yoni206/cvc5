@@ -307,13 +307,14 @@ void PfManager::checkFinalProof(std::shared_ptr<ProofNode> pfn)
   }
 }
 
-void PfManager::printProof(std::ostream& out,
+void PfManager::printProof(std::ostream& output,
                            std::shared_ptr<ProofNode> fp,
                            options::ProofFormatMode mode,
                            ProofScopeMode scopeMode,
                            const std::map<Node, std::string>& assertionNames)
 {
   Trace("smt-proof") << "PfManager::printProof: start " << mode << std::endl;
+  std::ostream& out = options().base.err;
   // We don't want to invalidate the proof nodes in fp, since these may be
   // reused in further check-sat calls, or they may be used again if the
   // user asks for the proof again (in non-incremental mode). We don't need to
