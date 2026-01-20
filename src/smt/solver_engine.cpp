@@ -1511,12 +1511,11 @@ void SolverEngine::ensureWellFormedTerms(const std::vector<Node>& ns,
   }
 }
 
-void SolverEngine::printProof(std::ostream& output,
+void SolverEngine::printProof(std::ostream& out,
                               std::shared_ptr<ProofNode> fp,
                               modes::ProofFormat proofFormat,
                               const std::map<Node, std::string>& assertionNames)
 {
-  std::ostream& out = options().base.err;
   out << "(" << std::endl;
   // we print in the format based on the proof mode
   options::ProofFormatMode mode = options::ProofFormatMode::NONE;

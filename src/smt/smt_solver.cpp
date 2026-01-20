@@ -97,7 +97,7 @@ void SmtSolver::finishInit()
     if (pm != nullptr)
     {
       // Logs proofs on the base output stream of the solver
-      pm->startProofLogging(options().base.err, d_asserts);
+      pm->startProofLogging(options().base.out, d_asserts);
     }
   }
 }
