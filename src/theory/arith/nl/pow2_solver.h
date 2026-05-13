@@ -17,9 +17,13 @@
 
 #include "context/cdhashset.h"
 #include "expr/node.h"
+#include "proof/proof_set.h"
 #include "smt/env_obj.h"
 
 namespace cvc5::internal {
+
+class CDProof;
+
 namespace theory {
 namespace arith {
 
@@ -88,13 +92,13 @@ class Pow2Solver : protected EnvObj
    * Cleared at each last call effort check.
    * */
   std::vector<Node> d_pow2s;
+  /** A CDProofSet that hands out CDProof objects for our lemmas. */
+  std::unique_ptr<CDProofSet<CDProof>> d_proof;
 
-  /**
-   * Value-based refinement lemma for i of the form (pow2 x). Returns:
-   *   x = M(x) /\ x>= 0 ---->
-   *     (pow2 x) = rewrite((pow2 M(x)))
-   */
-  Node valueBasedLemma(Node i);
+  /** Whether proof production is enabled in this solver. */
+  bool isProofEnabled() const;
+  /** Allocate a fresh CDProof for a lemma. */
+  CDProof* getProof();
 }; /* class Pow2Solver */
 
 }  // namespace nl
