@@ -1,0 +1,5 @@
+(set-logic QF_ALL)
+(declare-fun p () Int)
+(declare-fun purify_3 () Int)
+(assert (< (* (- 1) (mod_total (+ (* 1 (ite (= p 18) (mod_total 0 0) (mod_total purify_3 0))) (* 4 ((_ iand 2) p 1) ((_ iand 19) p purify_3)) (* purify_3 (ite (= p 17) (mod_total (* 8 p) 0) (mod_total 0 0))) (* p ((_ iand 19) p purify_3) (ite (= p 18) (mod_total 0 p) (ite (= p 17) (mod_total (* 8 p) 0) (mod_total 0 0))))) 8)) 0))
+(check-sat)

@@ -1,0 +1,6 @@
+(set-logic QF_ALL)
+(declare-const x6 Bool)
+(declare-fun p () Int)
+(declare-fun x () Int)
+(assert (> (mod_total (+ (ite (= p 4) 0 x) (* 2 ((_ iand 2) p x)) (* x (ite (= p 2) (+ p 2) 0)) (* p ((_ iand 2) p x) (ite (= x 2) 0 (ite x6 (+ p 1) 0)))) 2) 0))
+(check-sat)
