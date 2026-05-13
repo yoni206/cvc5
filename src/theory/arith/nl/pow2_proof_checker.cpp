@@ -37,9 +37,10 @@ void Pow2ProofRuleChecker::registerTo(ProofChecker* pc)
   pc->registerChecker(ProofRule::ARITH_POW2_VALUE_REFINE, this);
 }
 
-Node Pow2ProofRuleChecker::checkInternal(ProofRule id,
-                                         const std::vector<Node>& children,
-                                         const std::vector<Node>& args)
+Node Pow2ProofRuleChecker::checkInternal(
+    ProofRule id,
+    [[maybe_unused]] const std::vector<Node>& children,
+    const std::vector<Node>& args)
 {
   NodeManager* nm = nodeManager();
   Node zero = nm->mkConstInt(Rational(0));
