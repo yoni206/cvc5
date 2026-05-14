@@ -157,10 +157,6 @@ void Pow2Solver::checkFullRefine()
       else if (y <= 0 && y < x && pow2x <= pow2y)
       {
         // 0 <= y /\ y < x => pow2(y) < pow2(x).
-        // The 0 <= y precondition is required for soundness: pow2 is only
-        // strictly increasing on non-negative integers (pow2 of a negative
-        // integer is 0), so without this guard the lemma would be unsound
-        // when both y and x are strictly negative.
         Node y_lt_x = nm->mkNode(Kind::LT, m[0], n[0]);
         Node ygeq0 = nm->mkNode(Kind::LEQ, d_zero, m[0]);
         Node assumption = nm->mkNode(Kind::AND, ygeq0, y_lt_x);
