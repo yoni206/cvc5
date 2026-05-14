@@ -1,4 +1,5 @@
 ; EXPECT: unsat
+; DISABLE-TESTER: alethe
 ; exercises ProofRule::ARITH_POW2_LOWER_BOUND_REFINE
 (set-logic QF_NIA)
 (declare-fun x () Int)

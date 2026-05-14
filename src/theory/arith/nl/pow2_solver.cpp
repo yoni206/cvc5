@@ -205,8 +205,7 @@ void Pow2Solver::checkFullRefine()
     if (x < 0 && pow2x != 0)
     {
       Node assumption = nm->mkNode(Kind::LT, n[0], d_zero);
-      Node conclusion =
-          nm->mkNode(Kind::EQUAL, n, mkZero(n.getType()));
+      Node conclusion = nm->mkNode(Kind::EQUAL, n, mkZero(n.getType()));
       Node lem = nm->mkNode(Kind::IMPLIES, assumption, conclusion);
       CDProof* proof = nullptr;
       if (isProofEnabled())
@@ -256,10 +255,8 @@ void Pow2Solver::checkFullRefine()
                        {},
                        {n[0], valXConcrete});
       }
-      d_im.addPendingLemma(lem,
-                           InferenceId::ARITH_NL_POW2_LOWER_BOUND_CASE_REFINE,
-                           proof,
-                           true);
+      d_im.addPendingLemma(
+          lem, InferenceId::ARITH_NL_POW2_LOWER_BOUND_CASE_REFINE, proof, true);
     }
 
     // Place holder for additional lemma schemas

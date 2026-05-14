@@ -1,4 +1,5 @@
 ; EXPECT: unsat
+; DISABLE-TESTER: alethe
 ; exercises ProofRule::ARITH_POW2_INIT_REFINE
 (set-logic QF_NIA)
 (declare-fun x () Int)

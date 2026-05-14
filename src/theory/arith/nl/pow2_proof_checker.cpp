@@ -61,9 +61,7 @@ Node Pow2ProofRuleChecker::checkInternal(
     Node even = nm->mkNode(
         Kind::IMPLIES,
         nm->mkNode(Kind::DISTINCT, t, zero),
-        nm->mkNode(Kind::EQUAL,
-                   nm->mkNode(Kind::INTS_MODULUS, pt, two),
-                   zero));
+        nm->mkNode(Kind::EQUAL, nm->mkNode(Kind::INTS_MODULUS, pt, two), zero));
     return nm->mkNode(Kind::AND, nonneg, even);
   }
   else if (id == ProofRule::ARITH_POW2_MONOTONE_REFINE)
@@ -76,13 +74,10 @@ Node Pow2ProofRuleChecker::checkInternal(
     {
       return Node::null();
     }
-    Node assumption =
-        nm->mkNode(Kind::AND,
-                   nm->mkNode(Kind::LEQ, zero, x),
-                   nm->mkNode(Kind::LT, x, y));
-    Node conclusion = nm->mkNode(Kind::LT,
-                                 nm->mkNode(Kind::POW2, x),
-                                 nm->mkNode(Kind::POW2, y));
+    Node assumption = nm->mkNode(
+        Kind::AND, nm->mkNode(Kind::LEQ, zero, x), nm->mkNode(Kind::LT, x, y));
+    Node conclusion = nm->mkNode(
+        Kind::LT, nm->mkNode(Kind::POW2, x), nm->mkNode(Kind::POW2, y));
     return nm->mkNode(Kind::IMPLIES, assumption, conclusion);
   }
   else if (id == ProofRule::ARITH_POW2_NEG_REFINE)
@@ -132,9 +127,8 @@ Node Pow2ProofRuleChecker::checkInternal(
     Node kt = nm->mkNode(Kind::MULT, k, t);
     Node kk = nm->mkNode(Kind::MULT, k, k);
     Node bound = nm->mkNode(Kind::ADD, kt, kk);
-    return nm->mkNode(Kind::IMPLIES,
-                      assumption,
-                      nm->mkNode(Kind::GT, pt, bound));
+    return nm->mkNode(
+        Kind::IMPLIES, assumption, nm->mkNode(Kind::GT, pt, bound));
   }
   else if (id == ProofRule::ARITH_POW2_VALUE_REFINE)
   {
@@ -147,9 +141,8 @@ Node Pow2ProofRuleChecker::checkInternal(
       return Node::null();
     }
     Node lhs = nm->mkNode(Kind::EQUAL, t, v);
-    Node rhs = nm->mkNode(Kind::EQUAL,
-                          nm->mkNode(Kind::POW2, t),
-                          nm->mkNode(Kind::POW2, v));
+    Node rhs = nm->mkNode(
+        Kind::EQUAL, nm->mkNode(Kind::POW2, t), nm->mkNode(Kind::POW2, v));
     return nm->mkNode(Kind::IMPLIES, lhs, rhs);
   }
   return Node::null();
