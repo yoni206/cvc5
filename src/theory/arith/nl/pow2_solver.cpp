@@ -154,7 +154,7 @@ void Pow2Solver::checkFullRefine()
         d_im.addPendingLemma(
             lem, InferenceId::ARITH_NL_POW2_MONOTONE_REFINE, nullptr, true);
       }
-      else if (y <= 0 && y < x && pow2x <= pow2y)
+      else if (y >= 0 && y < x && pow2x <= pow2y)
       {
         // 0 <= y /\ y < x => pow2(y) < pow2(x).
         Node y_lt_x = nm->mkNode(Kind::LT, m[0], n[0]);
