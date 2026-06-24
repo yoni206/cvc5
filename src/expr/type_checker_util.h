@@ -15,6 +15,9 @@
  * for them.
  */
 
+#ifndef CVC5__EXPR__TYPE_CHECKER_UTIL_H
+#define CVC5__EXPR__TYPE_CHECKER_UTIL_H
+
 #include <sstream>
 
 #include "cvc5_private.h"
@@ -235,3 +238,5 @@ class SimpleTypeRuleVar
 
 }  // namespace expr
 }  // namespace cvc5::internal
+
+#endif /* CVC5__EXPR__TYPE_CHECKER_UTIL_H */

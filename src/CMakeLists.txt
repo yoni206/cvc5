@@ -1502,6 +1502,37 @@ add_check_cxx_flag("-fno-var-tracking-assignments" ${LIBCVC5_GEN_SRCS})
 add_library(cvc5-obj OBJECT ${LIBCVC5_SRCS} ${LIBCVC5_GEN_SRCS})
 target_compile_definitions(cvc5-obj PRIVATE -D__BUILDING_CVC5LIB -Dcvc5_obj_EXPORTS)
 set_target_properties(cvc5-obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+# Precompiled header: parse the heavy, ubiquitously-included core headers
+# (expr/node.h & friends) once into a PCH instead of in every translation unit.
+# Semantics-preserving; large clean-build speedup. See src/cvc5_pch.h.
+option(ENABLE_PCH "Use a precompiled header for the core library" ON)
+if(ENABLE_PCH)
+  # Apply the PCH to C++ sources only: cvc5-obj also contains C source(s), and a
+  # C++ header cannot be precompiled as a C header.
+  target_precompile_headers(cvc5-obj PRIVATE
+    "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/cvc5_pch.h>")
+endif()
+
+# Unity (jumbo) build: compile the library's sources in batches within a single
+# translation unit, so shared headers are parsed once per batch instead of once
+# per file. Large clean-build speedup. Off by default upstream; toggle here.
+option(ENABLE_UNITY_BUILD "Compile the core library as a unity/jumbo build" OFF)
+set(UNITY_BATCH_SIZE 8 CACHE STRING "Files per unity build batch")
+if(ENABLE_UNITY_BUILD)
+  set_target_properties(cvc5-obj PROPERTIES
+    UNITY_BUILD ON
+    UNITY_BUILD_MODE BATCH
+    UNITY_BUILD_BATCH_SIZE ${UNITY_BATCH_SIZE})
+  # Vendored MiniSat sources rely on file-local statics (e.g. option category
+  # `_cat`) and template specializations that collide when several files are
+  # concatenated into one unity TU. Compile them individually.
+  file(GLOB_RECURSE CVC5_NO_UNITY_SRCS CONFIGURE_DEPENDS
+       "${CMAKE_CURRENT_SOURCE_DIR}/prop/minisat/*.cc"
+       "${CMAKE_CURRENT_SOURCE_DIR}/prop/minisat/*.cpp")
+  set_source_files_properties(${CVC5_NO_UNITY_SRCS}
+    PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+endif()
 # add_dependencies() is necessary for cmake versions before 3.21
 add_dependencies(cvc5-obj cvc5base cvc5context)
 # Add libcvc5 dependencies for generated sources.

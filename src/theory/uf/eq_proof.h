@@ -10,6 +10,9 @@
  * A proof as produced by the equality engine.
  */
 
+#ifndef CVC5__THEORY__UF__EQ_PROOF_H
+#define CVC5__THEORY__UF__EQ_PROOF_H
+
 #include "cvc5_private.h"
 #include "expr/node.h"
 #include "theory/uf/equality_engine_types.h"
@@ -353,3 +356,5 @@ class EqProof
 }  // Namespace eq
 }  // Namespace theory
 }  // namespace cvc5::internal
+
+#endif /* CVC5__THEORY__UF__EQ_PROOF_H */

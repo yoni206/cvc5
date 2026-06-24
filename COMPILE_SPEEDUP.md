@@ -91,6 +91,8 @@ All times: delete cvc5's own `*.o`/PCH under `build/{src,test}` (deps kept), the
 | # | Configuration | Wall time (`make -j8`) | vs baseline | Notes |
 |---|---------------|------------------------|-------------|-------|
 | 0 | Baseline (debug, as-is) | **262.8 s** | — | full build: lib+bin+parser+unit tests |
+| 1 | + PCH on `cvc5-obj` | **208.9 s** | **−20.5%** | `src/cvc5_pch.h` (node.h & core, C++ only). Dropped `rational.h` (latent `operator<<` ambiguity). Tests/parser not yet covered. |
+| 2 | + Unity build (batch 8) + PCH | **109.2 s** | **−58.4%** | `UNITY_BUILD` on `cvc5-obj`. Required: add include guards to 2 unguarded headers; exclude vendored MiniSat from unity. Binary verified sat/unsat correct. |
 
 ---
 
