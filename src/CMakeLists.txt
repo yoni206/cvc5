@@ -1503,22 +1503,25 @@ add_library(cvc5-obj OBJECT ${LIBCVC5_SRCS} ${LIBCVC5_GEN_SRCS})
 target_compile_definitions(cvc5-obj PRIVATE -D__BUILDING_CVC5LIB -Dcvc5_obj_EXPORTS)
 set_target_properties(cvc5-obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-# Precompiled header: parse the heavy, ubiquitously-included core headers
-# (expr/node.h & friends) once into a PCH instead of in every translation unit.
-# Semantics-preserving; large clean-build speedup. See src/cvc5_pch.h.
+# ----------------------------------------------------------------------------#
+# Compile-time speedups for the core library (cvc5-obj).
+#
+# Two independent, semantics-preserving mechanisms (see COMPILE_SPEEDUP.md for
+# measurements):
+#   * Unity/jumbo build  — compile sources in batches within one translation
+#     unit, so shared headers (expr/node.h & friends, ~73k preprocessed lines)
+#     are parsed once per batch instead of once per file. Biggest win
+#     (~-72% on `make -j8`) and, because it emits far fewer/larger objects with
+#     much less duplicated debug info, it also makes linking and *incremental*
+#     rebuilds faster.
+#   * Precompiled header — parse those same heavy headers once into a PCH. Used
+#     when unity is disabled (~-20%). Redundant under unity (measured to add
+#     pure overhead there), so it is skipped automatically when unity is on.
+# ----------------------------------------------------------------------------#
+option(ENABLE_UNITY_BUILD "Compile the core library as a unity/jumbo build" ON)
+set(UNITY_BATCH_SIZE 32 CACHE STRING "Files per unity build batch")
 option(ENABLE_PCH "Use a precompiled header for the core library" ON)
-if(ENABLE_PCH)
-  # Apply the PCH to C++ sources only: cvc5-obj also contains C source(s), and a
-  # C++ header cannot be precompiled as a C header.
-  target_precompile_headers(cvc5-obj PRIVATE
-    "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/cvc5_pch.h>")
-endif()
 
-# Unity (jumbo) build: compile the library's sources in batches within a single
-# translation unit, so shared headers are parsed once per batch instead of once
-# per file. Large clean-build speedup. Off by default upstream; toggle here.
-option(ENABLE_UNITY_BUILD "Compile the core library as a unity/jumbo build" OFF)
-set(UNITY_BATCH_SIZE 8 CACHE STRING "Files per unity build batch")
 if(ENABLE_UNITY_BUILD)
   set_target_properties(cvc5-obj PROPERTIES
     UNITY_BUILD ON
@@ -1530,8 +1533,18 @@ if(ENABLE_UNITY_BUILD)
   file(GLOB_RECURSE CVC5_NO_UNITY_SRCS CONFIGURE_DEPENDS
        "${CMAKE_CURRENT_SOURCE_DIR}/prop/minisat/*.cc"
        "${CMAKE_CURRENT_SOURCE_DIR}/prop/minisat/*.cpp")
+  # node_manager.cpp (generated into the build tree) provides explicit
+  # specializations of NodeManager::mkConst<T>; if another file in the same unity
+  # batch instantiates the template first, the specialization becomes ill-formed
+  # ("after instantiation"). Keep it separate.
+  list(APPEND CVC5_NO_UNITY_SRCS "${CMAKE_CURRENT_BINARY_DIR}/expr/node_manager.cpp")
   set_source_files_properties(${CVC5_NO_UNITY_SRCS}
     PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+elseif(ENABLE_PCH)
+  # Apply the PCH to C++ sources only: cvc5-obj also contains C source(s), and a
+  # C++ header cannot be precompiled as a C header.
+  target_precompile_headers(cvc5-obj PRIVATE
+    "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/cvc5_pch.h>")
 endif()
 # add_dependencies() is necessary for cmake versions before 3.21
 add_dependencies(cvc5-obj cvc5base cvc5context)
