@@ -7,17 +7,23 @@ build semantics (still a usable debug build: assertions, tracing, statistics on)
 
 ---
 
-## Environment (baseline machine)
+## Environment
+
+> **Machine switch (2026-06-24):** Work moved from the original 8-core box to a
+> bigger shared-home machine. All numbers below are from the **current** machine.
 
 - Compiler: `g++ (GCC) 11.5.0` (`/usr/bin/c++`)
-- Cores available: **8** (`nproc` = 8; cgroup-limited even if host has more)
-- RAM: 251 GB total, ~199 GB available — memory is NOT a constraint.
-- Linkers present: **mold** (`~/.local/bin/mold`) and `ld.gold`.
-  - CMakeLists already auto-detects and uses **mold** → linking is already fast;
-    a faster linker is NOT an available lever here.
-- `ccache`: **not installed** (no `/usr/bin/ccache`, not in conda). Could be a
-  big win for *re*builds but doesn't help a single clean build, and we can't
-  assume we can install it. Noted as a possible future lever.
+- Cores: **112**; RAM: 503 GB. Memory/parallelism are NOT constraints.
+  - **Headline metric stays `make -j8`** (per request) so improvements in *total
+    compile work* show clearly rather than being hidden by 112-way parallelism.
+- Linkers present: `mold` (`~/.local/bin/mold`) and `ld.gold`.
+  - ⚠️ GCC 11.5 here does **not** accept `-fuse-ld=mold` (that needs gcc ≥ 12).
+    cvc5's CMake mold-probe fails and correctly falls back to **`-fuse-ld=gold`**.
+    So on this machine the linker is **gold**, and a faster linker is not an
+    easily-available lever (gold is already fast; link is a small fraction).
+  - (The stale `build/` carried over via NFS home had `-fuse-ld=mold` baked in
+    from the other machine → link errors. Fixed by a fresh reconfigure here.)
+- `ccache`: **not installed**. Helps *re*builds, not a single clean build.
 - Build config under test: **debug** (`./configure.sh debug --auto-download`)
   - From `cmake/ConfigDebug.cmake`: `-DCVC5_DEBUG`, `-fno-inline`,
     `OPTIMIZATION_LEVEL=g` (`-Og`), debug symbols ON (`-ggdb3 -gz`),
@@ -79,19 +85,46 @@ From top-level `CMakeLists.txt`:
 
 ## Results table
 
+All times: delete cvc5's own `*.o`/PCH under `build/{src,test}` (deps kept), then
+`time make -j8`. Script: `measure.sh`.
+
 | # | Configuration | Wall time (`make -j8`) | vs baseline | Notes |
 |---|---------------|------------------------|-------------|-------|
-| 0 | Baseline (debug, as-is) | *pending* | — | clean full build |
+| 0 | Baseline (debug, as-is) | **262.8 s** | — | full build: lib+bin+parser+unit tests |
 
 ---
+
+## Profiling (what to attack)
+
+Most-included project headers across `src/` (`#include` count) and their
+preprocessed weight (lines after `cpp`, with debug flags):
+
+| Header | #includes | preprocessed lines |
+|--------|-----------|--------------------|
+| `expr/node.h` | 451 | 73,645 |
+| `smt/env_obj.h` / `smt/env.h` | 237 / 112 | (env.h) 77,564 |
+| `theory/rewriter.h` | 190 | 75,116 |
+| `util/rational.h` | 146 | — |
+| `expr/skolem_manager.h` | 146 | — |
+| `theory/theory.h` | 85 | 77,957 |
+| `proof/proof.h` | 63 | 78,944 |
+
+Takeaway: ~450 TUs each reparse ~73K+ lines of `node.h` & friends. This is the
+redundant work PCH (and unity) eliminate. Main library target: **`cvc5-obj`**
+(`src/CMakeLists.txt:1502`), an OBJECT library over `LIBCVC5_SRCS`.
 
 ## Progress log
 
 - **2026-06-24** — Set up branch `speedup-compile`. Surveyed build system.
   Key findings: mold already in use (linking not a lever), no PCH, no unity
   build (both big opportunities), debug uses `-Og -fno-inline -gz`. Wrote this
-  log. Baseline measurement was about to run when work paused to switch
-  machines. **Next step on resume:** capture baseline (#0), then implement PCH.
+  log. Baseline measurement was about to run when work paused to switch machines.
+- **2026-06-24 (machine 2)** — Reconfigured fresh (`./configure.sh debug
+  --auto-download`) — needed because the NFS-shared `build/` was configured on
+  the old machine with `-fuse-ld=mold`, which GCC 11.5 here rejects. Verified the
+  binary builds & links (gold). Wrote `measure.sh`. **Captured baseline #0 =
+  262.8 s.** Profiled header include frequency/weight (table above). **Next:** PCH
+  on `cvc5-obj`.
 
 ### Notes / gotchas discovered
 - Bash tool working dir doesn't persist reliably between calls — use absolute
