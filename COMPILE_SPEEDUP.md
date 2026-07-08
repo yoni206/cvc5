@@ -157,11 +157,101 @@ A plain `./configure.sh debug` already gets the speedup. Tuning:
 
 **What changed (all on branch `speedup-compile`):**
 - `src/CMakeLists.txt`: `ENABLE_UNITY_BUILD` (default ON, batch 32) + `ENABLE_PCH`
-  on `cvc5-obj`, with vendored MiniSat and generated `node_manager.cpp` excluded
-  from unity batching.
+  on `cvc5-obj`. Files carved out of unity batching (each for a concrete reason):
+  vendored MiniSat, generated `node_manager.cpp`, generated `main/options.cpp`
+  (static-build dup symbols), optional SAT wrappers `prop/kissat.cpp` &
+  `prop/cryptominisat.cpp`, and — only under `USE_COCOA` — the CoCoA/finite-field
+  sources. See "Multi-configuration validation" for why each is needed.
 - `src/cvc5_pch.h`: new precompiled-header payload (used when unity is off).
 - `src/theory/uf/eq_proof.h`, `src/expr/type_checker_util.h`: added missing
-  include guards (latent bug; also required for unity). 
+  include guards (latent bug; also required for unity).
+- **Validated across `debug`, `production`, `production --static`, and
+  `--gpl --cocoa --cln --kissat`** — all compile and run correctly; ~68–72%
+  faster in every config. (Helpers: `build-configs.sh`, `measure-dir.sh`.)
+
+---
+
+## Multi-configuration validation (2026-07-08)
+
+The unity/PCH changes only touch the core library target `cvc5-obj`. The real
+risk surface is configurations that (a) compile a **different set of source
+files** into that target, or (b) **link it statically** (unity changes archive
+extraction). Tested the main suspects, each in its own build dir with
+`--auto-download` (`build-configs.sh`, paired timings via `measure-dir.sh`).
+
+> ⚠️ Times here are on the **8-core** machine (gold linker), so absolute numbers
+> differ from the 112-core numbers in the TL;DR above. What matters is the
+> **paired unity-ON vs unity-OFF delta measured on the same box**. Every config
+> stays ~68–72% faster and, after the fixes below, compiles and runs correctly.
+
+| Config | Compiles | Binary | unity ON | unity OFF | **Δ** | PCH-only |
+|--------|:---:|:---:|---:|---:|:---:|---:|
+| `debug` (default) | ✅ | sat/unsat ✅ | 135.1 s | 476.7 s | **−71.7%** | 388.2 s (−18.6%) |
+| `production` (`-O3`, NDEBUG) | ✅ | sat/unsat ✅ | 132.9 s | 423.6 s | **−68.6%** | 329.5 s (−22.2%) |
+| `production --static` (static cvc5 libs) | ✅ *(after fix)* | sat/unsat ✅, fully static-linked | — | — | — | — |
+| `debug --gpl --cocoa --cln --kissat` | ✅ *(after 2 fixes)* | sat/unsat/QF_FF ✅ | 146.7 s | 508.3 s | **−71.1%** | 406.1 s (−20.1%) |
+| `production --static --static-binary` | ⛔ env | — | — | — | — | — |
+
+`--static-binary` (fully static, incl. **system** libs) can't complete on this
+machine: `libc.a` / `libstdc++.a` are not installed (no `glibc-static` /
+`libstdc++-static` RPMs). This fails identically on stock `main` (unity OFF), so
+it is **environmental, not caused by our change.** The `--static` row above still
+exercises the important part — `libcvc5.a` static archive linking — end to end.
+(CryptoMiniSat was dropped from the GPL config for the same reason: building its
+*own* CLI links `libstdc++` statically and hits the same missing-lib wall; its
+cvc5 wrapper is excluded from unity anyway.)
+
+**Three real bugs were found and fixed by this multi-config testing** — all were
+invisible to the original shared-debug-only validation:
+1. `main/options.cpp` duplicate symbols in **static** builds (below).
+2. CoCoA / finite-field unity collisions (`--cocoa`).
+3. Optional SAT-backend wrapper unity collisions (`--kissat` / `--cryptominisat`).
+
+### Bug 1 — `main/options.cpp` duplicate symbols in static builds (`cea3fabde0`)
+
+`--static` builds failed to link with `multiple definition of
+cvc5::main::parse / printUsage / parseInternal / ...`. Root cause: the generated
+`main/options.cpp` is compiled into **both** `cvc5-obj` (→ `libcvc5.a`) and the
+separate `main` object library that is linked into the binary. Normally the
+linker never pulls the `libcvc5.a` copy (archive members load on demand and its
+symbols are already provided). **Unity bundling defeats that**: `options.cpp`
+lands in a unity object that also holds symbols the binary *does* need, so the
+whole object is extracted → duplicate symbols. Only surfaces in **static**
+builds (shared builds resolve to the single `.so` copy), which is why the
+original shared-build validation missed it. **Fix:** exclude `main/options.cpp`
+from unity, mirroring the `node_manager.cpp` / MiniSat exclusions.
+
+### Bug 2 — CoCoA / finite-field unity collisions, `--cocoa` (`71b6c4b5b9`)
+
+`debug --gpl --cocoa …` failed to compile two unity batches:
+- `theory/ff/multi_roots.cpp` etc. each define `template<class T> std::string
+  ostring(const T&)` at file scope in the same `theory::ff` namespace →
+  *redefinition* once concatenated.
+- `lazard_evaluation.cpp` & friends rely on file-scoped `using namespace` / ADL
+  for CoCoA operators; concatenation makes `std::gcd` vs `CoCoA::gcd` and
+  `operator<<(ostream, vector<CoCoA::RingElem>)` *ambiguous*.
+
+**Fix:** when `USE_COCOA` is on, keep the CoCoA-touching sources (all
+`theory/ff/*.cpp`, the two nl-arith `coverings` CoCoA files, `theory_arith.cpp`,
+`util/cocoa_globals.cpp`) out of unity. When CoCoA is off they are inert and stay
+in unity, so the default build is unaffected.
+
+### Bug 3 — optional SAT-backend wrapper collisions, `--kissat`/`--cryptominisat` (`71b6c4b5b9`)
+
+`prop/kissat.cpp` and `prop/cryptominisat.cpp` each define
+`toSatValue` / `toSatValueLit` in the *anonymous* namespace of the enclosing
+`cvc5::internal::prop` scope. In a unity TU those merge into one anonymous
+namespace (mutual redefinition), and they additionally clash with
+`cadical::toSatValue` — `prop/cadical/cadical.cpp` does `using namespace cadical;`
+at namespace scope, which **leaks** to every file concatenated after it, making
+the call ambiguous. **Fix:** keep both optional wrappers out of unity (cadical,
+the default backend, stays in).
+
+**Lesson:** shared-debug-only validation was insufficient. Static linking has
+different symbol-resolution semantics, and optional/GPL deps compile a different
+set of source files into the unity batches — both must be in the test matrix.
+The fix pattern is uniform: **carve unity-hostile files out with
+`SKIP_UNITY_BUILD_INCLUSION`; the rest of the library keeps the speedup.**
 
 ---
 
@@ -208,6 +298,17 @@ redundant work PCH (and unity) eliminate. Main library target: **`cvc5-obj`**
     clean and incremental. PCH is redundant under unity → auto-skipped.
   - Verified correctness: 118/120 regress0 problems pass, 0 mismatches.
   - **Goal (−50%) exceeded: −71.5% at `-j8`, −58.9% at `-j32`.**
+- **2026-07-08 (8-core machine)** — Multi-configuration validation (see section
+  above). Built `debug`, `production`, `production --static`, and
+  `debug --gpl --cocoa --cln --kissat`, each in its own `--auto-download` build
+  dir, with paired unity-ON/OFF timings. **Found & fixed 3 real bugs** that the
+  original shared-debug-only run never exercised: static-build duplicate symbols
+  (`main/options.cpp`), CoCoA/finite-field unity collisions, and optional
+  SAT-wrapper unity collisions. After the fixes every config compiles, runs
+  (`sat`/`unsat`, plus `QF_FF` for the CoCoA build), and is 68–72% faster.
+  `--static-binary` (fully static incl. system libs) is blocked by missing
+  `libc.a`/`libstdc++.a` on this box — environmental, fails on stock `main` too.
+  Commits `cea3fabde0`, `71b6c4b5b9`.
 
 ### Possible further levers (not pursued — diminishing returns past −71%)
 - **Debug-info weight**: `-gz` (compress) + `-ggdb3` make objects large and the

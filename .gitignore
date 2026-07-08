@@ -17,3 +17,6 @@ generated/
 *.pyc
 
 
+
+# compile-speedup multi-config test build dirs (not committed)
+/build-*/
