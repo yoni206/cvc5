@@ -1503,32 +1503,6 @@ add_library(cvc5-obj OBJECT ${LIBCVC5_SRCS} ${LIBCVC5_GEN_SRCS})
 target_compile_definitions(cvc5-obj PRIVATE -D__BUILDING_CVC5LIB -Dcvc5_obj_EXPORTS)
 set_target_properties(cvc5-obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-# ----------------------------------------------------------------------------#
-# Compile-time speedup for the core library (cvc5-obj): unity/jumbo build.
-#
-# The core library has ~800 translation units, and the great majority of them
-# #include the same handful of large, stable headers (expr/node.h & friends,
-# ~73k preprocessed lines each). Compiling one file at a time re-parses that
-# shared header text once per file — hundreds of times over.
-#
-# A unity build groups the sources into batches and compiles each batch as a
-# single translation unit (CMake concatenates them behind the scenes as
-# `#include "a.cpp"\n#include "b.cpp"\n...`). Every header with an include guard
-# is then parsed once per *batch* instead of once per *file*, so with a batch of
-# 32 the shared-header parsing cost drops ~32x. This is a semantics-preserving,
-# build-system-only change (no source logic changes): the same code is compiled,
-# just grouped differently. Measured ~-70% on a clean `make -j8`
-# (see COMPILE_SPEEDUP.md). It also shrinks link time and incremental rebuilds,
-# because it emits far fewer, larger object files with much less duplicated
-# debug info.
-#
-# The catch: concatenating files into one TU can expose latent
-# translation-unit-locality assumptions (file-local statics/anonymous
-# namespaces, leaking `using namespace`, same-named file-scope helpers,
-# order-dependent template instantiations). The few offending files are excluded
-# from batching below with SKIP_UNITY_BUILD_INCLUSION and compiled on their own;
-# the rest of the library still gets the speedup.
-# ----------------------------------------------------------------------------#
 option(ENABLE_UNITY_BUILD "Compile the core library as a unity/jumbo build" ON)
 set(UNITY_BATCH_SIZE 32 CACHE STRING "Files per unity build batch")
 
@@ -1537,49 +1511,14 @@ if(ENABLE_UNITY_BUILD)
     UNITY_BUILD ON
     UNITY_BUILD_MODE BATCH
     UNITY_BUILD_BATCH_SIZE ${UNITY_BATCH_SIZE})
-  # Vendored MiniSat sources rely on file-local statics (e.g. option category
-  # `_cat`) and template specializations that collide when several files are
-  # concatenated into one unity TU. Compile them individually.
   file(GLOB_RECURSE CVC5_NO_UNITY_SRCS CONFIGURE_DEPENDS
        "${CMAKE_CURRENT_SOURCE_DIR}/prop/minisat/*.cc"
        "${CMAKE_CURRENT_SOURCE_DIR}/prop/minisat/*.cpp")
-  # Optional SAT-backend wrappers (Kissat, CryptoMiniSat) each define helper
-  # functions `toSatValue`/`toSatValueLit` in *the* anonymous namespace of the
-  # enclosing `cvc5::internal::prop` scope. In a unity TU these become the same
-  # anonymous namespace (mutual redefinition), and they additionally clash with
-  # `cadical::toSatValue` — cadical.cpp does `using namespace cadical;` at
-  # namespace scope, which leaks to files concatenated after it and makes the
-  # call ambiguous. Only compiled (non-empty) when the respective solver is
-  # enabled, so just always keep them out of unity.
   list(APPEND CVC5_NO_UNITY_SRCS
        "${CMAKE_CURRENT_SOURCE_DIR}/prop/kissat.cpp"
        "${CMAKE_CURRENT_SOURCE_DIR}/prop/cryptominisat.cpp")
-  # node_manager.cpp (generated into the build tree) provides explicit
-  # specializations of NodeManager::mkConst<T>; if another file in the same unity
-  # batch instantiates the template first, the specialization becomes ill-formed
-  # ("after instantiation"). Keep it separate.
   list(APPEND CVC5_NO_UNITY_SRCS "${CMAKE_CURRENT_BINARY_DIR}/expr/node_manager.cpp")
-  # main/options.cpp (generated) is compiled into BOTH this core library and the
-  # separate `main` object library that is linked into the cvc5 binary (see
-  # src/main/CMakeLists.txt). In a static build the linker normally ignores the
-  # copy inside libcvc5.a because its symbols (cvc5::main::parse/printUsage/...)
-  # are already provided by main/options.cpp.o — archive members are only pulled
-  # in on demand. Bundling it into a unity object defeats that laziness: the
-  # unity object also holds many symbols the binary DOES need, so the whole
-  # object gets extracted, causing "multiple definition" link errors in static
-  # builds. Keeping it as its own object restores the on-demand behaviour.
   list(APPEND CVC5_NO_UNITY_SRCS "${CMAKE_CURRENT_BINARY_DIR}/main/options.cpp")
-  # CoCoA-backed sources (finite-field theory + Lazard evaluation in nl-arith)
-  # are not unity-safe: several define identically-named file-local helpers
-  # (e.g. `template<class T> std::string ostring(const T&)`) that clash when
-  # concatenated, and they rely on file-scoped `using namespace`/ADL for CoCoA's
-  # operators — which, once other files are pulled into the same TU, resolves
-  # ambiguously (e.g. `std::gcd` vs `CoCoA::gcd`, `operator<<` for
-  # `vector<CoCoA::RingElem>`). These files only pull in CoCoA when USE_COCOA is
-  # set (otherwise CVC5_USE_COCOA is off and they are inert / unity-safe), so we
-  # only carve them out of unity in that configuration. Compiling them
-  # individually costs little (~18 files) and keeps the rest of the library in
-  # unity.
   if(USE_COCOA)
     file(GLOB CVC5_COCOA_NO_UNITY_SRCS CONFIGURE_DEPENDS
          "${CMAKE_CURRENT_SOURCE_DIR}/theory/ff/*.cpp")
