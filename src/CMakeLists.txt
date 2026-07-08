@@ -1538,6 +1538,16 @@ if(ENABLE_UNITY_BUILD)
   # batch instantiates the template first, the specialization becomes ill-formed
   # ("after instantiation"). Keep it separate.
   list(APPEND CVC5_NO_UNITY_SRCS "${CMAKE_CURRENT_BINARY_DIR}/expr/node_manager.cpp")
+  # main/options.cpp (generated) is compiled into BOTH this core library and the
+  # separate `main` object library that is linked into the cvc5 binary (see
+  # src/main/CMakeLists.txt). In a static build the linker normally ignores the
+  # copy inside libcvc5.a because its symbols (cvc5::main::parse/printUsage/...)
+  # are already provided by main/options.cpp.o — archive members are only pulled
+  # in on demand. Bundling it into a unity object defeats that laziness: the
+  # unity object also holds many symbols the binary DOES need, so the whole
+  # object gets extracted, causing "multiple definition" link errors in static
+  # builds. Keeping it as its own object restores the on-demand behaviour.
+  list(APPEND CVC5_NO_UNITY_SRCS "${CMAKE_CURRENT_BINARY_DIR}/main/options.cpp")
   set_source_files_properties(${CVC5_NO_UNITY_SRCS}
     PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 elseif(ENABLE_PCH)
