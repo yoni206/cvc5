@@ -1503,32 +1503,83 @@ add_library(cvc5-obj OBJECT ${LIBCVC5_SRCS} ${LIBCVC5_GEN_SRCS})
 target_compile_definitions(cvc5-obj PRIVATE -D__BUILDING_CVC5LIB -Dcvc5_obj_EXPORTS)
 set_target_properties(cvc5-obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
+# ---------------------------------------------------------------------------
+# Unity (jumbo) build for the core library.
+#
+# Every translation unit in cvc5-obj re-parses a large, shared header floor
+# (e.g. expr/node.h pulls ~57k preprocessed lines, most of it the std iostream
+# base anchored by base/check.h and base/output.h).  A unity build batches
+# sources into a handful of translation units so that floor is parsed once per
+# batch instead of once per file, cutting a clean build of cvc5-obj by ~70%.
+#
+# This is CMake's native UNITY_BUILD: nothing is amalgamated into the source
+# tree and no header/source is edited to enable it.  A plain per-file build is
+# one `-DENABLE_UNITY_BUILD=OFF` away and is recommended for tight edit/rebuild
+# loops (batching enlarges the unit recompiled after a one-file edit).
+# ---------------------------------------------------------------------------
 option(ENABLE_UNITY_BUILD "Compile the core library as a unity/jumbo build" ON)
-set(UNITY_BATCH_SIZE 32 CACHE STRING "Files per unity build batch")
+
+# Sources per batched translation unit.  This is the one tuning knob: larger
+# batches amortize the shared header floor more, but raise peak memory per
+# compiler process and shrink the pool of parallel jobs.  32 is the measured
+# sweet spot for a clean build of this codebase (~-71% wall-clock; re-measure
+# with measure.sh if the tree or hardware changes).  It is a cache variable --
+# override with -DUNITY_BATCH_SIZE=<n>, no source edit needed.
+set(UNITY_BATCH_SIZE 32 CACHE STRING "Core-library sources per unity batch")
 
 if(ENABLE_UNITY_BUILD)
   set_target_properties(cvc5-obj PROPERTIES
     UNITY_BUILD ON
     UNITY_BUILD_MODE BATCH
     UNITY_BUILD_BATCH_SIZE ${UNITY_BATCH_SIZE})
-  file(GLOB_RECURSE CVC5_NO_UNITY_SRCS CONFIGURE_DEPENDS
+
+  # A few sources must compile as their own translation unit instead of being
+  # folded into a batch.  Each entry below belongs to exactly one of the
+  # principled categories that follow.  If you add code that fails ONLY under
+  # the unity build (redefinition / ambiguous symbol / macro clash, or a
+  # static-build duplicate symbol), add it to the matching category -- do not
+  # disable unity wholesale.
+  set(CVC5_NO_UNITY_SRCS "")
+
+  # (1) Vendored third-party code: carries its own macros and anonymous
+  #     namespaces and is not ours to reshape for batching.  Directory glob so
+  #     new vendored files are excluded automatically.
+  file(GLOB_RECURSE _no_unity_vendored CONFIGURE_DEPENDS
        "${CMAKE_CURRENT_SOURCE_DIR}/prop/minisat/*.cc"
        "${CMAKE_CURRENT_SOURCE_DIR}/prop/minisat/*.cpp")
-  list(APPEND CVC5_NO_UNITY_SRCS
+
+  # (2) Optional external SAT-backend wrappers: each drags a third-party solver
+  #     header into the shared batch scope and clashes with its neighbours.
+  set(_no_unity_sat_backends
        "${CMAKE_CURRENT_SOURCE_DIR}/prop/kissat.cpp"
        "${CMAKE_CURRENT_SOURCE_DIR}/prop/cryptominisat.cpp")
-  list(APPEND CVC5_NO_UNITY_SRCS "${CMAKE_CURRENT_BINARY_DIR}/expr/node_manager.cpp")
-  list(APPEND CVC5_NO_UNITY_SRCS "${CMAKE_CURRENT_BINARY_DIR}/main/options.cpp")
+
+  # (3) Generated sources with whole-file linkage requirements:
+  #       node_manager.cpp -- generated; kept a standalone TU.
+  #       main/options.cpp -- compiled into BOTH cvc5-obj and the main target;
+  #         batching pulls the whole object in, producing duplicate symbols in
+  #         static builds.  Standalone lets the linker de-dup as it used to.
+  set(_no_unity_generated
+       "${CMAKE_CURRENT_BINARY_DIR}/expr/node_manager.cpp"
+       "${CMAKE_CURRENT_BINARY_DIR}/main/options.cpp")
+
+  list(APPEND CVC5_NO_UNITY_SRCS
+       ${_no_unity_vendored} ${_no_unity_sat_backends} ${_no_unity_generated})
+
+  # (4) CoCoA / finite-field sources (only compiled with --cocoa): heavy CoCoA
+  #     templates collide across a shared batch scope.  Gated on USE_COCOA so
+  #     they are never referenced in a non-GPL configuration.
   if(USE_COCOA)
-    file(GLOB CVC5_COCOA_NO_UNITY_SRCS CONFIGURE_DEPENDS
+    file(GLOB _no_unity_cocoa CONFIGURE_DEPENDS
          "${CMAKE_CURRENT_SOURCE_DIR}/theory/ff/*.cpp")
-    list(APPEND CVC5_COCOA_NO_UNITY_SRCS
+    list(APPEND _no_unity_cocoa
       "${CMAKE_CURRENT_SOURCE_DIR}/theory/arith/nl/coverings/cocoa_converter.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/theory/arith/nl/coverings/lazard_evaluation.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/theory/arith/theory_arith.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/util/cocoa_globals.cpp")
-    list(APPEND CVC5_NO_UNITY_SRCS ${CVC5_COCOA_NO_UNITY_SRCS})
+    list(APPEND CVC5_NO_UNITY_SRCS ${_no_unity_cocoa})
   endif()
+
   set_source_files_properties(${CVC5_NO_UNITY_SRCS}
     PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 endif()
