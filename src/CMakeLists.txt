@@ -1381,8 +1381,16 @@ set(options_toml_files
 )
 string(REPLACE "toml" "cpp;" options_gen_cpp_files ${options_toml_files})
 string(REPLACE "toml" "h;"   options_gen_h_files ${options_toml_files})
-list(APPEND options_gen_cpp_files "options/io_utils.cpp" "options/options.cpp" "options/options_public.cpp" "main/options.cpp")
+list(APPEND options_gen_cpp_files "options/io_utils.cpp" "options/options.cpp" "options/options_public.cpp")
 list(APPEND options_gen_h_files "options/io_utils.h" "options/options.h")
+
+# main/options.cpp is the command-line DRIVER's option parser (namespace
+# cvc5::main).  mkoptions.py generates it here, but it belongs to the `main`
+# target alone (src/main/CMakeLists.txt) -- no library code references
+# cvc5::main symbols.  Compiling it into the library too produced duplicate
+# symbols in static builds and forced a unity carve-out.  Keep it a generated
+# byproduct (below), but out of the library sources.
+set(main_options_gen_cpp "main/options.cpp")
 
 libcvc5_add_sources(GENERATED ${options_gen_cpp_files} ${options_gen_h_files})
 
@@ -1420,7 +1428,7 @@ add_custom_command(
     ${CMAKE_CURRENT_BINARY_DIR}
     ${abs_toml_files}
   BYPRODUCTS
-    ${options_gen_cpp_files} ${options_gen_h_files} ${options_gen_doc_files}
+    ${options_gen_cpp_files} ${main_options_gen_cpp} ${options_gen_h_files} ${options_gen_doc_files}
   DEPENDS
     options/mkoptions.py
     ${options_toml_files}
@@ -1548,20 +1556,26 @@ if(ENABLE_UNITY_BUILD)
        "${CMAKE_CURRENT_SOURCE_DIR}/prop/minisat/*.cc"
        "${CMAKE_CURRENT_SOURCE_DIR}/prop/minisat/*.cpp")
 
-  # (2) Optional external SAT-backend wrappers: each drags a third-party solver
-  #     header into the shared batch scope and clashes with its neighbours.
-  set(_no_unity_sat_backends
-       "${CMAKE_CURRENT_SOURCE_DIR}/prop/kissat.cpp"
-       "${CMAKE_CURRENT_SOURCE_DIR}/prop/cryptominisat.cpp")
+  # (2) Optional external SAT-backend wrappers: when its backend is enabled a
+  #     wrapper drags a third-party solver header into the shared batch scope
+  #     and clashes with its neighbours.  With the backend off the wrapper is an
+  #     (almost) empty TU that batches fine, so gate on the feature flags -- the
+  #     carve-out then tracks the actual reason it exists.
+  set(_no_unity_sat_backends "")
+  if(USE_KISSAT)
+    list(APPEND _no_unity_sat_backends
+         "${CMAKE_CURRENT_SOURCE_DIR}/prop/kissat.cpp")
+  endif()
+  if(USE_CRYPTOMINISAT)
+    list(APPEND _no_unity_sat_backends
+         "${CMAKE_CURRENT_SOURCE_DIR}/prop/cryptominisat.cpp")
+  endif()
 
-  # (3) Generated sources with whole-file linkage requirements:
-  #       node_manager.cpp -- generated; kept a standalone TU.
-  #       main/options.cpp -- compiled into BOTH cvc5-obj and the main target;
-  #         batching pulls the whole object in, producing duplicate symbols in
-  #         static builds.  Standalone lets the linker de-dup as it used to.
+  # (3) Generated source kept as its own translation unit: node_manager.cpp.
+  #     (main/options.cpp is no longer compiled into the library at all -- see
+  #     the options-generation section above -- so it needs no carve-out here.)
   set(_no_unity_generated
-       "${CMAKE_CURRENT_BINARY_DIR}/expr/node_manager.cpp"
-       "${CMAKE_CURRENT_BINARY_DIR}/main/options.cpp")
+       "${CMAKE_CURRENT_BINARY_DIR}/expr/node_manager.cpp")
 
   list(APPEND CVC5_NO_UNITY_SRCS
        ${_no_unity_vendored} ${_no_unity_sat_backends} ${_no_unity_generated})
