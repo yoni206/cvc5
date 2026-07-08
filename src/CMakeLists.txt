@@ -1533,6 +1533,17 @@ if(ENABLE_UNITY_BUILD)
   file(GLOB_RECURSE CVC5_NO_UNITY_SRCS CONFIGURE_DEPENDS
        "${CMAKE_CURRENT_SOURCE_DIR}/prop/minisat/*.cc"
        "${CMAKE_CURRENT_SOURCE_DIR}/prop/minisat/*.cpp")
+  # Optional SAT-backend wrappers (Kissat, CryptoMiniSat) each define helper
+  # functions `toSatValue`/`toSatValueLit` in *the* anonymous namespace of the
+  # enclosing `cvc5::internal::prop` scope. In a unity TU these become the same
+  # anonymous namespace (mutual redefinition), and they additionally clash with
+  # `cadical::toSatValue` — cadical.cpp does `using namespace cadical;` at
+  # namespace scope, which leaks to files concatenated after it and makes the
+  # call ambiguous. Only compiled (non-empty) when the respective solver is
+  # enabled, so just always keep them out of unity.
+  list(APPEND CVC5_NO_UNITY_SRCS
+       "${CMAKE_CURRENT_SOURCE_DIR}/prop/kissat.cpp"
+       "${CMAKE_CURRENT_SOURCE_DIR}/prop/cryptominisat.cpp")
   # node_manager.cpp (generated into the build tree) provides explicit
   # specializations of NodeManager::mkConst<T>; if another file in the same unity
   # batch instantiates the template first, the specialization becomes ill-formed
@@ -1548,6 +1559,27 @@ if(ENABLE_UNITY_BUILD)
   # object gets extracted, causing "multiple definition" link errors in static
   # builds. Keeping it as its own object restores the on-demand behaviour.
   list(APPEND CVC5_NO_UNITY_SRCS "${CMAKE_CURRENT_BINARY_DIR}/main/options.cpp")
+  # CoCoA-backed sources (finite-field theory + Lazard evaluation in nl-arith)
+  # are not unity-safe: several define identically-named file-local helpers
+  # (e.g. `template<class T> std::string ostring(const T&)`) that clash when
+  # concatenated, and they rely on file-scoped `using namespace`/ADL for CoCoA's
+  # operators — which, once other files are pulled into the same TU, resolves
+  # ambiguously (e.g. `std::gcd` vs `CoCoA::gcd`, `operator<<` for
+  # `vector<CoCoA::RingElem>`). These files only pull in CoCoA when USE_COCOA is
+  # set (otherwise CVC5_USE_COCOA is off and they are inert / unity-safe), so we
+  # only carve them out of unity in that configuration. Compiling them
+  # individually costs little (~18 files) and keeps the rest of the library in
+  # unity.
+  if(USE_COCOA)
+    file(GLOB CVC5_COCOA_NO_UNITY_SRCS CONFIGURE_DEPENDS
+         "${CMAKE_CURRENT_SOURCE_DIR}/theory/ff/*.cpp")
+    list(APPEND CVC5_COCOA_NO_UNITY_SRCS
+      "${CMAKE_CURRENT_SOURCE_DIR}/theory/arith/nl/coverings/cocoa_converter.cpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/theory/arith/nl/coverings/lazard_evaluation.cpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/theory/arith/theory_arith.cpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/util/cocoa_globals.cpp")
+    list(APPEND CVC5_NO_UNITY_SRCS ${CVC5_COCOA_NO_UNITY_SRCS})
+  endif()
   set_source_files_properties(${CVC5_NO_UNITY_SRCS}
     PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 elseif(ENABLE_PCH)
