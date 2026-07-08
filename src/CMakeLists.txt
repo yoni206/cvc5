@@ -1504,23 +1504,33 @@ target_compile_definitions(cvc5-obj PRIVATE -D__BUILDING_CVC5LIB -Dcvc5_obj_EXPO
 set_target_properties(cvc5-obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # ----------------------------------------------------------------------------#
-# Compile-time speedups for the core library (cvc5-obj).
+# Compile-time speedup for the core library (cvc5-obj): unity/jumbo build.
 #
-# Two independent, semantics-preserving mechanisms (see COMPILE_SPEEDUP.md for
-# measurements):
-#   * Unity/jumbo build  — compile sources in batches within one translation
-#     unit, so shared headers (expr/node.h & friends, ~73k preprocessed lines)
-#     are parsed once per batch instead of once per file. Biggest win
-#     (~-72% on `make -j8`) and, because it emits far fewer/larger objects with
-#     much less duplicated debug info, it also makes linking and *incremental*
-#     rebuilds faster.
-#   * Precompiled header — parse those same heavy headers once into a PCH. Used
-#     when unity is disabled (~-20%). Redundant under unity (measured to add
-#     pure overhead there), so it is skipped automatically when unity is on.
+# The core library has ~800 translation units, and the great majority of them
+# #include the same handful of large, stable headers (expr/node.h & friends,
+# ~73k preprocessed lines each). Compiling one file at a time re-parses that
+# shared header text once per file — hundreds of times over.
+#
+# A unity build groups the sources into batches and compiles each batch as a
+# single translation unit (CMake concatenates them behind the scenes as
+# `#include "a.cpp"\n#include "b.cpp"\n...`). Every header with an include guard
+# is then parsed once per *batch* instead of once per *file*, so with a batch of
+# 32 the shared-header parsing cost drops ~32x. This is a semantics-preserving,
+# build-system-only change (no source logic changes): the same code is compiled,
+# just grouped differently. Measured ~-70% on a clean `make -j8`
+# (see COMPILE_SPEEDUP.md). It also shrinks link time and incremental rebuilds,
+# because it emits far fewer, larger object files with much less duplicated
+# debug info.
+#
+# The catch: concatenating files into one TU can expose latent
+# translation-unit-locality assumptions (file-local statics/anonymous
+# namespaces, leaking `using namespace`, same-named file-scope helpers,
+# order-dependent template instantiations). The few offending files are excluded
+# from batching below with SKIP_UNITY_BUILD_INCLUSION and compiled on their own;
+# the rest of the library still gets the speedup.
 # ----------------------------------------------------------------------------#
 option(ENABLE_UNITY_BUILD "Compile the core library as a unity/jumbo build" ON)
 set(UNITY_BATCH_SIZE 32 CACHE STRING "Files per unity build batch")
-option(ENABLE_PCH "Use a precompiled header for the core library" ON)
 
 if(ENABLE_UNITY_BUILD)
   set_target_properties(cvc5-obj PROPERTIES
@@ -1582,11 +1592,6 @@ if(ENABLE_UNITY_BUILD)
   endif()
   set_source_files_properties(${CVC5_NO_UNITY_SRCS}
     PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
-elseif(ENABLE_PCH)
-  # Apply the PCH to C++ sources only: cvc5-obj also contains C source(s), and a
-  # C++ header cannot be precompiled as a C header.
-  target_precompile_headers(cvc5-obj PRIVATE
-    "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/cvc5_pch.h>")
 endif()
 # add_dependencies() is necessary for cmake versions before 3.21
 add_dependencies(cvc5-obj cvc5base cvc5context)

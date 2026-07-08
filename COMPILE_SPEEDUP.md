@@ -148,21 +148,26 @@ plus two small correctness fixes. **No source logic changed; build is still a
 normal debug build** (assertions/tracing/statistics on) and is verified correct
 (118/120 regression problems, 0 mismatches; `sat`/`unsat` smoke tests).
 
-**Defaults now:** unity build ON (batch 32), PCH ON (auto-skipped under unity).
-A plain `./configure.sh debug` already gets the speedup. Tuning:
+> **Note (2026-07-08):** the precompiled-header (PCH) mechanism was **removed** —
+> unity is the sole speedup now. PCH was only ever a fallback for when unity is
+> off, it added nothing under unity, and keeping one code path is simpler.
+> Historical PCH numbers are left in the tables below as a record. `ENABLE_PCH`
+> and `src/cvc5_pch.h` no longer exist.
+
+**Defaults now:** unity build ON (batch 32). A plain `./configure.sh debug`
+already gets the speedup. Tuning:
 - Fastest clean `-j8` build: `-DUNITY_BATCH_SIZE=64` (70.0 s, −73.4%).
-- Disable unity (e.g. for tight single-file iteration on tiny files, or to match
-  upstream): `./configure.sh debug -DENABLE_UNITY_BUILD=OFF` → still −20.5% via PCH.
+- Disable unity (e.g. to match upstream exactly, or to bisect a unity-only
+  build issue): `./configure.sh debug -DENABLE_UNITY_BUILD=OFF`.
 - All knobs go through `configure.sh`'s `-DVAR=VALUE` passthrough.
 
 **What changed (all on branch `speedup-compile`):**
-- `src/CMakeLists.txt`: `ENABLE_UNITY_BUILD` (default ON, batch 32) + `ENABLE_PCH`
-  on `cvc5-obj`. Files carved out of unity batching (each for a concrete reason):
+- `src/CMakeLists.txt`: `ENABLE_UNITY_BUILD` (default ON, batch 32) on
+  `cvc5-obj`. Files carved out of unity batching (each for a concrete reason):
   vendored MiniSat, generated `node_manager.cpp`, generated `main/options.cpp`
   (static-build dup symbols), optional SAT wrappers `prop/kissat.cpp` &
   `prop/cryptominisat.cpp`, and — only under `USE_COCOA` — the CoCoA/finite-field
   sources. See "Multi-configuration validation" for why each is needed.
-- `src/cvc5_pch.h`: new precompiled-header payload (used when unity is off).
 - `src/theory/uf/eq_proof.h`, `src/expr/type_checker_util.h`: added missing
   include guards (latent bug; also required for unity).
 - **Validated across `debug`, `production`, `production --static`, and
@@ -309,6 +314,10 @@ redundant work PCH (and unity) eliminate. Main library target: **`cvc5-obj`**
   `--static-binary` (fully static incl. system libs) is blocked by missing
   `libc.a`/`libstdc++.a` on this box — environmental, fails on stock `main` too.
   Commits `cea3fabde0`, `71b6c4b5b9`.
+- **2026-07-08 (cont.)** — Removed the PCH mechanism (`ENABLE_PCH` option +
+  `src/cvc5_pch.h`). Unity is now the only speedup path: PCH was pure fallback,
+  contributed nothing when unity is on, and dropping it removes a code path and a
+  maintained header. Verified `build/` still reconfigures and builds clean.
 
 ### Possible further levers (not pursued — diminishing returns past −71%)
 - **Debug-info weight**: `-gz` (compress) + `-ggdb3` make objects large and the
