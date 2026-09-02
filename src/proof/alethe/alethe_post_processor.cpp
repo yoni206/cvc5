@@ -1061,11 +1061,13 @@ bool AletheProofPostprocessCallback::update(Node res,
     }
     case ProofRule::TRUST_THEORY_REWRITE:
     {
+      // Use sexp to ensure deterministic node ID assignments
+      Node sexp = nm->mkNode(Kind::SEXPR, d_cl, res);
       return addAletheStep(
           options().proof.proofAletheTesting ? AletheRule::UNDEFINED
                                              : AletheRule::HOLE,
           res,
-          nm->mkNode(Kind::SEXPR, d_cl, res),
+          sexp,
           children,
           {nm->mkRawSymbol("\"untranslated rewrite\"", nm->sExprType())},
           *cdp);
@@ -2868,7 +2870,7 @@ bool AletheProofPostprocessCallback::update(Node res,
       return addAletheStep(AletheRule::LA_MULT_ABS_COMPARISON,
                            res,
                            nm->mkNode(Kind::SEXPR, d_cl, res),
-                           {},
+                           children,
                            {},
                            *cdp);
     }
